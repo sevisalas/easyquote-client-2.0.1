@@ -168,7 +168,7 @@ export default function SalesOrderEdit() {
         .from("sales_orders")
         .update({
           customer_id: formData.customer_id || null,
-          description: formData.description || null,
+          description: formData.description || (items[0] as any)?.name || items[0]?.product_name || null,
           notes: formData.notes || null,
           delivery_date: formData.delivery_date || null,
         })

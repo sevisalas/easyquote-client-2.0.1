@@ -403,7 +403,7 @@ export default function SalesOrderNew() {
           user_id: user.id,
           customer_id: finalCustomerId,
           order_number: orderNumber,
-          description: description || itemsArray[0]?.itemDescription || "",
+          description: description || itemsArray[0]?.displayName || itemsArray[0]?.productName || "",
           status: status,
           order_date: new Date().toISOString(),
           delivery_date: calculatedDeliveryDate,
