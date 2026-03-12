@@ -1,0 +1,1 @@
+UPDATE quotes SET description = 'CARPETAS GETSA' WHERE quote_number = '26-0083';
