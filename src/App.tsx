@@ -45,7 +45,7 @@ import WorkloadDashboard from "./pages/WorkloadDashboard";
 
 
 import PresupuestosDashboard from "./pages/PresupuestosDashboard";
-import ProductTestPage from "./pages/ProductTestPage";
+
 import ImageManagement from "./pages/ImageManagement";
 import SalesOrdersList from "./pages/SalesOrdersList";
 import SalesOrderDetail from "./pages/SalesOrderDetail";
