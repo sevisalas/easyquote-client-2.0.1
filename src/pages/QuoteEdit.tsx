@@ -381,7 +381,7 @@ export default function QuoteEdit() {
         .update({
           customer_id: actualCustomerId,
           title: data.title,
-          description: data.description || currentItems[0]?.displayName || currentItems[0]?.name || currentItems[0]?.product_name || "",
+          description: data.description || items[0]?.displayName || items[0]?.name || items[0]?.product_name || "",
           notes: data.notes,
           status: data.status,
           valid_until: data.valid_until,
