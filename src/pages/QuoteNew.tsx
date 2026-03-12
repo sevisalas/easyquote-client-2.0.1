@@ -441,7 +441,7 @@ export default function QuoteNew() {
       const quoteDataBase: Omit<QuotesInsert, "quote_number" | "title"> = {
         user_id: user.id,
         customer_id: actualCustomerId,
-        description: description || itemsArray[0]?.itemDescription || "",
+        description: description || itemsArray[0]?.displayName || itemsArray[0]?.name || itemsArray[0]?.product_name || "",
         status,
         subtotal: totals.subtotal,
         tax_amount: totals.taxAmount,
