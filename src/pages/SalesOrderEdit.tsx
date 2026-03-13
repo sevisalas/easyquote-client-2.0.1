@@ -142,7 +142,7 @@ export default function SalesOrderEdit() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const organizationId = order.organization_id || sessionStorage.getItem('selected_organization_id');
+      const organizationId = sessionStorage.getItem('selected_organization_id') || (order as any).organization_id;
       if (!organizationId) return;
 
       await (supabase
