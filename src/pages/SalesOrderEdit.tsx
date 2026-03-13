@@ -4,10 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate, useParams } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { Plus, ShieldAlert } from "lucide-react";
 import { useSalesOrders, SalesOrder, SalesOrderItem } from "@/hooks/useSalesOrders";
 import { CustomerSelector } from "@/components/quotes/CustomerSelector";
 import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
@@ -44,6 +45,8 @@ export default function SalesOrderEdit() {
   const [orderAdditionals, setOrderAdditionals] = useState<SelectedAdditional[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [editReason, setEditReason] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     customer_id: "",
     description: "",
@@ -51,12 +54,35 @@ export default function SalesOrderEdit() {
     delivery_date: "",
   });
   const [hasToken] = useState(true);
+  // Store original data for audit diff
+  const [originalData, setOriginalData] = useState<any>(null);
 
   useEffect(() => {
-    if (id) {
+    checkPermissions();
+  }, []);
+
+  useEffect(() => {
+    if (id && isAdmin) {
       loadOrderData();
     }
-  }, [id]);
+  }, [id, isAdmin]);
+
+  const checkPermissions = async () => {
+    const { data: roleData } = await supabase.rpc('get_current_user_role').single();
+    if (!roleData || roleData.role !== 'admin') {
+      toast.error("Solo los administradores pueden editar pedidos");
+      navigate("/pedidos");
+      return;
+    }
+    setIsAdmin(true);
+    
+    // Get edit reason from sessionStorage (set by confirmation dialog)
+    const reason = sessionStorage.getItem('edit_order_reason');
+    if (reason) {
+      setEditReason(reason);
+      sessionStorage.removeItem('edit_order_reason');
+    }
+  };
 
   const loadOrderData = async () => {
     if (!id) return;
@@ -70,19 +96,15 @@ export default function SalesOrderEdit() {
         return;
       }
 
-      if (orderData.status !== 'draft') {
-        toast.error("Solo se pueden editar pedidos en estado Borrador");
-        navigate(`/pedidos/${id}`);
-        return;
-      }
-
       setOrder(orderData);
-      setFormData({
+      const formValues = {
         customer_id: orderData.customer_id || "",
         description: orderData.description || "",
         notes: orderData.notes || "",
         delivery_date: orderData.delivery_date || "",
-      });
+      };
+      setFormData(formValues);
+      setOriginalData({ ...formValues, status: orderData.status });
 
       const itemsData = await fetchSalesOrderItems(id);
       setItems(itemsData);
@@ -110,6 +132,33 @@ export default function SalesOrderEdit() {
       toast.error("Error al cargar el pedido");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const logEditAction = async (changes: Record<string, any>) => {
+    if (!id || !order) return;
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const organizationId = sessionStorage.getItem('selected_organization_id') || (order as any).organization_id;
+      if (!organizationId) return;
+
+      await (supabase
+        .from('sales_order_edit_logs' as any)
+        .insert({
+          sales_order_id: id,
+          organization_id: organizationId,
+          user_id: user.id,
+          reason: editReason || 'Edición en borrador',
+          changes,
+          order_status_at_edit: order.status,
+        }) as any);
+
+      console.log('📝 Edit log saved for order', order.order_number);
+    } catch (err) {
+      console.error('Error saving edit log (non-fatal):', err);
     }
   };
 
@@ -179,6 +228,16 @@ export default function SalesOrderEdit() {
       // Recalculate totals
       await recalculateSalesOrderTotals(id);
 
+      // Log the edit action with changes
+      const changes: Record<string, any> = {};
+      if (originalData) {
+        if (formData.customer_id !== originalData.customer_id) changes.customer_id = { from: originalData.customer_id, to: formData.customer_id };
+        if (formData.description !== originalData.description) changes.description = { from: originalData.description, to: formData.description };
+        if (formData.notes !== originalData.notes) changes.notes = { from: originalData.notes, to: formData.notes };
+        if (formData.delivery_date !== originalData.delivery_date) changes.delivery_date = { from: originalData.delivery_date, to: formData.delivery_date };
+      }
+      await logEditAction(changes);
+
       toast.success("Pedido actualizado correctamente");
       navigate(`/pedidos/${id}`);
     } catch (error) {
@@ -247,6 +306,9 @@ export default function SalesOrderEdit() {
       if (updatedOrder && order) {
         setOrder({ ...order, final_price: updatedOrder.final_price });
       }
+
+      // Log item edit
+      await logEditAction({ item_updated: { id: item.id, product_name: item.product_name } });
       
       toast.success("Artículo actualizado");
     } catch (error) {
@@ -259,6 +321,8 @@ export default function SalesOrderEdit() {
     if (!id) return;
 
     try {
+      const removedItem = items.find(item => item.id === itemId);
+      
       const { error } = await supabase
         .from("sales_order_items")
         .delete()
@@ -279,6 +343,9 @@ export default function SalesOrderEdit() {
       if (updatedOrder && order) {
         setOrder({ ...order, final_price: updatedOrder.final_price });
       }
+
+      // Log item removal
+      await logEditAction({ item_removed: { id: itemId, product_name: removedItem?.product_name } });
       
       toast.success("Artículo eliminado");
     } catch (error) {
@@ -307,6 +374,9 @@ export default function SalesOrderEdit() {
       if (data) {
         setItems([...items, data as SalesOrderItem]);
       }
+
+      // Log item addition
+      await logEditAction({ item_added: true });
       
       toast.success("Artículo añadido");
     } catch (error) {
@@ -327,14 +397,22 @@ export default function SalesOrderEdit() {
     return null;
   }
 
+  const isNonDraftEdit = order.status !== 'draft';
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       {/* Header with title and actions */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex items-center gap-3">
               <CardTitle className="text-lg">Pedido: {order.order_number}</CardTitle>
+              {isNonDraftEdit && (
+                <Badge variant="outline" className="border-amber-500 text-amber-600 gap-1">
+                  <ShieldAlert className="h-3 w-3" />
+                  Edición con auditoría
+                </Badge>
+              )}
             </div>
             <div className="flex gap-2">
               <Button onClick={handleSave} disabled={saving} size="sm">
@@ -345,6 +423,11 @@ export default function SalesOrderEdit() {
               </Button>
             </div>
           </div>
+          {isNonDraftEdit && editReason && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Motivo: <em>{editReason}</em>
+            </p>
+          )}
         </CardHeader>
       </Card>
 

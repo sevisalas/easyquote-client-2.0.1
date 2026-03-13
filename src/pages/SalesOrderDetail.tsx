@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Download, ChevronDown, Edit, FileText, LayoutGrid, Wrench } from "lucide-react";
+import { ArrowLeft, Trash2, Download, ChevronDown, Edit, FileText, LayoutGrid, Wrench, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,9 @@ import { useSalesOrders, SalesOrder, SalesOrderItem, SalesOrderAdditional } from
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -69,6 +72,10 @@ const SalesOrderDetail = () => {
   const [adminOnlyPrompts, setAdminOnlyPrompts] = useState<Set<string>>(new Set());
   const [customerInfo, setCustomerInfo] = useState<{ name: string; email?: string; phone?: string }>({ name: 'Sin cliente' });
   const { isHoldedActive } = useHoldedIntegration();
+  // Edit confirmation dialog state
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editReason, setEditReason] = useState('');
+  const [editConsent, setEditConsent] = useState(false);
 
   useEffect(() => {
     if (!canAccessProduccion()) {
@@ -839,16 +846,30 @@ const SalesOrderDetail = () => {
                   {!isMobile && "Descargar OT PDF"}
                 </Button>
               )}
-              {order.status === 'draft' && (
-                <Button 
-                  onClick={() => navigate(`/pedidos/${id}/editar`)}
-                  size={isMobile ? "default" : "sm"}
-                  variant="outline"
-                  className={`gap-2 ${isMobile ? 'h-10 flex-1' : ''}`}
-                >
-                  <Edit className="h-4 w-4" />
-                  {!isMobile && "Editar"}
-                </Button>
+              {userRole === 'admin' && (
+                <>
+                  {order.status === 'draft' ? (
+                    <Button 
+                      onClick={() => navigate(`/pedidos/${id}/editar`)}
+                      size={isMobile ? "default" : "sm"}
+                      variant="outline"
+                      className={`gap-2 ${isMobile ? 'h-10 flex-1' : ''}`}
+                    >
+                      <Edit className="h-4 w-4" />
+                      {!isMobile && "Editar"}
+                    </Button>
+                  ) : (
+                    <Button 
+                      onClick={() => { setEditReason(''); setEditConsent(false); setShowEditDialog(true); }}
+                      size={isMobile ? "default" : "sm"}
+                      variant="outline"
+                      className={`gap-2 ${isMobile ? 'h-10 flex-1' : ''}`}
+                    >
+                      <ShieldAlert className="h-4 w-4" />
+                      {!isMobile && "Editar"}
+                    </Button>
+                  )}
+                </>
               )}
               {order.status === 'draft' && (
                 <AlertDialog>
@@ -899,7 +920,57 @@ const SalesOrderDetail = () => {
         </CardHeader>
       </Card>
 
-      {/* Información del Pedido */}
+      {/* Edit Confirmation Dialog */}
+      <AlertDialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-amber-500" />
+              Editar pedido {order?.order_number}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Este pedido ya no está en borrador (estado: <strong>{order?.status ? statusLabels[order.status as keyof typeof statusLabels] || order.status : ''}</strong>). 
+              Modificarlo puede afectar a producción y facturación. Esta acción quedará registrada.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-reason" className="text-sm font-medium">Motivo de la edición *</Label>
+              <Textarea
+                id="edit-reason"
+                placeholder="Explica por qué necesitas modificar este pedido..."
+                value={editReason}
+                onChange={(e) => setEditReason(e.target.value)}
+                rows={3}
+              />
+            </div>
+            <div className="flex items-start space-x-2">
+              <Checkbox
+                id="edit-consent"
+                checked={editConsent}
+                onCheckedChange={(checked) => setEditConsent(checked === true)}
+              />
+              <Label htmlFor="edit-consent" className="text-sm leading-tight cursor-pointer">
+                Entiendo que esta modificación quedará registrada y puede afectar a procesos en curso
+              </Label>
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!editReason.trim() || !editConsent}
+              onClick={() => {
+                // Store reason in sessionStorage for the edit page to use
+                sessionStorage.setItem('edit_order_reason', editReason.trim());
+                navigate(`/pedidos/${id}/editar`);
+              }}
+            >
+              Continuar con la edición
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Card className={isMobile ? "rounded-none" : ""}>
         <CardHeader className={isMobile ? "p-3 pb-2" : "pb-2"}>
           <CardTitle className="text-base">Información del pedido</CardTitle>

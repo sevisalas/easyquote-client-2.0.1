@@ -2658,6 +2658,61 @@ export type Database = {
           },
         ]
       }
+      sales_order_edit_logs: {
+        Row: {
+          changes: Json | null
+          created_at: string
+          id: string
+          order_status_at_edit: string | null
+          organization_id: string
+          reason: string
+          sales_order_id: string
+          user_id: string
+        }
+        Insert: {
+          changes?: Json | null
+          created_at?: string
+          id?: string
+          order_status_at_edit?: string | null
+          organization_id: string
+          reason: string
+          sales_order_id: string
+          user_id: string
+        }
+        Update: {
+          changes?: Json | null
+          created_at?: string
+          id?: string
+          order_status_at_edit?: string | null
+          organization_id?: string
+          reason?: string
+          sales_order_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_order_edit_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "sales_order_edit_logs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sales_order_edit_logs_sales_order_id_fkey"
+            columns: ["sales_order_id"]
+            isOneToOne: false
+            referencedRelation: "sales_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sales_order_items: {
         Row: {
           composite_data: Json | null
