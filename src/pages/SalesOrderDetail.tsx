@@ -72,6 +72,10 @@ const SalesOrderDetail = () => {
   const [adminOnlyPrompts, setAdminOnlyPrompts] = useState<Set<string>>(new Set());
   const [customerInfo, setCustomerInfo] = useState<{ name: string; email?: string; phone?: string }>({ name: 'Sin cliente' });
   const { isHoldedActive } = useHoldedIntegration();
+  // Edit confirmation dialog state
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editReason, setEditReason] = useState('');
+  const [editConsent, setEditConsent] = useState(false);
 
   useEffect(() => {
     if (!canAccessProduccion()) {
