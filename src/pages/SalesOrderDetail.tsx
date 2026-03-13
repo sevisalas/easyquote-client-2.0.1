@@ -846,16 +846,30 @@ const SalesOrderDetail = () => {
                   {!isMobile && "Descargar OT PDF"}
                 </Button>
               )}
-              {order.status === 'draft' && (
-                <Button 
-                  onClick={() => navigate(`/pedidos/${id}/editar`)}
-                  size={isMobile ? "default" : "sm"}
-                  variant="outline"
-                  className={`gap-2 ${isMobile ? 'h-10 flex-1' : ''}`}
-                >
-                  <Edit className="h-4 w-4" />
-                  {!isMobile && "Editar"}
-                </Button>
+              {userRole === 'admin' && (
+                <>
+                  {order.status === 'draft' ? (
+                    <Button 
+                      onClick={() => navigate(`/pedidos/${id}/editar`)}
+                      size={isMobile ? "default" : "sm"}
+                      variant="outline"
+                      className={`gap-2 ${isMobile ? 'h-10 flex-1' : ''}`}
+                    >
+                      <Edit className="h-4 w-4" />
+                      {!isMobile && "Editar"}
+                    </Button>
+                  ) : (
+                    <Button 
+                      onClick={() => { setEditReason(''); setEditConsent(false); setShowEditDialog(true); }}
+                      size={isMobile ? "default" : "sm"}
+                      variant="outline"
+                      className={`gap-2 ${isMobile ? 'h-10 flex-1' : ''}`}
+                    >
+                      <ShieldAlert className="h-4 w-4" />
+                      {!isMobile && "Editar"}
+                    </Button>
+                  )}
+                </>
               )}
               {order.status === 'draft' && (
                 <AlertDialog>
