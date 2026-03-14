@@ -5,6 +5,15 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.6.3] - 2026-03-14
+
+### Añadido
+- **Totales de filtrado en listados**: Presupuestos y pedidos muestran ahora la suma total en EUR de los documentos filtrados, visible entre los filtros y la tabla
+- **Exportación Excel de listados**: Botón "Exportar Excel" en presupuestos y pedidos que descarga un `.xlsx` con las columnas visibles (Fecha, Nº, Cliente, Usuario, Descripción, Total, Estado) del filtrado activo
+- **Edición de pedidos con auditoría**: Los administradores pueden editar pedidos en cualquier estado; los pedidos no-borrador requieren motivo obligatorio y los cambios se registran en tabla de auditoría (`sales_order_edit_logs`)
+
+---
+
 ## [2.6.2] - 2026-03-12
 
 ### Mejorado
