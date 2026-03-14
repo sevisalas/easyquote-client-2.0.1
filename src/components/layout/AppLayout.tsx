@@ -5,6 +5,7 @@ import { useTokenRefresh } from "@/hooks/useTokenRefresh";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileBottomNav } from "@/components/mobile/MobileBottomNav";
 import { useTheme } from "@/hooks/useTheme";
+import { WhatsNewDialog } from "@/components/WhatsNewDialog";
 import { cn } from "@/lib/utils";
 
 function MainContent({ children }: PropsWithChildren) {
@@ -40,6 +41,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
         </div>
         
         {isMobile && <MobileBottomNav />}
+        <WhatsNewDialog />
       </div>
     </SidebarProvider>
   );
