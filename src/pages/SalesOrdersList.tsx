@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, Copy, X, Search, CalendarIcon, Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Eye, Copy, X, Search, CalendarIcon, Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, FileSpreadsheet } from "lucide-react";
+import { exportListToExcel } from "@/utils/exportListToExcel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -483,9 +484,48 @@ const SalesOrdersList = () => {
             )}
           </div>
 
-          {/* Results Summary */}
-          <div className="mb-2 text-xs text-muted-foreground">
-            {filteredOrders.length} de {orders.length} pedidos
+          {/* Results Summary with Totals */}
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded border bg-muted/20 px-3 py-2">
+            <div className="flex items-center gap-3 text-sm">
+              <span className="text-muted-foreground">
+                {filteredOrders.length} de {orders.length} pedidos
+              </span>
+              <span className="font-semibold text-foreground">
+                Total: {fmtEUR(filteredOrders.reduce((s: number, o: any) => s + (Number(o.final_price) || 0), 0))}
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={() => {
+                const rows = filteredOrders.map((o: any) => ({
+                  fecha: new Date(o.order_date).toLocaleDateString("es-ES"),
+                  numero: o.order_number || "",
+                  cliente: getCustomerName(o.customer_id),
+                  usuario: getUserName(o.user_id),
+                  descripcion: o.description || "",
+                  total: Number(o.final_price) || 0,
+                  estado: statusLabels[o.status as keyof typeof statusLabels] || o.status,
+                }));
+                exportListToExcel(
+                  rows,
+                  [
+                    { header: "Fecha", key: "fecha" },
+                    { header: "Nº", key: "numero" },
+                    { header: "Cliente", key: "cliente" },
+                    { header: "Usuario", key: "usuario" },
+                    { header: "Descripción", key: "descripcion" },
+                    { header: "Total (€)", key: "total" },
+                    { header: "Estado", key: "estado" },
+                  ],
+                  `pedidos_${format(new Date(), "yyyyMMdd")}.xlsx`,
+                );
+              }}
+            >
+              <FileSpreadsheet className="h-3.5 w-3.5" />
+              Exportar Excel
+            </Button>
           </div>
 
           {loading ? (
