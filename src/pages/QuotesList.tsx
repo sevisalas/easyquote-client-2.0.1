@@ -345,9 +345,48 @@ const QuotesList = () => {
             )}
           </div>
 
-          {/* Results Summary */}
-          <div className="mb-2 text-xs md:text-xs text-muted-foreground px-1">
-            {filteredQuotes.length} de {quotes.length} presupuestos
+          {/* Results Summary with Totals */}
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2 rounded border bg-muted/20 px-3 py-2">
+            <div className="flex items-center gap-3 text-sm">
+              <span className="text-muted-foreground">
+                {filteredQuotes.length} de {quotes.length} presupuestos
+              </span>
+              <span className="font-semibold text-foreground">
+                Total: {fmtEUR(filteredQuotes.reduce((s: number, q: any) => s + (Number(q.final_price) || 0), 0))}
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1"
+              onClick={() => {
+                const rows = filteredQuotes.map((q: any) => ({
+                  fecha: new Date(q.created_at).toLocaleDateString("es-ES"),
+                  numero: q.quote_number || "",
+                  cliente: getCustomerName(q.customer_id),
+                  usuario: getUserName(q.user_id),
+                  descripcion: q.description || "",
+                  total: Number(q.final_price) || 0,
+                  estado: statusLabel[q.status as keyof typeof statusLabel] || q.status,
+                }));
+                exportListToExcel(
+                  rows,
+                  [
+                    { header: "Fecha", key: "fecha" },
+                    { header: "Nº", key: "numero" },
+                    { header: "Cliente", key: "cliente" },
+                    { header: "Usuario", key: "usuario" },
+                    { header: "Descripción", key: "descripcion" },
+                    { header: "Total (€)", key: "total" },
+                    { header: "Estado", key: "estado" },
+                  ],
+                  `presupuestos_${format(new Date(), "yyyyMMdd")}.xlsx`,
+                );
+              }}
+            >
+              <FileSpreadsheet className="h-3.5 w-3.5" />
+              Exportar Excel
+            </Button>
           </div>
 
           {filteredQuotes.length === 0 ? (
