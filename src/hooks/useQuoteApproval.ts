@@ -136,7 +136,7 @@ export const useQuoteApproval = () => {
         if (multi?.rows && Array.isArray(multi.rows) && itemQuantities?.[item.id]) {
           const selectedQuantity = itemQuantities[item.id];
           const selectedRow = multi.rows.find((row: any) => 
-            row.qty === selectedQuantity || row.quantity === selectedQuantity
+            Number(row.qty) === selectedQuantity || Number(row.quantity) === selectedQuantity
           );
           if (selectedRow) {
             itemPrice = parseFloat(selectedRow.outs?.find((o: any) => o.type === 'Price')?.value || selectedRow.price || item.price || 0);
