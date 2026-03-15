@@ -226,7 +226,7 @@ export const useQuoteApproval = () => {
         if (multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1 && itemQuantities?.[item.id]) {
           const selectedQuantity = itemQuantities[item.id];
           const selectedRow = multi.rows.find((row: any) => 
-            row.qty === selectedQuantity || row.quantity === selectedQuantity
+            Number(row.qty) === selectedQuantity || Number(row.quantity) === selectedQuantity
           );
           
           if (selectedRow) {
