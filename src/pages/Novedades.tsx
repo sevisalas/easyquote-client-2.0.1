@@ -26,6 +26,181 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.6.3",
+    date: "2026-03-14",
+    changes: {
+      added: [
+        "Totales de filtrado en listados: presupuestos y pedidos muestran la suma total en EUR de los documentos filtrados",
+        "Exportación Excel de listados: botón para descargar un .xlsx con las columnas visibles del filtrado activo",
+        "Edición de pedidos con auditoría: los administradores pueden editar pedidos en cualquier estado con motivo obligatorio y registro de cambios",
+      ],
+    },
+  },
+  {
+    version: "2.6.2",
+    date: "2026-03-12",
+    changes: {
+      changed: [
+        "Descripción automática en presupuestos y pedidos: se rellena con el nombre del primer artículo si el usuario no la escribe",
+      ],
+      fixed: [
+        "Precios multi-cantidad con ajustes por cantidad en PDF: Q2/Q3 ahora usan el valor de ajuste específico de cada cantidad",
+      ],
+      removed: [
+        "Ruta independiente de pruebas de producto (/admin/productos/test)",
+      ],
+    },
+  },
+  {
+    version: "2.6.1",
+    date: "2026-03-11",
+    changes: {
+      security: [
+        "Protección del endpoint de notificaciones: autenticación JWT obligatoria y sanitización de campos HTML",
+      ],
+    },
+  },
+  {
+    version: "2.5.25",
+    date: "2026-03-06",
+    changes: {
+      added: [
+        "Ajuste tipo porcentaje para artículos: nuevo tipo 'Porcentaje sobre subtotal' disponible en configuración",
+      ],
+    },
+  },
+  {
+    version: "2.5.24",
+    date: "2026-03-05",
+    changes: {
+      changed: [
+        "Bloque de precio unificado en productos simples: precio y botón de modificar comparten el mismo contenedor visual",
+      ],
+    },
+  },
+  {
+    version: "2.5.23",
+    date: "2026-03-04",
+    changes: {
+      fixed: [
+        "Error de clave duplicada al aprobar presupuestos: verificación de pedido existente y reintento automático",
+        "Cliente recién importado no reconocido al aprobar: la verificación de holded_id ahora se refresca siempre",
+      ],
+    },
+  },
+  {
+    version: "2.5.22",
+    date: "2026-03-04",
+    changes: {
+      fixed: [
+        "Precios multi-cantidad con ajustes en PDF: Q2/Q3 ahora incluyen los ajustes recalculados para cada cantidad",
+        "Eliminado mensaje incorrecto sobre exportación separada de cantidades múltiples a Holded",
+      ],
+    },
+  },
+  {
+    version: "2.5.21",
+    date: "2026-02-27",
+    changes: {
+      added: [
+        "Modo de exportación 'Presupuestos solo al aprobar': nuevo modo de integración con Holded",
+        "Tres modos de exportación configurables desde Configuración > Integraciones",
+        "Detalles de artículos visibles en consulta aunque el documento esté bloqueado o aprobado",
+      ],
+      fixed: [
+        "Ajustes ocultos en Holded (Campillo/Anebri): los importes se distribuyen proporcionalmente entre los subtotales",
+      ],
+    },
+  },
+  {
+    version: "2.5.20",
+    date: "2026-02-27",
+    changes: {
+      fixed: [
+        "Precio de productos compuestos no se actualizaba al cambiar la cantidad de ejemplares",
+      ],
+    },
+  },
+  {
+    version: "2.5.19",
+    date: "2026-02-26",
+    changes: {
+      changed: [
+        "Datos de cliente en PDF simplificados: eliminados email y teléfono, solo empresa y dirección",
+        "Descripción del presupuesto reubicada fuera de la tabla de artículos en plantillas Campillo y Anebri",
+      ],
+    },
+  },
+  {
+    version: "2.5.18",
+    date: "2026-02-25",
+    changes: {
+      added: [
+        "Texto legal en pie de PDF: configurable desde Configuración > Plantilla PDF para plantillas Campillo y Anebri",
+      ],
+      fixed: [
+        "Nombre de empresa en Template 8 corregido a 'ANEBRI S.L.'",
+      ],
+    },
+  },
+  {
+    version: "2.5.17",
+    date: "2026-02-25",
+    changes: {
+      fixed: [
+        "Plantilla PDF compartida por organización: todos los miembros ven y usan la misma plantilla corporativa",
+      ],
+    },
+  },
+  {
+    version: "2.5.16",
+    date: "2026-02-24",
+    changes: {
+      added: [
+        "Plantilla PDF Anebri (Template 8): nueva plantilla corporativa exclusiva con logo y paleta roja",
+        "Previews de plantillas 7 y 8",
+      ],
+      fixed: [
+        "Plantilla PDF incorrecta en presupuestos multi-organización: ahora usa el organization_id del presupuesto",
+        "Toast 'Bienvenido' persistente: añadida duración de 3 segundos",
+      ],
+    },
+  },
+  {
+    version: "2.5.15",
+    date: "2026-02-23",
+    changes: {
+      fixed: [
+        "Campos ocultos en PDF y Holded: los campos marcados como ocultos se excluyen correctamente en PDF y Holded",
+        "Configuración de plantilla PDF: corrección del fallback para obtener la organización del usuario",
+      ],
+    },
+  },
+  {
+    version: "2.5.14",
+    date: "2026-02-20",
+    changes: {
+      fixed: [
+        "Permisos de adjuntos para propietarios de organizaciones",
+        "Edición de adjuntos en presupuestos ya exportados a Holded",
+        "Descripción compuesta en Holded sin campos repetidos en cada componente",
+      ],
+    },
+  },
+  {
+    version: "2.5.13",
+    date: "2026-02-13",
+    changes: {
+      added: [
+        "Adjuntos a Holded: archivos adjuntos (máx. 5 × 10 MB) se sincronizan automáticamente al exportar",
+        "Interfaz de adjuntos discreta: sección colapsable en formularios de presupuestos y pedidos",
+      ],
+      fixed: [
+        "Permisos de exportación en Holded para usuarios con múltiples organizaciones",
+      ],
+    },
+  },
+  {
     version: "2.5.12",
     date: "2026-02-11",
     changes: {
