@@ -740,7 +740,7 @@ const Novedades = () => {
                     </CardTitle>
                     {version.isDevelopment ? (
                       <Badge variant="outline" className="border-amber-500/50 text-amber-600 bg-amber-500/10">En desarrollo</Badge>
-                    ) : index === 1 && (
+                    ) : index === 0 && (
                       <Badge className="bg-primary">Actual</Badge>
                     )}
                   </div>
