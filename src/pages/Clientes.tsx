@@ -338,7 +338,6 @@ export default function Clientes() {
                       {cliente.source === 'local' ? 'Local' : 'Holded'}
                     </Badge>
                   </TableCell>
-                  <TableCell className="py-1.5 px-3 text-sm">{cliente.notes}</TableCell>
                   <TableCell className="py-1.5 px-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       {cliente.source === 'local' ? (
