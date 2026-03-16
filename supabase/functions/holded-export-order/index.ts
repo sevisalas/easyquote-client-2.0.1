@@ -264,6 +264,20 @@ Deno.serve(async (req) => {
       .eq('api_user_id', apiUserId)
       .or('hide_in_documents.eq.true,admin_only.eq.true');
 
+    // Load quantity prompt settings (is_quantity = true)
+    const { data: quantityPromptSettings } = await supabase
+      .from('product_prompt_settings')
+      .select('easyquote_product_id, prompt_name, label')
+      .eq('api_user_id', apiUserId)
+      .eq('is_quantity', true);
+
+    // Build a map: productId -> { prompt_name, label } for quantity prompts
+    const quantityPromptByProduct = new Map<string, { prompt_name: string; label: string | null }>();
+    (quantityPromptSettings || []).forEach((s: any) => {
+      quantityPromptByProduct.set(s.easyquote_product_id, { prompt_name: s.prompt_name, label: s.label });
+    });
+    console.log('📊 Quantity prompts configured:', Object.fromEntries(quantityPromptByProduct));
+
     const normalizeHiddenKey = (v: unknown) => normalizePromptKey(v).toUpperCase();
     const makeHiddenKey = (productId: unknown, promptKey: unknown) => `${String(productId ?? '')}:${normalizeHiddenKey(promptKey)}`;
     // Include BOTH prompt_name (cell ref) AND label (human name) for matching
@@ -688,50 +702,53 @@ Deno.serve(async (req) => {
         totalPrice = parseFloat(item.price) || 0;
       }
       
-      // Detect quantity: first from output type Quantity, then from output name, then from prompts
-      if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
-        // 1) Buscar output con type=Quantity
-        let quantityOut = item.outputs.find((o: any) => 
-          String(o?.type || '').toLowerCase() === 'quantity'
-        );
-        
-        // 2) Si no hay type=Quantity, buscar por nombre que contenga "unidades", "cantidad", "units", "quantity"
-        if (!quantityOut) {
-          quantityOut = item.outputs.find((o: any) => {
-            const name = String(o?.name || '').toLowerCase();
-            return name.includes('unidades') || name.includes('cantidad') || 
-                   name.includes('units') || name.includes('quantity') ||
-                   name.includes('ejemplares') || name.includes('copias');
-          });
-        }
-        
-        if (quantityOut) {
-          const qtyValue = quantityOut.value;
-          units = typeof qtyValue === "number" 
-            ? qtyValue 
-            : parseInt(String(qtyValue || 1).replace(/\./g, "").replace(",", ".")) || 1;
-          console.log('📊 Quantity from output:', { units, outputName: quantityOut.name, outputType: quantityOut.type });
-        }
-      }
-      
-      // If no quantity from output, check prompts for UNIDADES/CANTIDAD/EJEMPLAR
-      if (units === 1 && item.prompts) {
+      // Detect quantity from prompts ONLY (never from outputs)
+      // Priority: 1) prompt marked with is_quantity in product_prompt_settings
+      //           2) heuristic fallback on prompt labels
+      //           3) custom product quantity
+      if (!isCustomProduct && item.prompts) {
         const promptsArray = Array.isArray(item.prompts) ? item.prompts : [];
-        const qtyPrompt = promptsArray.find((p: any) => {
-          const label = String(p?.label || '').toUpperCase();
-          return label.includes('UNIDADES') || label.includes('CANTIDAD') || label.includes('EJEMPLAR');
-        });
+        const qtySetting = quantityPromptByProduct.get(itemProductId);
         
-        if (qtyPrompt) {
-          const qtyValue = qtyPrompt.value;
-          units = typeof qtyValue === "number" 
-            ? qtyValue 
-            : parseInt(String(qtyValue || 1).replace(/\./g, "").replace(",", ".")) || 1;
-          console.log('📊 Quantity from prompt:', { units, promptLabel: qtyPrompt.label });
+        if (qtySetting) {
+          // Use the prompt marked as is_quantity in settings
+          const normalizedSettingName = normalizePromptKey(qtySetting.prompt_name).toUpperCase();
+          const normalizedSettingLabel = qtySetting.label ? normalizePromptKey(qtySetting.label).toUpperCase() : null;
+          
+          const qtyPrompt = promptsArray.find((p: any) => {
+            const pName = normalizePromptKey(p?.name || p?.id || '').toUpperCase();
+            const pLabel = normalizePromptKey(p?.label || '').toUpperCase();
+            return pName === normalizedSettingName || pLabel === normalizedSettingName ||
+                   (normalizedSettingLabel && (pName === normalizedSettingLabel || pLabel === normalizedSettingLabel));
+          });
+          
+          if (qtyPrompt) {
+            const qtyValue = qtyPrompt.value;
+            units = typeof qtyValue === "number" 
+              ? qtyValue 
+              : parseInt(String(qtyValue || 1).replace(/\./g, "").replace(",", ".")) || 1;
+            console.log('📊 Quantity from is_quantity prompt:', { units, promptLabel: qtyPrompt.label, settingName: qtySetting.prompt_name });
+          }
+        }
+        
+        // Heuristic fallback: only if no is_quantity setting found for this product
+        if (units === 1 && !qtySetting) {
+          const qtyPrompt = promptsArray.find((p: any) => {
+            const label = String(p?.label || '').toUpperCase();
+            return label.includes('UNIDADES') || label.includes('CANTIDAD') || label.includes('EJEMPLAR');
+          });
+          
+          if (qtyPrompt) {
+            const qtyValue = qtyPrompt.value;
+            units = typeof qtyValue === "number" 
+              ? qtyValue 
+              : parseInt(String(qtyValue || 1).replace(/\./g, "").replace(",", ".")) || 1;
+            console.log('📊 Quantity from prompt heuristic (no is_quantity configured):', { units, promptLabel: qtyPrompt.label });
+          }
         }
       }
       
-      // For custom products, use quantity from prompts if not already found
+      // For custom products, use quantity from prompts
       if (isCustomProduct && units === 1) {
         units = customQuantity;
       }
