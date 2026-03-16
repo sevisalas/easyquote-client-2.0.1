@@ -461,7 +461,14 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
 
               <View style={styles.headerRight}>
                 <Text style={styles.otTitle}>ORDEN DE TRABAJO</Text>
-                <Text style={styles.otNumber}>{orderNumber}</Text>
+                {items.length > 1 ? (
+                  <>
+                    <Text style={{ fontSize: 9, color: '#666' }}>Pedido: {orderNumber}</Text>
+                    <Text style={styles.otNumber}>{orderNumber}/{itemIndex + 1}</Text>
+                  </>
+                ) : (
+                  <Text style={styles.otNumber}>{orderNumber}</Text>
+                )}
                 {(orderDate || deliveryDate) && (
                   <View style={{ marginTop: 6 }}>
                     {orderDate && (

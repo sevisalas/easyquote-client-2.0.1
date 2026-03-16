@@ -22,6 +22,8 @@ interface WorkOrderItemProps {
   filterOutput?: (output: { name: string; type: string; value: any }) => boolean;
   /** Filter function for prompt visibility (by prompt label) */
   filterPrompt?: (prompt: { label: string; value: any }) => boolean;
+  /** Total number of items in the order (for hierarchical OT numbering) */
+  totalItems?: number;
 }
 
 export const WorkOrderItem = ({ 
