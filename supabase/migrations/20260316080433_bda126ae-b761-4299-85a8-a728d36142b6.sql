@@ -1,0 +1,1 @@
+ALTER TABLE public.sales_order_items ADD COLUMN item_additionals jsonb DEFAULT null;
