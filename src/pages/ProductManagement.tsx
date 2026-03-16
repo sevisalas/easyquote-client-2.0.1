@@ -2866,6 +2866,9 @@ export default function ProductManagement() {
                   </div> : <ScrollArea className="h-[500px] pr-4">
                     <div className="space-y-3">
                       {productPrompts.map((prompt, index) => {
+                    const promptLabel = (prompt as any)?.promptText;
+                    const promptAliases = [prompt.promptCell, promptLabel, prompt.id];
+                    const promptSettingKey = prompt.promptCell || promptLabel || prompt.id;
                     const promptName = prompt.promptCell || prompt.id;
                     const assignedComponent = getPromptComponent(promptName);
                     const componentLabel = assignedComponent === 'general' ? 'General' : COMPONENT_PRESETS.compuesto.components.find(c => c.value === assignedComponent)?.label || assignedComponent;
