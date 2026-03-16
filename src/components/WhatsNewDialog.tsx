@@ -15,7 +15,7 @@ import { Sparkles, FileSpreadsheet, ShieldCheck } from "lucide-react";
  * Bump CURRENT_VERSION every time you want to show a new "What's New" dialog.
  * Add the matching entry to RELEASE_NOTES below.
  */
-const CURRENT_VERSION = "2.6.3";
+const CURRENT_VERSION = "2.6.5";
 const LS_KEY = "whats_new_seen_version";
 
 interface ReleaseNote {
