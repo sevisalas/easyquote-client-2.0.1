@@ -321,7 +321,7 @@ export default function Clientes() {
           <TableBody>
             {clientes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-6">
+                <TableCell colSpan={5} className="text-center py-6">
                   {searchTerm
                     ? "No se encontraron clientes que coincidan con la búsqueda."
                     : "No hay clientes registrados."}
