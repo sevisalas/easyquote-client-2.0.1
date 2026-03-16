@@ -1501,6 +1501,7 @@ export type Database = {
           id: string
           max_daily_orders: number | null
           name: string
+          split_orders_per_item: boolean
           subscription_plan: string
           updated_at: string
         }
@@ -1516,6 +1517,7 @@ export type Database = {
           id?: string
           max_daily_orders?: number | null
           name: string
+          split_orders_per_item?: boolean
           subscription_plan?: string
           updated_at?: string
         }
@@ -1531,6 +1533,7 @@ export type Database = {
           id?: string
           max_daily_orders?: number | null
           name?: string
+          split_orders_per_item?: boolean
           subscription_plan?: string
           updated_at?: string
         }
