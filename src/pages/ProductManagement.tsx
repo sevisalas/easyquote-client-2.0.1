@@ -3194,7 +3194,7 @@ export default function ProductManagement() {
                                   <Input 
                                     className="flex-1 h-8"
                                     placeholder="Nombre descriptivo"
-                                    value={promptLabelDrafts[prompt.promptCell] ?? getPromptLabel(prompt.promptCell) ?? prompt.promptText ?? ""}
+                                    value={promptLabelDrafts[prompt.promptCell] ?? getPromptLabel(...promptAliases) ?? prompt.promptText ?? ""}
                                     onChange={e => {
                                       setPromptLabelDrafts(prev => ({
                                         ...prev,
