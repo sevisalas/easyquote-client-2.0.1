@@ -71,7 +71,14 @@ export const WorkOrderItem = ({
       {/* Header compacto estilo OT */}
       <div className="flex items-center justify-between border-b border-foreground/20 pb-1">
         <div className="flex items-center gap-3 text-xs">
-          <span className="font-bold text-sm">{item.product_name}</span>
+          {totalItems > 1 ? (
+            <div className="flex flex-col">
+              <span className="text-[9px] text-muted-foreground">Pedido: {orderNumber}</span>
+              <span className="font-bold text-sm">{orderNumber}/{itemIndex + 1} — {item.product_name}</span>
+            </div>
+          ) : (
+            <span className="font-bold text-sm">{item.product_name}</span>
+          )}
         </div>
         <div className="flex items-center gap-4 text-xs text-muted-foreground">
           {orderDate && <span>F. Pedido: <span className="font-medium text-foreground">{orderDate}</span></span>}
