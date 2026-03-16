@@ -1,1 +1,0 @@
-ALTER TABLE public.organizations ADD COLUMN split_orders_per_item boolean NOT NULL DEFAULT false;

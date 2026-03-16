@@ -1,1 +1,0 @@
-UPDATE public.organizations SET split_orders_per_item = true WHERE id IN ('95abc5cd-77dd-4f55-8380-f9de4dd85cac', '294133c5-ab2a-445c-9270-85a179a0bde6', '108bcc37-fc60-4bc0-a81f-c30641d0ebc9');
