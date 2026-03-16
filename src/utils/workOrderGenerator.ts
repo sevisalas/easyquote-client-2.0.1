@@ -30,7 +30,7 @@ export const generateWorkOrderPDF = async (
     orderDate,
     deliveryDate,
     items,
-    filename = `OT-${orderNumber}.pdf`, 
+    filename = `${orderNumber}.pdf`, 
     quality = 2 
   } = options;
 
