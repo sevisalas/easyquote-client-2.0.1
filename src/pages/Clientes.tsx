@@ -315,14 +315,13 @@ export default function Clientes() {
               <TableHead className="py-2 text-xs font-semibold">Email</TableHead>
               <TableHead className="py-2 text-xs font-semibold">Teléfono</TableHead>
               <TableHead className="py-2 text-xs font-semibold">Origen</TableHead>
-              <TableHead className="py-2 text-xs font-semibold">Notas</TableHead>
               <TableHead className="py-2 text-right text-xs font-semibold">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {clientes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-6">
+                <TableCell colSpan={5} className="text-center py-6">
                   {searchTerm
                     ? "No se encontraron clientes que coincidan con la búsqueda."
                     : "No hay clientes registrados."}
@@ -339,7 +338,6 @@ export default function Clientes() {
                       {cliente.source === 'local' ? 'Local' : 'Holded'}
                     </Badge>
                   </TableCell>
-                  <TableCell className="py-1.5 px-3 text-sm">{cliente.notes}</TableCell>
                   <TableCell className="py-1.5 px-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       {cliente.source === 'local' ? (
