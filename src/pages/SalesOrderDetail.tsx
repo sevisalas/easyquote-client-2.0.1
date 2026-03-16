@@ -1236,6 +1236,7 @@ const SalesOrderDetail = () => {
                               : undefined
                             }
                             itemIndex={index}
+                            totalItems={items.length}
                             filterOutput={(o) => isVisibleIn(o.type, visibilityContext)}
                             filterPrompt={(p) => !isAdminOnlyPrompt(p.label || '')}
                           />

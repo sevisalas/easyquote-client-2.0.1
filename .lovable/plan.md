@@ -1,43 +1,62 @@
 
+# Corregir nombre del articulo en pedidos
 
-## Plan: Numeración jerárquica de OT (solo si hay más de un artículo)
+## Problema
 
-### Lógica
+En `SalesOrderNew.tsx` y `SalesOrderEdit.tsx`, el campo `product_name` se rellena con `itemDescription` (la descripcion larga con los parametros del producto) en lugar del nombre real (ej. "Encuadernado"). En `QuoteNew.tsx` ya esta bien hecho usando `productName` y `displayName`.
 
-- **1 artículo**: todo queda como está, sin cambios visuales.
-- **>1 artículo**: en el header derecho del PDF y en el componente visual:
-  - Línea secundaria (fontSize 9, color gris): `Pedido: OT-{orderNumber}`
-  - Línea principal destacada (fontSize 14, bold): `OT-{orderNumber}/{itemIndex+1}`
+## Cambios
 
-### Cambios
+La columna `description` ya existe en `sales_order_items`, asi que no hace falta migracion.
 
-**1. `src/utils/workOrderPdfGenerator.tsx` — Header derecho (líneas 462-464)**
+### 1. `SalesOrderNew.tsx` - Tipo ItemSnapshot (lineas 22-32)
 
-Reemplazar la línea fija `<Text style={styles.otNumber}>{orderNumber}</Text>` con lógica condicional:
+Anadir `displayName`, `productName` y `descriptionManual` al tipo:
 
-```tsx
-{items.length > 1 ? (
-  <>
-    <Text style={{ fontSize: 9, color: '#666' }}>Pedido: {orderNumber}</Text>
-    <Text style={styles.otNumber}>{orderNumber}/{itemIndex + 1}</Text>
-  </>
-) : (
-  <Text style={styles.otNumber}>{orderNumber}</Text>
-)}
+```typescript
+type ItemSnapshot = {
+  productId: string;
+  prompts: Record<string, any>;
+  outputs: any[];
+  price?: number;
+  displayName?: string;
+  productName?: string;
+  itemDescription?: string;
+  descriptionManual?: boolean;
+  itemAdditionals?: any[];
+  needsRecalculation?: boolean;
+  isFinalized?: boolean;
+  compositeData?: any;
+};
 ```
 
-**2. `src/components/production/WorkOrderItem.tsx` — Header visual (línea ~70)**
+### 2. `SalesOrderNew.tsx` - Guardado de items (lineas 454-456)
 
-Añadir props `totalItems` y actualizar el header:
-- Si `totalItems > 1`: mostrar "Pedido: OT-{orderNumber}" en texto pequeño gris + "OT-{orderNumber}/{itemIndex+1}" en bold.
-- Si `totalItems === 1`: mantener como está.
+Cambiar:
+```typescript
+// ANTES
+product_name: item.itemDescription || "",
+description: item.itemDescription || "",
 
-Actualizar los sitios que consumen `WorkOrderItem` para pasar `totalItems`.
+// DESPUES
+product_name: item.displayName || item.productName || item.productId || "",
+description: item.itemDescription || "",
+description_manual: item.descriptionManual || false,
+```
 
-**3. Nombre del fichero PDF** — Sin cambios, se mantiene `OT-{orderNumber}.pdf`.
+### 3. `SalesOrderEdit.tsx` - handleItemChange (linea 202)
 
-### Archivos a modificar
-- `src/utils/workOrderPdfGenerator.tsx`
-- `src/components/production/WorkOrderItem.tsx`
-- Cualquier padre que renderice `WorkOrderItem` (para pasar `totalItems`)
+Cambiar:
+```typescript
+// ANTES
+product_name: snapshot.itemDescription || updatedItems[itemIndex].product_name,
 
+// DESPUES
+product_name: snapshot.displayName || snapshot.productName || updatedItems[itemIndex].product_name,
+```
+
+## Impacto
+
+- Pedidos nuevos guardaran el nombre correcto (ej. "Encuadernado") en `product_name` y la descripcion larga en `description`
+- Pedidos existentes no cambian automaticamente (habria que re-guardarlos)
+- No requiere migracion de base de datos
