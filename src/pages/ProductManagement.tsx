@@ -819,60 +819,62 @@ export default function ProductManagement() {
     return setting?.hide_in_documents || false;
   };
 
+  const normalizePromptKey = (v: unknown) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+
+  const settingsByPromptKey = useMemo(() => {
+    const map = new Map<string, any>();
+    for (const setting of promptSettings as any[]) {
+      const byPromptName = normalizePromptKey(setting?.prompt_name);
+      const byLabel = normalizePromptKey(setting?.label);
+      if (byPromptName) map.set(byPromptName, setting);
+      if (byLabel) map.set(byLabel, setting);
+    }
+    return map;
+  }, [promptSettings]);
+
+  const getPromptSettingByKeys = (...promptKeys: Array<string | null | undefined>) => {
+    for (const rawKey of promptKeys) {
+      const key = normalizePromptKey(rawKey);
+      if (!key) continue;
+      const setting = settingsByPromptKey.get(key);
+      if (setting) return setting;
+    }
+    return undefined;
+  };
+
   // Helper to check if prompt is admin only
-  const isPromptAdminOnly = (promptName: string): boolean => {
-    const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
-    const key = normalizePromptKey(promptName);
-    const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
-    return setting?.admin_only || false;
+  const isPromptAdminOnly = (...promptKeys: Array<string | null | undefined>): boolean => {
+    return getPromptSettingByKeys(...promptKeys)?.admin_only || false;
   };
 
   // Helper to check if prompt is "force result"
-  const isPromptForceResult = (promptName: string): boolean => {
-    const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
-    const key = normalizePromptKey(promptName);
-    const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
-    return setting?.force_result || false;
+  const isPromptForceResult = (...promptKeys: Array<string | null | undefined>): boolean => {
+    return getPromptSettingByKeys(...promptKeys)?.force_result || false;
   };
 
   // Helper to check if prompt is hidden from users
-  const isPromptHidden = (promptName: string): boolean => {
-    const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
-    const key = normalizePromptKey(promptName);
-    const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
-    return setting?.is_hidden || false;
+  const isPromptHidden = (...promptKeys: Array<string | null | undefined>): boolean => {
+    return getPromptSettingByKeys(...promptKeys)?.is_hidden || false;
   };
 
   // Helper to check if prompt is the quantity field
-  const isPromptQuantity = (promptName: string): boolean => {
-    const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
-    const key = normalizePromptKey(promptName);
-    const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
-    return setting?.is_quantity || false;
+  const isPromptQuantity = (...promptKeys: Array<string | null | undefined>): boolean => {
+    return getPromptSettingByKeys(...promptKeys)?.is_quantity || false;
   };
 
   // Helper to check if prompt is shown in OT
-  const isPromptInOt = (promptName: string): boolean => {
-    const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
-    const key = normalizePromptKey(promptName);
-    const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
-    return setting?.show_in_ot || false;
+  const isPromptInOt = (...promptKeys: Array<string | null | undefined>): boolean => {
+    return getPromptSettingByKeys(...promptKeys)?.show_in_ot || false;
   };
 
   // Helper to get OT section for a prompt
-  const getPromptOtSection = (promptName: string): string | null => {
-    const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
-    const key = normalizePromptKey(promptName);
-    const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
-    return setting?.ot_section || null;
+  const getPromptOtSection = (...promptKeys: Array<string | null | undefined>): string | null => {
+    return getPromptSettingByKeys(...promptKeys)?.ot_section || null;
   };
 
   // Helper to get saved label for a prompt
-  const getPromptLabel = (promptName: string): string | undefined => {
-    const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
-    const key = normalizePromptKey(promptName);
-    const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
-    return setting?.label ?? undefined;
+  const getPromptLabel = (...promptKeys: Array<string | null | undefined>): string | undefined => {
+    return getPromptSettingByKeys(...promptKeys)?.label ?? undefined;
   };
 
   // Helper to detect sheet inconsistencies in prompts
