@@ -36,6 +36,7 @@ export const WorkOrderItem = ({
   children,
   filterOutput,
   filterPrompt,
+  totalItems = 1,
 }: WorkOrderItemProps) => {
   const applyOutputFilter = (outputs: Array<{ name: string; type: string; value: any }>) =>
     filterOutput ? outputs.filter(filterOutput) : outputs;
