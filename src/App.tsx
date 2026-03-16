@@ -331,6 +331,16 @@ const AppContent = () => {
         }
       />
       <Route
+        path="/admin/productos/test"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ProductTestPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/admin/productos/nuevo"
         element={
           <ProtectedRoute>
