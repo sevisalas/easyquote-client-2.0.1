@@ -255,15 +255,15 @@ export const useQuoteApproval = () => {
       if (quoteError) throw quoteError;
       if (!quote) throw new Error('Presupuesto no encontrado');
 
-      // Check if this quote already has a sales order (prevent duplicate approvals)
-      const { data: existingOrder } = await supabase
+      // Check if this quote already has sales orders (prevent duplicate approvals)
+      const { data: existingOrders } = await supabase
         .from('sales_orders')
         .select('id, order_number')
-        .eq('quote_id', quoteId)
-        .maybeSingle();
+        .eq('quote_id', quoteId);
 
-      if (existingOrder) {
-        throw new Error(`Este presupuesto ya tiene un pedido asociado (${existingOrder.order_number}). No se puede aprobar de nuevo.`);
+      if (existingOrders && existingOrders.length > 0) {
+        const orderNumbers = existingOrders.map(o => o.order_number).join(', ');
+        throw new Error(`Este presupuesto ya tiene pedido(s) asociado(s) (${orderNumbers}). No se puede aprobar de nuevo.`);
       }
 
       // Check permissions: comercial can only approve their own quotes
