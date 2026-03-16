@@ -258,6 +258,20 @@ Deno.serve(async (req) => {
       .eq('api_user_id', apiUserId)
       .or('hide_in_documents.eq.true,admin_only.eq.true');
 
+    // Load quantity prompt settings (is_quantity = true)
+    const { data: quantityPromptSettings } = await supabase
+      .from('product_prompt_settings')
+      .select('easyquote_product_id, prompt_name, label')
+      .eq('api_user_id', apiUserId)
+      .eq('is_quantity', true);
+
+    // Build a map: productId -> { prompt_name, label } for quantity prompts
+    const quantityPromptByProduct = new Map<string, { prompt_name: string; label: string | null }>();
+    (quantityPromptSettings || []).forEach((s: any) => {
+      quantityPromptByProduct.set(s.easyquote_product_id, { prompt_name: s.prompt_name, label: s.label });
+    });
+    console.log('📊 Quantity prompts configured:', Object.fromEntries(quantityPromptByProduct));
+
     // IMPORTANT: in product_prompt_settings we store prompt_name (prompt id/name), not the human label.
     // Match using normalized keys to avoid issues with $, casing, spaces, etc.
     const normalizeHiddenKey = (v: unknown) => normalizePromptKey(v).toUpperCase();
