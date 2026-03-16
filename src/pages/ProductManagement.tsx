@@ -812,11 +812,8 @@ export default function ProductManagement() {
   });
 
   // Helper to check if prompt is hidden in documents
-  const isPromptHiddenInDocuments = (promptName: string): boolean => {
-    const normalizePromptKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
-    const key = normalizePromptKey(promptName);
-    const setting = promptSettings.find(s => normalizePromptKey(s.prompt_name) === key);
-    return setting?.hide_in_documents || false;
+  const isPromptHiddenInDocuments = (...promptKeys: Array<string | null | undefined>): boolean => {
+    return getPromptSettingByKeys(...promptKeys)?.hide_in_documents || false;
   };
 
   const normalizePromptKey = (v: unknown) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
