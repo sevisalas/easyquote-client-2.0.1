@@ -46,11 +46,10 @@ export function WhatsNewDialog() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
+    // v2.6.5: no modal — mark as seen silently
     const seen = localStorage.getItem(LS_KEY);
     if (seen !== CURRENT_VERSION) {
-      // Small delay so it doesn't flash on first paint
-      const timer = setTimeout(() => setOpen(true), 800);
-      return () => clearTimeout(timer);
+      localStorage.setItem(LS_KEY, CURRENT_VERSION);
     }
   }, []);
 
