@@ -126,6 +126,97 @@ export const useQuoteApproval = () => {
         .select('*')
         .eq('quote_id', quoteId);
 
+      const normalizePromptKey = (value: string) =>
+        String(value ?? '').replace(/\$/g, '').trim().toUpperCase();
+
+      const parseQuantity = (value: unknown): number => {
+        if (typeof value === 'number') {
+          return Number.isFinite(value) && value > 0 ? value : 1;
+        }
+
+        const parsed = parseFloat(String(value ?? '').replace(/\./g, '').replace(',', '.'));
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+      };
+
+      const quantityPromptByProduct = new Map<string, { promptName: string; label: string | null }>();
+      const productIds = Array.from(
+        new Set(
+          itemsToApprove
+            .map((item: any) => String(item.product_id ?? '').trim())
+            .filter(Boolean)
+        )
+      );
+
+      if (productIds.length > 0 && organizationId) {
+        const { data: quantitySettings, error: quantitySettingsError } = await supabase
+          .from('product_prompt_settings')
+          .select('easyquote_product_id, prompt_name, label')
+          .eq('organization_id', organizationId)
+          .eq('is_quantity', true)
+          .in('easyquote_product_id', productIds);
+
+        if (quantitySettingsError) {
+          console.warn('Error loading quantity prompt settings, using prompt fallback:', quantitySettingsError);
+        } else {
+          for (const row of quantitySettings || []) {
+            if (!quantityPromptByProduct.has(row.easyquote_product_id)) {
+              quantityPromptByProduct.set(row.easyquote_product_id, {
+                promptName: row.prompt_name,
+                label: row.label,
+              });
+            }
+          }
+        }
+      }
+
+      const resolveItemQuantityFromPrompts = (item: any): number => {
+        const promptsArray = Array.isArray(item.prompts)
+          ? item.prompts
+          : Object.values(item.prompts || {});
+
+        const qtySetting = item.product_id
+          ? quantityPromptByProduct.get(String(item.product_id))
+          : undefined;
+
+        if (qtySetting) {
+          const normalizedSettingName = normalizePromptKey(qtySetting.promptName);
+          const normalizedSettingLabel = qtySetting.label ? normalizePromptKey(qtySetting.label) : '';
+
+          const qtyPrompt = promptsArray.find((p: any) => {
+            const promptName = normalizePromptKey(p?.name || p?.id || '');
+            const promptLabel = normalizePromptKey(p?.label || '');
+
+            return (
+              promptName === normalizedSettingName ||
+              promptLabel === normalizedSettingName ||
+              (normalizedSettingLabel &&
+                (promptName === normalizedSettingLabel || promptLabel === normalizedSettingLabel))
+            );
+          });
+
+          if (qtyPrompt?.value !== undefined && qtyPrompt?.value !== null) {
+            return parseQuantity(qtyPrompt.value);
+          }
+        }
+
+        const heuristicPrompt = promptsArray.find((p: any) => {
+          const text = normalizePromptKey(p?.label || p?.name || p?.id || '');
+          return (
+            text.includes('CANTIDAD') ||
+            text.includes('UNIDADES') ||
+            text.includes('EJEMPLAR') ||
+            text.includes('QUANTITY') ||
+            text === 'QTY'
+          );
+        });
+
+        if (heuristicPrompt?.value !== undefined && heuristicPrompt?.value !== null) {
+          return parseQuantity(heuristicPrompt.value);
+        }
+
+        return parseQuantity(item.quantity ?? 1);
+      };
+
       // Calculate subtotal from selected items
       let subtotal = 0;
       for (const item of itemsToApprove) {
@@ -135,11 +226,16 @@ export const useQuoteApproval = () => {
         // If multi with selected quantity, use that specific price
         if (multi?.rows && Array.isArray(multi.rows) && itemQuantities?.[item.id]) {
           const selectedQuantity = itemQuantities[item.id];
-          const selectedRow = multi.rows.find((row: any) => 
+          const selectedRow = multi.rows.find((row: any) =>
             Number(row.qty) === selectedQuantity || Number(row.quantity) === selectedQuantity
           );
           if (selectedRow) {
-            itemPrice = parseFloat(selectedRow.outs?.find((o: any) => o.type === 'Price')?.value || selectedRow.price || item.price || 0);
+            itemPrice = parseFloat(
+              selectedRow.outs?.find((o: any) => o.type === 'Price')?.value ||
+                selectedRow.price ||
+                item.price ||
+                0
+            );
           }
         }
 
@@ -149,7 +245,7 @@ export const useQuoteApproval = () => {
       // Calculate additionals
       let discountAmount = 0;
       let taxAmount = 0;
-      
+
       if (quoteAdditionals && quoteAdditionals.length > 0) {
         for (const additional of quoteAdditionals) {
           if (additional.is_discount) {
@@ -215,36 +311,44 @@ export const useQuoteApproval = () => {
         if (additionalsError) throw additionalsError;
       }
 
-      // Create sales order items - EXACT COPY from quote items
+      // Create sales order items - quantity source of truth is prompts (is_quantity)
       const orderItems = itemsToApprove.map((item: any, index: number) => {
         const multi = item.multi as any;
-        let finalQuantity = item.quantity || 1;
+        const finalQuantity = resolveItemQuantityFromPrompts(item);
         let finalPrice = item.price || 0;
         let finalMulti = item.multi;
 
-        // ONLY modify if user explicitly selected a quantity from multi options
+        // ONLY modify price if user explicitly selected a quantity from multi options
         if (multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1 && itemQuantities?.[item.id]) {
           const selectedQuantity = itemQuantities[item.id];
-          const selectedRow = multi.rows.find((row: any) => 
+          const selectedRow = multi.rows.find((row: any) =>
             Number(row.qty) === selectedQuantity || Number(row.quantity) === selectedQuantity
           );
-          
+
           if (selectedRow) {
-            finalQuantity = selectedQuantity;
-            finalPrice = parseFloat(selectedRow.outs?.find((o: any) => o.type === 'Price')?.value || selectedRow.price || item.price || 0);
+            finalPrice = parseFloat(
+              selectedRow.outs?.find((o: any) => o.type === 'Price')?.value ||
+                selectedRow.price ||
+                item.price ||
+                0
+            );
             // Keep only the selected row in multi
             finalMulti = {
               ...multi,
-              rows: [selectedRow]
+              rows: [selectedRow],
             };
           }
         }
 
-        // If there's only one row in multi, use that row's quantity and price
+        // If there's only one row in multi, keep that row price
         if (multi?.rows && Array.isArray(multi.rows) && multi.rows.length === 1) {
           const singleRow = multi.rows[0];
-          finalQuantity = singleRow.qty || singleRow.quantity || item.quantity || 1;
-          finalPrice = parseFloat(singleRow.outs?.find((o: any) => o.type === 'Price')?.value || singleRow.price || item.price || 0);
+          finalPrice = parseFloat(
+            singleRow.outs?.find((o: any) => o.type === 'Price')?.value ||
+              singleRow.price ||
+              item.price ||
+              0
+          );
         }
 
         return {
