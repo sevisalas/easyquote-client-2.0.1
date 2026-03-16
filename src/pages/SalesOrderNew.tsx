@@ -435,6 +435,42 @@ export default function SalesOrderNew() {
         order = data;
       }
 
+      const normalizePromptKey = (value: string) =>
+        String(value ?? "").replace(/\$/g, "").trim().toUpperCase();
+
+      const parseQuantity = (value: unknown): number => {
+        if (typeof value === "number") {
+          return Number.isFinite(value) && value > 0 ? value : 1;
+        }
+        const parsed = parseFloat(String(value ?? "").replace(/\./g, "").replace(",", "."));
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+      };
+
+      const quantityPromptByProduct = new Map<string, { promptName: string; label: string | null }>();
+      const itemProductIds = Array.from(new Set(itemsArray.map(item => item.productId).filter(Boolean)));
+
+      if (itemProductIds.length > 0) {
+        const { data: quantitySettings, error: quantitySettingsError } = await supabase
+          .from("product_prompt_settings")
+          .select("easyquote_product_id, prompt_name, label")
+          .eq("organization_id", organizationId)
+          .eq("is_quantity", true)
+          .in("easyquote_product_id", itemProductIds);
+
+        if (quantitySettingsError) {
+          console.warn("Error loading quantity prompt settings, using prompt fallback:", quantitySettingsError);
+        } else {
+          for (const row of quantitySettings || []) {
+            if (!quantityPromptByProduct.has(row.easyquote_product_id)) {
+              quantityPromptByProduct.set(row.easyquote_product_id, {
+                promptName: row.prompt_name,
+                label: row.label,
+              });
+            }
+          }
+        }
+      }
+
       // Create order items
       const orderItemsData = itemsArray.map((item, index) => {
         const promptsArray = Object.entries(item.prompts || {})
@@ -446,13 +482,47 @@ export default function SalesOrderNew() {
           }))
           .sort((a, b) => a.order - b.order);
 
-        // Extract quantity: first try is_quantity setting, then heuristic
+        const qtySetting = item.productId
+          ? quantityPromptByProduct.get(item.productId)
+          : undefined;
+
         let quantity = 1;
-        const quantityPrompt = promptsArray.find(p => 
-          p.label.toLowerCase() === 'quantity' || p.label.toLowerCase() === 'cantidad'
-        );
-        if (quantityPrompt?.value) {
-          quantity = Number(quantityPrompt.value) || 1;
+
+        if (qtySetting) {
+          const normalizedSettingName = normalizePromptKey(qtySetting.promptName);
+          const normalizedSettingLabel = qtySetting.label ? normalizePromptKey(qtySetting.label) : "";
+
+          const settingPrompt = promptsArray.find((p) => {
+            const promptName = normalizePromptKey(String(p.id || ""));
+            const promptLabel = normalizePromptKey(String(p.label || ""));
+            return (
+              promptName === normalizedSettingName ||
+              promptLabel === normalizedSettingName ||
+              (normalizedSettingLabel &&
+                (promptName === normalizedSettingLabel || promptLabel === normalizedSettingLabel))
+            );
+          });
+
+          if (settingPrompt?.value !== undefined && settingPrompt?.value !== null) {
+            quantity = parseQuantity(settingPrompt.value);
+          }
+        }
+
+        if (quantity === 1) {
+          const heuristicPrompt = promptsArray.find((p) => {
+            const text = normalizePromptKey(String(p.label || p.id || ""));
+            return (
+              text.includes("CANTIDAD") ||
+              text.includes("UNIDADES") ||
+              text.includes("EJEMPLAR") ||
+              text.includes("QUANTITY") ||
+              text === "QTY"
+            );
+          });
+
+          if (heuristicPrompt?.value !== undefined && heuristicPrompt?.value !== null) {
+            quantity = parseQuantity(heuristicPrompt.value);
+          }
         }
 
         return {
@@ -464,7 +534,7 @@ export default function SalesOrderNew() {
           prompts: promptsArray,
           outputs: item.outputs || [],
           price: item.price || 0,
-          quantity: quantity,
+          quantity,
           position: index,
           composite_data: item.compositeData || null,
         };
