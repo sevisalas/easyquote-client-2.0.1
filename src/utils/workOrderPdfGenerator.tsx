@@ -889,7 +889,7 @@ export const generateWorkOrderPDF = async (
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `OT-${options.orderNumber}.pdf`;
+    link.download = `${options.orderNumber}.pdf`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
