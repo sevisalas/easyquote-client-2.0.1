@@ -315,7 +315,6 @@ export default function Clientes() {
               <TableHead className="py-2 text-xs font-semibold">Email</TableHead>
               <TableHead className="py-2 text-xs font-semibold">Teléfono</TableHead>
               <TableHead className="py-2 text-xs font-semibold">Origen</TableHead>
-              <TableHead className="py-2 text-xs font-semibold">Notas</TableHead>
               <TableHead className="py-2 text-right text-xs font-semibold">Acciones</TableHead>
             </TableRow>
           </TableHeader>
