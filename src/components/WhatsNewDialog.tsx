@@ -15,7 +15,7 @@ import { Sparkles, FileSpreadsheet, ShieldCheck } from "lucide-react";
  * Bump CURRENT_VERSION every time you want to show a new "What's New" dialog.
  * Add the matching entry to RELEASE_NOTES below.
  */
-const CURRENT_VERSION = "2.6.3";
+const CURRENT_VERSION = "2.6.5";
 const LS_KEY = "whats_new_seen_version";
 
 interface ReleaseNote {
@@ -46,11 +46,10 @@ export function WhatsNewDialog() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
+    // v2.6.5: no modal — mark as seen silently
     const seen = localStorage.getItem(LS_KEY);
     if (seen !== CURRENT_VERSION) {
-      // Small delay so it doesn't flash on first paint
-      const timer = setTimeout(() => setOpen(true), 800);
-      return () => clearTimeout(timer);
+      localStorage.setItem(LS_KEY, CURRENT_VERSION);
     }
   }, []);
 
