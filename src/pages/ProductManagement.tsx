@@ -3093,11 +3093,11 @@ export default function ProductManagement() {
                               </div>
                               <div className="flex items-center gap-2">
                                 <Label className="text-sm font-medium whitespace-nowrap">Ocultar docs.</Label>
-                                <Switch checked={isPromptHiddenInDocuments(prompt.promptCell)} onCheckedChange={checked => {
+                                <Switch checked={isPromptHiddenInDocuments(...promptAliases)} onCheckedChange={checked => {
                                 if (selectedProduct) {
                                   upsertPromptSettingMutation.mutate({
                                     productId: selectedProduct.id,
-                                    promptName: prompt.promptCell,
+                                    promptName: promptSettingKey,
                                     hideInDocuments: checked
                                   });
                                 }
@@ -3105,11 +3105,11 @@ export default function ProductManagement() {
                               </div>
                               <div className="flex items-center gap-2">
                                 <Label className="text-sm font-medium whitespace-nowrap">Solo admin</Label>
-                                <Switch checked={isPromptAdminOnly(prompt.promptCell)} onCheckedChange={checked => {
+                                <Switch checked={isPromptAdminOnly(...promptAliases)} onCheckedChange={checked => {
                                 if (selectedProduct) {
                                   upsertPromptSettingMutation.mutate({
                                     productId: selectedProduct.id,
-                                    promptName: prompt.promptCell,
+                                    promptName: promptSettingKey,
                                     adminOnly: checked,
                                   });
                                 }
@@ -3117,11 +3117,11 @@ export default function ProductManagement() {
                               </div>
                               <div className="flex items-center gap-2">
                                 <Label className="text-sm font-medium whitespace-nowrap">Opc. restrictiva</Label>
-                                <Switch checked={isPromptForceResult(prompt.promptCell)} onCheckedChange={checked => {
+                                <Switch checked={isPromptForceResult(...promptAliases)} onCheckedChange={checked => {
                                 if (selectedProduct) {
                                   upsertPromptSettingMutation.mutate({
                                     productId: selectedProduct.id,
-                                    promptName: prompt.promptCell,
+                                    promptName: promptSettingKey,
                                     forceResult: checked
                                   });
                                 }
@@ -3129,11 +3129,11 @@ export default function ProductManagement() {
                               </div>
                               <div className="flex items-center gap-2">
                                 <Label className="text-sm font-medium whitespace-nowrap">Oculto</Label>
-                                <Switch checked={isPromptHidden(prompt.promptCell)} onCheckedChange={checked => {
+                                <Switch checked={isPromptHidden(...promptAliases)} onCheckedChange={checked => {
                                 if (selectedProduct) {
                                   upsertPromptSettingMutation.mutate({
                                     productId: selectedProduct.id,
-                                    promptName: prompt.promptCell,
+                                    promptName: promptSettingKey,
                                     isHidden: checked
                                   });
                                 }
@@ -3141,11 +3141,11 @@ export default function ProductManagement() {
                               </div>
                               <div className="flex items-center gap-2">
                                 <Label className="text-sm font-medium whitespace-nowrap">Cantidad</Label>
-                                <Switch checked={isPromptQuantity(prompt.promptCell)} onCheckedChange={checked => {
+                                <Switch checked={isPromptQuantity(...promptAliases)} onCheckedChange={checked => {
                                 if (selectedProduct) {
                                   upsertPromptSettingMutation.mutate({
                                     productId: selectedProduct.id,
-                                    promptName: prompt.promptCell,
+                                    promptName: promptSettingKey,
                                     isQuantity: checked
                                   });
                                 }
@@ -3153,25 +3153,25 @@ export default function ProductManagement() {
                               </div>
                               <div className="flex items-center gap-2">
                                 <Label className="text-sm font-medium whitespace-nowrap">OT</Label>
-                                <Switch checked={isPromptInOt(prompt.promptCell)} onCheckedChange={checked => {
+                                <Switch checked={isPromptInOt(...promptAliases)} onCheckedChange={checked => {
                                 if (selectedProduct) {
                                   upsertPromptSettingMutation.mutate({
                                     productId: selectedProduct.id,
-                                    promptName: prompt.promptCell,
+                                    promptName: promptSettingKey,
                                     showInOt: checked,
-                                    otSection: checked ? (getPromptOtSection(prompt.promptCell) || 'datos_destacados') : null,
+                                    otSection: checked ? (getPromptOtSection(...promptAliases) || 'datos_destacados') : null,
                                   });
                                 }
                               }} />
                               </div>
-                              {isPromptInOt(prompt.promptCell) && (
+                              {isPromptInOt(...promptAliases) && (
                                 <div className="flex items-center gap-2">
                                   <Label className="text-sm font-medium whitespace-nowrap">Sección OT</Label>
-                                  <Select value={getPromptOtSection(prompt.promptCell) || "datos_destacados"} onValueChange={value => {
+                                  <Select value={getPromptOtSection(...promptAliases) || "datos_destacados"} onValueChange={value => {
                                     if (selectedProduct) {
                                       upsertPromptSettingMutation.mutate({
                                         productId: selectedProduct.id,
-                                        promptName: prompt.promptCell,
+                                        promptName: promptSettingKey,
                                         otSection: value,
                                       });
                                     }
