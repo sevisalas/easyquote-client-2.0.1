@@ -888,8 +888,8 @@ Deno.serve(async (req) => {
             }
           }
           
-          // Heuristic fallback: only if no is_quantity setting found for this product
-          if (units === 1 && !qtySetting) {
+           // Heuristic fallback: always try if units is still 1 (qtySetting match may have failed due to cell ref vs UUID mismatch)
+           if (units === 1) {
             const qtyPrompt = promptsArray.find((p: any) => {
               const label = String(p?.label || '').toUpperCase();
               return label.includes('UNIDADES') || label.includes('CANTIDAD') || label.includes('EJEMPLAR');
