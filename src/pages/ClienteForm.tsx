@@ -229,6 +229,18 @@ const ClienteForm = () => {
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="address">Domicilio</Label>
+                <Input
+                  id="address"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  placeholder="Calle, número, ciudad..."
+                  className={isMobile ? 'h-11' : ''}
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="integration_id">ID de Integración</Label>
                 <Input
                   id="integration_id"
