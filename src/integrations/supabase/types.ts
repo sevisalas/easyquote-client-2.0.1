@@ -470,6 +470,7 @@ export type Database = {
       customers: {
         Row: {
           address: string | null
+          city: string | null
           created_at: string
           email: string | null
           holded_id: string | null
@@ -479,12 +480,15 @@ export type Database = {
           notes: string | null
           organization_id: string | null
           phone: string | null
+          province: string | null
           source: string
           updated_at: string
           user_id: string
+          zip: string | null
         }
         Insert: {
           address?: string | null
+          city?: string | null
           created_at?: string
           email?: string | null
           holded_id?: string | null
@@ -494,12 +498,15 @@ export type Database = {
           notes?: string | null
           organization_id?: string | null
           phone?: string | null
+          province?: string | null
           source?: string
           updated_at?: string
           user_id: string
+          zip?: string | null
         }
         Update: {
           address?: string | null
+          city?: string | null
           created_at?: string
           email?: string | null
           holded_id?: string | null
@@ -509,9 +516,11 @@ export type Database = {
           notes?: string | null
           organization_id?: string | null
           phone?: string | null
+          province?: string | null
           source?: string
           updated_at?: string
           user_id?: string
+          zip?: string | null
         }
         Relationships: [
           {
