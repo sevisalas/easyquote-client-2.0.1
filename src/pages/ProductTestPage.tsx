@@ -98,7 +98,7 @@ export default function ProductTestPage({
 
   // Fetch api_user_id for the overridden organization (SuperAdmin impersonation)
   const { data: overrideOrgData, isLoading: isLoadingOverrideOrg } = useQuery({
-    queryKey: ["organization-api-user-id", overrideOrganizationId],
+    queryKey: ["override-org-data", overrideOrganizationId],
     queryFn: async () => {
       if (!overrideOrganizationId) return null;
       const { data, error } = await supabase
