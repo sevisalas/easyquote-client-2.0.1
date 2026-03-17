@@ -14,6 +14,7 @@ interface ClienteData {
   name: string;
   email: string;
   phone: string;
+  address: string;
   notes: string;
   integration_id: string;
 }
@@ -29,6 +30,7 @@ const ClienteForm = () => {
     name: "",
     email: "",
     phone: "",
+    address: "",
     notes: "",
     integration_id: ""
   });
