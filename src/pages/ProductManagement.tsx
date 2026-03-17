@@ -3143,7 +3143,9 @@ export default function ProductManagement() {
                                   upsertPromptSettingMutation.mutate({
                                     productId: selectedProduct.id,
                                     promptName: promptSettingKey,
-                                    isQuantity: checked
+                                    isQuantity: checked,
+                                    // Always persist the human label so exports can match by label
+                                    label: checked ? (promptLabel || promptSettingKey) : undefined,
                                   });
                                 }
                               }} />
