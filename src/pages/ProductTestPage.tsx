@@ -323,7 +323,7 @@ export default function ProductTestPage({
     const map = new Map<number, string>();
     for (const t of outputTypes as any[]) {
       const id = Number(t?.id);
-      const name = String(t?.name ?? "").trim();
+      const name = String(t?.outputType ?? t?.name ?? "").trim();
       if (Number.isFinite(id) && name) map.set(id, name);
     }
     return map;
