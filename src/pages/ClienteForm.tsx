@@ -64,9 +64,9 @@ const ClienteForm = () => {
         email: data.email || "",
         phone: data.phone || "",
         address: data.address || "",
-        zip: data.zip || "",
-        city: data.city || "",
-        province: data.province || "",
+        zip: (data as any).zip || "",
+        city: (data as any).city || "",
+        province: (data as any).province || "",
         notes: data.notes || "",
         integration_id: data.integration_id || ""
       });
