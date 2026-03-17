@@ -573,6 +573,13 @@ export default function ProductTestPage({
         (pricingData?.prompts || []).forEach((prompt: any) => {
           if (prompt.currentValue !== undefined && prompt.currentValue !== null) {
             currentValues[prompt.id] = prompt.currentValue;
+          } else {
+            // Include ALL prompts with sensible defaults so none are lost in PATCH
+            if (prompt.valueOptions?.length > 0) {
+              currentValues[prompt.id] = prompt.valueOptions[0];
+            } else if (prompt.promptType === "Number" || prompt.promptType === "Quantity") {
+              currentValues[prompt.id] = prompt.minimum ?? 0;
+            }
           }
         });
         console.log("📋 Initial prompt values:", currentValues);
@@ -645,17 +652,30 @@ export default function ProductTestPage({
       // Use the most recent pricing response as primary source (has the most prompts)
       const latestPrompts = pricing?.prompts || productDetail?.prompts || [];
       (Array.isArray(latestPrompts) ? latestPrompts : []).forEach((p: any) => {
+        const key = String(p.id);
         if (p.currentValue !== undefined && p.currentValue !== null) {
-          const key = String(p.id);
           allPromptValues[key] = p.currentValue;
+        } else {
+          // Include prompts without currentValue using sensible defaults
+          if (p.valueOptions?.length > 0) {
+            allPromptValues[key] = p.valueOptions[0];
+          } else if (p.promptType === "Number" || p.promptType === "Quantity") {
+            allPromptValues[key] = p.minimum ?? 0;
+          }
         }
       });
 
       // Also include productDetail prompts as fallback (in case pricing has fewer)
       (productDetail?.prompts || []).forEach((p: any) => {
         const key = String(p.id);
-        if (!(key in allPromptValues) && p.currentValue !== undefined && p.currentValue !== null) {
-          allPromptValues[key] = p.currentValue;
+        if (!(key in allPromptValues)) {
+          if (p.currentValue !== undefined && p.currentValue !== null) {
+            allPromptValues[key] = p.currentValue;
+          } else if (p.valueOptions?.length > 0) {
+            allPromptValues[key] = p.valueOptions[0];
+          } else if (p.promptType === "Number" || p.promptType === "Quantity") {
+            allPromptValues[key] = p.minimum ?? 0;
+          }
         }
       });
 
