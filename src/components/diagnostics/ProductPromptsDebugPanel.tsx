@@ -19,12 +19,15 @@ function safeString(v: unknown): string {
 
 export default function ProductPromptsDebugPanel({
   prompts,
+  rawResponse,
   title = "Prompts (API)",
 }: {
   prompts: AnyPrompt[] | undefined;
+  rawResponse?: unknown;
   title?: string;
 }) {
   const list = Array.isArray(prompts) ? prompts : [];
+  const rawDump = rawResponse ?? list;
 
   const normalized = useMemo(() => {
     return list
@@ -60,8 +63,8 @@ export default function ProductPromptsDebugPanel({
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(JSON.stringify(list, null, 2));
-      toast.success("Prompts copiados al portapapeles");
+      await navigator.clipboard.writeText(JSON.stringify(rawDump, null, 2));
+      toast.success("JSON copiado al portapapeles");
     } catch (e) {
       console.error("Copy prompts failed", e);
       toast.error("No se pudo copiar");
@@ -112,9 +115,11 @@ export default function ProductPromptsDebugPanel({
             </div>
 
             <details className="mt-3">
-              <summary className="cursor-pointer text-sm font-medium">Ver respuesta cruda</summary>
+              <summary className="cursor-pointer text-sm font-medium">
+                {rawResponse ? "Ver respuesta cruda completa (incluye outputs)" : "Ver respuesta cruda"}
+              </summary>
               <pre className="mt-2 max-h-80 overflow-auto rounded-md bg-muted p-3 text-xs">
-                {JSON.stringify(list, null, 2)}
+                {JSON.stringify(rawDump, null, 2)}
               </pre>
             </details>
           </>
