@@ -323,7 +323,7 @@ export default function ProductTestPage({
     const map = new Map<number, string>();
     for (const t of outputTypes as any[]) {
       const id = Number(t?.id);
-      const name = String(t?.name ?? "").trim();
+      const name = String(t?.outputType ?? t?.name ?? "").trim();
       if (Number.isFinite(id) && name) map.set(id, name);
     }
     return map;
@@ -1105,6 +1105,29 @@ export default function ProductTestPage({
     });
   }, [generalOutputs]);
 
+  const parseEasyQuoteNumber = (value: any) => {
+    const raw = String(value ?? "").trim();
+    if (!raw) return 0;
+
+    // If both separators exist, the last one is treated as decimal separator.
+    const lastComma = raw.lastIndexOf(",");
+    const lastDot = raw.lastIndexOf(".");
+
+    if (lastComma !== -1 && lastDot !== -1) {
+      const decimalIsComma = lastComma > lastDot;
+      const normalized = decimalIsComma
+        ? raw.replace(/\./g, "").replace(",", ".")
+        : raw.replace(/,/g, "");
+      return parseFloat(normalized) || 0;
+    }
+
+    if (lastComma !== -1) {
+      return parseFloat(raw.replace(/\./g, "").replace(",", ".")) || 0;
+    }
+
+    return parseFloat(raw.replace(/,/g, "")) || 0;
+  };
+
   // Precio del API (productos simples): output type "Price" / "price"
   const apiPrice = useMemo(() => {
     const priceOutput = generalOutputs.find(
@@ -1112,10 +1135,7 @@ export default function ProductTestPage({
     );
 
     if (!priceOutput) return 0;
-
-    return (
-      parseFloat(String(priceOutput.value ?? "0").replace(/\./g, "").replace(",", ".")) || 0
-    );
+    return parseEasyQuoteNumber(priceOutput.value);
   }, [generalOutputs]);
 
   // Calcular componentes activos según configuración
@@ -1135,9 +1155,7 @@ export default function ProductTestPage({
         (o: any) => String(o?.type || o?.outputType || "").toLowerCase() === "price"
       );
       if (priceOutput) {
-        const val =
-          parseFloat(String(priceOutput.value ?? "0").replace(/\./g, "").replace(",", ".")) || 0;
-        total += val;
+        total += parseEasyQuoteNumber(priceOutput.value);
       }
     }
     return total;
