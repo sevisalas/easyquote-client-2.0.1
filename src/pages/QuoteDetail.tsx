@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Edit, Download, Copy, CheckCircle, ChevronDown } from "lucide-react";
+import { Edit, Download, Copy, CheckCircle, ChevronDown, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
@@ -720,9 +720,12 @@ export default function QuoteDetail() {
                   const multi = item.multi as any;
                   const hasMultipleQuantities = multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1;
                   const itemPrompts = item.prompts && typeof item.prompts === 'object' ? item.prompts : {};
-                  const isCustomProduct = !item.product_id || item.product_id === '__CUSTOM_PRODUCT__';
-                  const hasDetails = isCustomProduct ? !!item.description : (Object.keys(itemPrompts).length > 0 || (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0));
-                  const isExpanded = expandedItems.has(index);
+                   const itemOutputs = Array.isArray(item.outputs) ? item.outputs : [];
+                   const compositeData = (item as any).composite_data;
+                   const isComposite = compositeData?.components && Object.keys(compositeData.components).length > 0;
+                   const isCustomProduct = !item.product_id || item.product_id === '__CUSTOM_PRODUCT__';
+                   const hasDetails = isCustomProduct ? !!item.description : (Object.keys(itemPrompts).length > 0 || itemOutputs.length > 0 || isComposite || (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0));
+                   const isExpanded = expandedItems.has(index);
                   
                   return (
                     <Collapsible 
@@ -773,7 +776,13 @@ export default function QuoteDetail() {
                               )}
                               {hasDetails && (
                                 <CollapsibleTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                  <Button variant="ghost" size="sm" className={`h-6 p-0 ${quote.status === 'approved' ? 'px-2 gap-1 text-xs text-muted-foreground' : 'w-6'}`}>
+                                    {quote.status === 'approved' && !isExpanded && (
+                                      <>
+                                        <Eye className="h-3.5 w-3.5" />
+                                        Ver detalles
+                                      </>
+                                    )}
                                     <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                                   </Button>
                                 </CollapsibleTrigger>
@@ -951,8 +960,96 @@ export default function QuoteDetail() {
                                   );
                                 });
                               })()}
-                              
-                              {/* Ajustes del artículo */}
+
+                              {/* Outputs del producto */}
+                              {itemOutputs.length > 0 && (() => {
+                                const visibleOutputs = itemOutputs.filter((o: any) => {
+                                  if (!o.name || o.type === 'Price') return false;
+                                  const val = o.value;
+                                  if (val === null || val === undefined || val === '' || val === '0' || val === 0) return false;
+                                  return true;
+                                });
+                                if (visibleOutputs.length === 0) return null;
+                                return (
+                                  <div className="pt-1 mt-1 border-t border-border/50">
+                                    <p className="text-xs font-medium text-muted-foreground mb-0.5">Resultados:</p>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-0.5">
+                                      {visibleOutputs.map((output: any, idx: number) => (
+                                        <div key={idx} className="text-xs">
+                                          <span className="font-medium text-muted-foreground">{output.name}:</span>{' '}
+                                          <span className="text-foreground">{output.value}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+
+                              {/* Componentes del producto compuesto */}
+                              {isComposite && (() => {
+                                const componentEntries = Object.entries(compositeData.components || {});
+                                if (componentEntries.length === 0) return null;
+                                return (
+                                  <div className="pt-2 mt-2 border-t border-border/50 space-y-2">
+                                    <p className="text-xs font-semibold text-muted-foreground">Componentes:</p>
+                                    {componentEntries.map(([compKey, compData]: [string, any]) => {
+                                      const alias = compData.alias || compKey.split(':')[0] || 'Componente';
+                                      const compPrompts = Array.isArray(compData.prompts) ? compData.prompts : [];
+                                      const compOutputs = Array.isArray(compData.outputs) ? compData.outputs : [];
+                                      const compPrice = compData.price;
+                                      
+                                      const visibleCompPrompts = compPrompts.filter((p: any) => {
+                                        const val = p.currentValue;
+                                        if (!val || val === '' || val === null) return false;
+                                        if (typeof val === 'string' && (val.startsWith('http') || val.startsWith('#'))) return false;
+                                        return true;
+                                      }).sort((a: any, b: any) => (a.promptSequence ?? 999) - (b.promptSequence ?? 999));
+                                      
+                                      const visibleCompOutputs = compOutputs.filter((o: any) => {
+                                        if (!o.name || o.type === 'Price') return false;
+                                        const val = o.value;
+                                        if (val === null || val === undefined || val === '' || val === '0' || val === 0) return false;
+                                        return true;
+                                      });
+
+                                      return (
+                                        <div key={compKey} className="bg-muted/30 rounded-md p-2 space-y-1">
+                                          <div className="flex items-center justify-between">
+                                            <p className="text-xs font-semibold text-foreground">{alias}</p>
+                                            {compPrice != null && compPrice !== 0 && (
+                                              <span className="text-xs font-medium text-primary">{fmtEUR(compPrice)}</span>
+                                            )}
+                                          </div>
+                                          {visibleCompPrompts.length > 0 && (
+                                            <div className="space-y-0.5">
+                                              {visibleCompPrompts.map((p: any, idx: number) => (
+                                                <div key={idx} className="text-xs">
+                                                  <span className="font-medium text-muted-foreground">{p.promptText || p.label || `Prompt ${p.promptSequence}`}:</span>{' '}
+                                                  <span className="text-foreground">{String(p.currentValue)}</span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+                                          {visibleCompOutputs.length > 0 && (
+                                            <div className="pt-0.5">
+                                              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-0.5">Resultados</p>
+                                              <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-0.5">
+                                                {visibleCompOutputs.map((o: any, idx: number) => (
+                                                  <div key={idx} className="text-xs">
+                                                    <span className="font-medium text-muted-foreground">{o.name}:</span>{' '}
+                                                    <span className="text-foreground">{o.value}</span>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                );
+                              })()}
+
                               {item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0 && (
                                 <div className="pt-1 mt-1 border-t border-border/50">
                                   <p className="text-xs font-medium text-muted-foreground mb-0.5">Ajustes:</p>
