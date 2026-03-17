@@ -15,6 +15,9 @@ interface ClienteData {
   email: string;
   phone: string;
   address: string;
+  zip: string;
+  city: string;
+  province: string;
   notes: string;
   integration_id: string;
 }
