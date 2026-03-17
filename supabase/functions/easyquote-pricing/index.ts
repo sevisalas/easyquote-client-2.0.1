@@ -117,10 +117,12 @@ serve(async (req: Request): Promise<Response> => {
       if (typeof value === "string") {
         const trimmed = value.trim();
         
-        // Filter empty strings
+        // Convert empty strings to 0 instead of discarding them
+        // Empty prompts must reach Syncfusion so the engine uses 0 instead of cached/residual values
         if (trimmed === "") {
-          console.log(`⚠️ Filtering out prompt ${id}: empty string`);
-          return false;
+          console.log(`📝 Converting empty prompt ${id} to 0`);
+          input.value = 0;
+          return true;
         }
 
         // Filter strings that are only special characters (no alphanumeric content)
