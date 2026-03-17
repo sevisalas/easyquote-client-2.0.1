@@ -14,6 +14,7 @@ interface ClienteData {
   name: string;
   email: string;
   phone: string;
+  address: string;
   notes: string;
   integration_id: string;
 }
@@ -29,6 +30,7 @@ const ClienteForm = () => {
     name: "",
     email: "",
     phone: "",
+    address: "",
     notes: "",
     integration_id: ""
   });
@@ -55,6 +57,7 @@ const ClienteForm = () => {
         name: data.name || "",
         email: data.email || "",
         phone: data.phone || "",
+        address: data.address || "",
         notes: data.notes || "",
         integration_id: data.integration_id || ""
       });
@@ -221,6 +224,18 @@ const ClienteForm = () => {
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="+34 600 000 000"
+                  className={isMobile ? 'h-11' : ''}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address">Domicilio</Label>
+                <Input
+                  id="address"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  placeholder="Calle, número, ciudad..."
                   className={isMobile ? 'h-11' : ''}
                 />
               </div>
