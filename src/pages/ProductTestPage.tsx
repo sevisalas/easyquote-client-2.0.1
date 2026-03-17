@@ -573,6 +573,13 @@ export default function ProductTestPage({
         (pricingData?.prompts || []).forEach((prompt: any) => {
           if (prompt.currentValue !== undefined && prompt.currentValue !== null) {
             currentValues[prompt.id] = prompt.currentValue;
+          } else {
+            // Include ALL prompts with sensible defaults so none are lost in PATCH
+            if (prompt.valueOptions?.length > 0) {
+              currentValues[prompt.id] = prompt.valueOptions[0];
+            } else if (prompt.promptType === "Number" || prompt.promptType === "Quantity") {
+              currentValues[prompt.id] = prompt.minimum ?? 0;
+            }
           }
         });
         console.log("📋 Initial prompt values:", currentValues);
