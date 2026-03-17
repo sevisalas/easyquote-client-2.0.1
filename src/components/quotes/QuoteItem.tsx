@@ -1870,9 +1870,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             additionalValue = additional.value;
           }
         } else if (additional.type === 'percentage') {
-          // For per-qty breakdown, calculate percentage of that qty's base price
-          // Use the main row price as reference
-          const rowPrice = multiRows.length > 0 ? (parseFloat(String(multiRows[0]?.totalStr || 0).replace(/\./g, '').replace(',', '.')) || 0) : 0;
+          // For per-qty breakdown, calculate percentage of THAT quantity's base price
+          const rowIdx = qtyIndex !== undefined ? qtyIndex : 0;
+          const row = multiRows.length > rowIdx ? multiRows[rowIdx] : multiRows[0];
+          const rowPrice = row ? (typeof row.totalStr === 'number' ? row.totalStr : (parseFloat(String(row.totalStr || 0).replace(/\./g, '').replace(',', '.')) || 0)) : 0;
           additionalValue = (rowPrice * additional.value) / 100;
         } else if (additional.type === 'quantity_multiplier') {
           additionalValue = additional.value * qty;
