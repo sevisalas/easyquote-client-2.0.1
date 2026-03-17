@@ -1480,6 +1480,7 @@ export default function ProductTestPage({
                                   ? productDetail?.prompts
                                   : []
                             }
+                            rawResponse={pricing || productDetail}
                           />
                         )}
                       </>
