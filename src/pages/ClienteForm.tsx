@@ -106,12 +106,15 @@ const ClienteForm = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("No user found");
 
-        // Resolve organization_id robustly: sessionStorage > context > DB lookup
-        let orgId = sessionStorage.getItem('selected_organization_id') 
-          || organization?.id 
-          || (membership as any)?.organization_id 
-          || (membership as any)?.organization?.id 
-          || null;
+        // Resolve organization_id robustly: selected org > context > DB lookup
+        const orgCandidates = [
+          sessionStorage.getItem('selected_organization_id'),
+          organization?.id ?? null,
+          (membership as any)?.organization_id ?? null,
+          (membership as any)?.organization?.id ?? null,
+        ];
+
+        let orgId = orgCandidates.find((candidate): candidate is string => isValidUuid(candidate)) ?? null;
 
         // Fallback: query organization_members if still null
         if (!orgId) {
@@ -120,10 +123,15 @@ const ClienteForm = () => {
             .select('organization_id')
             .eq('user_id', user.id)
             .limit(1)
-            .single();
-          if (memberData) {
+            .maybeSingle();
+
+          if (isValidUuid(memberData?.organization_id)) {
             orgId = memberData.organization_id;
           }
+        }
+
+        if (!orgId) {
+          throw new Error("No se pudo resolver la organización activa");
         }
 
         console.log('[ClienteForm] Creating customer with orgId:', orgId, 'userId:', user.id);
