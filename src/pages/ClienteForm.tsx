@@ -57,6 +57,7 @@ const ClienteForm = () => {
         name: data.name || "",
         email: data.email || "",
         phone: data.phone || "",
+        address: data.address || "",
         notes: data.notes || "",
         integration_id: data.integration_id || ""
       });
