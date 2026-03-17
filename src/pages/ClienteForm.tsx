@@ -91,8 +91,27 @@ const ClienteForm = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("No user found");
 
-        const selectedOrgId = sessionStorage.getItem('selected_organization_id');
-        const orgId = selectedOrgId || organization?.id || membership?.organization_id || membership?.organization?.id || null;
+        // Resolve organization_id robustly: sessionStorage > context > DB lookup
+        let orgId = sessionStorage.getItem('selected_organization_id') 
+          || organization?.id 
+          || (membership as any)?.organization_id 
+          || (membership as any)?.organization?.id 
+          || null;
+
+        // Fallback: query organization_members if still null
+        if (!orgId) {
+          const { data: memberData } = await supabase
+            .from('organization_members')
+            .select('organization_id')
+            .eq('user_id', user.id)
+            .limit(1)
+            .single();
+          if (memberData) {
+            orgId = memberData.organization_id;
+          }
+        }
+
+        console.log('[ClienteForm] Creating customer with orgId:', orgId, 'userId:', user.id);
 
         const { error } = await supabase
           .from('customers')
@@ -111,7 +130,8 @@ const ClienteForm = () => {
       }
       
       navigate('/clientes');
-    } catch (error) {
+    } catch (error: any) {
+      console.error('[ClienteForm] Error:', error?.message || error);
       toast({
         title: "Error",
         description: isEditing ? "No se pudo actualizar el cliente" : "No se pudo crear el cliente",
