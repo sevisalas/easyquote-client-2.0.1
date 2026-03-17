@@ -1155,9 +1155,7 @@ export default function ProductTestPage({
         (o: any) => String(o?.type || o?.outputType || "").toLowerCase() === "price"
       );
       if (priceOutput) {
-        const val =
-          parseFloat(String(priceOutput.value ?? "0").replace(/\./g, "").replace(",", ".")) || 0;
-        total += val;
+        total += parseEasyQuoteNumber(priceOutput.value);
       }
     }
     return total;
