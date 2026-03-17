@@ -34,6 +34,9 @@ const ClienteForm = () => {
     email: "",
     phone: "",
     address: "",
+    zip: "",
+    city: "",
+    province: "",
     notes: "",
     integration_id: ""
   });
