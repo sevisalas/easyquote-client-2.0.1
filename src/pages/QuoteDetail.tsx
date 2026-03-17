@@ -720,9 +720,12 @@ export default function QuoteDetail() {
                   const multi = item.multi as any;
                   const hasMultipleQuantities = multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1;
                   const itemPrompts = item.prompts && typeof item.prompts === 'object' ? item.prompts : {};
-                  const isCustomProduct = !item.product_id || item.product_id === '__CUSTOM_PRODUCT__';
-                  const hasDetails = isCustomProduct ? !!item.description : (Object.keys(itemPrompts).length > 0 || (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0));
-                  const isExpanded = expandedItems.has(index);
+                   const itemOutputs = Array.isArray(item.outputs) ? item.outputs : [];
+                   const compositeData = (item as any).composite_data;
+                   const isComposite = compositeData?.components && Object.keys(compositeData.components).length > 0;
+                   const isCustomProduct = !item.product_id || item.product_id === '__CUSTOM_PRODUCT__';
+                   const hasDetails = isCustomProduct ? !!item.description : (Object.keys(itemPrompts).length > 0 || itemOutputs.length > 0 || isComposite || (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0));
+                   const isExpanded = expandedItems.has(index);
                   
                   return (
                     <Collapsible 
