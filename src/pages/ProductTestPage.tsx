@@ -644,48 +644,37 @@ export default function ProductTestPage({
       
       console.log("Making pricing call with inputs:", debouncedPromptValues);
 
-      // CRITICAL: EasyQuote API PATCH requires ALL prompts to be sent, not just modified ones
-      // Start with all prompt values from the LATEST pricing response (most complete),
-      // then fall back to productDetail (initial GET - may have fewer prompts).
+      // CRITICAL: EasyQuote API PATCH requires enviar SOLO prompts activos
+      // (última respuesta del pricing API = source of truth)
       const allPromptValues: Record<string, any> = {};
+      const activePrompts = (Array.isArray(pricing?.prompts) && pricing.prompts.length > 0)
+        ? pricing.prompts
+        : (productDetail?.prompts || []);
+      const activePromptIds = new Set<string>();
 
-      // Use the most recent pricing response as primary source (has the most prompts)
-      const latestPrompts = pricing?.prompts || productDetail?.prompts || [];
-      (Array.isArray(latestPrompts) ? latestPrompts : []).forEach((p: any) => {
-        const key = String(p.id);
+      (Array.isArray(activePrompts) ? activePrompts : []).forEach((p: any) => {
+        const key = String(p?.id ?? "");
+        if (!key) return;
+
+        activePromptIds.add(key);
+
         if (p.currentValue !== undefined && p.currentValue !== null) {
           allPromptValues[key] = p.currentValue;
-        } else {
-          // Include prompts without currentValue using sensible defaults
-          if (p.valueOptions?.length > 0) {
-            allPromptValues[key] = p.valueOptions[0];
-          } else if (p.promptType === "Number" || p.promptType === "Quantity") {
-            allPromptValues[key] = p.minimum ?? 0;
-          }
+        } else if (p.valueOptions?.length > 0) {
+          allPromptValues[key] = p.valueOptions[0];
+        } else if (p.promptType === "Number" || p.promptType === "Quantity") {
+          allPromptValues[key] = p.minimum ?? 0;
         }
       });
 
-      // Also include productDetail prompts as fallback (in case pricing has fewer)
-      (productDetail?.prompts || []).forEach((p: any) => {
-        const key = String(p.id);
-        if (!(key in allPromptValues)) {
-          if (p.currentValue !== undefined && p.currentValue !== null) {
-            allPromptValues[key] = p.currentValue;
-          } else if (p.valueOptions?.length > 0) {
-            allPromptValues[key] = p.valueOptions[0];
-          } else if (p.promptType === "Number" || p.promptType === "Quantity") {
-            allPromptValues[key] = p.minimum ?? 0;
-          }
-        }
-      });
-
-      // Override with user-modified values (keys are already strings from state)
+      // Override con cambios del usuario, pero SOLO para prompts activos
       Object.entries(debouncedPromptValues || {}).forEach(([k, v]) => {
+        if (!activePromptIds.has(k)) return;
         if (v !== undefined && v !== null) {
           allPromptValues[k] = v;
         }
       });
-      console.log("All prompt values (merged):", allPromptValues);
+      console.log("All prompt values (active-only):", allPromptValues);
 
       // Now normalize all values for the API
       const norm: Record<string, any> = {};
@@ -694,7 +683,7 @@ export default function ProductTestPage({
         if (v === undefined || v === null) return;
 
         // Find the prompt to check its type (compare as strings for consistent matching)
-        const prompt = productDetail?.prompts?.find((p: any) => String(p.id) === k);
+        const prompt = activePrompts.find((p: any) => String(p.id) === k);
         const promptType = prompt?.promptType;
         if (typeof v === "string") {
           const trimmed = v.trim();
@@ -746,7 +735,7 @@ export default function ProductTestPage({
         id,
         value
       }));
-      console.log("Sending ALL prompts to API:", inputsArray.length, "prompts", inputsArray);
+      console.log("Sending ACTIVE prompts to API:", inputsArray.length, "prompts", inputsArray);
       const {
         data,
         error
@@ -778,8 +767,16 @@ export default function ProductTestPage({
   // Aquí sincronizamos igualmente:
   // - la estructura de prompts (valueOptions)
   // - los valores forzados por el API (currentValue)
+  // - y eliminamos prompts huérfanos para evitar enviar valores obsoletos
   useEffect(() => {
     if (!pricing?.prompts || !Array.isArray(pricing.prompts)) return;
+
+    const activePrompts = pricing.prompts as any[];
+    const activePromptIds = new Set(
+      activePrompts
+        .map((p: any) => String(p?.id ?? ""))
+        .filter(Boolean)
+    );
 
     setProductDetail((prev) => {
       if (!prev) return prev;
@@ -793,7 +790,15 @@ export default function ProductTestPage({
       let changed = false;
       const next: Record<string, any> = { ...prev };
 
-      for (const p of pricing.prompts as any[]) {
+      // PRUNE: eliminar keys que ya no están activas en la respuesta del API
+      for (const key of Object.keys(next)) {
+        if (!activePromptIds.has(String(key))) {
+          delete next[key];
+          changed = true;
+        }
+      }
+
+      for (const p of activePrompts) {
         const id = String(p?.id ?? "");
         if (!id) continue;
 
@@ -824,6 +829,20 @@ export default function ProductTestPage({
 
     setPromptValues(applyCorrections);
     setDebouncedPromptValues(applyCorrections);
+    setClearedPromptIds((prev) => {
+      let changed = false;
+      const next: Record<string, true> = {};
+
+      Object.keys(prev).forEach((key) => {
+        if (activePromptIds.has(String(key))) {
+          next[key] = true;
+        } else {
+          changed = true;
+        }
+      });
+
+      return changed ? next : prev;
+    });
   }, [pricing?.prompts, productId]);
 
   // Auto-select product if productId is in URL params
