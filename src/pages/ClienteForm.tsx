@@ -15,6 +15,9 @@ interface ClienteData {
   email: string;
   phone: string;
   address: string;
+  zip: string;
+  city: string;
+  province: string;
   notes: string;
   integration_id: string;
 }
@@ -31,6 +34,9 @@ const ClienteForm = () => {
     email: "",
     phone: "",
     address: "",
+    zip: "",
+    city: "",
+    province: "",
     notes: "",
     integration_id: ""
   });
@@ -58,6 +64,9 @@ const ClienteForm = () => {
         email: data.email || "",
         phone: data.phone || "",
         address: data.address || "",
+        zip: (data as any).zip || "",
+        city: (data as any).city || "",
+        province: (data as any).province || "",
         notes: data.notes || "",
         integration_id: data.integration_id || ""
       });
@@ -238,6 +247,42 @@ const ClienteForm = () => {
                   placeholder="Calle, número, ciudad..."
                   className={isMobile ? 'h-11' : ''}
                 />
+              </div>
+
+              <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-3'}`}>
+                <div className="space-y-2">
+                  <Label htmlFor="zip">C.P.</Label>
+                  <Input
+                    id="zip"
+                    name="zip"
+                    value={formData.zip}
+                    onChange={handleChange}
+                    placeholder="28001"
+                    className={isMobile ? 'h-11' : ''}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="city">Población</Label>
+                  <Input
+                    id="city"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleChange}
+                    placeholder="Madrid"
+                    className={isMobile ? 'h-11' : ''}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="province">Provincia</Label>
+                  <Input
+                    id="province"
+                    name="province"
+                    value={formData.province}
+                    onChange={handleChange}
+                    placeholder="Madrid"
+                    className={isMobile ? 'h-11' : ''}
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
