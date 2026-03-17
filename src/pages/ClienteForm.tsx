@@ -249,6 +249,42 @@ const ClienteForm = () => {
                 />
               </div>
 
+              <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'grid-cols-3'}`}>
+                <div className="space-y-2">
+                  <Label htmlFor="zip">C.P.</Label>
+                  <Input
+                    id="zip"
+                    name="zip"
+                    value={formData.zip}
+                    onChange={handleChange}
+                    placeholder="28001"
+                    className={isMobile ? 'h-11' : ''}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="city">Población</Label>
+                  <Input
+                    id="city"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleChange}
+                    placeholder="Madrid"
+                    className={isMobile ? 'h-11' : ''}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="province">Provincia</Label>
+                  <Input
+                    id="province"
+                    name="province"
+                    value={formData.province}
+                    onChange={handleChange}
+                    placeholder="Madrid"
+                    className={isMobile ? 'h-11' : ''}
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="integration_id">ID de Integración</Label>
                 <Input
