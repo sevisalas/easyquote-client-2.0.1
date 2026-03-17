@@ -901,11 +901,11 @@ Deno.serve(async (req) => {
             }
           }
           
-           // Heuristic fallback: only if no is_quantity setting found for this product
-           if (units === 1 && !qtySetting) {
+           // Heuristic fallback: if is_quantity is not configured OR configured but unresolved in saved prompts
+           if (units === 1) {
             const qtyPrompt = promptsArray.find((p: any) => {
               const label = String(p?.label || '').toUpperCase();
-              return label.includes('UNIDADES') || label.includes('CANTIDAD') || label.includes('EJEMPLAR');
+              return label.includes('UNIDADES') || label.includes('CANTIDAD') || label.includes('EJEMPLAR') || label.includes('QTY');
             });
             
             if (qtyPrompt) {
