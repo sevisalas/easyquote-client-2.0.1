@@ -130,7 +130,8 @@ const ClienteForm = () => {
       }
       
       navigate('/clientes');
-    } catch (error) {
+    } catch (error: any) {
+      console.error('[ClienteForm] Error:', error?.message || error);
       toast({
         title: "Error",
         description: isEditing ? "No se pudo actualizar el cliente" : "No se pudo crear el cliente",
