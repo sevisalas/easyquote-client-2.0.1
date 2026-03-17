@@ -1866,6 +1866,18 @@ export default function ProductTestPage({
                     </>
                   )}
 
+                  {/* Respuesta JSON cruda - solo superadmin */}
+                  {(showDebugTools || isSuperAdmin) && (pricing || productDetail) && (
+                    <details className="mt-4 border-t pt-4">
+                      <summary className="cursor-pointer text-sm font-medium text-muted-foreground">
+                        Ver respuesta JSON cruda
+                      </summary>
+                      <pre className="mt-2 text-xs bg-muted p-3 rounded overflow-auto max-h-96 whitespace-pre-wrap">
+                        {JSON.stringify(pricing || productDetail, null, 2)}
+                      </pre>
+                    </details>
+                  )}
+
                 </CardContent>
               </Card>}
           </div>
