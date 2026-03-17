@@ -715,11 +715,24 @@ Deno.serve(async (req) => {
           const normalizedSettingName = normalizePromptKey(qtySetting.prompt_name).toUpperCase();
           const normalizedSettingLabel = qtySetting.label ? normalizePromptKey(qtySetting.label).toUpperCase() : null;
           
+          // Also resolve cell ref (e.g. 'B6') → human label via defsMap for matching against stored prompts
+          let resolvedLabel: string | null = null;
+          if (defsMap) {
+            for (const kk of keyVariants(qtySetting.prompt_name)) {
+              const def = (defsMap as any)[kk];
+              if (def?.label) {
+                resolvedLabel = normalizePromptKey(def.label).toUpperCase();
+                break;
+              }
+            }
+          }
+          
           const qtyPrompt = promptsArray.find((p: any) => {
             const pName = normalizePromptKey(p?.name || p?.id || '').toUpperCase();
             const pLabel = normalizePromptKey(p?.label || '').toUpperCase();
             return pName === normalizedSettingName || pLabel === normalizedSettingName ||
-                   (normalizedSettingLabel && (pName === normalizedSettingLabel || pLabel === normalizedSettingLabel));
+                   (normalizedSettingLabel && (pName === normalizedSettingLabel || pLabel === normalizedSettingLabel)) ||
+                   (resolvedLabel && (pName === resolvedLabel || pLabel === resolvedLabel));
           });
           
           if (qtyPrompt) {
@@ -727,7 +740,7 @@ Deno.serve(async (req) => {
             units = typeof qtyValue === "number" 
               ? qtyValue 
               : parseInt(String(qtyValue || 1).replace(/\./g, "").replace(",", ".")) || 1;
-            console.log('📊 Quantity from is_quantity prompt:', { units, promptLabel: qtyPrompt.label, settingName: qtySetting.prompt_name });
+            console.log('📊 Quantity from is_quantity prompt:', { units, promptLabel: qtyPrompt.label, settingName: qtySetting.prompt_name, resolvedLabel });
           }
         }
         
