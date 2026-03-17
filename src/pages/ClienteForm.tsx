@@ -90,10 +90,27 @@ const ClienteForm = () => {
     setLoading(true);
 
     try {
+      const preparedCustomerPayload = {
+        ...formData,
+        name: formData.name.trim(),
+        email: formData.email.trim() || null,
+        phone: formData.phone.trim() || null,
+        address: formData.address.trim() || null,
+        zip: formData.zip.trim() || null,
+        city: formData.city.trim() || null,
+        province: formData.province.trim() || null,
+        notes: formData.notes.trim() || null,
+        integration_id: formData.integration_id.trim() || null,
+      };
+
+      if (!preparedCustomerPayload.name) {
+        throw new Error("El nombre es obligatorio");
+      }
+
       if (isEditing) {
         const { error } = await supabase
           .from('customers')
-          .update(formData)
+          .update(preparedCustomerPayload)
           .eq('id', id);
 
         if (error) throw error;
@@ -139,7 +156,7 @@ const ClienteForm = () => {
         const { error } = await supabase
           .from('customers')
           .insert({
-            ...formData,
+            ...preparedCustomerPayload,
             user_id: user.id,
             organization_id: orgId
           });
