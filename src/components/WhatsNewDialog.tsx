@@ -15,7 +15,7 @@ import { Sparkles, FileSpreadsheet, ShieldCheck } from "lucide-react";
  * Bump CURRENT_VERSION every time you want to show a new "What's New" dialog.
  * Add the matching entry to RELEASE_NOTES below.
  */
-const CURRENT_VERSION = "2.6.5";
+const CURRENT_VERSION = "2.6.6";
 const LS_KEY = "whats_new_seen_version";
 
 interface ReleaseNote {
@@ -28,17 +28,10 @@ interface ReleaseNote {
 const RELEASE_NOTES: ReleaseNote[] = [
   {
     icon: <FileSpreadsheet className="h-5 w-5 text-primary" />,
-    title: "Totales de filtrado y exportación Excel",
+    title: "Ver detalles en presupuestos aprobados",
     description:
-      "Al filtrar presupuestos o pedidos por fecha, ahora se muestra la suma total en EUR. Además puedes exportar el listado filtrado a Excel con un solo clic.",
+      "Los presupuestos aprobados ahora incluyen un botón «Ver detalles» que muestra todos los outputs, prompts y datos de componentes en modo lectura.",
     badge: "Todos",
-  },
-  {
-    icon: <ShieldCheck className="h-5 w-5 text-primary" />,
-    title: "Edición de pedidos con auditoría",
-    description:
-      "Los administradores pueden editar pedidos en cualquier estado. Si el pedido no es un borrador, se requiere un motivo y todos los cambios quedan registrados.",
-    badge: "Admin",
   },
 ];
 
