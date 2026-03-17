@@ -776,7 +776,13 @@ export default function QuoteDetail() {
                               )}
                               {hasDetails && (
                                 <CollapsibleTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                  <Button variant="ghost" size="sm" className={`h-6 p-0 ${quote.status === 'approved' ? 'px-2 gap-1 text-xs text-muted-foreground' : 'w-6'}`}>
+                                    {quote.status === 'approved' && !isExpanded && (
+                                      <>
+                                        <Eye className="h-3.5 w-3.5" />
+                                        Ver detalles
+                                      </>
+                                    )}
                                     <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                                   </Button>
                                 </CollapsibleTrigger>
