@@ -396,49 +396,7 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    // WORKAROUND TEMPORAL (API EasyQuote):
-    // Para el producto afectado, si Pantone está en "No", forzar outputs de coste a 0.
-    const WORKAROUND_PRODUCT_ID = "2dc61856-f003-4840-a167-4e9b98d796bb";
-    if (productId === WORKAROUND_PRODUCT_ID) {
-      const norm = (v: unknown) => String(v ?? "").trim().toLowerCase();
-
-      const hasPantoneNo = Array.isArray(data?.prompts)
-        ? data.prompts.some((p: any) => {
-            const label = norm(p?.promptText ?? p?.label ?? p?.name);
-            const current = norm(p?.currentValue ?? p?.value ?? p?.selectedValue);
-            return label.includes("pantone") && current === "no";
-          })
-        : false;
-
-      if (hasPantoneNo) {
-        const forceOutputZero = (list: any[]) =>
-          list.map((output: any) => {
-            const label = norm(output?.label ?? output?.name ?? output?.outputText ?? output?.text);
-            // Solo forzar "coste planchas" a 0, NO "coste tirada"
-            const shouldZero = label.includes("coste planchas");
-
-            if (!shouldZero) return output;
-
-            return {
-              ...output,
-              value: 0,
-              currentValue: 0,
-              outputValue: 0,
-              result: 0,
-            };
-          });
-
-        if (Array.isArray(data?.outputValues)) {
-          data.outputValues = forceOutputZero(data.outputValues);
-        }
-
-        if (Array.isArray(data?.outputs)) {
-          data.outputs = forceOutputZero(data.outputs);
-        }
-
-        console.log("easyquote-pricing: workaround applied (Pantone=No => costes a 0)");
-      }
-    }
+    // API response is the source of truth - no manual overrides
 
     const totalTime = Date.now() - startTime;
     console.log(`⏱️ easyquote-pricing: TOTAL request time: ${totalTime}ms`);
