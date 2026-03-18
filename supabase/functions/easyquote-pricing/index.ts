@@ -414,7 +414,8 @@ serve(async (req: Request): Promise<Response> => {
         const forceOutputZero = (list: any[]) =>
           list.map((output: any) => {
             const label = norm(output?.label ?? output?.name ?? output?.outputText ?? output?.text);
-            const shouldZero = label.includes("coste tirada") || label.includes("coste planchas");
+            // Solo forzar "coste planchas" a 0, NO "coste tirada"
+            const shouldZero = label.includes("coste planchas");
 
             if (!shouldZero) return output;
 
