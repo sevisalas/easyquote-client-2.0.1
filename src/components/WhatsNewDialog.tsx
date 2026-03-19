@@ -9,13 +9,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, FileSpreadsheet, ShieldCheck } from "lucide-react";
+import { Sparkles, Layout, Clock, Wrench } from "lucide-react";
 
-/**
- * Bump CURRENT_VERSION every time you want to show a new "What's New" dialog.
- * Add the matching entry to RELEASE_NOTES below.
- */
-const CURRENT_VERSION = "2.6.6";
+const CURRENT_VERSION = "2.6.7";
 const LS_KEY = "whats_new_seen_version";
 
 interface ReleaseNote {
@@ -27,10 +23,24 @@ interface ReleaseNote {
 
 const RELEASE_NOTES: ReleaseNote[] = [
   {
-    icon: <FileSpreadsheet className="h-5 w-5 text-primary" />,
-    title: "Ver detalles en presupuestos aprobados",
+    icon: <Layout className="h-5 w-5 text-primary" />,
+    title: "Nuevo diseño de la página de productos",
     description:
-      "Los presupuestos aprobados ahora incluyen un botón «Ver detalles» que muestra todos los outputs, prompts y datos de componentes en modo lectura.",
+      "Interfaz renovada para la gestión de productos con mejor organización visual y acceso más rápido a la configuración.",
+    badge: "Admin",
+  },
+  {
+    icon: <Clock className="h-5 w-5 text-primary" />,
+    title: "Fechas de estado en presupuestos",
+    description:
+      "Pasa el ratón sobre la fecha de un presupuesto para ver cuándo se creó, envió y aprobó. Las fechas también se incluyen en la exportación a Excel.",
+    badge: "Todos",
+  },
+  {
+    icon: <Wrench className="h-5 w-5 text-primary" />,
+    title: "Correcciones y mejoras generales",
+    description:
+      "Mejoras de rendimiento, correcciones menores de interfaz y optimizaciones internas.",
     badge: "Todos",
   },
 ];
@@ -39,10 +49,9 @@ export function WhatsNewDialog() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    // v2.6.5: no modal — mark as seen silently
     const seen = localStorage.getItem(LS_KEY);
     if (seen !== CURRENT_VERSION) {
-      localStorage.setItem(LS_KEY, CURRENT_VERSION);
+      setOpen(true);
     }
   }, []);
 
