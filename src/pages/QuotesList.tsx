@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, X, Search, Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MoreVertical, FileSpreadsheet } from "lucide-react";
+import { CalendarIcon, X, Search, Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MoreVertical, FileSpreadsheet, Send, CheckCircle2, Clock } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { exportListToExcel } from "@/utils/exportListToExcel";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
@@ -423,10 +424,7 @@ const QuotesList = () => {
             <Table className="table-fixed w-full">
               <TableHeader>
                 <TableRow className="h-9">
-                  <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[90px]">Fecha</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[90px]">Hora borrador</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[95px]">Hora envío</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[110px]">Hora aprobación</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[110px]">Fecha</TableHead>
                   <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[100px]">Nº</TableHead>
                   <TableHead className="py-2 text-xs font-semibold w-[18%]">Cliente</TableHead>
                   <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[100px]">Usuario</TableHead>
@@ -446,20 +444,33 @@ const QuotesList = () => {
                 {paginatedQuotes.map((q: any) => (
                    <TableRow key={q.id} className="h-auto">
                     <TableCell className="py-1.5 px-3 text-sm whitespace-nowrap">
-                      {new Date(q.created_at).toLocaleDateString("es-ES")}
-                    </TableCell>
-                    <TableCell className="py-1.5 px-3 text-sm whitespace-nowrap">
-                      {new Date(q.created_at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
-                    </TableCell>
-                    <TableCell className="py-1.5 px-3 text-sm whitespace-nowrap text-muted-foreground">
-                      {q.sent_at
-                        ? new Date(q.sent_at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })
-                        : "—"}
-                    </TableCell>
-                    <TableCell className="py-1.5 px-3 text-sm whitespace-nowrap text-muted-foreground">
-                      {q.approved_at
-                        ? new Date(q.approved_at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })
-                        : "—"}
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="cursor-default">
+                              {new Date(q.created_at).toLocaleDateString("es-ES")}
+                              {" "}
+                              <span className="text-muted-foreground">
+                                {new Date(q.created_at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
+                              </span>
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" align="start" className="text-xs space-y-1 p-2">
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="h-3 w-3 text-muted-foreground" />
+                              <span>Creado: {new Date(q.created_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Send className="h-3 w-3 text-blue-500" />
+                              <span>Enviado: {q.sent_at ? new Date(q.sent_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <CheckCircle2 className="h-3 w-3 text-green-500" />
+                              <span>Aprobado: {q.approved_at ? new Date(q.approved_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}</span>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </TableCell>
                     <TableCell className="py-1.5 px-3 text-sm font-medium whitespace-nowrap">{q.quote_number}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm truncate">
