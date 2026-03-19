@@ -42,7 +42,7 @@ const fetchQuotes = async () => {
   
   let query = supabase
     .from("quotes")
-    .select("id, created_at, quote_number, customer_id, product_name, final_price, status, selections, description, holded_estimate_number, holded_estimate_id, holded_id, user_id, organization_id")
+    .select("id, created_at, updated_at, sent_at, approved_at, quote_number, customer_id, product_name, final_price, status, selections, description, holded_estimate_number, holded_estimate_id, holded_id, user_id, organization_id")
     .order("created_at", { ascending: false });
   
   if (organizationId) {
