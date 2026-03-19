@@ -230,8 +230,8 @@ const SuperAdminRoadmap = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Roadmap de desarrollo</h1>
-            <p className="text-muted-foreground">
-              Gestiona sprints y tareas del backlog de desarrollo
+             <p className="text-muted-foreground">
+               Gestiona sprints y objetivos del backlog de desarrollo
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
