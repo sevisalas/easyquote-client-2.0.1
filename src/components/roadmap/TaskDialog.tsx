@@ -205,23 +205,32 @@ export const TaskDialog = ({
                 {sprints.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No hay sprints</p>
                 ) : (
-                  sprints.map((s) => (
-                    <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 p-1 rounded">
-                      <input
-                        type="checkbox"
-                        checked={formData.sprint_ids.includes(s.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFormData({ ...formData, sprint_ids: [...formData.sprint_ids, s.id] });
-                          } else {
-                            setFormData({ ...formData, sprint_ids: formData.sprint_ids.filter((id) => id !== s.id) });
-                          }
-                        }}
-                        className="rounded"
-                      />
-                      {s.name}
-                    </label>
-                  ))
+                  sprints
+                    .filter((s) => {
+                      const notStarted = ["backlog", "todo"].includes(formData.status);
+                      if (notStarted && s.status === "completed") return false;
+                      return true;
+                    })
+                    .map((s) => (
+                      <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 p-1 rounded">
+                        <input
+                          type="checkbox"
+                          checked={formData.sprint_ids.includes(s.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({ ...formData, sprint_ids: [...formData.sprint_ids, s.id] });
+                            } else {
+                              setFormData({ ...formData, sprint_ids: formData.sprint_ids.filter((id) => id !== s.id) });
+                            }
+                          }}
+                          className="rounded"
+                        />
+                        {s.name}
+                        {s.status === "completed" && (
+                          <span className="text-xs text-muted-foreground ml-1">(completado)</span>
+                        )}
+                      </label>
+                    ))
                 )}
               </div>
             </div>
