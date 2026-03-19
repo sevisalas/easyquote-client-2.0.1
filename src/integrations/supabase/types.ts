@@ -2525,6 +2525,7 @@ export type Database = {
       }
       quotes: {
         Row: {
+          approved_at: string | null
           created_at: string
           customer_id: string | null
           description: string | null
@@ -2541,6 +2542,7 @@ export type Database = {
           quote_additionals: Json | null
           quote_number: string
           selections: Json | null
+          sent_at: string | null
           status: string
           subtotal: number
           tax_amount: number
@@ -2551,6 +2553,7 @@ export type Database = {
           valid_until: string | null
         }
         Insert: {
+          approved_at?: string | null
           created_at?: string
           customer_id?: string | null
           description?: string | null
@@ -2567,6 +2570,7 @@ export type Database = {
           quote_additionals?: Json | null
           quote_number: string
           selections?: Json | null
+          sent_at?: string | null
           status?: string
           subtotal?: number
           tax_amount?: number
@@ -2577,6 +2581,7 @@ export type Database = {
           valid_until?: string | null
         }
         Update: {
+          approved_at?: string | null
           created_at?: string
           customer_id?: string | null
           description?: string | null
@@ -2593,6 +2598,7 @@ export type Database = {
           quote_additionals?: Json | null
           quote_number?: string
           selections?: Json | null
+          sent_at?: string | null
           status?: string
           subtotal?: number
           tax_amount?: number
