@@ -1449,6 +1449,15 @@ export default function ProductConfigPage() {
               <p className="text-sm text-muted-foreground">Gestiona los campos de salida para este producto</p>
             </div>
             <div className="flex gap-2">
+              {productOutputs.length > 0 && (
+                <Button variant="ghost" size="sm" onClick={() => {
+                  if (expandedOutputs.size === productOutputs.length) setExpandedOutputs(new Set());
+                  else setExpandedOutputs(new Set(productOutputs.map((o: any) => o.id)));
+                }}>
+                  <ChevronsUpDown className="h-4 w-4 mr-2" />
+                  {expandedOutputs.size === productOutputs.length ? "Colapsar" : "Expandir"} todos
+                </Button>
+              )}
               <Button onClick={addNewOutput} size="sm" variant="outline"><Plus className="h-4 w-4 mr-2" />Añadir uno</Button>
               <Button onClick={() => setIsBulkOutputsDialogOpen(true)} size="sm"><Layers className="h-4 w-4 mr-2" />Añadir Varios</Button>
             </div>
