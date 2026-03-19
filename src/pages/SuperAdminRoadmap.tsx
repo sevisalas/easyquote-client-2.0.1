@@ -64,12 +64,12 @@ const SuperAdminRoadmap = () => {
       if (priorityFilter !== "all" && task.priority !== priorityFilter) {
         return false;
       }
-      if (sprintFilter === "none" && task.sprint_id !== null) {
-        return false;
-      }
-      if (sprintFilter !== "all" && sprintFilter !== "none" && task.sprint_id !== sprintFilter) {
-        return false;
-      }
+       if (sprintFilter === "none" && task.sprint_ids.length > 0) {
+         return false;
+       }
+       if (sprintFilter !== "all" && sprintFilter !== "none" && !task.sprint_ids.includes(sprintFilter)) {
+         return false;
+       }
       return true;
     });
   }, [tasks, search, categoryFilter, priorityFilter, sprintFilter]);
@@ -141,10 +141,10 @@ const SuperAdminRoadmap = () => {
       priority: 'high' as TaskPriority,
       status: 'backlog' as TaskStatus,
       estimated_hours: 40,
-      sort_order: 1,
-      sprint_id: null,
-      actual_hours: null,
-      notes: null,
+       sort_order: 1,
+       sprint_ids: [],
+       actual_hours: null,
+       notes: null,
       related_version: null
     }, {
       title: 'Integración Shopify',
@@ -153,10 +153,10 @@ const SuperAdminRoadmap = () => {
       priority: 'medium' as TaskPriority,
       status: 'backlog' as TaskStatus,
       estimated_hours: 60,
-      sort_order: 2,
-      sprint_id: null,
-      actual_hours: null,
-      notes: null,
+       sort_order: 2,
+       sprint_ids: [],
+       actual_hours: null,
+       notes: null,
       related_version: null
     }, {
       title: 'Comparador de Precios',
@@ -165,10 +165,10 @@ const SuperAdminRoadmap = () => {
       priority: 'low' as TaskPriority,
       status: 'backlog' as TaskStatus,
       estimated_hours: 30,
-      sort_order: 3,
-      sprint_id: null,
-      actual_hours: null,
-      notes: null,
+       sort_order: 3,
+       sprint_ids: [],
+       actual_hours: null,
+       notes: null,
       related_version: null
     }, {
       title: 'Control n8n',
@@ -177,10 +177,10 @@ const SuperAdminRoadmap = () => {
       priority: 'medium' as TaskPriority,
       status: 'backlog' as TaskStatus,
       estimated_hours: 25,
-      sort_order: 4,
-      sprint_id: null,
-      actual_hours: null,
-      notes: null,
+       sort_order: 4,
+       sprint_ids: [],
+       actual_hours: null,
+       notes: null,
       related_version: null
     }, {
       title: 'Dashboard Automatizaciones',
@@ -189,10 +189,10 @@ const SuperAdminRoadmap = () => {
       priority: 'medium' as TaskPriority,
       status: 'backlog' as TaskStatus,
       estimated_hours: 35,
-      sort_order: 5,
-      sprint_id: null,
-      actual_hours: null,
-      notes: null,
+       sort_order: 5,
+       sprint_ids: [],
+       actual_hours: null,
+       notes: null,
       related_version: null
     }, {
       title: 'Cola de Preflight',
@@ -201,10 +201,10 @@ const SuperAdminRoadmap = () => {
       priority: 'low' as TaskPriority,
       status: 'backlog' as TaskStatus,
       estimated_hours: 20,
-      sort_order: 6,
-      sprint_id: null,
-      actual_hours: null,
-      notes: null,
+       sort_order: 6,
+       sprint_ids: [],
+       actual_hours: null,
+       notes: null,
       related_version: null
     }];
     try {

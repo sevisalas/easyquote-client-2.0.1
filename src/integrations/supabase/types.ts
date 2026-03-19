@@ -627,6 +627,42 @@ export type Database = {
         }
         Relationships: []
       }
+      development_task_sprints: {
+        Row: {
+          created_at: string | null
+          id: string
+          sprint_id: string
+          task_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          sprint_id: string
+          task_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          sprint_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "development_task_sprints_sprint_id_fkey"
+            columns: ["sprint_id"]
+            isOneToOne: false
+            referencedRelation: "development_sprints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "development_task_sprints_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "development_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       development_tasks: {
         Row: {
           actual_hours: number | null
@@ -639,7 +675,6 @@ export type Database = {
           priority: string
           related_version: string | null
           sort_order: number | null
-          sprint_id: string | null
           status: string
           title: string
           updated_at: string
@@ -655,7 +690,6 @@ export type Database = {
           priority?: string
           related_version?: string | null
           sort_order?: number | null
-          sprint_id?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -671,20 +705,11 @@ export type Database = {
           priority?: string
           related_version?: string | null
           sort_order?: number | null
-          sprint_id?: string | null
           status?: string
           title?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "development_tasks_sprint_id_fkey"
-            columns: ["sprint_id"]
-            isOneToOne: false
-            referencedRelation: "development_sprints"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       document_attachments: {
         Row: {

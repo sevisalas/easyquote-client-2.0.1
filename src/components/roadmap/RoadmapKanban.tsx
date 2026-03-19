@@ -42,7 +42,7 @@ const SortableTaskCard = ({
   onDelete,
 }: {
   task: Task;
-  sprint?: Sprint | null;
+  sprint?: Sprint[] | null;
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
 }) => {
@@ -87,8 +87,8 @@ export const RoadmapKanban = ({
   const getTasksForColumn = (status: TaskStatus) =>
     tasks.filter((task) => task.status === status);
 
-  const findSprint = (sprintId: string | null) =>
-    sprintId ? sprints.find((s) => s.id === sprintId) : null;
+  const findSprints = (sprintIds: string[]) =>
+    sprintIds.map((id) => sprints.find((s) => s.id === id)).filter(Boolean) as Sprint[];
 
   const activeTask = activeId ? tasks.find((t) => t.id === activeId) : null;
 
@@ -160,7 +160,7 @@ export const RoadmapKanban = ({
                       <SortableTaskCard
                         key={task.id}
                         task={task}
-                        sprint={findSprint(task.sprint_id)}
+                        sprint={findSprints(task.sprint_ids)}
                         onEdit={onEditTask}
                         onDelete={onDeleteTask}
                       />
@@ -182,7 +182,7 @@ export const RoadmapKanban = ({
         {activeTask && (
           <TaskCard
             task={activeTask}
-            sprint={findSprint(activeTask.sprint_id)}
+            sprint={findSprints(activeTask.sprint_ids)}
             onEdit={() => {}}
             onDelete={() => {}}
             isDragging

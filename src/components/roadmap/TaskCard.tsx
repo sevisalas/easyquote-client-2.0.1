@@ -12,7 +12,7 @@ import {
 
 interface TaskCardProps {
   task: Task;
-  sprint?: Sprint | null;
+  sprint?: Sprint[] | null;
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
   isDragging?: boolean;
@@ -69,8 +69,8 @@ export const TaskCard = ({ task, sprint, onEdit, onDelete, isDragging }: TaskCar
 
         {/* Footer with sprint and hours/credits */}
         <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
-          <span className="truncate max-w-[100px]">
-            {sprint ? sprint.name : "Sin sprint"}
+          <span className="truncate max-w-[120px]">
+            {sprint && sprint.length > 0 ? sprint.map(s => s.name).join(", ") : "Sin sprint"}
           </span>
           <div className="flex items-center gap-2">
             {task.estimated_hours && (

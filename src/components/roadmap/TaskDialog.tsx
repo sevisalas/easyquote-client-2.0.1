@@ -65,7 +65,7 @@ export const TaskDialog = ({
     category: "feature" as TaskCategory,
     priority: "medium" as TaskPriority,
     status: "backlog" as TaskStatus,
-    sprint_id: null as string | null,
+    sprint_ids: [] as string[],
     estimated_hours: null as number | null,
     notes: "",
   });
@@ -78,7 +78,7 @@ export const TaskDialog = ({
         category: task.category,
         priority: task.priority,
         status: task.status,
-        sprint_id: task.sprint_id,
+        sprint_ids: task.sprint_ids || [],
         estimated_hours: task.estimated_hours,
         notes: task.notes || "",
       });
@@ -89,7 +89,7 @@ export const TaskDialog = ({
         category: "feature",
         priority: "medium",
         status: "backlog",
-        sprint_id: null,
+        sprint_ids: [],
         estimated_hours: null,
         notes: "",
       });
@@ -200,25 +200,30 @@ export const TaskDialog = ({
             </div>
 
             <div className="space-y-2">
-              <Label>Sprint</Label>
-              <Select
-                value={formData.sprint_id || "none"}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, sprint_id: value === "none" ? null : value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sin sprint" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Sin sprint</SelectItem>
-                  {sprints.map((s) => (
-                    <SelectItem key={s.id} value={s.id}>
+              <Label>Sprints</Label>
+              <div className="space-y-1 max-h-32 overflow-y-auto border rounded-md p-2">
+                {sprints.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No hay sprints</p>
+                ) : (
+                  sprints.map((s) => (
+                    <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 p-1 rounded">
+                      <input
+                        type="checkbox"
+                        checked={formData.sprint_ids.includes(s.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData({ ...formData, sprint_ids: [...formData.sprint_ids, s.id] });
+                          } else {
+                            setFormData({ ...formData, sprint_ids: formData.sprint_ids.filter((id) => id !== s.id) });
+                          }
+                        }}
+                        className="rounded"
+                      />
                       {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    </label>
+                  ))
+                )}
+              </div>
             </div>
           </div>
 
