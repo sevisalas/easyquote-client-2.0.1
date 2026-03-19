@@ -359,7 +359,7 @@ const SuperAdminRoadmap = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar sprint?</AlertDialogTitle>
             <AlertDialogDescription>
-              Las tareas asignadas a este sprint quedarán sin sprint asignado.
+              Los objetivos asignados a este sprint quedarán sin sprint asignado.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
