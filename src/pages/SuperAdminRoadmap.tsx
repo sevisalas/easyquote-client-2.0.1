@@ -244,7 +244,7 @@ const SuperAdminRoadmap = () => {
             setTaskDialogOpen(true);
           }}>
               <Plus className="h-4 w-4 mr-2" />
-              Nueva tarea
+              Nuevo objetivo
             </Button>
             <Button variant="secondary" onClick={() => {
             setEditingSprint(null);
