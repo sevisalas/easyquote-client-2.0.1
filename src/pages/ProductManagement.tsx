@@ -2171,6 +2171,10 @@ export default function ProductManagement() {
   const createNewPrompt = () => {
     if (!selectedProduct) return;
 
+    // Validar referencias de celda
+    if (!validateCellRef(newPromptData.promptCell, "Rótulo")) return;
+    if (!validateCellRef(newPromptData.valueCell, "Valor")) return;
+
     // Calculate next sequence number to avoid duplicates
     const nextSeq = productPrompts.length === 0 ? 1 : Math.max(...productPrompts.map(p => p.promptSeq || 0)) + 1;
 
