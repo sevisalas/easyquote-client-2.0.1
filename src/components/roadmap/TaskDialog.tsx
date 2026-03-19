@@ -65,7 +65,7 @@ export const TaskDialog = ({
     category: "feature" as TaskCategory,
     priority: "medium" as TaskPriority,
     status: "backlog" as TaskStatus,
-    sprint_id: null as string | null,
+    sprint_ids: [] as string[],
     estimated_hours: null as number | null,
     notes: "",
   });
