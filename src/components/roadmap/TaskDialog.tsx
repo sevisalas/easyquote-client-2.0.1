@@ -108,7 +108,7 @@ export const TaskDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{task ? "Editar Tarea" : "Nueva Tarea"}</DialogTitle>
+          <DialogTitle>{task ? "Editar objetivo" : "Nuevo objetivo"}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
