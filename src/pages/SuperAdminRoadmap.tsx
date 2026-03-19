@@ -211,9 +211,9 @@ const SuperAdminRoadmap = () => {
       for (const task of initialTasks) {
         await createTask.mutateAsync(task);
       }
-      toast.success('6 tareas iniciales cargadas correctamente');
+      toast.success('6 objetivos iniciales cargados correctamente');
     } catch (error) {
-      toast.error('Error al cargar tareas iniciales');
+      toast.error('Error al cargar objetivos iniciales');
     }
   };
 
@@ -230,21 +230,21 @@ const SuperAdminRoadmap = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Roadmap de desarrollo</h1>
-            <p className="text-muted-foreground">
-              Gestiona sprints y tareas del backlog de desarrollo
+             <p className="text-muted-foreground">
+               Gestiona sprints y objetivos del backlog de desarrollo
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             {tasks.length === 0 && !isLoading && <Button variant="outline" onClick={loadInitialTasks} disabled={createTask.isPending}>
                 <Download className="h-4 w-4 mr-2" />
-                {createTask.isPending ? 'Cargando...' : 'Cargar tareas iniciales'}
-              </Button>}
+                 {createTask.isPending ? 'Cargando...' : 'Cargar objetivos iniciales'}
+               </Button>}
             <Button onClick={() => {
             setEditingTask(null);
             setTaskDialogOpen(true);
           }}>
               <Plus className="h-4 w-4 mr-2" />
-              Nueva tarea
+              Nuevo objetivo
             </Button>
             <Button variant="secondary" onClick={() => {
             setEditingSprint(null);
@@ -259,7 +259,7 @@ const SuperAdminRoadmap = () => {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div className="bg-primary rounded-lg p-4 border border-primary-foreground/10">
-            <p className="text-sm text-primary-foreground/70">Total tareas</p>
+            <p className="text-sm text-primary-foreground/70">Total objetivos</p>
             <p className="text-2xl font-bold text-primary-foreground">{totalTasks}</p>
           </div>
           <div className="bg-primary rounded-lg p-4 border border-primary-foreground/10">
@@ -321,9 +321,9 @@ const SuperAdminRoadmap = () => {
                   Crear primer sprint
                 </Button>
               </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {sprints.map(sprint => <SprintCard key={sprint.id} sprint={sprint} stats={getSprintStats(sprint.id)} onEdit={handleEditSprint} onDelete={setDeleteSprintId} onViewTasks={sprintId => {
-              setSprintFilter(sprintId);
-            }} />)}
+                 {sprints.map(sprint => <SprintCard key={sprint.id} sprint={sprint} stats={getSprintStats(sprint.id)} onEdit={handleEditSprint} onDelete={setDeleteSprintId} onViewObjectives={sprintId => {
+               setSprintFilter(sprintId);
+             }} />)}
               </div>}
           </TabsContent>
         </Tabs>
@@ -339,9 +339,9 @@ const SuperAdminRoadmap = () => {
       <AlertDialog open={!!deleteTaskId} onOpenChange={() => setDeleteTaskId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar tarea?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. La tarea será eliminada permanentemente.
+             <AlertDialogTitle>¿Eliminar objetivo?</AlertDialogTitle>
+             <AlertDialogDescription>
+               Esta acción no se puede deshacer. El objetivo será eliminado permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -359,7 +359,7 @@ const SuperAdminRoadmap = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar sprint?</AlertDialogTitle>
             <AlertDialogDescription>
-              Las tareas asignadas a este sprint quedarán sin sprint asignado.
+              Los objetivos asignados a este sprint quedarán sin sprint asignado.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

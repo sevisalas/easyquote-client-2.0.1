@@ -12,7 +12,7 @@ interface SprintCardProps {
   stats: { total: number; done: number; progress: number };
   onEdit: (sprint: Sprint) => void;
   onDelete: (sprintId: string) => void;
-  onViewTasks: (sprintId: string) => void;
+  onViewObjectives: (sprintId: string) => void;
 }
 
 const statusConfig = {
@@ -33,7 +33,7 @@ const statusConfig = {
   },
 };
 
-export const SprintCard = ({ sprint, stats, onEdit, onDelete, onViewTasks }: SprintCardProps) => {
+export const SprintCard = ({ sprint, stats, onEdit, onDelete, onViewObjectives }: SprintCardProps) => {
   const config = statusConfig[sprint.status];
   const { Icon } = config;
 
@@ -89,14 +89,14 @@ export const SprintCard = ({ sprint, stats, onEdit, onDelete, onViewTasks }: Spr
           </div>
         )}
 
-        <Button 
-          variant="outline" 
-          className="w-full" 
-          size="sm"
-          onClick={() => onViewTasks(sprint.id)}
-        >
-          Ver tareas
-        </Button>
+         <Button 
+           variant="outline" 
+           className="w-full" 
+           size="sm"
+           onClick={() => onViewObjectives(sprint.id)}
+         >
+           Ver objetivos
+         </Button>
       </CardContent>
     </Card>
   );
