@@ -127,7 +127,7 @@ function SortableOutputItem({
   output, index, excelSheets, outputTypes, onUpdate, onDelete,
   getMappedVariableId, getMappedNames, upsertVariableMapping, productionVariables,
   selectedProduct, labelValue, onLabelChange, isOutputInOt, getOutputOtSection,
-  onOtToggle, onOtSectionChange,
+  onOtToggle, onOtSectionChange, isExpanded, onToggle,
 }: {
   output: ProductOutput; index: number; excelSheets: string[]; outputTypes: OutputType[];
   onUpdate: (output: ProductOutput) => void; onDelete: (id: string) => void;
@@ -137,6 +137,7 @@ function SortableOutputItem({
   onLabelChange: (value: string) => void; isOutputInOt: boolean;
   getOutputOtSection: string | null; onOtToggle: (checked: boolean) => void;
   onOtSectionChange: (section: string) => void;
+  isExpanded: boolean; onToggle: (open: boolean) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: output.id });
@@ -148,104 +149,138 @@ function SortableOutputItem({
   };
 
   const displayLabel = labelValue || output.nameCell || `Campo nº ${index + 1}`;
+  const typeName = outputTypes.find((t) => t.id === output.outputTypeId)?.outputType || '?';
+  const cellsText = `${output.nameCell || '?'}→${output.valueCell || '?'}`;
 
   return (
-    <div ref={setNodeRef} style={style} className={`p-4 border rounded-lg bg-background ${isDragging ? "ring-2 ring-primary" : ""}`}>
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded" type="button">
+    <Collapsible open={isExpanded} onOpenChange={onToggle}>
+      <div ref={setNodeRef} style={style} className={`border rounded-lg bg-background ${isDragging ? "ring-2 ring-primary" : ""}`}>
+        {/* Summary header */}
+        <div className="flex items-center gap-3 px-4 py-3">
+          <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded shrink-0" type="button">
             <GripVertical className="h-4 w-4 text-muted-foreground" />
           </button>
-          <h4 className="font-medium">{displayLabel}</h4>
-          {labelValue && <span className="text-xs text-muted-foreground">({output.nameCell})</span>}
+          <CollapsibleTrigger asChild>
+            <button className="flex items-center gap-3 flex-1 text-left hover:bg-muted/50 -mx-2 px-2 py-1 rounded transition-colors" type="button">
+              <ChevronRight className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+              <span className="font-medium truncate">{displayLabel}</span>
+              <span className="text-sm font-mono text-muted-foreground">({cellsText})</span>
+              {output.sheet && <span className="text-sm text-muted-foreground">· {output.sheet}</span>}
+              <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-secondary text-secondary-foreground ml-auto">{typeName}</span>
+              {isOutputInOt && (
+                <TooltipProvider><Tooltip><TooltipTrigger asChild>
+                  <span className="text-muted-foreground"><ClipboardList className="h-3.5 w-3.5" /></span>
+                </TooltipTrigger><TooltipContent>Mostrar en OT</TooltipContent></Tooltip></TooltipProvider>
+              )}
+            </button>
+          </CollapsibleTrigger>
+          <div className="flex items-center gap-1 shrink-0">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onUpdate(output)}>
+              <Save className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => onDelete(output.id)}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-      </div>
 
-      <div className="grid grid-cols-12 gap-2 items-end">
-        <div className="col-span-2">
-          <Label>Hoja</Label>
-          <Select value={output.sheet || ""} onValueChange={(value) => onUpdate({ ...output, sheet: value })}>
-            <SelectTrigger><SelectValue placeholder={output.sheet || "Seleccionar hoja"} /></SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50">
-              {output.sheet && !excelSheets.includes(output.sheet) && <SelectItem value={output.sheet}>{output.sheet}</SelectItem>}
-              {excelSheets.map((sheet) => <SelectItem key={sheet} value={sheet}>{sheet}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="col-span-3">
-          <Label>Rótulo</Label>
-          <Input defaultValue={output.nameCell || ""} placeholder="ej: A25" onBlur={(e) => onUpdate({ ...output, nameCell: e.target.value })} />
-        </div>
-        <div className="col-span-3">
-          <Label>Valor por defecto</Label>
-          <Input defaultValue={output.valueCell || ""} placeholder="ej: B25" onBlur={(e) => onUpdate({ ...output, valueCell: e.target.value })} />
-        </div>
-        <div className="col-span-2">
-          <Label>Tipo</Label>
-          <Select value={output.outputTypeId?.toString() || ""} onValueChange={(value) => onUpdate({ ...output, outputTypeId: parseInt(value) })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent className="bg-background border shadow-lg z-50">
-              {outputTypes.map((type) => <SelectItem key={type.id} value={type.id?.toString() || "0"}>{type.outputType}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="col-span-2">
-          <Label>Acción</Label>
-          <div className="flex gap-1">
-            <Button variant="ghost" size="sm" onClick={() => onUpdate(output)}><Save className="h-4 w-4" /></Button>
-            <Button variant="ghost" size="sm" onClick={() => onDelete(output.id)}><Trash2 className="h-4 w-4" /></Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-4 mt-4 pt-4 border-t flex-wrap">
-        <div className="flex items-center gap-4 flex-1">
-          <div className="flex items-center gap-2 flex-1">
-            <Label className="text-sm font-medium whitespace-nowrap">Etiqueta</Label>
-            <Input className="flex-1 h-8" value={labelValue} placeholder="Nombre descriptivo" onChange={(e) => onLabelChange(e.target.value)} />
-          </div>
-          <div className="flex items-center gap-2">
-            <Label className="text-sm font-medium whitespace-nowrap">Variable de prod.</Label>
-            <Select value={getMappedVariableId(output.nameCell) || "none"} onValueChange={(value) => {
-              if (selectedProduct) {
-                upsertVariableMapping({
-                  easyquoteProductId: selectedProduct.id,
-                  productName: selectedProduct.productName,
-                  promptOrOutputName: output.nameCell,
-                  variableId: value === "none" ? null : value,
-                });
-              }
-            }}>
-              <SelectTrigger className="w-40"><SelectValue placeholder="Sin variable" /></SelectTrigger>
-              <SelectContent className="bg-background border shadow-lg z-50">
-                <SelectItem value="none">Sin variable asignada</SelectItem>
-                {productionVariables.map((variable) => <SelectItem key={variable.id} value={variable.id}>{variable.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2">
-            <Label className="text-sm font-medium whitespace-nowrap">OT</Label>
-            <Switch checked={isOutputInOt} onCheckedChange={onOtToggle} />
-          </div>
-          {isOutputInOt && (
-            <div className="flex items-center gap-2">
-              <Label className="text-sm font-medium whitespace-nowrap">Sección OT</Label>
-              <Select value={getOutputOtSection || "datos_destacados"} onValueChange={onOtSectionChange}>
-                <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
-                <SelectContent className="bg-background border shadow-lg z-50">
-                  <SelectItem value="datos_destacados">Datos destacados</SelectItem>
-                  <SelectItem value="impresion">Impresión</SelectItem>
-                  <SelectItem value="acabados">Acabados</SelectItem>
-                  <SelectItem value="imposiciones">Imposiciones</SelectItem>
-                  <SelectItem value="ajustes">Ajustes</SelectItem>
-                  <SelectItem value="observaciones">Observaciones</SelectItem>
-                </SelectContent>
-              </Select>
+        {/* Expanded content */}
+        <CollapsibleContent>
+          <div className="px-4 pb-4 space-y-4 border-t">
+            {/* Section 1: Excel Config */}
+            <div className="pt-4">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Configuración Excel</p>
+              <div className="grid grid-cols-12 gap-3 items-end">
+                <div className="col-span-3">
+                  <Label className="text-xs">Hoja</Label>
+                  <Select value={output.sheet || ""} onValueChange={(value) => onUpdate({ ...output, sheet: value })}>
+                    <SelectTrigger className="h-9"><SelectValue placeholder={output.sheet || "Seleccionar hoja"} /></SelectTrigger>
+                    <SelectContent className="bg-background border shadow-lg z-50">
+                      {output.sheet && !excelSheets.includes(output.sheet) && <SelectItem value={output.sheet}>{output.sheet}</SelectItem>}
+                      {excelSheets.map((sheet) => <SelectItem key={sheet} value={sheet}>{sheet}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-xs">Rótulo</Label>
+                  <Input className="h-9" defaultValue={output.nameCell || ""} placeholder="ej: A25" onBlur={(e) => onUpdate({ ...output, nameCell: e.target.value })} />
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-xs">Valor</Label>
+                  <Input className="h-9" defaultValue={output.valueCell || ""} placeholder="ej: B25" onBlur={(e) => onUpdate({ ...output, valueCell: e.target.value })} />
+                </div>
+                <div className="col-span-3">
+                  <Label className="text-xs">Tipo</Label>
+                  <Select value={output.outputTypeId?.toString() || ""} onValueChange={(value) => onUpdate({ ...output, outputTypeId: parseInt(value) })}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent className="bg-background border shadow-lg z-50">
+                      {outputTypes.map((type) => <SelectItem key={type.id} value={type.id?.toString() || "0"}>{type.outputType}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
+
+            {/* Section 2: Labels & Mappings */}
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Etiquetas y mapeos</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs">Etiqueta personalizada</Label>
+                  <Input className="h-9 mt-1" value={labelValue} placeholder="Nombre descriptivo" onChange={(e) => onLabelChange(e.target.value)} />
+                </div>
+                <div>
+                  <Label className="text-xs">Variable de producción</Label>
+                  <Select value={getMappedVariableId(output.nameCell) || "none"} onValueChange={(value) => {
+                    if (selectedProduct) {
+                      upsertVariableMapping({
+                        easyquoteProductId: selectedProduct.id,
+                        productName: selectedProduct.productName,
+                        promptOrOutputName: output.nameCell,
+                        variableId: value === "none" ? null : value,
+                      });
+                    }
+                  }}>
+                    <SelectTrigger className="h-9 mt-1"><SelectValue placeholder="Sin variable" /></SelectTrigger>
+                    <SelectContent className="bg-background border shadow-lg z-50">
+                      <SelectItem value="none">Sin variable asignada</SelectItem>
+                      {productionVariables.map((variable) => <SelectItem key={variable.id} value={variable.id}>{variable.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 3: OT */}
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Orden de trabajo</p>
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <Checkbox id={`ot-out-${output.id}`} checked={isOutputInOt} onCheckedChange={(checked: boolean) => onOtToggle(checked)} />
+                  <Label htmlFor={`ot-out-${output.id}`} className="text-sm cursor-pointer">Mostrar en OT</Label>
+                </div>
+                {isOutputInOt && (
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm whitespace-nowrap">Sección OT</Label>
+                    <Select value={getOutputOtSection || "datos_destacados"} onValueChange={onOtSectionChange}>
+                      <SelectTrigger className="h-8 w-44"><SelectValue /></SelectTrigger>
+                      <SelectContent className="bg-background border shadow-lg z-50">
+                        <SelectItem value="datos_destacados">Datos destacados</SelectItem>
+                        <SelectItem value="impresion">Impresión</SelectItem>
+                        <SelectItem value="acabados">Acabados</SelectItem>
+                        <SelectItem value="imposiciones">Imposiciones</SelectItem>
+                        <SelectItem value="ajustes">Ajustes</SelectItem>
+                        <SelectItem value="observaciones">Observaciones</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </CollapsibleContent>
       </div>
-    </div>
+    </Collapsible>
   );
 }
 
