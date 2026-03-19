@@ -211,7 +211,7 @@ const SuperAdminRoadmap = () => {
       for (const task of initialTasks) {
         await createTask.mutateAsync(task);
       }
-      toast.success('6 tareas iniciales cargadas correctamente');
+      toast.success('6 objetivos iniciales cargados correctamente');
     } catch (error) {
       toast.error('Error al cargar tareas iniciales');
     }
