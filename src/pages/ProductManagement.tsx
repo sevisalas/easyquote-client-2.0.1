@@ -2293,6 +2293,8 @@ export default function ProductManagement() {
     if (!selectedProduct) return;
     try {
       for (const promptData of prompts) {
+        // Validar referencias de celda
+        if (!validateCellRef(promptData.promptCell, "Rótulo") || !validateCellRef(promptData.valueCell, "Valor")) continue;
         // Verificar si el tipo es numérico
         const promptType = promptTypes.find(t => t.id === promptData.promptType);
         const isNumericType = promptType?.promptType === "Number" || promptType?.promptType === "Quantity";
