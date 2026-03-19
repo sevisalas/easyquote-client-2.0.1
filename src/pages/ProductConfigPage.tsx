@@ -276,6 +276,7 @@ export default function ProductConfigPage() {
   const [isBulkPromptsDialogOpen, setIsBulkPromptsDialogOpen] = useState(false);
   const [isBulkOutputsDialogOpen, setIsBulkOutputsDialogOpen] = useState(false);
   const [isDeleteProductDialogOpen, setIsDeleteProductDialogOpen] = useState(false);
+  const [expandedPrompts, setExpandedPrompts] = useState<Set<string>>(new Set());
   const [excelSheets, setExcelSheets] = useState<string[]>([]);
   const [availableExcelFiles, setAvailableExcelFiles] = useState<EasyQuoteExcelFile[]>([]);
   const [newPromptData, setNewPromptData] = useState({
