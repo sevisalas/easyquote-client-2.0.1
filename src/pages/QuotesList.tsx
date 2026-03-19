@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, X, Search, Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MoreVertical, FileSpreadsheet } from "lucide-react";
+import { CalendarIcon, X, Search, Download, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, MoreVertical, FileSpreadsheet, Send, CheckCircle2 } from "lucide-react";
 import { exportListToExcel } from "@/utils/exportListToExcel";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
@@ -42,7 +42,7 @@ const fetchQuotes = async () => {
   
   let query = supabase
     .from("quotes")
-    .select("id, created_at, quote_number, customer_id, product_name, final_price, status, selections, description, holded_estimate_number, holded_estimate_id, holded_id, user_id, organization_id")
+    .select("id, created_at, updated_at, sent_at, approved_at, quote_number, customer_id, product_name, final_price, status, selections, description, holded_estimate_number, holded_estimate_id, holded_id, user_id, organization_id")
     .order("created_at", { ascending: false });
   
   if (organizationId) {
@@ -360,8 +360,11 @@ const QuotesList = () => {
               size="sm"
               className="h-7 text-xs gap-1"
               onClick={() => {
+                const fmtTs = (v: any) => v ? new Date(v).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
                 const rows = filteredQuotes.map((q: any) => ({
-                  fecha: new Date(q.created_at).toLocaleDateString("es-ES"),
+                  fecha: fmtTs(q.created_at),
+                  enviado: fmtTs(q.sent_at),
+                  aprobado: fmtTs(q.approved_at),
                   numero: q.quote_number || "",
                   cliente: getCustomerName(q.customer_id),
                   usuario: getUserName(q.user_id),
@@ -372,7 +375,9 @@ const QuotesList = () => {
                 exportListToExcel(
                   rows,
                   [
-                    { header: "Fecha", key: "fecha" },
+                    { header: "Fecha creación", key: "fecha" },
+                    { header: "Fecha envío", key: "enviado" },
+                    { header: "Fecha aprobación", key: "aprobado" },
                     { header: "Nº", key: "numero" },
                     { header: "Cliente", key: "cliente" },
                     { header: "Usuario", key: "usuario" },
@@ -418,7 +423,7 @@ const QuotesList = () => {
             <Table className="table-fixed w-full">
               <TableHeader>
                 <TableRow className="h-9">
-                  <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[90px]">Fecha</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[120px]">Fecha</TableHead>
                   <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[100px]">Nº</TableHead>
                   <TableHead className="py-2 text-xs font-semibold w-[22%]">Cliente</TableHead>
                   <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[100px]">Usuario</TableHead>
@@ -437,7 +442,25 @@ const QuotesList = () => {
               <TableBody>
                 {paginatedQuotes.map((q: any) => (
                    <TableRow key={q.id} className="h-auto">
-                    <TableCell className="py-1.5 px-3 text-sm whitespace-nowrap">{new Date(q.created_at).toLocaleDateString("es-ES")}</TableCell>
+                    <TableCell className="py-1.5 px-3 whitespace-nowrap">
+                      <div className="text-sm">{new Date(q.created_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
+                      {(q.sent_at || q.approved_at) && (
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {q.sent_at && (
+                            <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground" title="Enviado">
+                              <Send className="h-2.5 w-2.5" />
+                              {new Date(q.sent_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          )}
+                          {q.approved_at && (
+                            <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground" title="Aprobado">
+                              <CheckCircle2 className="h-2.5 w-2.5" />
+                              {new Date(q.approved_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell className="py-1.5 px-3 text-sm font-medium whitespace-nowrap">{q.quote_number}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm truncate">
                       <CustomerName customerId={q.customer_id} />

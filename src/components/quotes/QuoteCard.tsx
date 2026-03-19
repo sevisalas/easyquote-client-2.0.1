@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, Eye, Copy, Trash2 } from "lucide-react";
+import { Download, Eye, Copy, Trash2, Send, CheckCircle2 } from "lucide-react";
 import { CustomerName } from "./CustomerName";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -84,7 +84,19 @@ export function QuoteCard({
         {/* Date */}
         <div className="mb-2">
           <p className="text-xs text-muted-foreground">Fecha</p>
-          <p className="text-sm">{new Date(quote.created_at).toLocaleDateString("es-ES")}</p>
+          <p className="text-sm">{new Date(quote.created_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+          {quote.sent_at && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+              <Send className="h-3 w-3" />
+              Enviado: {new Date(quote.sent_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+            </p>
+          )}
+          {quote.approved_at && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+              <CheckCircle2 className="h-3 w-3" />
+              Aprobado: {new Date(quote.approved_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+            </p>
+          )}
         </div>
 
         {/* Description */}
