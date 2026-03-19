@@ -190,7 +190,7 @@ const SuperAdminRoadmap = () => {
       status: 'backlog' as TaskStatus,
       estimated_hours: 35,
       sort_order: 5,
-      sprint_id: null,
+      sprint_ids: [],
       actual_hours: null,
       notes: null,
       related_version: null
