@@ -255,7 +255,7 @@ export const TaskDialog = ({
               Cancelar
             </Button>
             <Button type="submit" disabled={isLoading || !formData.title.trim()}>
-              {isLoading ? "Guardando..." : task ? "Guardar cambios" : "Crear tarea"}
+              {isLoading ? "Guardando..." : task ? "Guardar cambios" : "Crear objetivo"}
             </Button>
           </DialogFooter>
         </form>

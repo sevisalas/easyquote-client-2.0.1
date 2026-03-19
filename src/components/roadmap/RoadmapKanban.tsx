@@ -165,9 +165,9 @@ export const RoadmapKanban = ({
                         onDelete={onDeleteTask}
                       />
                     ))}
-                    {columnTasks.length === 0 && (
-                      <div className="text-center py-8 text-sm text-muted-foreground">
-                        Sin tareas
+                     {columnTasks.length === 0 && (
+                       <div className="text-center py-8 text-sm text-muted-foreground">
+                         Sin objetivos
                       </div>
                     )}
                   </div>

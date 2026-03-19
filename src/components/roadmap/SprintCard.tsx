@@ -89,14 +89,14 @@ export const SprintCard = ({ sprint, stats, onEdit, onDelete, onViewObjectives }
           </div>
         )}
 
-        <Button 
-          variant="outline" 
-          className="w-full" 
-          size="sm"
-          onClick={() => onViewTasks(sprint.id)}
-        >
-          Ver tareas
-        </Button>
+         <Button 
+           variant="outline" 
+           className="w-full" 
+           size="sm"
+           onClick={() => onViewObjectives(sprint.id)}
+         >
+           Ver objetivos
+         </Button>
       </CardContent>
     </Card>
   );

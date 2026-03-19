@@ -62,7 +62,7 @@ export const RoadmapFilters = ({
         <Input
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="Buscar tareas..."
+          placeholder="Buscar objetivos..."
           className="pl-9"
         />
       </div>
