@@ -213,7 +213,7 @@ const SuperAdminRoadmap = () => {
       }
       toast.success('6 objetivos iniciales cargados correctamente');
     } catch (error) {
-      toast.error('Error al cargar tareas iniciales');
+      toast.error('Error al cargar objetivos iniciales');
     }
   };
 
