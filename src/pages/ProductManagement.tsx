@@ -2970,6 +2970,10 @@ export default function ProductManagement() {
                               <div className="col-span-1">
                                 <Label>Valor</Label>
                                 <Input defaultValue={prompt.valueCell || ""} onBlur={e => {
+                                if (!validateCellRef(e.target.value, "Valor")) {
+                                  e.target.value = prompt.valueCell || "";
+                                  return;
+                                }
                                 const updatedPrompt = {
                                   ...prompt,
                                   valueCell: e.target.value,
