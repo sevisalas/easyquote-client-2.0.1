@@ -1,56 +1,70 @@
 
 
-## Mejora visual de los campos de entrada (prompts)
+# Mostrar hora de creación, envío y aprobación en el listado de presupuestos
 
-### Problema actual
-Cada prompt se muestra como una tarjeta plana con dos filas densas:
-1. Una fila de 12 columnas con campos API (Hoja, Rótulo, Valor, Orden, Rango, Tipo, acciones)
-2. Una fila de switches en línea (Requerido, Ocultar docs, Solo admin, Opc. restrictiva, Oculto, Cantidad, OT, Sección OT) + Etiqueta + Variable de producción
+## Resumen
 
-Esto resulta abrumador, especialmente con muchos prompts.
+Actualmente la tabla `quotes` no tiene columnas `sent_at` ni `approved_at`. Se necesita:
+1. Añadir esas columnas a la BD
+2. Registrar automáticamente la fecha/hora cuando cambia el estado
+3. Mostrar las horas en el listado (desktop y mobile)
 
-### Solución propuesta: tarjeta colapsable con secciones agrupadas
+## Cambios
 
-Cada prompt se convierte en un **Collapsible** que por defecto muestra solo una línea resumen, y al expandir muestra los detalles organizados en secciones claras.
+### 1. Migración SQL -- añadir columnas `sent_at` y `approved_at`
 
-#### Vista colapsada (una línea por prompt)
-```text
-┌──────────────────────────────────────────────────────────────────┐
-│ ▶  #1  ·  "Ancho" (C5→C6)  ·  DropDown  ·  Hoja: Datos  ·  🔒 │
-└──────────────────────────────────────────────────────────────────┘
-```
-- Número de orden, etiqueta o promptText, celdas, tipo, hoja
-- Iconos pequeños para indicar flags activos (requerido, oculto, admin, OT)
-
-#### Vista expandida (al hacer clic)
-Tres secciones con títulos discretos:
-
-**1. Configuración Excel** — los campos técnicos actuales
-```text
-Hoja | Rótulo | Valor | Orden | Rango (si aplica) | Tipo
+```sql
+ALTER TABLE quotes ADD COLUMN sent_at timestamptz;
+ALTER TABLE quotes ADD COLUMN approved_at timestamptz;
 ```
 
-**2. Visibilidad y comportamiento** — los switches agrupados en grid 2-3 columnas
-```text
-[x] Requerido        [x] Ocultar en docs    [ ] Solo admin
-[ ] Opc. restrictiva [ ] Oculto              [ ] Cantidad
-[ ] Mostrar en OT    [Sección OT: ___]
+Ademas, un trigger que las rellene automáticamente al cambiar el status:
+
+```sql
+CREATE OR REPLACE FUNCTION set_quote_status_timestamps()
+RETURNS trigger AS $$
+BEGIN
+  IF NEW.status = 'sent' AND (OLD.status IS DISTINCT FROM 'sent') AND NEW.sent_at IS NULL THEN
+    NEW.sent_at = now();
+  END IF;
+  IF NEW.status = 'approved' AND (OLD.status IS DISTINCT FROM 'approved') AND NEW.approved_at IS NULL THEN
+    NEW.approved_at = now();
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_quote_status_timestamps
+  BEFORE UPDATE ON quotes
+  FOR EACH ROW EXECUTE FUNCTION set_quote_status_timestamps();
 ```
-Usaremos **Checkbox** en lugar de Switch para ocupar menos espacio horizontal.
 
-**3. Etiquetas y mapeos** — Etiqueta personalizada + Variable de producción + Componente (si compuesto)
+### 2. `src/pages/QuotesList.tsx`
 
-**Acciones** (Guardar/Eliminar) se ubican en la cabecera colapsada, siempre visibles.
+- Añadir `sent_at, approved_at, updated_at` al select de `fetchQuotes`
+- En la columna "Fecha" del desktop, mostrar fecha + hora de creación (formato `dd/MM/yyyy HH:mm`)
+- Añadir subtext debajo con iconos: icono de envío + hora si `sent_at` existe, icono de check + hora si `approved_at` existe
+- En el Excel export, incluir columnas "Hora creación", "Fecha envío", "Fecha aprobación"
 
-### Cambios técnicos
+### 3. `src/components/quotes/QuoteCard.tsx` (mobile)
 
-**Archivo: `src/pages/ProductConfigPage.tsx`**
-- Importar `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`
-- Reemplazar el bloque de renderizado de cada prompt (líneas ~1129-1312) con el nuevo layout colapsable
-- Agrupar los switches en un grid de 3 columnas usando Checkbox en vez de Switch
-- La línea resumen colapsada muestra: orden, etiqueta, celdas, tipo, badges de flags activos
-- Estado local `expandedPrompts: Set<string>` para controlar qué prompts están abiertos
-- Botón "Expandir todos / Colapsar todos" junto a los botones de añadir
+- Cambiar la sección "Fecha" para mostrar hora además de fecha
+- Añadir líneas con `sent_at` y `approved_at` cuando existan, con iconos `Send` y `CheckCircle2`
 
-No se modifica ninguna lógica de datos ni mutaciones, solo la presentación visual.
+### Diseño visual (desktop)
+
+La columna "Fecha" se amplía ligeramente y muestra:
+
+```text
+19/03/2026 14:32          ← created_at con hora
+  📤 14:45  ✅ 15:10      ← sent_at y approved_at (solo si existen, texto xs muted)
+```
+
+### Archivos afectados
+
+| Archivo | Cambio |
+|---|---|
+| Migración SQL | `sent_at`, `approved_at` + trigger |
+| `src/pages/QuotesList.tsx` | Select + display timestamps en tabla y export |
+| `src/components/quotes/QuoteCard.tsx` | Display timestamps en tarjeta mobile |
 
