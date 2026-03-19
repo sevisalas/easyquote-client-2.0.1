@@ -177,10 +177,10 @@ const SuperAdminRoadmap = () => {
       priority: 'medium' as TaskPriority,
       status: 'backlog' as TaskStatus,
       estimated_hours: 25,
-      sort_order: 4,
-      sprint_id: null,
-      actual_hours: null,
-      notes: null,
+       sort_order: 4,
+       sprint_ids: [],
+       actual_hours: null,
+       notes: null,
       related_version: null
     }, {
       title: 'Dashboard Automatizaciones',
