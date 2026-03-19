@@ -165,8 +165,8 @@ function SortableOutputItem({
               <ChevronRight className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
               <span className="font-medium truncate">{displayLabel}</span>
               <span className="text-sm font-mono text-muted-foreground">({cellsText})</span>
+              <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-secondary text-secondary-foreground">{typeName}</span>
               {output.sheet && <span className="text-sm text-muted-foreground">· {output.sheet}</span>}
-              <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-secondary text-secondary-foreground ml-auto">{typeName}</span>
               {isOutputInOt && (
                 <TooltipProvider><Tooltip><TooltipTrigger asChild>
                   <span className="text-muted-foreground"><ClipboardList className="h-3.5 w-3.5" /></span>
