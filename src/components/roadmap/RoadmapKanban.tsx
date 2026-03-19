@@ -160,7 +160,7 @@ export const RoadmapKanban = ({
                       <SortableTaskCard
                         key={task.id}
                         task={task}
-                        sprint={findSprint(task.sprint_id)}
+                        sprint={findSprints(task.sprint_ids)}
                         onEdit={onEditTask}
                         onDelete={onDeleteTask}
                       />
