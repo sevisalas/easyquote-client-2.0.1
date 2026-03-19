@@ -321,7 +321,7 @@ const SuperAdminRoadmap = () => {
                   Crear primer sprint
                 </Button>
               </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {sprints.map((sprint) => <SprintCard key={sprint.id} sprint={sprint} stats={getSprintStats(sprint.id)} onEdit={handleEditSprint} onDelete={setDeleteSprintId} onViewTasks={(sprintId) => {
+                {sprints.map((sprint) => <SprintCard key={sprint.id} sprint={sprint} stats={getSprintStats(sprint.id)} onEdit={handleEditSprint} onDelete={setDeleteSprintId} onViewObjectives={(sprintId) => {
               setSprintFilter(sprintId);
             }} />)}
               </div>}
