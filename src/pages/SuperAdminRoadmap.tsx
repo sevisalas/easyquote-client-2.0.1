@@ -165,10 +165,10 @@ const SuperAdminRoadmap = () => {
       priority: 'low' as TaskPriority,
       status: 'backlog' as TaskStatus,
       estimated_hours: 30,
-      sort_order: 3,
-      sprint_id: null,
-      actual_hours: null,
-      notes: null,
+       sort_order: 3,
+       sprint_ids: [],
+       actual_hours: null,
+       notes: null,
       related_version: null
     }, {
       title: 'Control n8n',
