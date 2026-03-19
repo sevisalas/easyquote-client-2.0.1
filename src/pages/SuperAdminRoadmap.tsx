@@ -54,7 +54,7 @@ const SuperAdminRoadmap = () => {
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
-    return tasks.filter(task => {
+    return tasks.filter((task) => {
       if (search && !task.title.toLowerCase().includes(search.toLowerCase())) {
         return false;
       }
@@ -64,12 +64,12 @@ const SuperAdminRoadmap = () => {
       if (priorityFilter !== "all" && task.priority !== priorityFilter) {
         return false;
       }
-       if (sprintFilter === "none" && task.sprint_ids.length > 0) {
-         return false;
-       }
-       if (sprintFilter !== "all" && sprintFilter !== "none" && !task.sprint_ids.includes(sprintFilter)) {
-         return false;
-       }
+      if (sprintFilter === "none" && task.sprint_id !== null) {
+        return false;
+      }
+      if (sprintFilter !== "all" && sprintFilter !== "none" && task.sprint_id !== sprintFilter) {
+        return false;
+      }
       return true;
     });
   }, [tasks, search, categoryFilter, priorityFilter, sprintFilter]);
@@ -141,10 +141,10 @@ const SuperAdminRoadmap = () => {
       priority: 'high' as TaskPriority,
       status: 'backlog' as TaskStatus,
       estimated_hours: 40,
-       sort_order: 1,
-       sprint_ids: [],
-       actual_hours: null,
-       notes: null,
+      sort_order: 1,
+      sprint_id: null,
+      actual_hours: null,
+      notes: null,
       related_version: null
     }, {
       title: 'Integración Shopify',
@@ -153,10 +153,10 @@ const SuperAdminRoadmap = () => {
       priority: 'medium' as TaskPriority,
       status: 'backlog' as TaskStatus,
       estimated_hours: 60,
-       sort_order: 2,
-       sprint_ids: [],
-       actual_hours: null,
-       notes: null,
+      sort_order: 2,
+      sprint_id: null,
+      actual_hours: null,
+      notes: null,
       related_version: null
     }, {
       title: 'Comparador de Precios',
@@ -165,10 +165,10 @@ const SuperAdminRoadmap = () => {
       priority: 'low' as TaskPriority,
       status: 'backlog' as TaskStatus,
       estimated_hours: 30,
-       sort_order: 3,
-       sprint_ids: [],
-       actual_hours: null,
-       notes: null,
+      sort_order: 3,
+      sprint_id: null,
+      actual_hours: null,
+      notes: null,
       related_version: null
     }, {
       title: 'Control n8n',
@@ -177,10 +177,10 @@ const SuperAdminRoadmap = () => {
       priority: 'medium' as TaskPriority,
       status: 'backlog' as TaskStatus,
       estimated_hours: 25,
-       sort_order: 4,
-       sprint_ids: [],
-       actual_hours: null,
-       notes: null,
+      sort_order: 4,
+      sprint_id: null,
+      actual_hours: null,
+      notes: null,
       related_version: null
     }, {
       title: 'Dashboard Automatizaciones',
@@ -189,10 +189,10 @@ const SuperAdminRoadmap = () => {
       priority: 'medium' as TaskPriority,
       status: 'backlog' as TaskStatus,
       estimated_hours: 35,
-       sort_order: 5,
-       sprint_ids: [],
-       actual_hours: null,
-       notes: null,
+      sort_order: 5,
+      sprint_id: null,
+      actual_hours: null,
+      notes: null,
       related_version: null
     }, {
       title: 'Cola de Preflight',
@@ -201,26 +201,26 @@ const SuperAdminRoadmap = () => {
       priority: 'low' as TaskPriority,
       status: 'backlog' as TaskStatus,
       estimated_hours: 20,
-       sort_order: 6,
-       sprint_ids: [],
-       actual_hours: null,
-       notes: null,
+      sort_order: 6,
+      sprint_id: null,
+      actual_hours: null,
+      notes: null,
       related_version: null
     }];
     try {
       for (const task of initialTasks) {
         await createTask.mutateAsync(task);
       }
-      toast.success('6 objetivos iniciales cargados correctamente');
+      toast.success('6 tareas iniciales cargadas correctamente');
     } catch (error) {
-      toast.error('Error al cargar objetivos iniciales');
+      toast.error('Error al cargar tareas iniciales');
     }
   };
 
   // Stats
   const totalTasks = tasks.length;
-  const doneTasks = tasks.filter(t => t.status === "done").length;
-  const activeSprint = sprints.find(s => s.status === "active");
+  const doneTasks = tasks.filter((t) => t.status === "done").length;
+  const activeSprint = sprints.find((s) => s.status === "active");
   const totalHours = tasks.reduce((sum, t) => sum + (t.estimated_hours || 0), 0);
   const totalCredits = totalHours * 10;
   if (!isSuperAdmin) return null;
@@ -230,21 +230,21 @@ const SuperAdminRoadmap = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Roadmap de desarrollo</h1>
-             <p className="text-muted-foreground">
-               Gestiona sprints y objetivos del backlog de desarrollo
+            <p className="text-muted-foreground">
+              Gestiona sprints y tareas del backlog de desarrollo
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             {tasks.length === 0 && !isLoading && <Button variant="outline" onClick={loadInitialTasks} disabled={createTask.isPending}>
                 <Download className="h-4 w-4 mr-2" />
-                 {createTask.isPending ? 'Cargando...' : 'Cargar objetivos iniciales'}
-               </Button>}
+                {createTask.isPending ? 'Cargando...' : 'Cargar tareas iniciales'}
+              </Button>}
             <Button onClick={() => {
             setEditingTask(null);
             setTaskDialogOpen(true);
           }}>
               <Plus className="h-4 w-4 mr-2" />
-              Nuevo objetivo
+              Nueva tarea
             </Button>
             <Button variant="secondary" onClick={() => {
             setEditingSprint(null);
@@ -259,11 +259,11 @@ const SuperAdminRoadmap = () => {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div className="bg-primary rounded-lg p-4 border border-primary-foreground/10">
-            <p className="text-sm text-primary-foreground/70">Total objetivos</p>
+            <p className="text-sm text-primary-foreground/70">Total tareas</p>
             <p className="text-2xl font-bold text-primary-foreground">{totalTasks}</p>
           </div>
           <div className="bg-primary rounded-lg p-4 border border-primary-foreground/10">
-            <p className="text-sm text-primary-foreground/70">Completadas</p>
+            <p className="text-sm text-primary-foreground/70">Completados</p>
             <p className="text-2xl font-bold text-primary-foreground">{doneTasks}</p>
           </div>
           <div className="bg-card rounded-lg p-4 border">
@@ -303,13 +303,13 @@ const SuperAdminRoadmap = () => {
             <RoadmapFilters search={search} onSearchChange={setSearch} categoryFilter={categoryFilter} onCategoryChange={setCategoryFilter} priorityFilter={priorityFilter} onPriorityChange={setPriorityFilter} sprintFilter={sprintFilter} onSprintChange={setSprintFilter} sprints={sprints} onClearFilters={clearFilters} />
 
             {isLoading ? <div className="flex gap-4">
-                {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="w-72 h-96 flex-shrink-0" />)}
+                {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="w-72 h-96 flex-shrink-0" />)}
               </div> : <RoadmapKanban tasks={filteredTasks} sprints={sprints} onTaskStatusChange={handleTaskStatusChange} onEditTask={handleEditTask} onDeleteTask={setDeleteTaskId} />}
           </TabsContent>
 
           <TabsContent value="sprints">
             {isLoading ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[1, 2, 3].map(i => <Skeleton key={i} className="h-48" />)}
+                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-48" />)}
               </div> : sprints.length === 0 ? <div className="text-center py-12 text-muted-foreground">
                 <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No hay sprints creados</p>
@@ -321,9 +321,9 @@ const SuperAdminRoadmap = () => {
                   Crear primer sprint
                 </Button>
               </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                 {sprints.map(sprint => <SprintCard key={sprint.id} sprint={sprint} stats={getSprintStats(sprint.id)} onEdit={handleEditSprint} onDelete={setDeleteSprintId} onViewObjectives={sprintId => {
-               setSprintFilter(sprintId);
-             }} />)}
+                {sprints.map((sprint) => <SprintCard key={sprint.id} sprint={sprint} stats={getSprintStats(sprint.id)} onEdit={handleEditSprint} onDelete={setDeleteSprintId} onViewTasks={(sprintId) => {
+              setSprintFilter(sprintId);
+            }} />)}
               </div>}
           </TabsContent>
         </Tabs>
@@ -339,9 +339,9 @@ const SuperAdminRoadmap = () => {
       <AlertDialog open={!!deleteTaskId} onOpenChange={() => setDeleteTaskId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-             <AlertDialogTitle>¿Eliminar objetivo?</AlertDialogTitle>
-             <AlertDialogDescription>
-               Esta acción no se puede deshacer. El objetivo será eliminado permanentemente.
+            <AlertDialogTitle>¿Eliminar tarea?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. La tarea será eliminada permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -359,7 +359,7 @@ const SuperAdminRoadmap = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar sprint?</AlertDialogTitle>
             <AlertDialogDescription>
-              Los objetivos asignados a este sprint quedarán sin sprint asignado.
+              Las tareas asignadas a este sprint quedarán sin sprint asignado.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
