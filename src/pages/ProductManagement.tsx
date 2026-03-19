@@ -53,6 +53,27 @@ interface EasyQuoteProduct {
   currency?: string;
   [key: string]: any; // Para otros campos del API
 }
+
+/** Valida que un valor tenga formato de referencia de celda Excel (ej: B10, C13, $B$10) */
+function isValidCellReference(value: string): boolean {
+  if (!value || !value.trim()) return true; // vacío es aceptable
+  const cleaned = value.replace(/\$/g, "").trim();
+  return /^[A-Z]+\d+$/i.test(cleaned);
+}
+
+/** Valida una referencia de celda y muestra toast de error si es inválida */
+function validateCellRef(value: string, fieldName: string): boolean {
+  if (!value || !value.trim()) return true;
+  if (!isValidCellReference(value)) {
+    toast({
+      title: "Referencia de celda inválida",
+      description: `El campo "${fieldName}" tiene el valor "${value}" que no es una referencia válida de Excel (ej: B10, C13, $B$10). Verifica que incluya la letra de columna.`,
+      variant: "destructive",
+    });
+    return false;
+  }
+  return true;
+}
 interface ProductPrompt {
   id: string; // El API usa 'id' no 'promptId'
   productId: string;
@@ -2150,6 +2171,10 @@ export default function ProductManagement() {
   const createNewPrompt = () => {
     if (!selectedProduct) return;
 
+    // Validar referencias de celda
+    if (!validateCellRef(newPromptData.promptCell, "Rótulo")) return;
+    if (!validateCellRef(newPromptData.valueCell, "Valor")) return;
+
     // Calculate next sequence number to avoid duplicates
     const nextSeq = productPrompts.length === 0 ? 1 : Math.max(...productPrompts.map(p => p.promptSeq || 0)) + 1;
 
@@ -2268,6 +2293,8 @@ export default function ProductManagement() {
     if (!selectedProduct) return;
     try {
       for (const promptData of prompts) {
+        // Validar referencias de celda
+        if (!validateCellRef(promptData.promptCell, "Rótulo") || !validateCellRef(promptData.valueCell, "Valor")) continue;
         // Verificar si el tipo es numérico
         const promptType = promptTypes.find(t => t.id === promptData.promptType);
         const isNumericType = promptType?.promptType === "Number" || promptType?.promptType === "Quantity";
@@ -2928,6 +2955,10 @@ export default function ProductManagement() {
                               <div className="col-span-1">
                                 <Label>Rótulo</Label>
                                 <Input defaultValue={prompt.promptCell} onBlur={e => {
+                                if (!validateCellRef(e.target.value, "Rótulo")) {
+                                  e.target.value = prompt.promptCell;
+                                  return;
+                                }
                                 const updatedPrompt = {
                                   ...prompt,
                                   promptCell: e.target.value,
@@ -2941,6 +2972,10 @@ export default function ProductManagement() {
                               <div className="col-span-1">
                                 <Label>Valor</Label>
                                 <Input defaultValue={prompt.valueCell || ""} onBlur={e => {
+                                if (!validateCellRef(e.target.value, "Valor")) {
+                                  e.target.value = prompt.valueCell || "";
+                                  return;
+                                }
                                 const updatedPrompt = {
                                   ...prompt,
                                   valueCell: e.target.value,
