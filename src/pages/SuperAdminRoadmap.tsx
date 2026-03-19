@@ -6,7 +6,7 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useRoadmap, Task, Sprint, TaskCategory, TaskPriority, TaskStatus } from "@/hooks/useRoadmap";
 import { RoadmapKanban } from "@/components/roadmap/RoadmapKanban";
 import { RoadmapFilters } from "@/components/roadmap/RoadmapFilters";
-import { SprintCard } from "@/components/roadmap/SprintCard";
+import { SprintsKanban } from "@/components/roadmap/SprintsKanban";
 import { TaskDialog } from "@/components/roadmap/TaskDialog";
 import { SprintDialog } from "@/components/roadmap/SprintDialog";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -291,7 +291,7 @@ const SuperAdminRoadmap = () => {
           <TabsList>
             <TabsTrigger value="kanban" className="gap-2">
               <LayoutList className="h-4 w-4" />
-              Kanban
+              Objetivos
             </TabsTrigger>
             <TabsTrigger value="sprints" className="gap-2">
               <Calendar className="h-4 w-4" />
@@ -308,8 +308,8 @@ const SuperAdminRoadmap = () => {
           </TabsContent>
 
           <TabsContent value="sprints">
-            {isLoading ? <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[1, 2, 3].map((i) => <Skeleton key={i} className="h-48" />)}
+            {isLoading ? <div className="flex gap-4">
+                {[1, 2, 3].map((i) => <Skeleton key={i} className="w-80 h-96 flex-shrink-0" />)}
               </div> : sprints.length === 0 ? <div className="text-center py-12 text-muted-foreground">
                 <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No hay sprints creados</p>
@@ -320,11 +320,13 @@ const SuperAdminRoadmap = () => {
                   <Plus className="h-4 w-4 mr-2" />
                   Crear primer sprint
                 </Button>
-              </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {sprints.map((sprint) => <SprintCard key={sprint.id} sprint={sprint} stats={getSprintStats(sprint.id)} onEdit={handleEditSprint} onDelete={setDeleteSprintId} onViewObjectives={(sprintId) => {
-              setSprintFilter(sprintId);
-            }} />)}
-              </div>}
+              </div> : <SprintsKanban
+                sprints={sprints}
+                getSprintStats={getSprintStats}
+                onEdit={handleEditSprint}
+                onDelete={setDeleteSprintId}
+                onViewObjectives={(sprintId) => setSprintFilter(sprintId)}
+              />}
           </TabsContent>
         </Tabs>
       </div>
