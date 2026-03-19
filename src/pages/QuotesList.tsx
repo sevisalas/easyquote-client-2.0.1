@@ -449,25 +449,25 @@ const QuotesList = () => {
                           <TooltipTrigger asChild>
                             <span className="cursor-default">
                               {new Date(q.created_at).toLocaleDateString("es-ES")}
-                              {" "}
-                              <span className="text-muted-foreground">
-                                {new Date(q.created_at).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}
-                              </span>
                             </span>
                           </TooltipTrigger>
                           <TooltipContent side="bottom" align="start" className="text-xs space-y-1 p-2">
                             <div className="flex items-center gap-1.5">
                               <Clock className="h-3 w-3 text-muted-foreground" />
-                              <span>Creado: {new Date(q.created_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                              <span>Borrador: {new Date(q.created_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
                             </div>
-                            <div className="flex items-center gap-1.5">
-                              <Send className="h-3 w-3 text-blue-500" />
-                              <span>Enviado: {q.sent_at ? new Date(q.sent_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                              <CheckCircle2 className="h-3 w-3 text-green-500" />
-                              <span>Aprobado: {q.approved_at ? new Date(q.approved_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—"}</span>
-                            </div>
+                            {q.sent_at && (
+                              <div className="flex items-center gap-1.5">
+                                <Send className="h-3 w-3 text-blue-500" />
+                                <span>Enviado: {new Date(q.sent_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                              </div>
+                            )}
+                            {q.approved_at && (
+                              <div className="flex items-center gap-1.5">
+                                <CheckCircle2 className="h-3 w-3 text-green-500" />
+                                <span>Aprobado: {new Date(q.approved_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                              </div>
+                            )}
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
