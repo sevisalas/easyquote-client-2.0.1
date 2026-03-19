@@ -360,8 +360,11 @@ const QuotesList = () => {
               size="sm"
               className="h-7 text-xs gap-1"
               onClick={() => {
+                const fmtTs = (v: any) => v ? new Date(v).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
                 const rows = filteredQuotes.map((q: any) => ({
-                  fecha: new Date(q.created_at).toLocaleDateString("es-ES"),
+                  fecha: fmtTs(q.created_at),
+                  enviado: fmtTs(q.sent_at),
+                  aprobado: fmtTs(q.approved_at),
                   numero: q.quote_number || "",
                   cliente: getCustomerName(q.customer_id),
                   usuario: getUserName(q.user_id),
@@ -372,7 +375,9 @@ const QuotesList = () => {
                 exportListToExcel(
                   rows,
                   [
-                    { header: "Fecha", key: "fecha" },
+                    { header: "Fecha creación", key: "fecha" },
+                    { header: "Fecha envío", key: "enviado" },
+                    { header: "Fecha aprobación", key: "aprobado" },
                     { header: "Nº", key: "numero" },
                     { header: "Cliente", key: "cliente" },
                     { header: "Usuario", key: "usuario" },
