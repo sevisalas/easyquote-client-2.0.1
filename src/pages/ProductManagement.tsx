@@ -1999,7 +1999,7 @@ export default function ProductManagement() {
       queryClient.invalidateQueries({
         queryKey: ["easyquote-products"]
       });
-      navigate(`/admin/productos?editProduct=${newProductId}`);
+      navigate(`/admin/productos/${newProductId}`);
     },
     onError: (error: Error) => {
       toast({
