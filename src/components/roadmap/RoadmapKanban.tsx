@@ -87,8 +87,8 @@ export const RoadmapKanban = ({
   const getTasksForColumn = (status: TaskStatus) =>
     tasks.filter((task) => task.status === status);
 
-  const findSprint = (sprintId: string | null) =>
-    sprintId ? sprints.find((s) => s.id === sprintId) : null;
+  const findSprints = (sprintIds: string[]) =>
+    sprintIds.map((id) => sprints.find((s) => s.id === id)).filter(Boolean) as Sprint[];
 
   const activeTask = activeId ? tasks.find((t) => t.id === activeId) : null;
 

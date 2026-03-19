@@ -201,10 +201,10 @@ const SuperAdminRoadmap = () => {
       priority: 'low' as TaskPriority,
       status: 'backlog' as TaskStatus,
       estimated_hours: 20,
-      sort_order: 6,
-      sprint_id: null,
-      actual_hours: null,
-      notes: null,
+       sort_order: 6,
+       sprint_ids: [],
+       actual_hours: null,
+       notes: null,
       related_version: null
     }];
     try {
