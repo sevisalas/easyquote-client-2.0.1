@@ -1477,6 +1477,8 @@ export default function ProductConfigPage() {
                         getOutputOtSection={checkOutputOtSection(output.nameCell)}
                         onOtToggle={(checked) => upsertOutputOtSetting({ output_name: output.nameCell, label: outputLabelDrafts[output.nameCell] ?? getPromptLabel(output.nameCell) ?? output.nameCell, show_in_ot: checked, ot_section: checked ? (checkOutputOtSection(output.nameCell) || 'datos_destacados') : null })}
                         onOtSectionChange={(section) => upsertOutputOtSetting({ output_name: output.nameCell, label: outputLabelDrafts[output.nameCell] ?? getPromptLabel(output.nameCell) ?? output.nameCell, show_in_ot: true, ot_section: section })}
+                        isExpanded={expandedOutputs.has(output.id)}
+                        onToggle={(open) => setExpandedOutputs(prev => { const next = new Set(prev); if (open) next.add(output.id); else next.delete(output.id); return next; })}
                       />
                     ))}
                   </div>
