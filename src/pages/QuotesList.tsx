@@ -424,10 +424,7 @@ const QuotesList = () => {
             <Table className="table-fixed w-full">
               <TableHeader>
                 <TableRow className="h-9">
-                  <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[90px]">Fecha</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[90px]">Hora borrador</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[95px]">Hora envío</TableHead>
-                  <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[110px]">Hora aprobación</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[110px]">Fecha</TableHead>
                   <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[100px]">Nº</TableHead>
                   <TableHead className="py-2 text-xs font-semibold w-[18%]">Cliente</TableHead>
                   <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[100px]">Usuario</TableHead>
