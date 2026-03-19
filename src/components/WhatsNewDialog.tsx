@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Layout, Clock, Wrench } from "lucide-react";
 
-const CURRENT_VERSION = "2.6.7";
+const CURRENT_VERSION = "2.6.8";
 const LS_KEY = "whats_new_seen_version";
 
 interface ReleaseNote {
