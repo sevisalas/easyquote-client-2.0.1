@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -17,7 +18,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Task, Sprint, TaskCategory, TaskPriority, TaskStatus } from "@/hooks/useRoadmap";
+import { Search, X, Plus } from "lucide-react";
 
 interface TaskDialogProps {
   open: boolean;
@@ -70,6 +77,9 @@ export const TaskDialog = ({
     notes: "",
   });
 
+  const [sprintSearch, setSprintSearch] = useState("");
+  const [sprintPopoverOpen, setSprintPopoverOpen] = useState(false);
+
   useEffect(() => {
     if (task) {
       setFormData({
@@ -94,7 +104,30 @@ export const TaskDialog = ({
         notes: "",
       });
     }
+    setSprintSearch("");
   }, [task, open]);
+
+  const availableSprints = useMemo(() => {
+    const notStarted = ["backlog", "todo"].includes(formData.status);
+    return sprints.filter((s) => {
+      if (formData.sprint_ids.includes(s.id)) return false;
+      if (notStarted && s.status === "completed") return false;
+      if (sprintSearch && !s.name.toLowerCase().includes(sprintSearch.toLowerCase())) return false;
+      return true;
+    });
+  }, [sprints, formData.sprint_ids, formData.status, sprintSearch]);
+
+  const selectedSprints = sprints.filter((s) => formData.sprint_ids.includes(s.id));
+
+  const addSprint = (sprintId: string) => {
+    setFormData({ ...formData, sprint_ids: [...formData.sprint_ids, sprintId] });
+    setSprintSearch("");
+    setSprintPopoverOpen(false);
+  };
+
+  const removeSprint = (sprintId: string) => {
+    setFormData({ ...formData, sprint_ids: formData.sprint_ids.filter((id) => id !== sprintId) });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,12 +139,12 @@ export const TaskDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{task ? "Editar objetivo" : "Nuevo objetivo"}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="space-y-1.5">
             <Label htmlFor="title">Título *</Label>
             <Input
               id="title"
@@ -122,19 +155,19 @@ export const TaskDialog = ({
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="description">Descripción</Label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               placeholder="Descripción detallada"
-              rows={3}
+              rows={2}
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-1.5">
               <Label>Categoría</Label>
               <Select
                 value={formData.category}
@@ -155,7 +188,7 @@ export const TaskDialog = ({
               </Select>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>Prioridad</Label>
               <Select
                 value={formData.priority}
@@ -175,10 +208,8 @@ export const TaskDialog = ({
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>Estado</Label>
               <Select
                 value={formData.status}
@@ -198,62 +229,89 @@ export const TaskDialog = ({
                 </SelectContent>
               </Select>
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label>Sprints</Label>
-              <div className="space-y-1 max-h-32 overflow-y-auto border rounded-md p-2">
-                {sprints.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No hay sprints</p>
-                ) : (
-                  sprints
-                    .filter((s) => {
-                      const notStarted = ["backlog", "todo"].includes(formData.status);
-                      if (notStarted && s.status === "completed") return false;
-                      return true;
-                    })
-                    .map((s) => (
-                      <label key={s.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 p-1 rounded">
-                        <input
-                          type="checkbox"
-                          checked={formData.sprint_ids.includes(s.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setFormData({ ...formData, sprint_ids: [...formData.sprint_ids, s.id] });
-                            } else {
-                              setFormData({ ...formData, sprint_ids: formData.sprint_ids.filter((id) => id !== s.id) });
-                            }
-                          }}
-                          className="rounded"
-                        />
+          <div className="space-y-1.5">
+            <Label>Sprints</Label>
+            {selectedSprints.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-1.5">
+                {selectedSprints.map((s) => (
+                  <Badge key={s.id} variant="secondary" className="gap-1 pr-1">
+                    {s.name}
+                    <button
+                      type="button"
+                      onClick={() => removeSprint(s.id)}
+                      className="ml-0.5 rounded-full hover:bg-muted p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
+            <Popover open={sprintPopoverOpen} onOpenChange={setSprintPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button type="button" variant="outline" size="sm" className="w-full justify-start text-muted-foreground">
+                  <Plus className="h-3.5 w-3.5 mr-1.5" />
+                  Añadir sprint…
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-2" align="start">
+                <div className="flex items-center gap-2 border-b pb-2 mb-1">
+                  <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <input
+                    value={sprintSearch}
+                    onChange={(e) => setSprintSearch(e.target.value)}
+                    placeholder="Buscar sprint…"
+                    className="w-full text-sm bg-transparent outline-none placeholder:text-muted-foreground"
+                    autoFocus
+                  />
+                </div>
+                <div className="max-h-40 overflow-y-auto">
+                  {availableSprints.length === 0 ? (
+                    <p className="text-xs text-muted-foreground p-2 text-center">
+                      {sprintSearch ? "Sin resultados" : "No hay sprints disponibles"}
+                    </p>
+                  ) : (
+                    availableSprints.map((s) => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => addSprint(s.id)}
+                        className="w-full text-left text-sm px-2 py-1.5 rounded hover:bg-accent cursor-pointer"
+                      >
                         {s.name}
                         {s.status === "completed" && (
                           <span className="text-xs text-muted-foreground ml-1">(completado)</span>
                         )}
-                      </label>
+                      </button>
                     ))
-                )}
-              </div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="estimated_hours">Horas estimadas</Label>
+              <Input
+                id="estimated_hours"
+                type="number"
+                min={0}
+                value={formData.estimated_hours || ""}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    estimated_hours: e.target.value ? parseInt(e.target.value) : null,
+                  })
+                }
+                placeholder="0"
+              />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="estimated_hours">Horas estimadas</Label>
-            <Input
-              id="estimated_hours"
-              type="number"
-              min={0}
-              value={formData.estimated_hours || ""}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  estimated_hours: e.target.value ? parseInt(e.target.value) : null,
-                })
-              }
-              placeholder="0"
-            />
-          </div>
-
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label htmlFor="notes">Notas</Label>
             <Textarea
               id="notes"
