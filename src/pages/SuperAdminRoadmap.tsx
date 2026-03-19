@@ -339,9 +339,9 @@ const SuperAdminRoadmap = () => {
       <AlertDialog open={!!deleteTaskId} onOpenChange={() => setDeleteTaskId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar tarea?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. La tarea será eliminada permanentemente.
+             <AlertDialogTitle>¿Eliminar objetivo?</AlertDialogTitle>
+             <AlertDialogDescription>
+               Esta acción no se puede deshacer. El objetivo será eliminado permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
