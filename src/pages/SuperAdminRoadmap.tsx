@@ -64,12 +64,12 @@ const SuperAdminRoadmap = () => {
       if (priorityFilter !== "all" && task.priority !== priorityFilter) {
         return false;
       }
-      if (sprintFilter === "none" && task.sprint_id !== null) {
-        return false;
-      }
-      if (sprintFilter !== "all" && sprintFilter !== "none" && task.sprint_id !== sprintFilter) {
-        return false;
-      }
+       if (sprintFilter === "none" && task.sprint_ids.length > 0) {
+         return false;
+       }
+       if (sprintFilter !== "all" && sprintFilter !== "none" && !task.sprint_ids.includes(sprintFilter)) {
+         return false;
+       }
       return true;
     });
   }, [tasks, search, categoryFilter, priorityFilter, sprintFilter]);
