@@ -2953,6 +2953,10 @@ export default function ProductManagement() {
                               <div className="col-span-1">
                                 <Label>Rótulo</Label>
                                 <Input defaultValue={prompt.promptCell} onBlur={e => {
+                                if (!validateCellRef(e.target.value, "Rótulo")) {
+                                  e.target.value = prompt.promptCell;
+                                  return;
+                                }
                                 const updatedPrompt = {
                                   ...prompt,
                                   promptCell: e.target.value,
