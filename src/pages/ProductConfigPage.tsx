@@ -1223,9 +1223,9 @@ export default function ProductConfigPage() {
                             <ChevronRight className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                             <span className="text-xs font-mono text-muted-foreground w-6">#{prompt.promptSeq}</span>
                             <span className="font-medium truncate">{displayLabel}</span>
-                            <span className="text-xs font-mono text-muted-foreground">({cellsText})</span>
-                            <span className="text-xs text-muted-foreground">{currentPromptType?.promptType || '?'}</span>
-                            {prompt.promptSheet && <span className="text-xs text-muted-foreground hidden sm:inline">· {prompt.promptSheet}</span>}
+                            <span className="text-sm font-mono text-muted-foreground">({cellsText})</span>
+                            <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-secondary text-secondary-foreground">{currentPromptType?.promptType || '?'}</span>
+                            {prompt.promptSheet && <span className="text-sm text-muted-foreground hidden sm:inline">· {prompt.promptSheet}</span>}
                             {activeFlags.length > 0 && (
                               <div className="flex items-center gap-1 ml-auto">
                                 {activeFlags.map((flag, i) => (
