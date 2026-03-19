@@ -33,7 +33,7 @@ const statusConfig = {
   },
 };
 
-export const SprintCard = ({ sprint, stats, onEdit, onDelete, onViewTasks }: SprintCardProps) => {
+export const SprintCard = ({ sprint, stats, onEdit, onDelete, onViewObjectives }: SprintCardProps) => {
   const config = statusConfig[sprint.status];
   const { Icon } = config;
 
