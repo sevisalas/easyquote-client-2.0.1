@@ -442,7 +442,25 @@ const QuotesList = () => {
               <TableBody>
                 {paginatedQuotes.map((q: any) => (
                    <TableRow key={q.id} className="h-auto">
-                    <TableCell className="py-1.5 px-3 text-sm whitespace-nowrap">{new Date(q.created_at).toLocaleDateString("es-ES")}</TableCell>
+                    <TableCell className="py-1.5 px-3 whitespace-nowrap">
+                      <div className="text-sm">{new Date(q.created_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</div>
+                      {(q.sent_at || q.approved_at) && (
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {q.sent_at && (
+                            <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground" title="Enviado">
+                              <Send className="h-2.5 w-2.5" />
+                              {new Date(q.sent_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          )}
+                          {q.approved_at && (
+                            <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground" title="Aprobado">
+                              <CheckCircle2 className="h-2.5 w-2.5" />
+                              {new Date(q.approved_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell className="py-1.5 px-3 text-sm font-medium whitespace-nowrap">{q.quote_number}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm truncate">
                       <CustomerName customerId={q.customer_id} />
