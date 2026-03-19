@@ -423,7 +423,7 @@ const QuotesList = () => {
             <Table className="table-fixed w-full">
               <TableHeader>
                 <TableRow className="h-9">
-                  <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[90px]">Fecha</TableHead>
+                  <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[120px]">Fecha</TableHead>
                   <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[100px]">Nº</TableHead>
                   <TableHead className="py-2 text-xs font-semibold w-[22%]">Cliente</TableHead>
                   <TableHead className="py-2 text-xs font-semibold whitespace-nowrap w-[100px]">Usuario</TableHead>
