@@ -117,7 +117,7 @@ export const TaskDialog = ({
               id="title"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="Nombre de la tarea"
+              placeholder="Nombre del objetivo"
               required
             />
           </div>
