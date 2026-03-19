@@ -237,8 +237,8 @@ const SuperAdminRoadmap = () => {
           <div className="flex flex-wrap gap-2">
             {tasks.length === 0 && !isLoading && <Button variant="outline" onClick={loadInitialTasks} disabled={createTask.isPending}>
                 <Download className="h-4 w-4 mr-2" />
-                {createTask.isPending ? 'Cargando...' : 'Cargar tareas iniciales'}
-              </Button>}
+                 {createTask.isPending ? 'Cargando...' : 'Cargar objetivos iniciales'}
+               </Button>}
             <Button onClick={() => {
             setEditingTask(null);
             setTaskDialogOpen(true);
