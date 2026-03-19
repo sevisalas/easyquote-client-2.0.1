@@ -37,6 +37,7 @@ import ProductManagement from "./pages/ProductManagement";
 import ProductCategories from "./pages/ProductCategories";
 
 import ProductForm from "./pages/ProductForm";
+import ProductConfigPage from "./pages/ProductConfigPage";
 import ProductionConfiguration from "./pages/ProductionConfiguration";
 import WorkloadDashboard from "./pages/WorkloadDashboard";
 import ProductTestPage from "./pages/ProductTestPage";
