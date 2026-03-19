@@ -43,6 +43,7 @@ export default function AppLayout({ children }: PropsWithChildren) {
         
         {isMobile && <MobileBottomNav />}
         <WhatsNewDialog />
+        <UpdateBanner />
       </div>
     </SidebarProvider>
   );
