@@ -5,6 +5,17 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.6.7] - 2026-03-19
+
+### Añadido
+- **Fechas de estado en presupuestos**: La columna "Fecha" del listado muestra un tooltip al pasar el ratón con las fechas y horas de creación (borrador), envío y aprobación. Las fechas también se incluyen en la exportación a Excel
+- **Nuevo diseño de la página de productos**: Interfaz renovada con mejor organización visual y acceso más rápido a la configuración
+
+### Mejorado
+- **Correcciones y mejoras generales**: Optimizaciones de rendimiento y correcciones menores de interfaz
+
+---
+
 ## [2.6.3] - 2026-03-14
 
 ### Añadido
