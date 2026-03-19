@@ -332,6 +332,16 @@ const AppContent = () => {
         }
       />
       <Route
+        path="/admin/productos/:productId"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <ProductConfigPage />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/admin/productos/test"
         element={
           <ProtectedRoute>
