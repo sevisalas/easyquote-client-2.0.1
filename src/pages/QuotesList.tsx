@@ -454,6 +454,10 @@ const QuotesList = () => {
                           <TooltipContent side="bottom" align="start" className="text-xs space-y-1 p-2">
                             <div className="flex items-center gap-1.5">
                               <Clock className="h-3 w-3 text-muted-foreground" />
+                              <span>Creado: {new Date(q.created_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="h-3 w-3 text-muted-foreground" />
                               <span>Borrador: {new Date(q.created_at).toLocaleString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
                             </div>
                             {q.sent_at && (
