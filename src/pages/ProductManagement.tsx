@@ -53,6 +53,27 @@ interface EasyQuoteProduct {
   currency?: string;
   [key: string]: any; // Para otros campos del API
 }
+
+/** Valida que un valor tenga formato de referencia de celda Excel (ej: B10, C13, $B$10) */
+function isValidCellReference(value: string): boolean {
+  if (!value || !value.trim()) return true; // vacío es aceptable
+  const cleaned = value.replace(/\$/g, "").trim();
+  return /^[A-Z]+\d+$/i.test(cleaned);
+}
+
+/** Valida una referencia de celda y muestra toast de error si es inválida */
+function validateCellRef(value: string, fieldName: string): boolean {
+  if (!value || !value.trim()) return true;
+  if (!isValidCellReference(value)) {
+    toast({
+      title: "Referencia de celda inválida",
+      description: `El campo "${fieldName}" tiene el valor "${value}" que no es una referencia válida de Excel (ej: B10, C13, $B$10). Verifica que incluya la letra de columna.`,
+      variant: "destructive",
+    });
+    return false;
+  }
+  return true;
+}
 interface ProductPrompt {
   id: string; // El API usa 'id' no 'promptId'
   productId: string;
