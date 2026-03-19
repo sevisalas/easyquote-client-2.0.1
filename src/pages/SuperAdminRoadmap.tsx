@@ -141,10 +141,10 @@ const SuperAdminRoadmap = () => {
       priority: 'high' as TaskPriority,
       status: 'backlog' as TaskStatus,
       estimated_hours: 40,
-      sort_order: 1,
-      sprint_id: null,
-      actual_hours: null,
-      notes: null,
+       sort_order: 1,
+       sprint_ids: [],
+       actual_hours: null,
+       notes: null,
       related_version: null
     }, {
       title: 'Integración Shopify',
