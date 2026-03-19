@@ -12,7 +12,7 @@ interface SprintCardProps {
   stats: { total: number; done: number; progress: number };
   onEdit: (sprint: Sprint) => void;
   onDelete: (sprintId: string) => void;
-  onViewTasks: (sprintId: string) => void;
+  onViewObjectives: (sprintId: string) => void;
 }
 
 const statusConfig = {
