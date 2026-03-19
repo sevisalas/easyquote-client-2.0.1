@@ -259,7 +259,7 @@ const SuperAdminRoadmap = () => {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div className="bg-primary rounded-lg p-4 border border-primary-foreground/10">
-            <p className="text-sm text-primary-foreground/70">Total tareas</p>
+            <p className="text-sm text-primary-foreground/70">Total objetivos</p>
             <p className="text-2xl font-bold text-primary-foreground">{totalTasks}</p>
           </div>
           <div className="bg-primary rounded-lg p-4 border border-primary-foreground/10">
