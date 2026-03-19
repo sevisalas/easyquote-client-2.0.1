@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, Eye, Copy, Trash2 } from "lucide-react";
+import { Download, Eye, Copy, Trash2, Send, CheckCircle2 } from "lucide-react";
 import { CustomerName } from "./CustomerName";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
