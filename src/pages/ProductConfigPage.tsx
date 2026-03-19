@@ -18,7 +18,8 @@ import { useProductCategories } from "@/hooks/useProductCategories";
 import { useProductCategoryMappings } from "@/hooks/useProductCategoryMappings";
 import { useProductionVariables } from "@/hooks/useProductionVariables";
 import { useProductVariableMappings } from "@/hooks/useProductVariableMappings";
-import { Package, AlertCircle, AlertTriangle, Loader2, Save, Plus, Trash2, Layers, GripVertical, ArrowLeft } from "lucide-react";
+import { Package, AlertCircle, AlertTriangle, Loader2, Save, Plus, Trash2, Layers, GripVertical, ArrowLeft, ChevronRight, Lock, EyeOff, FileText, ShieldCheck, Hash, ClipboardList, ChevronsUpDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -275,6 +276,7 @@ export default function ProductConfigPage() {
   const [isBulkPromptsDialogOpen, setIsBulkPromptsDialogOpen] = useState(false);
   const [isBulkOutputsDialogOpen, setIsBulkOutputsDialogOpen] = useState(false);
   const [isDeleteProductDialogOpen, setIsDeleteProductDialogOpen] = useState(false);
+  const [expandedPrompts, setExpandedPrompts] = useState<Set<string>>(new Set());
   const [excelSheets, setExcelSheets] = useState<string[]>([]);
   const [availableExcelFiles, setAvailableExcelFiles] = useState<EasyQuoteExcelFile[]>([]);
   const [newPromptData, setNewPromptData] = useState({
@@ -1116,6 +1118,22 @@ export default function ProductConfigPage() {
               <p className="text-sm text-muted-foreground">Gestiona los campos de entrada para este producto</p>
             </div>
             <div className="flex gap-2">
+              {productPrompts.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    if (expandedPrompts.size === productPrompts.length) {
+                      setExpandedPrompts(new Set());
+                    } else {
+                      setExpandedPrompts(new Set(productPrompts.map((p: any) => p.id)));
+                    }
+                  }}
+                >
+                  <ChevronsUpDown className="h-4 w-4 mr-2" />
+                  {expandedPrompts.size === productPrompts.length ? "Colapsar" : "Expandir"} todos
+                </Button>
+              )}
               <Button onClick={addNewPrompt} size="sm" variant="outline"><Plus className="h-4 w-4 mr-2" />Añadir uno</Button>
               <Button onClick={() => setIsBulkPromptsDialogOpen(true)} size="sm"><Layers className="h-4 w-4 mr-2" />Añadir Varios</Button>
             </div>
@@ -1126,7 +1144,7 @@ export default function ProductConfigPage() {
           ) : productPrompts.length === 0 ? (
             <div className="text-center py-8"><Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" /><p className="text-muted-foreground">No hay datos de entrada configurados</p></div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {productPrompts.map((prompt: any, index: number) => {
                 const promptLabel = prompt?.promptText;
                 const promptAliases = [prompt.promptCell, promptLabel, prompt.id];
@@ -1134,167 +1152,218 @@ export default function ProductConfigPage() {
                 const promptName = prompt.promptCell || prompt.id;
                 const assignedComponent = getPromptComponent(promptName);
                 const componentLabel = assignedComponent === 'general' ? 'General' : COMPONENT_PRESETS.compuesto.components.find(c => c.value === assignedComponent)?.label || assignedComponent;
+                const currentPromptType = promptTypes.find((type: PromptType) => type.id === prompt.promptType);
+                const isNumericType = currentPromptType?.promptType === "Number" || currentPromptType?.promptType === "Quantity";
+                const isExpanded = expandedPrompts.has(prompt.id);
+                const displayLabel = promptLabelDrafts[prompt.promptCell] ?? getPromptLabel(...promptAliases) ?? promptLabel ?? prompt.promptCell;
+                const cellsText = `${prompt.promptCell || '?'}→${prompt.valueCell || '?'}`;
+
+                // Collect active flags for badges
+                const activeFlags: { icon: React.ReactNode; label: string }[] = [];
+                if (prompt.valueRequired) activeFlags.push({ icon: <Lock className="h-3 w-3" />, label: "Requerido" });
+                if (isPromptHiddenInDocuments(...promptAliases)) activeFlags.push({ icon: <FileText className="h-3 w-3" />, label: "Oculto docs" });
+                if (isPromptAdminOnly(...promptAliases)) activeFlags.push({ icon: <ShieldCheck className="h-3 w-3" />, label: "Admin" });
+                if (isPromptHidden(...promptAliases)) activeFlags.push({ icon: <EyeOff className="h-3 w-3" />, label: "Oculto" });
+                if (isPromptQuantity(...promptAliases)) activeFlags.push({ icon: <Hash className="h-3 w-3" />, label: "Cantidad" });
+                if (isPromptInOt(...promptAliases)) activeFlags.push({ icon: <ClipboardList className="h-3 w-3" />, label: "OT" });
 
                 return (
-                  <div key={prompt.id} className="p-4 border rounded-lg">
-                    <div className="mb-4 flex items-center justify-between">
-                      <h4 className="font-medium">Campo nº {index + 1}</h4>
-                    </div>
-                    {(() => {
-                      const currentPromptType = promptTypes.find((type: PromptType) => type.id === prompt.promptType);
-                      const isNumericType = currentPromptType?.promptType === "Number" || currentPromptType?.promptType === "Quantity";
-                      const isDropdownType = currentPromptType?.promptType === "DropDown";
-                      return (
-                        <>
-                          <div className="grid grid-cols-12 gap-2 items-end">
-                            <div className="col-span-2">
-                              <div className="flex items-center gap-1">
-                                <Label>Hoja</Label>
-                                {sheetInconsistencies.inconsistentPrompts.has(prompt.id) && (
-                                  <TooltipProvider><Tooltip><TooltipTrigger asChild><AlertTriangle className="h-4 w-4 text-amber-500" /></TooltipTrigger>
-                                    <TooltipContent><p className="max-w-xs">Este campo usa una hoja diferente al resto ({sheetInconsistencies.dominantSheet}). Verifica si es intencional.</p></TooltipContent>
-                                  </Tooltip></TooltipProvider>
-                                )}
-                              </div>
-                              <Select value={prompt.promptSheet || ""} onValueChange={value => {
-                                updatePromptMutation.mutate({
-                                  ...prompt, promptSheet: value, valueSheet: value, valueOptionSheet: value,
-                                  valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null,
-                                  valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null,
-                                  valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null,
-                                });
-                              }}>
-                                <SelectTrigger className={sheetInconsistencies.inconsistentPrompts.has(prompt.id) ? "border-amber-500" : ""}>
-                                  <SelectValue placeholder={prompt.promptSheet || "Seleccionar hoja"} />
-                                </SelectTrigger>
-                                <SelectContent className="bg-background border shadow-lg z-50">
-                                  {prompt.promptSheet && !excelSheets.includes(prompt.promptSheet) && <SelectItem value={prompt.promptSheet}>{prompt.promptSheet}</SelectItem>}
-                                  {excelSheets.map((sheet: string) => <SelectItem key={sheet} value={sheet}>{sheet}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="col-span-1">
-                              <Label>Rótulo</Label>
-                              <Input defaultValue={prompt.promptCell} onBlur={e => {
-                                if (!validateCellRef(e.target.value, "Rótulo")) { e.target.value = prompt.promptCell; return; }
-                                updatePromptMutation.mutate({
-                                  ...prompt, promptCell: e.target.value,
-                                  valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null,
-                                  valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null,
-                                  valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null,
-                                });
-                              }} />
-                            </div>
-                            <div className="col-span-1">
-                              <Label>Valor</Label>
-                              <Input defaultValue={prompt.valueCell || ""} onBlur={e => {
-                                if (!validateCellRef(e.target.value, "Valor")) { e.target.value = prompt.valueCell || ""; return; }
-                                updatePromptMutation.mutate({
-                                  ...prompt, valueCell: e.target.value,
-                                  valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null,
-                                  valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null,
-                                  valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null,
-                                });
-                              }} />
-                            </div>
-                            <div className="col-span-1">
-                              <Label>Orden</Label>
-                              <Input type="number" defaultValue={prompt.promptSeq} onBlur={e => {
-                                updatePromptMutation.mutate({
-                                  ...prompt, promptSeq: parseInt(e.target.value),
-                                  valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null,
-                                  valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null,
-                                  valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null,
-                                });
-                              }} />
-                            </div>
-                            {!isNumericType && (
-                              <div className="col-span-2">
-                                <Label>Rango</Label>
-                                <Input defaultValue={prompt.valueOptionRange || ""} placeholder="$E$2:$E$3" onBlur={e => {
-                                  updatePromptMutation.mutate({ ...prompt, valueOptionRange: e.target.value.replace(/^=/, ''), valueQuantityAllowedDecimals: null, valueQuantityMin: null, valueQuantityMax: null });
-                                }} />
+                  <Collapsible
+                    key={prompt.id}
+                    open={isExpanded}
+                    onOpenChange={(open) => {
+                      setExpandedPrompts(prev => {
+                        const next = new Set(prev);
+                        if (open) next.add(prompt.id); else next.delete(prompt.id);
+                        return next;
+                      });
+                    }}
+                  >
+                    <div className="border rounded-lg bg-background">
+                      {/* Collapsed summary header */}
+                      <div className="flex items-center gap-3 px-4 py-3">
+                        <CollapsibleTrigger asChild>
+                          <button className="flex items-center gap-3 flex-1 text-left hover:bg-muted/50 -mx-2 px-2 py-1 rounded transition-colors" type="button">
+                            <ChevronRight className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                            <span className="text-xs font-mono text-muted-foreground w-6">#{prompt.promptSeq}</span>
+                            <span className="font-medium truncate">{displayLabel}</span>
+                            <span className="text-xs font-mono text-muted-foreground">({cellsText})</span>
+                            <span className="text-xs text-muted-foreground">{currentPromptType?.promptType || '?'}</span>
+                            {prompt.promptSheet && <span className="text-xs text-muted-foreground hidden sm:inline">· {prompt.promptSheet}</span>}
+                            {activeFlags.length > 0 && (
+                              <div className="flex items-center gap-1 ml-auto">
+                                {activeFlags.map((flag, i) => (
+                                  <TooltipProvider key={i}><Tooltip><TooltipTrigger asChild>
+                                    <span className="text-muted-foreground">{flag.icon}</span>
+                                  </TooltipTrigger><TooltipContent>{flag.label}</TooltipContent></Tooltip></TooltipProvider>
+                                ))}
                               </div>
                             )}
-                            <div className="col-span-2">
-                              <Label>Tipo</Label>
-                              <Select value={prompt.promptType?.toString() || ""} onValueChange={value => {
-                                const newType = parseInt(value);
-                                const newPT = promptTypes.find((t: PromptType) => t.id === newType);
-                                const isNew = newPT?.promptType === "Number" || newPT?.promptType === "Quantity";
-                                updatePromptMutation.mutate({
-                                  ...prompt, promptType: newType,
-                                  valueQuantityAllowedDecimals: isNew ? prompt.valueQuantityAllowedDecimals : null,
-                                  valueQuantityMin: isNew ? prompt.valueQuantityMin : null,
-                                  valueQuantityMax: isNew ? prompt.valueQuantityMax : null,
-                                });
-                              }}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent className="bg-background border shadow-lg z-50">
-                                  {promptTypes.map((type: PromptType) => <SelectItem key={type.id} value={type.id?.toString() || "0"}>{type.promptType}</SelectItem>)}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            {isNumericType && (
-                              <>
-                                <div className="col-span-1"><Label>Decs.</Label><Input type="number" defaultValue={prompt.valueQuantityAllowedDecimals ?? 0} onBlur={e => { updatePromptMutation.mutate({ ...prompt, valueQuantityAllowedDecimals: e.target.value === '' ? 0 : parseInt(e.target.value), valueQuantityMin: prompt.valueQuantityMin ?? 0, valueQuantityMax: prompt.valueQuantityMax ?? 9999 }); }} /></div>
-                                <div className="col-span-1"><Label>Mínimo</Label><Input type="number" step="any" defaultValue={prompt.valueQuantityMin ?? 0} onBlur={e => { updatePromptMutation.mutate({ ...prompt, valueQuantityMin: e.target.value === '' ? 0 : parseFloat(e.target.value), valueQuantityAllowedDecimals: prompt.valueQuantityAllowedDecimals ?? 0, valueQuantityMax: prompt.valueQuantityMax ?? 9999 }); }} /></div>
-                                <div className="col-span-2"><Label>Máximo</Label><Input type="number" step="any" defaultValue={prompt.valueQuantityMax ?? 9999} onBlur={e => { updatePromptMutation.mutate({ ...prompt, valueQuantityMax: e.target.value === '' ? 9999 : parseFloat(e.target.value), valueQuantityAllowedDecimals: prompt.valueQuantityAllowedDecimals ?? 0, valueQuantityMin: prompt.valueQuantityMin ?? 0 }); }} /></div>
-                              </>
-                            )}
-                            {!isNumericType && <div className="col-span-2"></div>}
-                            <div className="col-span-1">
-                              <Label>Acción</Label>
-                              <div className="flex gap-1">
-                                <Button variant="ghost" size="sm" onClick={() => { updatePromptMutation.mutate({ ...prompt, valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals ?? 0 : null, valueQuantityMin: isNumericType ? prompt.valueQuantityMin ?? 0 : null, valueQuantityMax: isNumericType ? prompt.valueQuantityMax ?? 9999 : null }); }}><Save className="h-4 w-4" /></Button>
-                                <Button variant="ghost" size="sm" onClick={() => deletePromptMutation.mutate(prompt.id)}><Trash2 className="h-4 w-4" /></Button>
-                              </div>
-                            </div>
-                          </div>
+                          </button>
+                        </CollapsibleTrigger>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { updatePromptMutation.mutate({ ...prompt, valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals ?? 0 : null, valueQuantityMin: isNumericType ? prompt.valueQuantityMin ?? 0 : null, valueQuantityMax: isNumericType ? prompt.valueQuantityMax ?? 9999 : null }); }}>
+                            <Save className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deletePromptMutation.mutate(prompt.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
 
-                          <div className="flex items-center gap-4 mt-4 pt-4 border-t flex-wrap">
-                            <div className="flex items-center gap-2"><Label className="text-sm font-medium">Requerido</Label>
-                              <Switch checked={prompt.valueRequired} onCheckedChange={checked => { updatePromptMutation.mutate({ ...prompt, valueRequired: checked, valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null, valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null, valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null }); }} /></div>
-                            <div className="flex items-center gap-2"><Label className="text-sm font-medium whitespace-nowrap">Ocultar docs.</Label>
-                              <Switch checked={isPromptHiddenInDocuments(...promptAliases)} onCheckedChange={checked => { upsertPromptSettingMutation.mutate({ productId: selectedProduct.id, promptName: promptSettingKey, hideInDocuments: checked }); }} /></div>
-                            <div className="flex items-center gap-2"><Label className="text-sm font-medium whitespace-nowrap">Solo admin</Label>
-                              <Switch checked={isPromptAdminOnly(...promptAliases)} onCheckedChange={checked => { upsertPromptSettingMutation.mutate({ productId: selectedProduct.id, promptName: promptSettingKey, adminOnly: checked }); }} /></div>
-                            <div className="flex items-center gap-2"><Label className="text-sm font-medium whitespace-nowrap">Opc. restrictiva</Label>
-                              <Switch checked={isPromptForceResult(...promptAliases)} onCheckedChange={checked => { upsertPromptSettingMutation.mutate({ productId: selectedProduct.id, promptName: promptSettingKey, forceResult: checked }); }} /></div>
-                            <div className="flex items-center gap-2"><Label className="text-sm font-medium whitespace-nowrap">Oculto</Label>
-                              <Switch checked={isPromptHidden(...promptAliases)} onCheckedChange={checked => { upsertPromptSettingMutation.mutate({ productId: selectedProduct.id, promptName: promptSettingKey, isHidden: checked }); }} /></div>
-                            <div className="flex items-center gap-2"><Label className="text-sm font-medium whitespace-nowrap">Cantidad</Label>
-                              <Switch checked={isPromptQuantity(...promptAliases)} onCheckedChange={checked => { upsertPromptSettingMutation.mutate({ productId: selectedProduct.id, promptName: promptSettingKey, isQuantity: checked, label: checked ? (promptLabel || promptSettingKey) : undefined }); }} /></div>
-                            <div className="flex items-center gap-2"><Label className="text-sm font-medium whitespace-nowrap">OT</Label>
-                              <Switch checked={isPromptInOt(...promptAliases)} onCheckedChange={checked => { upsertPromptSettingMutation.mutate({ productId: selectedProduct.id, promptName: promptSettingKey, showInOt: checked, otSection: checked ? (getPromptOtSection(...promptAliases) || 'datos_destacados') : null }); }} /></div>
-                            {isPromptInOt(...promptAliases) && (
-                              <div className="flex items-center gap-2"><Label className="text-sm font-medium whitespace-nowrap">Sección OT</Label>
-                                <Select value={getPromptOtSection(...promptAliases) || "datos_destacados"} onValueChange={value => { upsertPromptSettingMutation.mutate({ productId: selectedProduct.id, promptName: promptSettingKey, otSection: value }); }}>
-                                  <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+                      {/* Expanded content */}
+                      <CollapsibleContent>
+                        <div className="px-4 pb-4 space-y-4 border-t">
+                          {/* Section 1: Excel Config */}
+                          <div className="pt-4">
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Configuración Excel</p>
+                            <div className="grid grid-cols-12 gap-2 items-end">
+                              <div className="col-span-2">
+                                <div className="flex items-center gap-1">
+                                  <Label className="text-xs">Hoja</Label>
+                                  {sheetInconsistencies.inconsistentPrompts.has(prompt.id) && (
+                                    <TooltipProvider><Tooltip><TooltipTrigger asChild><AlertTriangle className="h-3.5 w-3.5 text-amber-500" /></TooltipTrigger>
+                                      <TooltipContent><p className="max-w-xs">Hoja diferente al resto ({sheetInconsistencies.dominantSheet})</p></TooltipContent>
+                                    </Tooltip></TooltipProvider>
+                                  )}
+                                </div>
+                                <Select value={prompt.promptSheet || ""} onValueChange={value => {
+                                  updatePromptMutation.mutate({
+                                    ...prompt, promptSheet: value, valueSheet: value, valueOptionSheet: value,
+                                    valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null,
+                                    valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null,
+                                    valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null,
+                                  });
+                                }}>
+                                  <SelectTrigger className={`h-9 ${sheetInconsistencies.inconsistentPrompts.has(prompt.id) ? "border-amber-500" : ""}`}>
+                                    <SelectValue placeholder={prompt.promptSheet || "Hoja"} />
+                                  </SelectTrigger>
                                   <SelectContent className="bg-background border shadow-lg z-50">
-                                    <SelectItem value="datos_destacados">Datos destacados</SelectItem>
-                                    <SelectItem value="impresion">Impresión</SelectItem>
-                                    <SelectItem value="acabados">Acabados</SelectItem>
-                                    <SelectItem value="imposiciones">Imposiciones</SelectItem>
-                                    <SelectItem value="ajustes">Ajustes</SelectItem>
-                                    <SelectItem value="observaciones">Observaciones</SelectItem>
+                                    {prompt.promptSheet && !excelSheets.includes(prompt.promptSheet) && <SelectItem value={prompt.promptSheet}>{prompt.promptSheet}</SelectItem>}
+                                    {excelSheets.map((sheet: string) => <SelectItem key={sheet} value={sheet}>{sheet}</SelectItem>)}
                                   </SelectContent>
                                 </Select>
                               </div>
-                            )}
-                            <div className="flex items-center gap-4 flex-1">
-                              <div className="flex items-center gap-2 flex-1">
-                                <Label className="text-sm font-medium whitespace-nowrap">Etiqueta</Label>
-                                <Input className="flex-1 h-8" placeholder="Nombre descriptivo"
+                              <div className="col-span-1">
+                                <Label className="text-xs">Rótulo</Label>
+                                <Input className="h-9" defaultValue={prompt.promptCell} onBlur={e => {
+                                  if (!validateCellRef(e.target.value, "Rótulo")) { e.target.value = prompt.promptCell; return; }
+                                  updatePromptMutation.mutate({ ...prompt, promptCell: e.target.value, valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null, valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null, valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null });
+                                }} />
+                              </div>
+                              <div className="col-span-1">
+                                <Label className="text-xs">Valor</Label>
+                                <Input className="h-9" defaultValue={prompt.valueCell || ""} onBlur={e => {
+                                  if (!validateCellRef(e.target.value, "Valor")) { e.target.value = prompt.valueCell || ""; return; }
+                                  updatePromptMutation.mutate({ ...prompt, valueCell: e.target.value, valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null, valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null, valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null });
+                                }} />
+                              </div>
+                              <div className="col-span-1">
+                                <Label className="text-xs">Orden</Label>
+                                <Input className="h-9" type="number" defaultValue={prompt.promptSeq} onBlur={e => {
+                                  updatePromptMutation.mutate({ ...prompt, promptSeq: parseInt(e.target.value), valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null, valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null, valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null });
+                                }} />
+                              </div>
+                              {!isNumericType && (
+                                <div className="col-span-2">
+                                  <Label className="text-xs">Rango</Label>
+                                  <Input className="h-9" defaultValue={prompt.valueOptionRange || ""} placeholder="$E$2:$E$3" onBlur={e => {
+                                    updatePromptMutation.mutate({ ...prompt, valueOptionRange: e.target.value.replace(/^=/, ''), valueQuantityAllowedDecimals: null, valueQuantityMin: null, valueQuantityMax: null });
+                                  }} />
+                                </div>
+                              )}
+                              <div className="col-span-2">
+                                <Label className="text-xs">Tipo</Label>
+                                <Select value={prompt.promptType?.toString() || ""} onValueChange={value => {
+                                  const newType = parseInt(value);
+                                  const newPT = promptTypes.find((t: PromptType) => t.id === newType);
+                                  const isNew = newPT?.promptType === "Number" || newPT?.promptType === "Quantity";
+                                  updatePromptMutation.mutate({ ...prompt, promptType: newType, valueQuantityAllowedDecimals: isNew ? prompt.valueQuantityAllowedDecimals : null, valueQuantityMin: isNew ? prompt.valueQuantityMin : null, valueQuantityMax: isNew ? prompt.valueQuantityMax : null });
+                                }}>
+                                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                                  <SelectContent className="bg-background border shadow-lg z-50">
+                                    {promptTypes.map((type: PromptType) => <SelectItem key={type.id} value={type.id?.toString() || "0"}>{type.promptType}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              {isNumericType && (
+                                <>
+                                  <div className="col-span-1"><Label className="text-xs">Decs.</Label><Input className="h-9" type="number" defaultValue={prompt.valueQuantityAllowedDecimals ?? 0} onBlur={e => { updatePromptMutation.mutate({ ...prompt, valueQuantityAllowedDecimals: e.target.value === '' ? 0 : parseInt(e.target.value), valueQuantityMin: prompt.valueQuantityMin ?? 0, valueQuantityMax: prompt.valueQuantityMax ?? 9999 }); }} /></div>
+                                  <div className="col-span-1"><Label className="text-xs">Mínimo</Label><Input className="h-9" type="number" step="any" defaultValue={prompt.valueQuantityMin ?? 0} onBlur={e => { updatePromptMutation.mutate({ ...prompt, valueQuantityMin: e.target.value === '' ? 0 : parseFloat(e.target.value), valueQuantityAllowedDecimals: prompt.valueQuantityAllowedDecimals ?? 0, valueQuantityMax: prompt.valueQuantityMax ?? 9999 }); }} /></div>
+                                  <div className="col-span-2"><Label className="text-xs">Máximo</Label><Input className="h-9" type="number" step="any" defaultValue={prompt.valueQuantityMax ?? 9999} onBlur={e => { updatePromptMutation.mutate({ ...prompt, valueQuantityMax: e.target.value === '' ? 9999 : parseFloat(e.target.value), valueQuantityAllowedDecimals: prompt.valueQuantityAllowedDecimals ?? 0, valueQuantityMin: prompt.valueQuantityMin ?? 0 }); }} /></div>
+                                </>
+                              )}
+                              {!isNumericType && <div className="col-span-3"></div>}
+                            </div>
+                          </div>
+
+                          {/* Section 2: Visibility & Behavior */}
+                          <div>
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Visibilidad y comportamiento</p>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-3">
+                              <div className="flex items-center gap-2">
+                                <Checkbox id={`req-${prompt.id}`} checked={prompt.valueRequired} onCheckedChange={(checked: boolean) => { updatePromptMutation.mutate({ ...prompt, valueRequired: checked, valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals : null, valueQuantityMin: isNumericType ? prompt.valueQuantityMin : null, valueQuantityMax: isNumericType ? prompt.valueQuantityMax : null }); }} />
+                                <Label htmlFor={`req-${prompt.id}`} className="text-sm cursor-pointer">Requerido</Label>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Checkbox id={`hdoc-${prompt.id}`} checked={isPromptHiddenInDocuments(...promptAliases)} onCheckedChange={(checked: boolean) => { upsertPromptSettingMutation.mutate({ productId: selectedProduct.id, promptName: promptSettingKey, hideInDocuments: checked }); }} />
+                                <Label htmlFor={`hdoc-${prompt.id}`} className="text-sm cursor-pointer">Ocultar en docs.</Label>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Checkbox id={`admin-${prompt.id}`} checked={isPromptAdminOnly(...promptAliases)} onCheckedChange={(checked: boolean) => { upsertPromptSettingMutation.mutate({ productId: selectedProduct.id, promptName: promptSettingKey, adminOnly: checked }); }} />
+                                <Label htmlFor={`admin-${prompt.id}`} className="text-sm cursor-pointer">Solo admin</Label>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Checkbox id={`force-${prompt.id}`} checked={isPromptForceResult(...promptAliases)} onCheckedChange={(checked: boolean) => { upsertPromptSettingMutation.mutate({ productId: selectedProduct.id, promptName: promptSettingKey, forceResult: checked }); }} />
+                                <Label htmlFor={`force-${prompt.id}`} className="text-sm cursor-pointer">Opc. restrictiva</Label>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Checkbox id={`hidden-${prompt.id}`} checked={isPromptHidden(...promptAliases)} onCheckedChange={(checked: boolean) => { upsertPromptSettingMutation.mutate({ productId: selectedProduct.id, promptName: promptSettingKey, isHidden: checked }); }} />
+                                <Label htmlFor={`hidden-${prompt.id}`} className="text-sm cursor-pointer">Oculto</Label>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Checkbox id={`qty-${prompt.id}`} checked={isPromptQuantity(...promptAliases)} onCheckedChange={(checked: boolean) => { upsertPromptSettingMutation.mutate({ productId: selectedProduct.id, promptName: promptSettingKey, isQuantity: checked, label: checked ? (promptLabel || promptSettingKey) : undefined }); }} />
+                                <Label htmlFor={`qty-${prompt.id}`} className="text-sm cursor-pointer">Cantidad</Label>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Checkbox id={`ot-${prompt.id}`} checked={isPromptInOt(...promptAliases)} onCheckedChange={(checked: boolean) => { upsertPromptSettingMutation.mutate({ productId: selectedProduct.id, promptName: promptSettingKey, showInOt: checked, otSection: checked ? (getPromptOtSection(...promptAliases) || 'datos_destacados') : null }); }} />
+                                <Label htmlFor={`ot-${prompt.id}`} className="text-sm cursor-pointer">Mostrar en OT</Label>
+                              </div>
+                              {isPromptInOt(...promptAliases) && (
+                                <div className="flex items-center gap-2">
+                                  <Label className="text-sm whitespace-nowrap">Sección OT</Label>
+                                  <Select value={getPromptOtSection(...promptAliases) || "datos_destacados"} onValueChange={value => { upsertPromptSettingMutation.mutate({ productId: selectedProduct.id, promptName: promptSettingKey, otSection: value }); }}>
+                                    <SelectTrigger className="h-8 w-40"><SelectValue /></SelectTrigger>
+                                    <SelectContent className="bg-background border shadow-lg z-50">
+                                      <SelectItem value="datos_destacados">Datos destacados</SelectItem>
+                                      <SelectItem value="impresion">Impresión</SelectItem>
+                                      <SelectItem value="acabados">Acabados</SelectItem>
+                                      <SelectItem value="imposiciones">Imposiciones</SelectItem>
+                                      <SelectItem value="ajustes">Ajustes</SelectItem>
+                                      <SelectItem value="observaciones">Observaciones</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Section 3: Labels & Mappings */}
+                          <div>
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Etiquetas y mapeos</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div>
+                                <Label className="text-xs">Etiqueta personalizada</Label>
+                                <Input className="h-9 mt-1" placeholder="Nombre descriptivo"
                                   value={promptLabelDrafts[prompt.promptCell] ?? getPromptLabel(...promptAliases) ?? prompt.promptText ?? ""}
                                   onChange={e => { setPromptLabelDrafts(prev => ({ ...prev, [prompt.promptCell]: e.target.value })); }} />
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Label className="text-sm font-medium whitespace-nowrap">Variable de prod.</Label>
+                              <div>
+                                <Label className="text-xs">Variable de producción</Label>
                                 <Select value={getMappedVariableId(prompt.promptCell) || "none"} onValueChange={value => {
                                   upsertVariableMapping({ easyquoteProductId: selectedProduct.id, productName: selectedProduct.productName, promptOrOutputName: prompt.promptCell, variableId: value === "none" ? null : value });
                                 }}>
-                                  <SelectTrigger className="w-40"><SelectValue placeholder="Sin variable" /></SelectTrigger>
+                                  <SelectTrigger className="h-9 mt-1"><SelectValue placeholder="Sin variable" /></SelectTrigger>
                                   <SelectContent className="bg-background border shadow-lg z-50">
                                     <SelectItem value="none">Sin variable asignada</SelectItem>
                                     {productionVariables.map(v => <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>)}
@@ -1303,10 +1372,10 @@ export default function ProductConfigPage() {
                               </div>
                             </div>
                           </div>
-                        </>
-                      );
-                    })()}
-                  </div>
+                        </div>
+                      </CollapsibleContent>
+                    </div>
+                  </Collapsible>
                 );
               })}
             </div>
