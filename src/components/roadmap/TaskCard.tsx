@@ -12,7 +12,7 @@ import {
 
 interface TaskCardProps {
   task: Task;
-  sprint?: Sprint | null;
+  sprint?: Sprint[] | null;
   onEdit: (task: Task) => void;
   onDelete: (taskId: string) => void;
   isDragging?: boolean;
