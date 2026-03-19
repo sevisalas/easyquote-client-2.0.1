@@ -8,7 +8,6 @@ import { RoadmapKanban } from "@/components/roadmap/RoadmapKanban";
 import { RoadmapFilters } from "@/components/roadmap/RoadmapFilters";
 import { SprintsKanban } from "@/components/roadmap/SprintsKanban";
 import { TaskDialog } from "@/components/roadmap/TaskDialog";
-import { TaskDialog } from "@/components/roadmap/TaskDialog";
 import { SprintDialog } from "@/components/roadmap/SprintDialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
