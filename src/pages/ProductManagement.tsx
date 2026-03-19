@@ -1497,38 +1497,16 @@ export default function ProductManagement() {
     navigate(`/admin/productos/${product.id}`);
   };
 
-  // Track if we're waiting for a product to appear after refetch
-  const [pendingEditProductId, setPendingEditProductId] = useState<string | null>(null);
-
-  // Auto-open edit dialog if editProduct parameter is present
+  // Auto-redirect if editProduct parameter is present
   useEffect(() => {
     const editProductId = searchParams.get('editProduct');
-    if (!editProductId) {
-      setPendingEditProductId(null);
-      return;
+    if (editProductId) {
+      const newSearchParams = new URLSearchParams(searchParams);
+      newSearchParams.delete('editProduct');
+      setSearchParams(newSearchParams, { replace: true });
+      navigate(`/admin/productos/${editProductId}`);
     }
-
-    // Si los productos ya están cargados, buscar y abrir
-    if (products.length > 0 || !isLoading) {
-      const productToEdit = products.find(p => p.id === editProductId);
-      if (productToEdit) {
-        handleEditProduct(productToEdit);
-        // Remove the parameter from URL to avoid reopening on refresh
-        const newSearchParams = new URLSearchParams(searchParams);
-        newSearchParams.delete('editProduct');
-        setSearchParams(newSearchParams, {
-          replace: true
-        });
-        setPendingEditProductId(null);
-      } else if (!pendingEditProductId) {
-        // Producto no encontrado en la lista actual, refrescar la lista
-        // (puede ser un producto recién creado)
-        console.log("Product not found, refetching products list...", editProductId);
-        setPendingEditProductId(editProductId);
-        refetch();
-      }
-    }
-  }, [products, searchParams, setSearchParams, refetch, isLoading, pendingEditProductId]);
+  }, [searchParams, setSearchParams, navigate]);
 
   // Mutation para actualizar producto
   const updateProductMutation = useMutation({
