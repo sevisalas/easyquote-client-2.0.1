@@ -182,7 +182,7 @@ export const RoadmapKanban = ({
         {activeTask && (
           <TaskCard
             task={activeTask}
-            sprint={findSprint(activeTask.sprint_id)}
+            sprint={findSprints(activeTask.sprint_ids)}
             onEdit={() => {}}
             onDelete={() => {}}
             isDragging
