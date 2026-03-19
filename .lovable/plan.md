@@ -1,62 +1,56 @@
 
-# Corregir nombre del articulo en pedidos
 
-## Problema
+## Mejora visual de los campos de entrada (prompts)
 
-En `SalesOrderNew.tsx` y `SalesOrderEdit.tsx`, el campo `product_name` se rellena con `itemDescription` (la descripcion larga con los parametros del producto) en lugar del nombre real (ej. "Encuadernado"). En `QuoteNew.tsx` ya esta bien hecho usando `productName` y `displayName`.
+### Problema actual
+Cada prompt se muestra como una tarjeta plana con dos filas densas:
+1. Una fila de 12 columnas con campos API (Hoja, Rótulo, Valor, Orden, Rango, Tipo, acciones)
+2. Una fila de switches en línea (Requerido, Ocultar docs, Solo admin, Opc. restrictiva, Oculto, Cantidad, OT, Sección OT) + Etiqueta + Variable de producción
 
-## Cambios
+Esto resulta abrumador, especialmente con muchos prompts.
 
-La columna `description` ya existe en `sales_order_items`, asi que no hace falta migracion.
+### Solución propuesta: tarjeta colapsable con secciones agrupadas
 
-### 1. `SalesOrderNew.tsx` - Tipo ItemSnapshot (lineas 22-32)
+Cada prompt se convierte en un **Collapsible** que por defecto muestra solo una línea resumen, y al expandir muestra los detalles organizados en secciones claras.
 
-Anadir `displayName`, `productName` y `descriptionManual` al tipo:
+#### Vista colapsada (una línea por prompt)
+```text
+┌──────────────────────────────────────────────────────────────────┐
+│ ▶  #1  ·  "Ancho" (C5→C6)  ·  DropDown  ·  Hoja: Datos  ·  🔒 │
+└──────────────────────────────────────────────────────────────────┘
+```
+- Número de orden, etiqueta o promptText, celdas, tipo, hoja
+- Iconos pequeños para indicar flags activos (requerido, oculto, admin, OT)
 
-```typescript
-type ItemSnapshot = {
-  productId: string;
-  prompts: Record<string, any>;
-  outputs: any[];
-  price?: number;
-  displayName?: string;
-  productName?: string;
-  itemDescription?: string;
-  descriptionManual?: boolean;
-  itemAdditionals?: any[];
-  needsRecalculation?: boolean;
-  isFinalized?: boolean;
-  compositeData?: any;
-};
+#### Vista expandida (al hacer clic)
+Tres secciones con títulos discretos:
+
+**1. Configuración Excel** — los campos técnicos actuales
+```text
+Hoja | Rótulo | Valor | Orden | Rango (si aplica) | Tipo
 ```
 
-### 2. `SalesOrderNew.tsx` - Guardado de items (lineas 454-456)
-
-Cambiar:
-```typescript
-// ANTES
-product_name: item.itemDescription || "",
-description: item.itemDescription || "",
-
-// DESPUES
-product_name: item.displayName || item.productName || item.productId || "",
-description: item.itemDescription || "",
-description_manual: item.descriptionManual || false,
+**2. Visibilidad y comportamiento** — los switches agrupados en grid 2-3 columnas
+```text
+[x] Requerido        [x] Ocultar en docs    [ ] Solo admin
+[ ] Opc. restrictiva [ ] Oculto              [ ] Cantidad
+[ ] Mostrar en OT    [Sección OT: ___]
 ```
+Usaremos **Checkbox** en lugar de Switch para ocupar menos espacio horizontal.
 
-### 3. `SalesOrderEdit.tsx` - handleItemChange (linea 202)
+**3. Etiquetas y mapeos** — Etiqueta personalizada + Variable de producción + Componente (si compuesto)
 
-Cambiar:
-```typescript
-// ANTES
-product_name: snapshot.itemDescription || updatedItems[itemIndex].product_name,
+**Acciones** (Guardar/Eliminar) se ubican en la cabecera colapsada, siempre visibles.
 
-// DESPUES
-product_name: snapshot.displayName || snapshot.productName || updatedItems[itemIndex].product_name,
-```
+### Cambios técnicos
 
-## Impacto
+**Archivo: `src/pages/ProductConfigPage.tsx`**
+- Importar `Collapsible`, `CollapsibleTrigger`, `CollapsibleContent`
+- Reemplazar el bloque de renderizado de cada prompt (líneas ~1129-1312) con el nuevo layout colapsable
+- Agrupar los switches en un grid de 3 columnas usando Checkbox en vez de Switch
+- La línea resumen colapsada muestra: orden, etiqueta, celdas, tipo, badges de flags activos
+- Estado local `expandedPrompts: Set<string>` para controlar qué prompts están abiertos
+- Botón "Expandir todos / Colapsar todos" junto a los botones de añadir
 
-- Pedidos nuevos guardaran el nombre correcto (ej. "Encuadernado") en `product_name` y la descripcion larga en `description`
-- Pedidos existentes no cambian automaticamente (habria que re-guardarlos)
-- No requiere migracion de base de datos
+No se modifica ninguna lógica de datos ni mutaciones, solo la presentación visual.
+
