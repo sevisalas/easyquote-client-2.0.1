@@ -8,7 +8,7 @@ export interface SalesOrder {
   quote_id?: string;
   customer_id?: string;
   user_id: string;
-  status: 'draft' | 'pending' | 'in_production' | 'completed';
+  status: 'draft' | 'pending' | 'in_production' | 'completed' | 'cancelled';
   order_date: string;
   delivery_date?: string;
   title?: string;

@@ -399,6 +399,7 @@ const SalesOrdersList = () => {
                     <SelectItem value="pending">Pendiente</SelectItem>
                     <SelectItem value="in_production">En Producción</SelectItem>
                     <SelectItem value="completed">Completado</SelectItem>
+                    <SelectItem value="cancelled">Anulado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
