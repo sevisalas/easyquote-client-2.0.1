@@ -52,6 +52,10 @@ export function WhatsNewDialog() {
   useEffect(() => {
     const seen = localStorage.getItem(LS_KEY);
     if (seen !== CURRENT_VERSION) {
+      if (SILENT_UPDATE) {
+        localStorage.setItem(LS_KEY, CURRENT_VERSION);
+        return;
+      }
       setOpen(true);
     }
   }, []);
