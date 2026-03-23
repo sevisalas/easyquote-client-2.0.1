@@ -84,6 +84,8 @@ export default function QuoteDetail() {
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
   const { approveQuote, loading: isApproving } = useQuoteApproval();
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState('');
 
   const { data: quote, isLoading, error } = useQuery({
     queryKey: ['quote', id],
