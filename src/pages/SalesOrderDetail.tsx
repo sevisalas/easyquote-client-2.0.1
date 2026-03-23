@@ -536,6 +536,13 @@ const SalesOrderDetail = () => {
   const handleStatusChange = async (newStatus: SalesOrder['status']) => {
     if (!id || !order) return;
     
+    // If cancelling, show cancellation reason dialog
+    if (newStatus === 'cancelled') {
+      setCancellationReason('');
+      setShowCancelDialog(true);
+      return;
+    }
+    
     // Validar que todos los artículos estén completados antes de marcar el pedido como completado
     if (newStatus === 'completed') {
       const incompleteItems = items.filter(item => item.production_status !== 'completed');
@@ -559,6 +566,29 @@ const SalesOrderDetail = () => {
         setOrder(prev => prev ? { ...prev, status: newStatus } : null);
       }
     }
+  };
+
+  const handleConfirmCancellation = async () => {
+    if (!id || !order) return;
+    if (!cancellationReason.trim()) {
+      toast.error('Debes indicar el motivo de la anulación');
+      return;
+    }
+    
+    // Update status and cancellation reason
+    const { error } = await supabase
+      .from('sales_orders')
+      .update({ status: 'cancelled', cancellation_reason: cancellationReason.trim() })
+      .eq('id', id);
+    
+    if (error) {
+      toast.error('Error al anular el pedido');
+      return;
+    }
+    
+    toast.success('Pedido anulado');
+    setOrder(prev => prev ? { ...prev, status: 'cancelled', cancellation_reason: cancellationReason.trim() } : null);
+    setShowCancelDialog(false);
   };
 
   const handleDelete = async () => {
