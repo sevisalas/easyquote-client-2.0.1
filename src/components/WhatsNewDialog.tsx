@@ -9,9 +9,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Ban, UserCheck } from "lucide-react";
+import { Sparkles, Ban, FileX, DollarSign } from "lucide-react";
 
-const CURRENT_VERSION = "2.6.9";
+const CURRENT_VERSION = "2.6.10";
 const LS_KEY = "whats_new_seen_version";
 
 interface ReleaseNote {
@@ -24,17 +24,24 @@ interface ReleaseNote {
 const RELEASE_NOTES: ReleaseNote[] = [
   {
     icon: <Ban className="h-5 w-5 text-primary" />,
-    title: "Estado 'Anulado' en pedidos",
+    title: "Anulación de presupuestos",
     description:
-      "Nuevo estado para marcar pedidos como anulados o cancelados, visible en listados, detalle y tableros de producción.",
+      "Los presupuestos enviados o aprobados pueden anularse con motivo obligatorio, visible en el detalle y filtrable en listados.",
     badge: "Admin",
   },
   {
-    icon: <UserCheck className="h-5 w-5 text-primary" />,
-    title: "Gestores pueden cambiar estado de pedidos",
+    icon: <FileX className="h-5 w-5 text-primary" />,
+    title: "Motivo de anulación en pedidos",
     description:
-      "Los usuarios con rol gestor ahora pueden modificar el estado de pedidos aprobados y editarlos con auditoría.",
+      "Al anular un pedido se solicita un motivo obligatorio que queda registrado y visible en detalle y tarjetas.",
     badge: "Admin",
+  },
+  {
+    icon: <DollarSign className="h-5 w-5 text-primary" />,
+    title: "Corrección de precios en Holded",
+    description:
+      "Los ajustes a nivel de artículo ahora se integran correctamente en el precio al exportar pedidos a Holded.",
+    badge: "Todos",
   },
 ];
 
