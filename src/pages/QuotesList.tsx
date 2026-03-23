@@ -23,12 +23,13 @@ import { QuoteCard } from "@/components/quotes/QuoteCard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 
-const statusOptions = ["draft", "sent", "approved", "rejected"] as const;
+const statusOptions = ["draft", "sent", "approved", "rejected", "cancelled"] as const;
 const statusLabel: Record<string, string> = {
   draft: "Borrador",
   sent: "Enviado",
   approved: "Aprobado",
   rejected: "Rechazado",
+  cancelled: "Anulado",
 };
 
 const fmtEUR = (n: any) => {
