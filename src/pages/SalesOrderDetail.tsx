@@ -1392,6 +1392,41 @@ const SalesOrderDetail = () => {
       )}
 
       {/* Panel de Producción eliminado - ahora integrado en cada artículo */}
+
+      {/* Cancellation Reason Dialog */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Anular pedido</AlertDialogTitle>
+            <AlertDialogDescription>
+              Indica el motivo de la anulación de este pedido. Esta información quedará registrada.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-2">
+            <Label htmlFor="cancellation-reason" className="text-sm font-medium">
+              Motivo de anulación *
+            </Label>
+            <Textarea
+              id="cancellation-reason"
+              placeholder="Ej: Cliente canceló el encargo, error en especificaciones..."
+              value={cancellationReason}
+              onChange={(e) => setCancellationReason(e.target.value)}
+              className="mt-1.5"
+              rows={3}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmCancellation}
+              disabled={!cancellationReason.trim()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirmar anulación
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
