@@ -9,9 +9,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Layout, Clock, Wrench } from "lucide-react";
+import { Sparkles, Ban, UserCheck, Target } from "lucide-react";
 
-const CURRENT_VERSION = "2.6.8";
+const CURRENT_VERSION = "2.6.9";
 const LS_KEY = "whats_new_seen_version";
 
 interface ReleaseNote {
@@ -23,25 +23,25 @@ interface ReleaseNote {
 
 const RELEASE_NOTES: ReleaseNote[] = [
   {
-    icon: <Layout className="h-5 w-5 text-primary" />,
-    title: "Nuevo diseño de la página de productos",
+    icon: <Ban className="h-5 w-5 text-primary" />,
+    title: "Estado 'Anulado' en pedidos",
     description:
-      "Interfaz renovada para la gestión de productos con mejor organización visual y acceso más rápido a la configuración.",
+      "Nuevo estado para marcar pedidos como anulados o cancelados, visible en listados, detalle y tableros de producción.",
     badge: "Admin",
   },
   {
-    icon: <Clock className="h-5 w-5 text-primary" />,
-    title: "Fechas de estado en presupuestos",
+    icon: <UserCheck className="h-5 w-5 text-primary" />,
+    title: "Gestores pueden cambiar estado de pedidos",
     description:
-      "Pasa el ratón sobre la fecha de un presupuesto para ver cuándo se creó, envió y aprobó. Las fechas también se incluyen en la exportación a Excel.",
-    badge: "Todos",
+      "Los usuarios con rol gestor ahora pueden modificar el estado de pedidos aprobados y editarlos con auditoría.",
+    badge: "Admin",
   },
   {
-    icon: <Wrench className="h-5 w-5 text-primary" />,
-    title: "Correcciones y mejoras generales",
+    icon: <Target className="h-5 w-5 text-primary" />,
+    title: "Roadmap: Objetivos y Sprints en Kanban",
     description:
-      "Mejoras de rendimiento, correcciones menores de interfaz y optimizaciones internas.",
-    badge: "Todos",
+      "Nueva vista Kanban para objetivos y sprints, con búsqueda de sprints y diálogo de objetivos optimizado.",
+    badge: "SuperAdmin",
   },
 ];
 
