@@ -5,6 +5,17 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.6.10] - 2026-03-23
+
+### Añadido
+- **Anulación de presupuestos**: Los presupuestos enviados o aprobados pueden anularse con motivo obligatorio, visible en detalle y filtrable en listados
+- **Motivo de anulación en pedidos**: Al anular un pedido se solicita un motivo obligatorio que queda registrado y visible en detalle y tarjetas
+
+### Corregido
+- **Precios en exportación a Holded**: Los ajustes a nivel de artículo (item_additionals) ahora se integran correctamente en el precio al exportar pedidos a Holded
+
+---
+
 ## [2.6.9] - 2026-03-23
 
 ### Añadido
