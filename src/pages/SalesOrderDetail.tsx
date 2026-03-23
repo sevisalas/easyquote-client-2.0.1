@@ -848,7 +848,7 @@ const SalesOrderDetail = () => {
                   {!isMobile && "Descargar OT PDF"}
                 </Button>
               )}
-              {userRole === 'admin' && (
+              {(userRole === 'admin' || userRole === 'gestor') && (
                 <>
                   {order.status === 'draft' ? (
                     <Button 
