@@ -217,6 +217,35 @@ export const useQuoteApproval = () => {
         return parseQuantity(item.quantity ?? 1);
       };
 
+      // Helper: apply item_additionals to a base price
+      const applyItemAdditionals = (basePrice: number, item: any, quantity: number): number => {
+        const additionals = item.item_additionals;
+        if (!Array.isArray(additionals) || additionals.length === 0) return basePrice;
+        let total = basePrice;
+        for (const additional of additionals) {
+          const value = additional.value || 0;
+          const isDiscount = additional.is_discount === true || value < 0;
+          if (isDiscount) {
+            switch (additional.type) {
+              case 'net_amount': total -= Math.abs(value); break;
+              case 'percentage': total -= Math.abs((total * value) / 100); break;
+            }
+          } else {
+            switch (additional.type) {
+              case 'net_amount': total += value; break;
+              case 'percentage': total += (total * value) / 100; break;
+              case 'quantity_multiplier': total += value * quantity; break;
+              case 'capacity_divider': {
+                const cap = additional.capacity_value || 1;
+                total += value * Math.ceil(quantity / cap);
+                break;
+              }
+            }
+          }
+        }
+        return total;
+      };
+
       // Calculate subtotal from selected items
       let subtotal = 0;
       for (const item of itemsToApprove) {
@@ -224,18 +253,20 @@ export const useQuoteApproval = () => {
         let itemPrice = item.price || 0;
 
         // If multi with selected quantity, use that specific price
+        // and apply item_additionals (since row price is base-only from outputs)
         if (multi?.rows && Array.isArray(multi.rows) && itemQuantities?.[item.id]) {
           const selectedQuantity = itemQuantities[item.id];
           const selectedRow = multi.rows.find((row: any) =>
             Number(row.qty) === selectedQuantity || Number(row.quantity) === selectedQuantity
           );
           if (selectedRow) {
-            itemPrice = parseFloat(
+            const basePrice = parseFloat(
               selectedRow.outs?.find((o: any) => o.type === 'Price')?.value ||
                 selectedRow.price ||
                 item.price ||
                 0
             );
+            itemPrice = applyItemAdditionals(basePrice, item, selectedQuantity);
           }
         }
 
