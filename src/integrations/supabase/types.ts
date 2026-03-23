@@ -2551,6 +2551,7 @@ export type Database = {
       quotes: {
         Row: {
           approved_at: string | null
+          cancellation_reason: string | null
           created_at: string
           customer_id: string | null
           description: string | null
@@ -2579,6 +2580,7 @@ export type Database = {
         }
         Insert: {
           approved_at?: string | null
+          cancellation_reason?: string | null
           created_at?: string
           customer_id?: string | null
           description?: string | null
@@ -2607,6 +2609,7 @@ export type Database = {
         }
         Update: {
           approved_at?: string | null
+          cancellation_reason?: string | null
           created_at?: string
           customer_id?: string | null
           description?: string | null
