@@ -5,6 +5,15 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.6.11] - 2026-03-23
+
+### Corregido
+- **Componentes compuestos duplicados**: Al añadir múltiples instancias del mismo componente (ej. Interior 1 e Interior 2), los datos ya no se duplican entre sí; cada instancia mantiene sus propios prompts, outputs y precio
+- **Recálculo de componentes**: Editar los prompts de un componente específico ahora recalcula correctamente solo ese componente
+- **Copia de item_additionals en aprobación**: Los ajustes a nivel de artículo se copian correctamente al pedido generado
+
+---
+
 ## [2.6.10] - 2026-03-23
 
 ### Añadido
