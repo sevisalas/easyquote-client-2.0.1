@@ -766,6 +766,45 @@ Deno.serve(async (req) => {
         units = customQuantity;
       }
       
+      // Apply item additionals to the price (bake into unit price)
+      if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
+        item.item_additionals.forEach((additional: any) => {
+          const value = additional.value || 0;
+          const isDiscount = additional.is_discount === true || value < 0;
+          
+          if (isDiscount) {
+            switch (additional.type) {
+              case 'net_amount':
+                totalPrice -= Math.abs(value);
+                break;
+              case 'percentage':
+                totalPrice -= Math.abs((totalPrice * value) / 100);
+                break;
+            }
+          } else {
+            switch (additional.type) {
+              case 'net_amount':
+                totalPrice += value;
+                break;
+              case 'percentage':
+                totalPrice += (totalPrice * value) / 100;
+                break;
+              case 'quantity_multiplier':
+                totalPrice *= value;
+                break;
+              case 'capacity_divider': {
+                const cap = additional.capacity_value || 1;
+                const itemQty = units > 1 ? units : (item.quantity || 1);
+                const divUnits = Math.ceil(itemQty / cap);
+                totalPrice += value * divUnits;
+                break;
+              }
+            }
+          }
+        });
+        console.log('💰 After item_additionals:', { totalPrice, additionals: item.item_additionals.length });
+      }
+
       // Calculate unit price from total price and units
       const unitPrice = units > 0 ? totalPrice / units : totalPrice;
       // Round to 6 decimals for Holded compatibility (supports up to 6)
