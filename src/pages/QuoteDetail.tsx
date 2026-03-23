@@ -47,6 +47,7 @@ const statusLabel = (status: string) => {
     case 'approved': return 'Aprobado';
     case 'rejected': return 'Rechazado';
     case 'sent': return 'Enviado';
+    case 'cancelled': return 'Anulado';
     default: return status;
   }
 };
@@ -57,6 +58,7 @@ const getStatusVariant = (status: string) => {
     case 'pending': return 'secondary';
     case 'sent': return 'outline';
     case 'rejected': return 'destructive';
+    case 'cancelled': return 'destructive';
     default: return 'secondary';
   }
 };
