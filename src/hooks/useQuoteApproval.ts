@@ -357,12 +357,14 @@ export const useQuoteApproval = () => {
           );
 
           if (selectedRow) {
-            finalPrice = parseFloat(
+            const basePrice = parseFloat(
               selectedRow.outs?.find((o: any) => o.type === 'Price')?.value ||
                 selectedRow.price ||
                 item.price ||
                 0
             );
+            // Apply item_additionals to the selected row's base price
+            finalPrice = applyItemAdditionals(basePrice, item, selectedQuantity);
             // Keep only the selected row in multi
             finalMulti = {
               ...multi,
@@ -371,15 +373,17 @@ export const useQuoteApproval = () => {
           }
         }
 
-        // If there's only one row in multi, keep that row price
+        // If there's only one row in multi, keep that row price (with additionals)
         if (multi?.rows && Array.isArray(multi.rows) && multi.rows.length === 1) {
           const singleRow = multi.rows[0];
-          finalPrice = parseFloat(
+          const basePrice = parseFloat(
             singleRow.outs?.find((o: any) => o.type === 'Price')?.value ||
               singleRow.price ||
               item.price ||
               0
           );
+          const rowQty = Number(singleRow.qty) || Number(singleRow.quantity) || finalQuantity;
+          finalPrice = applyItemAdditionals(basePrice, item, rowQty);
         }
 
         return {
