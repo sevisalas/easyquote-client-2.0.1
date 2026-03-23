@@ -7,9 +7,11 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Edit, Download, Copy, CheckCircle, ChevronDown, Eye } from "lucide-react";
+import { Edit, Download, Copy, CheckCircle, ChevronDown, Eye, Ban } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
@@ -47,6 +49,7 @@ const statusLabel = (status: string) => {
     case 'approved': return 'Aprobado';
     case 'rejected': return 'Rechazado';
     case 'sent': return 'Enviado';
+    case 'cancelled': return 'Anulado';
     default: return status;
   }
 };
@@ -57,6 +60,7 @@ const getStatusVariant = (status: string) => {
     case 'pending': return 'secondary';
     case 'sent': return 'outline';
     case 'rejected': return 'destructive';
+    case 'cancelled': return 'destructive';
     default: return 'secondary';
   }
 };
@@ -80,6 +84,8 @@ export default function QuoteDetail() {
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
   const { approveQuote, loading: isApproving } = useQuoteApproval();
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState('');
 
   const { data: quote, isLoading, error } = useQuery({
     queryKey: ['quote', id],
@@ -644,6 +650,26 @@ export default function QuoteDetail() {
                     Reenviar a Holded
                   </Button>
                 )}
+                {/* Cancel button - available on sent or approved for admin/gestor */}
+                {(quote.status === 'sent' || quote.status === 'approved') && 
+                  (membership?.role === 'admin' || membership?.role === 'gestor') && (
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => { setCancellationReason(''); setShowCancelDialog(true); }}
+                    className="h-6 text-xs px-2"
+                  >
+                    <Ban className="h-3 w-3 mr-1" />
+                    Anular
+                  </Button>
+                )}
+                {/* Show cancellation reason if cancelled */}
+                {quote.status === 'cancelled' && quote.cancellation_reason && (
+                  <div className="bg-destructive/10 border border-destructive/20 rounded-md px-2 py-1">
+                    <span className="text-xs text-destructive font-medium">Motivo: </span>
+                    <span className="text-xs">{quote.cancellation_reason}</span>
+                  </div>
+                )}
               </div>
             </div>
             <div>
@@ -1183,6 +1209,53 @@ export default function QuoteDetail() {
         />
       )}
 
+      {/* Cancellation Dialog */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Anular presupuesto</AlertDialogTitle>
+            <AlertDialogDescription>
+              Indica el motivo de la anulación de este presupuesto. Esta información quedará registrada.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-2">
+            <Label htmlFor="quote-cancellation-reason" className="text-sm font-medium">
+              Motivo de anulación *
+            </Label>
+            <Textarea
+              id="quote-cancellation-reason"
+              placeholder="Ej: Cliente canceló el proyecto, presupuesto caducado..."
+              value={cancellationReason}
+              onChange={(e) => setCancellationReason(e.target.value)}
+              className="mt-1.5"
+              rows={3}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!cancellationReason.trim()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!id || !cancellationReason.trim()) return;
+                const { error } = await supabase
+                  .from('quotes')
+                  .update({ status: 'cancelled', cancellation_reason: cancellationReason.trim() })
+                  .eq('id', id);
+                if (error) {
+                  toast.error('Error al anular el presupuesto');
+                } else {
+                  toast.success('Presupuesto anulado');
+                  queryClient.invalidateQueries({ queryKey: ['quote', id] });
+                  setShowCancelDialog(false);
+                }
+              }}
+            >
+              Confirmar anulación
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
