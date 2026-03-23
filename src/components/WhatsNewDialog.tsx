@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Ban, UserCheck, Target } from "lucide-react";
+import { Sparkles, Ban, UserCheck } from "lucide-react";
 
 const CURRENT_VERSION = "2.6.9";
 const LS_KEY = "whats_new_seen_version";
