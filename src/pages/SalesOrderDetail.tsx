@@ -78,6 +78,9 @@ const SalesOrderDetail = () => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editReason, setEditReason] = useState('');
   const [editConsent, setEditConsent] = useState(false);
+  // Cancellation dialog state
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState('');
 
   useEffect(() => {
     if (!canAccessProduccion()) {

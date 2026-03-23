@@ -23,6 +23,7 @@ export interface SalesOrder {
   holded_document_id?: string;
   holded_document_number?: string;
   production_progress?: Record<string, any>;
+  cancellation_reason?: string;
   created_at: string;
   updated_at: string;
   created_from_scratch?: boolean;
