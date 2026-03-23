@@ -26,6 +26,7 @@ const statusColors = {
   pending: "default",
   in_production: "secondary",
   completed: "default",
+  cancelled: "destructive",
 } as const;
 
 const statusLabels = {
@@ -33,6 +34,7 @@ const statusLabels = {
   pending: "Pendiente",
   in_production: "Producción",
   completed: "Completado",
+  cancelled: "Anulado",
 };
 
 const fmtEUR = (n: any) => {
