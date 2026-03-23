@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Ban, FileX, DollarSign } from "lucide-react";
 
-const CURRENT_VERSION = "2.6.10";
+const CURRENT_VERSION = "2.6.11";
+const SILENT_UPDATE = true; // Bug fixes only, no dialog
 const LS_KEY = "whats_new_seen_version";
 
 interface ReleaseNote {
@@ -51,6 +52,10 @@ export function WhatsNewDialog() {
   useEffect(() => {
     const seen = localStorage.getItem(LS_KEY);
     if (seen !== CURRENT_VERSION) {
+      if (SILENT_UPDATE) {
+        localStorage.setItem(LS_KEY, CURRENT_VERSION);
+        return;
+      }
       setOpen(true);
     }
   }, []);
