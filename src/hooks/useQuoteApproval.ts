@@ -217,6 +217,35 @@ export const useQuoteApproval = () => {
         return parseQuantity(item.quantity ?? 1);
       };
 
+      // Helper: apply item_additionals to a base price
+      const applyItemAdditionals = (basePrice: number, item: any, quantity: number): number => {
+        const additionals = item.item_additionals;
+        if (!Array.isArray(additionals) || additionals.length === 0) return basePrice;
+        let total = basePrice;
+        for (const additional of additionals) {
+          const value = additional.value || 0;
+          const isDiscount = additional.is_discount === true || value < 0;
+          if (isDiscount) {
+            switch (additional.type) {
+              case 'net_amount': total -= Math.abs(value); break;
+              case 'percentage': total -= Math.abs((total * value) / 100); break;
+            }
+          } else {
+            switch (additional.type) {
+              case 'net_amount': total += value; break;
+              case 'percentage': total += (total * value) / 100; break;
+              case 'quantity_multiplier': total += value * quantity; break;
+              case 'capacity_divider': {
+                const cap = additional.capacity_value || 1;
+                total += value * Math.ceil(quantity / cap);
+                break;
+              }
+            }
+          }
+        }
+        return total;
+      };
+
       // Calculate subtotal from selected items
       let subtotal = 0;
       for (const item of itemsToApprove) {
@@ -224,18 +253,20 @@ export const useQuoteApproval = () => {
         let itemPrice = item.price || 0;
 
         // If multi with selected quantity, use that specific price
+        // and apply item_additionals (since row price is base-only from outputs)
         if (multi?.rows && Array.isArray(multi.rows) && itemQuantities?.[item.id]) {
           const selectedQuantity = itemQuantities[item.id];
           const selectedRow = multi.rows.find((row: any) =>
             Number(row.qty) === selectedQuantity || Number(row.quantity) === selectedQuantity
           );
           if (selectedRow) {
-            itemPrice = parseFloat(
+            const basePrice = parseFloat(
               selectedRow.outs?.find((o: any) => o.type === 'Price')?.value ||
                 selectedRow.price ||
                 item.price ||
                 0
             );
+            itemPrice = applyItemAdditionals(basePrice, item, selectedQuantity);
           }
         }
 
@@ -326,12 +357,14 @@ export const useQuoteApproval = () => {
           );
 
           if (selectedRow) {
-            finalPrice = parseFloat(
+            const basePrice = parseFloat(
               selectedRow.outs?.find((o: any) => o.type === 'Price')?.value ||
                 selectedRow.price ||
                 item.price ||
                 0
             );
+            // Apply item_additionals to the selected row's base price
+            finalPrice = applyItemAdditionals(basePrice, item, selectedQuantity);
             // Keep only the selected row in multi
             finalMulti = {
               ...multi,
@@ -340,15 +373,17 @@ export const useQuoteApproval = () => {
           }
         }
 
-        // If there's only one row in multi, keep that row price
+        // If there's only one row in multi, keep that row price (with additionals)
         if (multi?.rows && Array.isArray(multi.rows) && multi.rows.length === 1) {
           const singleRow = multi.rows[0];
-          finalPrice = parseFloat(
+          const basePrice = parseFloat(
             singleRow.outs?.find((o: any) => o.type === 'Price')?.value ||
               singleRow.price ||
               item.price ||
               0
           );
+          const rowQty = Number(singleRow.qty) || Number(singleRow.quantity) || finalQuantity;
+          finalPrice = applyItemAdditionals(basePrice, item, rowQty);
         }
 
         return {
@@ -363,6 +398,7 @@ export const useQuoteApproval = () => {
           multi: finalMulti,
           position: index,
           composite_data: item.composite_data || null,
+          item_additionals: item.item_additionals || null,
         };
       });
 
