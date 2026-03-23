@@ -363,6 +363,7 @@ export const useQuoteApproval = () => {
           multi: finalMulti,
           position: index,
           composite_data: item.composite_data || null,
+          item_additionals: item.item_additionals || null,
         };
       });
 
