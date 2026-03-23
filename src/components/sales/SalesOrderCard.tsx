@@ -98,6 +98,14 @@ export function SalesOrderCard({
           </div>
         )}
 
+        {/* Cancellation reason */}
+        {order.status === 'cancelled' && order.cancellation_reason && (
+          <div className="mb-2 bg-destructive/10 border border-destructive/20 rounded-md p-2">
+            <p className="text-xs font-medium text-destructive">Motivo de anulación</p>
+            <p className="text-xs mt-0.5">{order.cancellation_reason}</p>
+          </div>
+        )}
+
         {/* Price */}
         <div className="mb-3 pt-2 border-t">
           <div className="flex items-center justify-between">

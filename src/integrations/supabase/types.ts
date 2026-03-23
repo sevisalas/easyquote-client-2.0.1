@@ -2832,6 +2832,7 @@ export type Database = {
       }
       sales_orders: {
         Row: {
+          cancellation_reason: string | null
           created_at: string
           created_from_scratch: boolean
           customer_id: string | null
@@ -2857,6 +2858,7 @@ export type Database = {
           valid_until: string | null
         }
         Insert: {
+          cancellation_reason?: string | null
           created_at?: string
           created_from_scratch?: boolean
           customer_id?: string | null
@@ -2882,6 +2884,7 @@ export type Database = {
           valid_until?: string | null
         }
         Update: {
+          cancellation_reason?: string | null
           created_at?: string
           created_from_scratch?: boolean
           customer_id?: string | null

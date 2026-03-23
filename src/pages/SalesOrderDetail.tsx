@@ -78,6 +78,9 @@ const SalesOrderDetail = () => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editReason, setEditReason] = useState('');
   const [editConsent, setEditConsent] = useState(false);
+  // Cancellation dialog state
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancellationReason, setCancellationReason] = useState('');
 
   useEffect(() => {
     if (!canAccessProduccion()) {
@@ -533,6 +536,13 @@ const SalesOrderDetail = () => {
   const handleStatusChange = async (newStatus: SalesOrder['status']) => {
     if (!id || !order) return;
     
+    // If cancelling, show cancellation reason dialog
+    if (newStatus === 'cancelled') {
+      setCancellationReason('');
+      setShowCancelDialog(true);
+      return;
+    }
+    
     // Validar que todos los artículos estén completados antes de marcar el pedido como completado
     if (newStatus === 'completed') {
       const incompleteItems = items.filter(item => item.production_status !== 'completed');
@@ -556,6 +566,29 @@ const SalesOrderDetail = () => {
         setOrder(prev => prev ? { ...prev, status: newStatus } : null);
       }
     }
+  };
+
+  const handleConfirmCancellation = async () => {
+    if (!id || !order) return;
+    if (!cancellationReason.trim()) {
+      toast.error('Debes indicar el motivo de la anulación');
+      return;
+    }
+    
+    // Update status and cancellation reason
+    const { error } = await supabase
+      .from('sales_orders')
+      .update({ status: 'cancelled', cancellation_reason: cancellationReason.trim() })
+      .eq('id', id);
+    
+    if (error) {
+      toast.error('Error al anular el pedido');
+      return;
+    }
+    
+    toast.success('Pedido anulado');
+    setOrder(prev => prev ? { ...prev, status: 'cancelled', cancellation_reason: cancellationReason.trim() } : null);
+    setShowCancelDialog(false);
   };
 
   const handleDelete = async () => {
@@ -1139,8 +1172,14 @@ const SalesOrderDetail = () => {
               </div>
             </div>
           ) : (
-            <div className="pt-3">
+            <div className="pt-3 space-y-2">
               <Badge variant="destructive" className="text-sm">Pedido anulado</Badge>
+              {order.cancellation_reason && (
+                <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
+                  <p className="text-xs font-medium text-destructive mb-1">Motivo de anulación</p>
+                  <p className="text-sm whitespace-pre-wrap">{order.cancellation_reason}</p>
+                </div>
+              )}
             </div>
           )}
 
@@ -1353,6 +1392,41 @@ const SalesOrderDetail = () => {
       )}
 
       {/* Panel de Producción eliminado - ahora integrado en cada artículo */}
+
+      {/* Cancellation Reason Dialog */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Anular pedido</AlertDialogTitle>
+            <AlertDialogDescription>
+              Indica el motivo de la anulación de este pedido. Esta información quedará registrada.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-2">
+            <Label htmlFor="cancellation-reason" className="text-sm font-medium">
+              Motivo de anulación *
+            </Label>
+            <Textarea
+              id="cancellation-reason"
+              placeholder="Ej: Cliente canceló el encargo, error en especificaciones..."
+              value={cancellationReason}
+              onChange={(e) => setCancellationReason(e.target.value)}
+              className="mt-1.5"
+              rows={3}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmCancellation}
+              disabled={!cancellationReason.trim()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirmar anulación
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
