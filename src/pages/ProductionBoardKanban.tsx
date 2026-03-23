@@ -31,7 +31,8 @@ const statusLabels = {
   draft: "Borrador",
   pending: "Pendiente",
   in_production: "En producción",
-  completed: "Completado"
+  completed: "Completado",
+  cancelled: "Anulado",
 };
 const itemStatusLabels = {
   pending: "Pendiente",
