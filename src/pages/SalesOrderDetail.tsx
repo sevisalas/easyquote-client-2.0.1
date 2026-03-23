@@ -1172,8 +1172,14 @@ const SalesOrderDetail = () => {
               </div>
             </div>
           ) : (
-            <div className="pt-3">
+            <div className="pt-3 space-y-2">
               <Badge variant="destructive" className="text-sm">Pedido anulado</Badge>
+              {order.cancellation_reason && (
+                <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3">
+                  <p className="text-xs font-medium text-destructive mb-1">Motivo de anulación</p>
+                  <p className="text-sm whitespace-pre-wrap">{order.cancellation_reason}</p>
+                </div>
+              )}
             </div>
           )}
 
