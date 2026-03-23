@@ -650,6 +650,26 @@ export default function QuoteDetail() {
                     Reenviar a Holded
                   </Button>
                 )}
+                {/* Cancel button - available on sent or approved for admin/gestor */}
+                {(quote.status === 'sent' || quote.status === 'approved') && 
+                  (membership?.role === 'admin' || membership?.role === 'gestor') && (
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => { setCancellationReason(''); setShowCancelDialog(true); }}
+                    className="h-6 text-xs px-2"
+                  >
+                    <Ban className="h-3 w-3 mr-1" />
+                    Anular
+                  </Button>
+                )}
+                {/* Show cancellation reason if cancelled */}
+                {quote.status === 'cancelled' && quote.cancellation_reason && (
+                  <div className="bg-destructive/10 border border-destructive/20 rounded-md px-2 py-1">
+                    <span className="text-xs text-destructive font-medium">Motivo: </span>
+                    <span className="text-xs">{quote.cancellation_reason}</span>
+                  </div>
+                )}
               </div>
             </div>
             <div>
