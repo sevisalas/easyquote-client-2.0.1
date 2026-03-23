@@ -36,13 +36,6 @@ const RELEASE_NOTES: ReleaseNote[] = [
       "Los usuarios con rol gestor ahora pueden modificar el estado de pedidos aprobados y editarlos con auditoría.",
     badge: "Admin",
   },
-  {
-    icon: <Target className="h-5 w-5 text-primary" />,
-    title: "Roadmap: Objetivos y Sprints en Kanban",
-    description:
-      "Nueva vista Kanban para objetivos y sprints, con búsqueda de sprints y diálogo de objetivos optimizado.",
-    badge: "SuperAdmin",
-  },
 ];
 
 export function WhatsNewDialog() {
