@@ -5,6 +5,15 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.6.9] - 2026-03-23
+
+### Añadido
+- **Estado 'Anulado' en pedidos**: Nuevo estado `cancelled` para marcar pedidos como anulados, con badge destructivo y soporte en listados, detalle, filtros y tableros de producción
+- **Gestores pueden cambiar estado de pedidos**: Los usuarios con rol gestor ahora pueden modificar el estado y editar pedidos no-borrador con auditoría
+- **Roadmap: Objetivos y Sprints en Kanban**: Vista Kanban para objetivos y sprints con búsqueda, diálogo optimizado y filtros mejorados
+
+---
+
 ## [2.6.7] - 2026-03-19
 
 ### Añadido
