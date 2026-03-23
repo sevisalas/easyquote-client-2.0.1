@@ -1209,6 +1209,53 @@ export default function QuoteDetail() {
         />
       )}
 
+      {/* Cancellation Dialog */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Anular presupuesto</AlertDialogTitle>
+            <AlertDialogDescription>
+              Indica el motivo de la anulación de este presupuesto. Esta información quedará registrada.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-2">
+            <Label htmlFor="quote-cancellation-reason" className="text-sm font-medium">
+              Motivo de anulación *
+            </Label>
+            <Textarea
+              id="quote-cancellation-reason"
+              placeholder="Ej: Cliente canceló el proyecto, presupuesto caducado..."
+              value={cancellationReason}
+              onChange={(e) => setCancellationReason(e.target.value)}
+              className="mt-1.5"
+              rows={3}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!cancellationReason.trim()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                if (!id || !cancellationReason.trim()) return;
+                const { error } = await supabase
+                  .from('quotes')
+                  .update({ status: 'cancelled', cancellation_reason: cancellationReason.trim() })
+                  .eq('id', id);
+                if (error) {
+                  toast.error('Error al anular el presupuesto');
+                } else {
+                  toast.success('Presupuesto anulado');
+                  queryClient.invalidateQueries({ queryKey: ['quote', id] });
+                  setShowCancelDialog(false);
+                }
+              }}
+            >
+              Confirmar anulación
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
