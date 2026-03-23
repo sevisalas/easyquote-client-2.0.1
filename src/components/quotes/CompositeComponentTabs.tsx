@@ -781,10 +781,11 @@ export default function CompositeComponentTabs({
     const results: Array<{ data?: { prompts: any[]; outputs: any[]; price: number }; isLoading: boolean; isFetching: boolean }> = [];
     
     for (const component of activeComponents) {
-      const isReceiver = aggregationReceiverComponents.some(r => r.id === component.id);
+      const componentKey = getActiveComponentKey(component);
+      const isReceiver = aggregationReceiverComponents.some(r => r.id === component.id && (r.instance_index ?? 1) === (component.instance_index ?? 1));
       
       if (isReceiver) {
-        const idx = aggregationReceiverComponents.findIndex(r => r.id === component.id);
+        const idx = aggregationReceiverComponents.findIndex(r => getActiveComponentKey(r) === componentKey);
         const query = receiverComponentQueriesResults[idx];
         results.push({
           data: query?.data ? { prompts: query.data.prompts, outputs: query.data.outputs, price: query.data.price } : undefined,
@@ -792,7 +793,7 @@ export default function CompositeComponentTabs({
           isFetching: query?.isFetching ?? false,
         });
       } else {
-        const idx = sourceComponents.findIndex(s => s.id === component.id);
+        const idx = sourceComponents.findIndex(s => getActiveComponentKey(s) === componentKey);
         const query = sourceComponentQueriesResults[idx];
         results.push({
           data: query?.data ? { prompts: query.data.prompts, outputs: query.data.outputs, price: query.data.price } : undefined,
