@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Ban, UserCheck, Target } from "lucide-react";
+import { Sparkles, Ban, UserCheck } from "lucide-react";
 
 const CURRENT_VERSION = "2.6.9";
 const LS_KEY = "whats_new_seen_version";
@@ -35,13 +35,6 @@ const RELEASE_NOTES: ReleaseNote[] = [
     description:
       "Los usuarios con rol gestor ahora pueden modificar el estado de pedidos aprobados y editarlos con auditoría.",
     badge: "Admin",
-  },
-  {
-    icon: <Target className="h-5 w-5 text-primary" />,
-    title: "Roadmap: Objetivos y Sprints en Kanban",
-    description:
-      "Nueva vista Kanban para objetivos y sprints, con búsqueda de sprints y diálogo de objetivos optimizado.",
-    badge: "SuperAdmin",
   },
 ];
 
