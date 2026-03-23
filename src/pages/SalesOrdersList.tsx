@@ -26,6 +26,7 @@ const statusColors = {
   pending: "default",
   in_production: "secondary",
   completed: "default",
+  cancelled: "destructive",
 } as const;
 
 const statusLabels = {
@@ -33,6 +34,7 @@ const statusLabels = {
   pending: "Pendiente",
   in_production: "Producción",
   completed: "Completado",
+  cancelled: "Anulado",
 };
 
 const fmtEUR = (n: any) => {
@@ -397,6 +399,7 @@ const SalesOrdersList = () => {
                     <SelectItem value="pending">Pendiente</SelectItem>
                     <SelectItem value="in_production">En Producción</SelectItem>
                     <SelectItem value="completed">Completado</SelectItem>
+                    <SelectItem value="cancelled">Anulado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

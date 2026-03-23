@@ -1,0 +1,1 @@
+COMMENT ON COLUMN public.sales_orders.status IS 'Order status: draft, pending, in_production, completed, cancelled';

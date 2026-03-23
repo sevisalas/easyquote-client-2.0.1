@@ -36,6 +36,7 @@ const statusColors = {
   pending: "default",
   in_production: "secondary",
   completed: "default",
+  cancelled: "destructive",
 } as const;
 
 const statusLabels = {
@@ -43,6 +44,7 @@ const statusLabels = {
   pending: "Pendiente",
   in_production: "En Producción",
   completed: "Completado",
+  cancelled: "Anulado",
 };
 
 const fmtEUR = (amount: number) => {
@@ -1001,6 +1003,7 @@ const SalesOrderDetail = () => {
                         <SelectItem value="pending">Pendiente</SelectItem>
                         <SelectItem value="in_production">En Producción</SelectItem>
                         <SelectItem value="completed">Completado</SelectItem>
+                        <SelectItem value="cancelled">Anulado</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1060,6 +1063,7 @@ const SalesOrderDetail = () => {
                         <SelectItem value="pending">Pendiente</SelectItem>
                         <SelectItem value="in_production">En Producción</SelectItem>
                         <SelectItem value="completed">Completado</SelectItem>
+                        <SelectItem value="cancelled">Anulado</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1111,28 +1115,34 @@ const SalesOrderDetail = () => {
           )}
           
           {/* Barra de estados del pedido */}
-          <div className="pt-3">
-            <div className="flex items-center gap-2">
-              <div className={`flex-1 h-2 rounded-full transition-all ${
-                order.status === 'draft' || order.status === 'pending' || order.status === 'in_production' || order.status === 'completed' ? 'bg-slate-400' : 'bg-muted'
-              }`} title="Borrador" />
-              <div className={`flex-1 h-2 rounded-full transition-all ${
-                order.status === 'pending' || order.status === 'in_production' || order.status === 'completed' ? 'bg-orange-500' : 'bg-muted'
-              }`} title="Pendiente" />
-              <div className={`flex-1 h-2 rounded-full transition-all ${
-                order.status === 'in_production' || order.status === 'completed' ? 'bg-green-500' : 'bg-muted'
-              }`} title="En producción" />
-              <div className={`flex-1 h-2 rounded-full transition-all ${
-                order.status === 'completed' ? 'bg-blue-500' : 'bg-muted'
-              }`} title="Terminado" />
+          {order.status !== 'cancelled' ? (
+            <div className="pt-3">
+              <div className="flex items-center gap-2">
+                <div className={`flex-1 h-2 rounded-full transition-all ${
+                  order.status === 'draft' || order.status === 'pending' || order.status === 'in_production' || order.status === 'completed' ? 'bg-slate-400' : 'bg-muted'
+                }`} title="Borrador" />
+                <div className={`flex-1 h-2 rounded-full transition-all ${
+                  order.status === 'pending' || order.status === 'in_production' || order.status === 'completed' ? 'bg-orange-500' : 'bg-muted'
+                }`} title="Pendiente" />
+                <div className={`flex-1 h-2 rounded-full transition-all ${
+                  order.status === 'in_production' || order.status === 'completed' ? 'bg-green-500' : 'bg-muted'
+                }`} title="En producción" />
+                <div className={`flex-1 h-2 rounded-full transition-all ${
+                  order.status === 'completed' ? 'bg-blue-500' : 'bg-muted'
+                }`} title="Terminado" />
+              </div>
+              <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
+                <span>Borrador</span>
+                <span>Pendiente</span>
+                <span>En producción</span>
+                <span>Terminado</span>
+              </div>
             </div>
-            <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
-              <span>Borrador</span>
-              <span>Pendiente</span>
-              <span>En producción</span>
-              <span>Terminado</span>
+          ) : (
+            <div className="pt-3">
+              <Badge variant="destructive" className="text-sm">Pedido anulado</Badge>
             </div>
-          </div>
+          )}
 
           {order.status === 'draft' && order.created_from_scratch && isHoldedActive && (
             <div className="pt-1">
