@@ -237,15 +237,24 @@ export default function ExcelFiles() {
   const filesWithMeta = files.map(file => {
     const meta = excelFilesMeta?.find(m => m.file_id === file.id);
     const isMaster = meta?.is_master || false;
+    const localReferenceName = (meta as any)?.local_reference_name || null;
     return {
       ...file,
       isMaster,
-      fileUrl: null // Los archivos maestros ya no existen
+      localReferenceName,
+      fileUrl: null
     };
   });
 
+  // Sort: maestros first, then by fileName
+  const sortedFilesWithMeta = [...filesWithMeta].sort((a, b) => {
+    if (a.isMaster && !b.isMaster) return -1;
+    if (!a.isMaster && b.isMaster) return 1;
+    return a.fileName.localeCompare(b.fileName);
+  });
+
   // Filter files based on includeInactive setting
-  const filteredFiles = includeInactive ? filesWithMeta : filesWithMeta.filter(file => file.isActive);
+  const filteredFiles = includeInactive ? sortedFilesWithMeta : sortedFilesWithMeta.filter(file => file.isActive);
   console.log('[ExcelFiles] Filtered files:', {
     totalFiles: files.length,
     filesWithMeta: filesWithMeta.length,
