@@ -13,3 +13,9 @@ Para el usuario final, estos conceptos deben presentarse con nombres descriptivo
 - "Configura los datos de entrada del producto"
 - "Resultados del cálculo"
 - "Opciones del artículo"
+
+## Abreviaturas internas (desarrollo)
+- **EQAPI** = EasyQuote API — el servicio cloud de cálculo, productos y excels
+- **EQAPP** = EasyQuote APP — la aplicación cliente que estamos desarrollando
+
+Estas abreviaturas son solo para comunicación interna entre desarrolladores. NO se usan en la UI.
