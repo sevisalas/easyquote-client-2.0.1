@@ -1048,8 +1048,8 @@ export default function ExcelFiles() {
                     </Button>
                   </div>}
 
-                {/* Master file association - only show if there are masters and org is Tradsis */}
-                {isTradsis && masterFiles.length > 0 && selectedFile && (
+                {/* Master file association - only show if there are masters */}
+                {masterFiles.length > 0 && selectedFile && (
                   <div className="space-y-2 p-3 border rounded-lg bg-accent/20">
                     <div className="flex items-center gap-2">
                       <Crown className="h-4 w-4 text-amber-600" />
