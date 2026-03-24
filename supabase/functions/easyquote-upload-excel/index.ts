@@ -50,10 +50,6 @@ function safeDecodeURIComponent(value: string): string {
   }
 }
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 /**
  * Given a base64-encoded xlsx, replace master references in:
  * 1) externalLinks .rels files
