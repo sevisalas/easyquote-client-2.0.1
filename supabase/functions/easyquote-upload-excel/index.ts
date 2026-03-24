@@ -208,7 +208,7 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const { token, fileName, fileContent } = await req.json();
+    const { token, fileName, fileContent, associatedMasterFileId } = await req.json();
 
     if (!token) {
       return new Response(
