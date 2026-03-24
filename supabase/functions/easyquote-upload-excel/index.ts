@@ -161,34 +161,40 @@ async function replaceMasterReferences(
   }
 
   // 2) Replace in worksheet formulas with direct path/URL references
-  // Example matched prefix:
-  // 'https://d.docs.live.net/.../maestros/[maestro EQ01.xlsx]
+  // Example:
+  // ='https://d.docs.live.net/.../maestros/[maestro EQ01.xlsx]Papeles'!A6
   for (const wsEntry of worksheetEntries) {
     const writer = new TextWriter();
     const content = await wsEntry.getData!(writer);
 
-    let modified = content;
-    let wasModified = false;
+    let wsReplacementsCount = 0;
+    const modified = content.replace(
+      /(')([^'<]*?\[([^\]]+)\])/g,
+      (fullMatch, quoteMark: string, _pathWithBracket: string, bracketFileName: string) => {
+        const normalizedBracketName = safeDecodeURIComponent(bracketFileName)
+          .toLowerCase()
+          .trim();
 
-    for (const m of normalizedMappings) {
-      const escapedName = escapeRegExp(m.localName);
-      const quotedPathRegex = new RegExp(`'[^']*\\[${escapedName}\\]`, "g");
-      const next = modified.replace(
-        quotedPathRegex,
-        `'${m.publicFolderUrl}[${m.localName}]`,
+        const mapping = normalizedMappings.find((m) => {
+          const local = m.normalizedLocalName;
+          const encoded = encodeURIComponent(m.localName).toLowerCase();
+          return normalizedBracketName === local || normalizedBracketName === encoded;
+        });
+
+        if (!mapping) {
+          return fullMatch;
+        }
+
+        wsReplacementsCount += 1;
+        addReplacement(`formula [${mapping.localName}] → ${mapping.publicFolderUrl}`);
+        return `${quoteMark}${mapping.publicFolderUrl}[${mapping.localName}]`;
+      },
+    );
+
+    if (wsReplacementsCount > 0) {
+      console.log(
+        `easyquote-upload-excel: Replaced ${wsReplacementsCount} formula path(s) in ${wsEntry.filename}`,
       );
-
-      if (next !== modified) {
-        wasModified = true;
-        modified = next;
-        addReplacement(`formula [${m.localName}] → ${m.publicFolderUrl}`);
-        console.log(
-          `easyquote-upload-excel: Replaced formula path for [${m.localName}] in ${wsEntry.filename}`,
-        );
-      }
-    }
-
-    if (wasModified) {
       modifiedContents.set(wsEntry.filename, modified);
     }
   }
@@ -389,16 +395,8 @@ serve(async (req: Request): Promise<Response> => {
     let response = await uploadToEasyQuote(finalFileContent);
     console.log("easyquote-upload-excel: Response status:", response.status);
 
-    // If modified file failed and we did replacements, retry with original
-    if (!response.ok && masterReplacements.length > 0 && finalFileContent !== fileContent) {
-      console.warn(
-        "easyquote-upload-excel: Modified file rejected (status " + response.status + "), retrying with original file...",
-      );
-      await response.text(); // consume body
-      response = await uploadToEasyQuote(fileContent);
-      console.log("easyquote-upload-excel: Retry response status:", response.status);
-      masterReplacements = []; // clear since we used original
-    }
+    // Never upload original silently if replacement was expected.
+    // If modified upload fails, return the error so user knows replacement didn't apply.
 
     const responseText = await response.text();
     console.log(
