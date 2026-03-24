@@ -73,7 +73,7 @@ export default function ExcelFiles() {
     try {
       // Decode JWT token to get subscriber ID
       const payload = JSON.parse(atob(token.split('.')[1]));
-      return payload.SubscriberID || null;
+      return payload.SubscriberID || payload.SubscriberId || payload.subscriberId || payload.subscriberID || null;
     } catch (error) {
       console.error('Error decoding token:', error);
       return null;
