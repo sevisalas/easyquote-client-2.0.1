@@ -270,9 +270,12 @@ export default function ExcelFiles() {
     }
   }, [files]);
 
+  // Available master files for association
+  const masterFiles = filesWithMeta.filter(f => f.isMaster && f.isActive);
+
   // Upload Excel file to EasyQuote API
   const uploadMutation = useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async ({ file, masterFileId }: { file: File; masterFileId: string | null }) => {
       if (!file) throw new Error("No file selected");
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) {
@@ -285,7 +288,6 @@ export default function ExcelFiles() {
         reader.readAsDataURL(file);
         reader.onload = () => {
           const result = reader.result as string;
-          // Remove the data URL prefix (data:application/...;base64,)
           const base64Data = result.split(',')[1];
           resolve(base64Data);
         };
@@ -300,7 +302,8 @@ export default function ExcelFiles() {
         body: {
           token,
           fileName: file.name,
-          fileContent: base64
+          fileContent: base64,
+          associatedMasterFileId: masterFileId || undefined
         }
       });
       if (error) {
@@ -312,15 +315,19 @@ export default function ExcelFiles() {
       return data;
     },
     onSuccess: data => {
+      const replacementMsg = data?.masterReplacements?.length
+        ? ` Se vincularon ${data.masterReplacements.length} referencia(s) al maestro.`
+        : '';
       toast({
         title: "Archivo subido exitosamente",
-        description: `El archivo ${data.fileName} se ha subido correctamente.`
+        description: `El archivo ${data.fileName} se ha subido correctamente.${replacementMsg}`
       });
       queryClient.invalidateQueries({
         queryKey: ["easyquote-excel-files"]
       });
       setIsUploadDialogOpen(false);
       setSelectedFile(null);
+      setUploadMasterFileId(null);
     },
     onError: error => {
       toast({
