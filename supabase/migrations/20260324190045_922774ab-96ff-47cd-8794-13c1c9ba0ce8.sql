@@ -1,0 +1,1 @@
+ALTER TABLE public.excel_files ADD COLUMN IF NOT EXISTS local_reference_name TEXT;
