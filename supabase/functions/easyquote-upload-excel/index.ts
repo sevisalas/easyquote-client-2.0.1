@@ -42,12 +42,22 @@ function extractSubscriberIdFromJwt(token: string): string | undefined {
   }
 }
 
+function safeDecodeURIComponent(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 /**
- * Given a base64-encoded xlsx, check for external link .rels files.
- * If any external link Target matches a master's local_reference_name,
- * replace it with the master's EQAPI public URL.
- *
- * Returns the (possibly modified) base64 string.
+ * Given a base64-encoded xlsx, replace master references in:
+ * 1) externalLinks .rels files
+ * 2) worksheet formulas that embed full paths/URLs to [master.xlsx]
  */
 async function replaceMasterReferences(
   base64Content: string,
@@ -61,6 +71,9 @@ async function replaceMasterReferences(
   }
 
   const replacements: string[] = [];
+  const addReplacement = (value: string) => {
+    if (!replacements.includes(value)) replacements.push(value);
+  };
 
   // Decode base64 → binary
   const binaryStr = atob(base64Content);
@@ -73,33 +86,45 @@ async function replaceMasterReferences(
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
 
-  // Read the ZIP
+  // Read ZIP entries
   const zipReader = new ZipReader(new BlobReader(blob));
   const entries = await zipReader.getEntries();
 
-  // Find external link .rels files
   const relsEntries = entries.filter(
     (e) =>
       e.filename.includes("externalLinks/_rels/") &&
       e.filename.endsWith(".xml.rels"),
   );
+  const worksheetEntries = entries.filter(
+    (e) => e.filename.startsWith("xl/worksheets/") && e.filename.endsWith(".xml"),
+  );
 
-  if (!relsEntries.length) {
+  if (!relsEntries.length && !worksheetEntries.length) {
     await zipReader.close();
     return { base64: base64Content, replacements: [] };
   }
 
-  // Build lookup: normalized local name → public URL
-  const lookup = new Map<string, string>();
-  for (const m of masterMappings) {
-    // Normalize: lowercase, decode URI components
-    const normalized = decodeURIComponent(m.localName).toLowerCase().trim();
-    lookup.set(normalized, m.publicUrl);
+  const normalizedMappings = masterMappings.map((m) => {
+    const decodedName = safeDecodeURIComponent(m.localName).trim();
+    const publicFolderUrl =
+      m.publicUrl.slice(0, m.publicUrl.lastIndexOf("/") + 1) || m.publicUrl;
+    return {
+      localName: decodedName,
+      normalizedLocalName: decodedName.toLowerCase(),
+      publicUrl: m.publicUrl,
+      publicFolderUrl,
+    };
+  });
+
+  // Lookup for .rels replacement by filename
+  const relsLookup = new Map<string, string>();
+  for (const m of normalizedMappings) {
+    relsLookup.set(m.normalizedLocalName, m.publicUrl);
   }
 
-  // Read & modify the .rels content
   const modifiedContents = new Map<string, string>();
 
+  // 1) Replace in externalLinks .rels
   for (const relsEntry of relsEntries) {
     const writer = new TextWriter();
     const content = await relsEntry.getData!(writer);
@@ -107,28 +132,23 @@ async function replaceMasterReferences(
     let modified = content;
     let wasModified = false;
 
-    // Find all Target="..." in the XML
-    // Pattern: Target="some/path/maestro%20EQ01.xlsx"
     const targetRegex = /Target="([^"]+)"/g;
     let match;
     while ((match = targetRegex.exec(content)) !== null) {
       const target = match[1];
-      // Skip if already an HTTP URL
       if (/^https?:\/\//i.test(target)) continue;
 
-      // Extract just the filename from the target (could be a path)
-      const decoded = decodeURIComponent(target);
+      const decoded = safeDecodeURIComponent(target);
       const fileName = decoded.split("/").pop()?.trim() ?? decoded.trim();
-      const normalizedFileName = fileName.toLowerCase();
+      const publicUrl = relsLookup.get(fileName.toLowerCase());
 
-      const publicUrl = lookup.get(normalizedFileName);
       if (publicUrl) {
         modified = modified.replace(
           `Target="${target}"`,
           `Target="${publicUrl}" TargetMode="External"`,
         );
         wasModified = true;
-        replacements.push(`${fileName} → ${publicUrl}`);
+        addReplacement(`${fileName} → ${publicUrl}`);
         console.log(
           `easyquote-upload-excel: Replaced external ref: ${fileName} → ${publicUrl}`,
         );
@@ -140,13 +160,46 @@ async function replaceMasterReferences(
     }
   }
 
+  // 2) Replace in worksheet formulas with direct path/URL references
+  // Example matched prefix:
+  // 'https://d.docs.live.net/.../maestros/[maestro EQ01.xlsx]
+  for (const wsEntry of worksheetEntries) {
+    const writer = new TextWriter();
+    const content = await wsEntry.getData!(writer);
+
+    let modified = content;
+    let wasModified = false;
+
+    for (const m of normalizedMappings) {
+      const escapedName = escapeRegExp(m.localName);
+      const quotedPathRegex = new RegExp(`'[^']*\\[${escapedName}\\]`, "g");
+      const next = modified.replace(
+        quotedPathRegex,
+        `'${m.publicFolderUrl}[${m.localName}]`,
+      );
+
+      if (next !== modified) {
+        wasModified = true;
+        modified = next;
+        addReplacement(`formula [${m.localName}] → ${m.publicFolderUrl}`);
+        console.log(
+          `easyquote-upload-excel: Replaced formula path for [${m.localName}] in ${wsEntry.filename}`,
+        );
+      }
+    }
+
+    if (wasModified) {
+      modifiedContents.set(wsEntry.filename, modified);
+    }
+  }
+
   await zipReader.close();
 
   if (!modifiedContents.size) {
     return { base64: base64Content, replacements: [] };
   }
 
-  // Re-build the ZIP with modified .rels files
+  // Rebuild ZIP with modified entries
   const zipReader2 = new ZipReader(new BlobReader(blob));
   const entries2 = await zipReader2.getEntries();
 
@@ -163,10 +216,8 @@ async function replaceMasterReferences(
 
     const modifiedContent = modifiedContents.get(entry.filename);
     if (modifiedContent) {
-      // Write modified .rels
       await zipWriter.add(entry.filename, new TextReader(modifiedContent));
     } else {
-      // Copy original entry
       const blobWriter = new BlobWriter();
       const data = await entry.getData!(blobWriter);
       await zipWriter.add(entry.filename, new BlobReader(data));
@@ -180,9 +231,9 @@ async function replaceMasterReferences(
   const arrayBuffer = await outputBlob.arrayBuffer();
   const outputBytes = new Uint8Array(arrayBuffer);
 
-  // Convert back to base64 (safe chunked approach to avoid stack overflow)
+  // Convert back to base64 (safe chunked approach)
   const chunks: string[] = [];
-  const chunkSize = 1024; // smaller chunks to avoid call stack limits
+  const chunkSize = 1024;
   for (let i = 0; i < outputBytes.length; i += chunkSize) {
     const chunk = outputBytes.subarray(i, i + chunkSize);
     chunks.push(String.fromCharCode.apply(null, Array.from(chunk)));
