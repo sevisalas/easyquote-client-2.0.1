@@ -739,7 +739,7 @@ export default function ExcelFiles() {
     if (!selectedFile) return;
     setIsUploading(true);
     try {
-      await uploadMutation.mutateAsync(selectedFile);
+      await uploadMutation.mutateAsync({ file: selectedFile, masterFileId: uploadMasterFileId });
     } finally {
       setIsUploading(false);
     }
