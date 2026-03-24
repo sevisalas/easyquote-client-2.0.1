@@ -1174,73 +1174,115 @@ export default function ExcelFiles() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredFiles.map(file => <TableRow key={file.id} className="h-auto">
-                    <TableCell className="py-1.5 px-3 text-sm font-medium">
-                      <div className="flex items-center gap-2">
-                        <FileSpreadsheet className="h-3.5 w-3.5 flex-shrink-0" />
-                        <span className="truncate">{file.fileName}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-1.5 px-3 text-sm">{formatFileSize(file.fileSizeKb)}</TableCell>
-                    <TableCell className="py-1.5 px-3">
-                      <Badge variant={file.isActive ? "default" : "secondary"} className="text-xs px-2 py-0 h-5">
-                        {file.isActive ? <>
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                            Activo
-                          </> : <>
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            Inactivo
-                          </>}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="w-24 py-1.5 px-3">
-                      <Badge variant={file.isPlanCompliant ? "default" : "destructive"} className="text-xs px-2 py-0 h-5">
-                        {file.isPlanCompliant ? <>
-                            <Check className="h-3 w-3 mr-1" />
-                            Sí
-                          </> : <>
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            No
-                          </>}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="py-1.5 px-3">
-                      <div className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(file.dateModified), {
-                    addSuffix: true,
-                    locale: es
-                  })}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right py-1.5 px-3">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => {
-                    setSelectedFileForProducts(file);
-                    setIsProductsDialogOpen(true);
-                  }} title="Ver productos asociados" className="relative h-7 w-7 p-0">
-                          <Package className="h-3.5 w-3.5" />
-                          {(() => {
-                      const count = allProducts.filter((p: any) => p.excelfileId === file.id && (includeInactive || p.isActive)).length;
-                      return count > 0 && <Badge variant="default" className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 flex items-center justify-center text-xs rounded-full">
-                                {count}
-                              </Badge>;
-                    })()}
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => downloadFile(file.id, file.fileName)} title="Descargar Excel" className="h-7 w-7 p-0">
-                          <Download className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => {
-                    setSelectedExcelFile(file);
-                    setIsUpdateExcelDialogOpen(true);
-                  }} title="Actualizar Excel" className="h-7 w-7 p-0">
-                          <Edit className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(file.id)} disabled={deleteMutation.isPending} title="Borrar Excel" className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>)}
+                {filteredFiles.map((file, idx) => {
+                  const prevFile = idx > 0 ? filteredFiles[idx - 1] : null;
+                  const showSeparator = isTradsis && prevFile?.isMaster && !file.isMaster;
+                  return (
+                    <>
+                      {showSeparator && (
+                        <TableRow key={`sep-${file.id}`}>
+                          <TableCell colSpan={6} className="py-1 px-3">
+                            <Separator className="my-1" />
+                          </TableCell>
+                        </TableRow>
+                      )}
+                      <TableRow key={file.id} className={`h-auto ${file.isMaster && isTradsis ? 'bg-accent/30' : ''}`}>
+                        <TableCell className="py-1.5 px-3 text-sm font-medium">
+                          <div className="flex items-center gap-2">
+                            <FileSpreadsheet className="h-3.5 w-3.5 flex-shrink-0" />
+                            <span className="truncate">{file.fileName}</span>
+                            {file.isMaster && isTradsis && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge variant="outline" className="text-xs px-1.5 py-0 h-5 gap-1 border-amber-500/50 text-amber-600">
+                                      <Crown className="h-3 w-3" />
+                                      Maestro
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {file.localReferenceName ? `Ref: ${file.localReferenceName}` : 'Archivo maestro'}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-1.5 px-3 text-sm">{formatFileSize(file.fileSizeKb)}</TableCell>
+                        <TableCell className="py-1.5 px-3">
+                          <Badge variant={file.isActive ? "default" : "secondary"} className="text-xs px-2 py-0 h-5">
+                            {file.isActive ? <>
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Activo
+                              </> : <>
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                                Inactivo
+                              </>}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="w-24 py-1.5 px-3">
+                          <Badge variant={file.isPlanCompliant ? "default" : "destructive"} className="text-xs px-2 py-0 h-5">
+                            {file.isPlanCompliant ? <>
+                                <Check className="h-3 w-3 mr-1" />
+                                Sí
+                              </> : <>
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                                No
+                              </>}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-1.5 px-3">
+                          <div className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(file.dateModified), {
+                        addSuffix: true,
+                        locale: es
+                      })}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right py-1.5 px-3">
+                          <div className="flex justify-end gap-1">
+                            {isTradsis && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleMaestroToggle(file)}
+                                title={file.isMaster ? "Quitar maestro" : "Marcar como maestro"}
+                                className={`h-7 w-7 p-0 ${file.isMaster ? 'text-amber-600 hover:text-amber-700' : ''}`}
+                                disabled={toggleMaestroMutation.isPending}
+                              >
+                                <Crown className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="sm" onClick={() => {
+                        setSelectedFileForProducts(file);
+                        setIsProductsDialogOpen(true);
+                      }} title="Ver productos asociados" className="relative h-7 w-7 p-0">
+                              <Package className="h-3.5 w-3.5" />
+                              {(() => {
+                          const count = allProducts.filter((p: any) => p.excelfileId === file.id && (includeInactive || p.isActive)).length;
+                          return count > 0 && <Badge variant="default" className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 flex items-center justify-center text-xs rounded-full">
+                                    {count}
+                                  </Badge>;
+                        })()}
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => downloadFile(file.id, file.fileName)} title="Descargar Excel" className="h-7 w-7 p-0">
+                              <Download className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => {
+                        setSelectedExcelFile(file);
+                        setIsUpdateExcelDialogOpen(true);
+                      }} title="Actualizar Excel" className="h-7 w-7 p-0">
+                              <Edit className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(file.id)} disabled={deleteMutation.isPending} title="Borrar Excel" className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    </>
+                  );
+                })}
               </TableBody>
             </Table>}
         </CardContent>
