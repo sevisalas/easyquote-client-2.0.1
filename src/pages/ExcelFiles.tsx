@@ -1380,5 +1380,53 @@ export default function ExcelFiles() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Maestro Reference Name Dialog */}
+      <Dialog open={isMaestroDialogOpen} onOpenChange={setIsMaestroDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5 text-amber-600" />
+              Marcar como maestro
+            </DialogTitle>
+            <DialogDescription>
+              Introduce el nombre de referencia local que usa este archivo en las fórmulas Excel (ej: maestro.xlsx).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="maestroRefName">Nombre de referencia local</Label>
+              <Input
+                id="maestroRefName"
+                value={maestroRefName}
+                onChange={(e) => setMaestroRefName(e.target.value)}
+                placeholder="maestro.xlsx"
+              />
+              <p className="text-xs text-muted-foreground">
+                Este nombre se usará para identificar el archivo en las referencias de otros Excel.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsMaestroDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                if (maestroTargetFile) {
+                  toggleMaestroMutation.mutate({
+                    fileId: maestroTargetFile.id,
+                    isMaster: true,
+                    localReferenceName: maestroRefName || null
+                  });
+                }
+              }}
+              disabled={toggleMaestroMutation.isPending}
+            >
+              {toggleMaestroMutation.isPending ? "Guardando..." : "Confirmar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>;
 }
