@@ -1047,6 +1047,35 @@ export default function ExcelFiles() {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>}
+
+                {/* Master file association - only show if there are masters and org is Tradsis */}
+                {isTradsis && masterFiles.length > 0 && selectedFile && (
+                  <div className="space-y-2 p-3 border rounded-lg bg-accent/20">
+                    <div className="flex items-center gap-2">
+                      <Crown className="h-4 w-4 text-amber-600" />
+                      <Label className="text-sm font-medium">Asociar a un archivo maestro</Label>
+                    </div>
+                    <Select
+                      value={uploadMasterFileId || "none"}
+                      onValueChange={(v) => setUploadMasterFileId(v === "none" ? null : v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sin maestro asociado" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Sin maestro asociado</SelectItem>
+                        {masterFiles.map((mf) => (
+                          <SelectItem key={mf.id} value={mf.id}>
+                            {mf.fileName} {mf.localReferenceName ? `(ref: ${mf.localReferenceName})` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Si este archivo referencia un maestro, selecciónalo para vincular automáticamente las fórmulas.
+                    </p>
+                  </div>
+                )}
               </div>
               <DialogFooter>
                 <Button onClick={handleUpload} disabled={!selectedFile || isUploading} className="w-full">
