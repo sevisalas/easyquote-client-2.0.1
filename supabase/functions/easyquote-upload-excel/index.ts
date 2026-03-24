@@ -180,14 +180,14 @@ async function replaceMasterReferences(
   const arrayBuffer = await outputBlob.arrayBuffer();
   const outputBytes = new Uint8Array(arrayBuffer);
 
-  // Convert back to base64
-  let outputBase64 = "";
-  const chunkSize = 8192;
+  // Convert back to base64 (safe chunked approach to avoid stack overflow)
+  const chunks: string[] = [];
+  const chunkSize = 1024; // smaller chunks to avoid call stack limits
   for (let i = 0; i < outputBytes.length; i += chunkSize) {
     const chunk = outputBytes.subarray(i, i + chunkSize);
-    outputBase64 += String.fromCharCode(...chunk);
+    chunks.push(String.fromCharCode.apply(null, Array.from(chunk)));
   }
-  outputBase64 = btoa(outputBase64);
+  const outputBase64 = btoa(chunks.join(""));
 
   return { base64: outputBase64, replacements };
 }
