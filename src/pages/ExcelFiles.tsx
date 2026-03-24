@@ -54,6 +54,9 @@ export default function ExcelFiles() {
   const [includeInactive, setIncludeInactive] = useState(false);
   const [isProductsDialogOpen, setIsProductsDialogOpen] = useState(false);
   const [selectedFileForProducts, setSelectedFileForProducts] = useState<EasyQuoteExcelFile | null>(null);
+  const [isMaestroDialogOpen, setIsMaestroDialogOpen] = useState(false);
+  const [maestroTargetFile, setMaestroTargetFile] = useState<any>(null);
+  const [maestroRefName, setMaestroRefName] = useState("");
   const [newProductData, setNewProductData] = useState({
     productName: "",
     excelFileId: "",
