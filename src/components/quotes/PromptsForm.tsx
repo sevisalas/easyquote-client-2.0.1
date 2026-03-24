@@ -133,6 +133,13 @@ function extractPrompts(product: any): PromptDef[] {
   ];
   const raw: any[] = (candidates.find((r) => Array.isArray(r)) as any[]) || [];
 
+  // DEBUG: Log raw prompt data to diagnose visibility issues
+  if (raw.length > 0) {
+    console.log("[PromptsForm DEBUG] Raw prompts from API:", raw.map((f: any) => ({
+      id: f.id, name: f.name, promptText: f.promptText, promptCell: f.promptCell,
+      keys: Object.keys(f).filter(k => !['valueOptions','options'].includes(k)),
+    })));
+  }
   return raw.map((f: any, idx: number): PromptDef => {
     const id = String(f.id ?? f.key ?? f.code ?? f.slug ?? f.name ?? `field_${idx}`);
     
