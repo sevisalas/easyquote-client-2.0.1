@@ -117,6 +117,9 @@ export default function ExcelFiles() {
     isOrgAdmin
   } = useSubscription();
 
+  const TRADSIS_ORG_ID = 'f95d535e-5a8f-4fef-9dda-75071d5b0e9e';
+  const isTradsis = organization?.id === TRADSIS_ORG_ID || membership?.organization_id === TRADSIS_ORG_ID;
+
   // Fetch all products from EasyQuote to check associations
   const {
     data: allProducts = []
