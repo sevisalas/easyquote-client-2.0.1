@@ -625,7 +625,40 @@ export default function ExcelFiles() {
     }
   });
 
-  // Dropzone config
+  // Toggle maestro status
+  const toggleMaestroMutation = useMutation({
+    mutationFn: async ({ fileId, isMaster, localReferenceName }: { fileId: string; isMaster: boolean; localReferenceName: string | null }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user");
+      const { error } = await supabase.from("excel_files").update({
+        is_master: isMaster,
+        local_reference_name: localReferenceName
+      } as any).eq("file_id", fileId).eq("user_id", user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["excel-files-meta"] });
+      toast({ title: "Actualizado", description: "Estado de maestro actualizado." });
+      setIsMaestroDialogOpen(false);
+    },
+    onError: (error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const handleMaestroToggle = (file: any) => {
+    if (file.isMaster) {
+      // Unmark as maestro directly
+      toggleMaestroMutation.mutate({ fileId: file.id, isMaster: false, localReferenceName: null });
+    } else {
+      // Open dialog to set reference name
+      setMaestroTargetFile(file);
+      setMaestroRefName(file.localReferenceName || file.fileName);
+      setIsMaestroDialogOpen(true);
+    }
+  };
+
+  
   const {
     getRootProps,
     getInputProps,
