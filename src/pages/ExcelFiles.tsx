@@ -1443,6 +1443,34 @@ export default function ExcelFiles() {
                 Este nombre se usará para identificar el archivo en las referencias de otros Excel.
               </p>
             </div>
+            {maestroTargetFile && subscriberId && (
+              <div className="space-y-2">
+                <Label>URL pública del maestro</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    readOnly
+                    value={`https://sheets.easyquote.cloud/${encodeURIComponent(subscriberId)}/${encodeURIComponent(maestroTargetFile.id)}/${encodeURIComponent(maestroTargetFile.fileName)}`}
+                    className="text-xs font-mono"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0"
+                    onClick={() => {
+                      const url = `https://sheets.easyquote.cloud/${encodeURIComponent(subscriberId)}/${encodeURIComponent(maestroTargetFile.id)}/${encodeURIComponent(maestroTargetFile.fileName)}`;
+                      navigator.clipboard.writeText(url);
+                      toast({ title: "URL copiada", description: "La URL del maestro se ha copiado al portapapeles." });
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Esta es la URL que se inyecta en los archivos hijo al subirlos.
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsMaestroDialogOpen(false)}>
