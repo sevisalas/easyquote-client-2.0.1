@@ -180,14 +180,14 @@ async function replaceMasterReferences(
   const arrayBuffer = await outputBlob.arrayBuffer();
   const outputBytes = new Uint8Array(arrayBuffer);
 
-  // Convert back to base64
-  let outputBase64 = "";
-  const chunkSize = 8192;
+  // Convert back to base64 (safe chunked approach to avoid stack overflow)
+  const chunks: string[] = [];
+  const chunkSize = 1024; // smaller chunks to avoid call stack limits
   for (let i = 0; i < outputBytes.length; i += chunkSize) {
     const chunk = outputBytes.subarray(i, i + chunkSize);
-    outputBase64 += String.fromCharCode(...chunk);
+    chunks.push(String.fromCharCode.apply(null, Array.from(chunk)));
   }
-  outputBase64 = btoa(outputBase64);
+  const outputBase64 = btoa(chunks.join(""));
 
   return { base64: outputBase64, replacements };
 }
@@ -324,26 +324,30 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // ── Upload to EasyQuote API ────────────────────────────────────────
-    const requestBody = {
-      FileName: fileName,
-      File: finalFileContent,
-    };
-
-    console.log("easyquote-upload-excel: Request body keys:", Object.keys(requestBody));
-
-    const response = await fetch(
-      "https://api.easyquote.cloud/api/v1/excelfiles",
-      {
+    async function uploadToEasyQuote(content: string): Promise<Response> {
+      return fetch("https://api.easyquote.cloud/api/v1/excelfiles", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(requestBody),
-      },
-    );
+        body: JSON.stringify({ FileName: fileName, File: content }),
+      });
+    }
 
+    let response = await uploadToEasyQuote(finalFileContent);
     console.log("easyquote-upload-excel: Response status:", response.status);
+
+    // If modified file failed and we did replacements, retry with original
+    if (!response.ok && masterReplacements.length > 0 && finalFileContent !== fileContent) {
+      console.warn(
+        "easyquote-upload-excel: Modified file rejected (status " + response.status + "), retrying with original file...",
+      );
+      await response.text(); // consume body
+      response = await uploadToEasyQuote(fileContent);
+      console.log("easyquote-upload-excel: Retry response status:", response.status);
+      masterReplacements = []; // clear since we used original
+    }
 
     const responseText = await response.text();
     console.log(
