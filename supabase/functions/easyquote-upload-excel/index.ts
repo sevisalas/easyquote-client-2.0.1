@@ -50,10 +50,6 @@ function safeDecodeURIComponent(value: string): string {
   }
 }
 
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 /**
  * Given a base64-encoded xlsx, replace master references in:
  * 1) externalLinks .rels files
@@ -124,39 +120,66 @@ async function replaceMasterReferences(
 
   const modifiedContents = new Map<string, string>();
 
-  // 1) Replace in externalLinks .rels
-  for (const relsEntry of relsEntries) {
+  // Detect files that already use direct formula references like [maestro.xlsx].
+  // In that case we prioritize worksheet formula replacement and skip .rels,
+  // because changing .rels has been causing EasyQuote upload 500 for these files.
+  let hasDirectFormulaReferences = false;
+  for (const wsEntry of worksheetEntries) {
     const writer = new TextWriter();
-    const content = await relsEntry.getData!(writer);
+    const content = await wsEntry.getData!(writer);
+    const contentLower = content.toLowerCase();
 
-    let modified = content;
-    let wasModified = false;
+    const found = normalizedMappings.some((m) => {
+      const plain = `[${m.localName}]`.toLowerCase();
+      const encoded = `[${encodeURIComponent(m.localName)}]`.toLowerCase();
+      return contentLower.includes(plain) || contentLower.includes(encoded);
+    });
 
-    const targetRegex = /Target="([^"]+)"/g;
-    let match;
-    while ((match = targetRegex.exec(content)) !== null) {
-      const target = match[1];
-      if (/^https?:\/\//i.test(target)) continue;
-
-      const decoded = safeDecodeURIComponent(target);
-      const fileName = decoded.split("/").pop()?.trim() ?? decoded.trim();
-      const publicUrl = relsLookup.get(fileName.toLowerCase());
-
-      if (publicUrl) {
-        modified = modified.replace(
-          `Target="${target}"`,
-          `Target="${publicUrl}" TargetMode="External"`,
-        );
-        wasModified = true;
-        addReplacement(`${fileName} → ${publicUrl}`);
-        console.log(
-          `easyquote-upload-excel: Replaced external ref: ${fileName} → ${publicUrl}`,
-        );
-      }
+    if (found) {
+      hasDirectFormulaReferences = true;
+      break;
     }
+  }
 
-    if (wasModified) {
-      modifiedContents.set(relsEntry.filename, modified);
+  if (hasDirectFormulaReferences) {
+    console.log(
+      "easyquote-upload-excel: Direct formula references detected; skipping externalLinks .rels replacement",
+    );
+  } else {
+    // 1) Replace in externalLinks .rels
+    for (const relsEntry of relsEntries) {
+      const writer = new TextWriter();
+      const content = await relsEntry.getData!(writer);
+
+      let modified = content;
+      let wasModified = false;
+
+      const targetRegex = /Target="([^"]+)"/g;
+      let match;
+      while ((match = targetRegex.exec(content)) !== null) {
+        const target = match[1];
+        if (/^https?:\/\//i.test(target)) continue;
+
+        const decoded = safeDecodeURIComponent(target);
+        const fileName = decoded.split("/").pop()?.trim() ?? decoded.trim();
+        const publicUrl = relsLookup.get(fileName.toLowerCase());
+
+        if (publicUrl) {
+          modified = modified.replace(
+            `Target="${target}"`,
+            `Target="${publicUrl}"`,
+          );
+          wasModified = true;
+          addReplacement(`${fileName} → ${publicUrl}`);
+          console.log(
+            `easyquote-upload-excel: Replaced external ref: ${fileName} → ${publicUrl}`,
+          );
+        }
+      }
+
+      if (wasModified) {
+        modifiedContents.set(relsEntry.filename, modified);
+      }
     }
   }
 
