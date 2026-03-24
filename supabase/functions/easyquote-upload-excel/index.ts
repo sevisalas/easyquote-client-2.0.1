@@ -395,16 +395,8 @@ serve(async (req: Request): Promise<Response> => {
     let response = await uploadToEasyQuote(finalFileContent);
     console.log("easyquote-upload-excel: Response status:", response.status);
 
-    // If modified file failed and we did replacements, retry with original
-    if (!response.ok && masterReplacements.length > 0 && finalFileContent !== fileContent) {
-      console.warn(
-        "easyquote-upload-excel: Modified file rejected (status " + response.status + "), retrying with original file...",
-      );
-      await response.text(); // consume body
-      response = await uploadToEasyQuote(fileContent);
-      console.log("easyquote-upload-excel: Retry response status:", response.status);
-      masterReplacements = []; // clear since we used original
-    }
+    // Never upload original silently if replacement was expected.
+    // If modified upload fails, return the error so user knows replacement didn't apply.
 
     const responseText = await response.text();
     console.log(
