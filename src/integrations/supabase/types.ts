@@ -839,6 +839,7 @@ export type Database = {
           filename: string
           id: string
           is_master: boolean | null
+          local_reference_name: string | null
           mime_type: string | null
           original_filename: string
           processed: boolean
@@ -854,6 +855,7 @@ export type Database = {
           filename: string
           id?: string
           is_master?: boolean | null
+          local_reference_name?: string | null
           mime_type?: string | null
           original_filename: string
           processed?: boolean
@@ -869,6 +871,7 @@ export type Database = {
           filename?: string
           id?: string
           is_master?: boolean | null
+          local_reference_name?: string | null
           mime_type?: string | null
           original_filename?: string
           processed?: boolean

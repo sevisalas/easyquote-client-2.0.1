@@ -11,7 +11,8 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useDropzone } from "react-dropzone";
 import { toast } from "@/hooks/use-toast";
-import { Download, FileSpreadsheet, Plus, Trash2, Upload, AlertCircle, CheckCircle2, Package, Edit, Crown, Copy, Check } from "lucide-react";
+import { Download, FileSpreadsheet, Plus, Trash2, Upload, AlertCircle, CheckCircle2, Package, Edit, Crown, Copy, Check, X } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { Separator } from "@/components/ui/separator";
@@ -53,6 +54,9 @@ export default function ExcelFiles() {
   const [includeInactive, setIncludeInactive] = useState(false);
   const [isProductsDialogOpen, setIsProductsDialogOpen] = useState(false);
   const [selectedFileForProducts, setSelectedFileForProducts] = useState<EasyQuoteExcelFile | null>(null);
+  const [isMaestroDialogOpen, setIsMaestroDialogOpen] = useState(false);
+  const [maestroTargetFile, setMaestroTargetFile] = useState<any>(null);
+  const [maestroRefName, setMaestroRefName] = useState("");
   const [newProductData, setNewProductData] = useState({
     productName: "",
     excelFileId: "",
@@ -112,6 +116,9 @@ export default function ExcelFiles() {
     isSuperAdmin,
     isOrgAdmin
   } = useSubscription();
+
+  const TRADSIS_ORG_ID = 'f95d535e-5a8f-4fef-9dda-75071d5b0e9e';
+  const isTradsis = organization?.id === TRADSIS_ORG_ID || membership?.organization_id === TRADSIS_ORG_ID;
 
   // Fetch all products from EasyQuote to check associations
   const {
@@ -230,15 +237,24 @@ export default function ExcelFiles() {
   const filesWithMeta = files.map(file => {
     const meta = excelFilesMeta?.find(m => m.file_id === file.id);
     const isMaster = meta?.is_master || false;
+    const localReferenceName = (meta as any)?.local_reference_name || null;
     return {
       ...file,
       isMaster,
-      fileUrl: null // Los archivos maestros ya no existen
+      localReferenceName,
+      fileUrl: null
     };
   });
 
+  // Sort: maestros first, then by fileName
+  const sortedFilesWithMeta = [...filesWithMeta].sort((a, b) => {
+    if (a.isMaster && !b.isMaster) return -1;
+    if (!a.isMaster && b.isMaster) return 1;
+    return a.fileName.localeCompare(b.fileName);
+  });
+
   // Filter files based on includeInactive setting
-  const filteredFiles = includeInactive ? filesWithMeta : filesWithMeta.filter(file => file.isActive);
+  const filteredFiles = includeInactive ? sortedFilesWithMeta : sortedFilesWithMeta.filter(file => file.isActive);
   console.log('[ExcelFiles] Filtered files:', {
     totalFiles: files.length,
     filesWithMeta: filesWithMeta.length,
@@ -609,7 +625,40 @@ export default function ExcelFiles() {
     }
   });
 
-  // Dropzone config
+  // Toggle maestro status
+  const toggleMaestroMutation = useMutation({
+    mutationFn: async ({ fileId, isMaster, localReferenceName }: { fileId: string; isMaster: boolean; localReferenceName: string | null }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user");
+      const { error } = await supabase.from("excel_files").update({
+        is_master: isMaster,
+        local_reference_name: localReferenceName
+      } as any).eq("file_id", fileId).eq("user_id", user.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["excel-files-meta"] });
+      toast({ title: "Actualizado", description: "Estado de maestro actualizado." });
+      setIsMaestroDialogOpen(false);
+    },
+    onError: (error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    }
+  });
+
+  const handleMaestroToggle = (file: any) => {
+    if (file.isMaster) {
+      // Unmark as maestro directly
+      toggleMaestroMutation.mutate({ fileId: file.id, isMaster: false, localReferenceName: null });
+    } else {
+      // Open dialog to set reference name
+      setMaestroTargetFile(file);
+      setMaestroRefName(file.localReferenceName || file.fileName);
+      setIsMaestroDialogOpen(true);
+    }
+  };
+
+  
   const {
     getRootProps,
     getInputProps,
@@ -1125,73 +1174,115 @@ export default function ExcelFiles() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredFiles.map(file => <TableRow key={file.id} className="h-auto">
-                    <TableCell className="py-1.5 px-3 text-sm font-medium">
-                      <div className="flex items-center gap-2">
-                        <FileSpreadsheet className="h-3.5 w-3.5 flex-shrink-0" />
-                        <span className="truncate">{file.fileName}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="py-1.5 px-3 text-sm">{formatFileSize(file.fileSizeKb)}</TableCell>
-                    <TableCell className="py-1.5 px-3">
-                      <Badge variant={file.isActive ? "default" : "secondary"} className="text-xs px-2 py-0 h-5">
-                        {file.isActive ? <>
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                            Activo
-                          </> : <>
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            Inactivo
-                          </>}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="w-24 py-1.5 px-3">
-                      <Badge variant={file.isPlanCompliant ? "default" : "destructive"} className="text-xs px-2 py-0 h-5">
-                        {file.isPlanCompliant ? <>
-                            <Check className="h-3 w-3 mr-1" />
-                            Sí
-                          </> : <>
-                            <AlertCircle className="h-3 w-3 mr-1" />
-                            No
-                          </>}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="py-1.5 px-3">
-                      <div className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(file.dateModified), {
-                    addSuffix: true,
-                    locale: es
-                  })}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right py-1.5 px-3">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => {
-                    setSelectedFileForProducts(file);
-                    setIsProductsDialogOpen(true);
-                  }} title="Ver productos asociados" className="relative h-7 w-7 p-0">
-                          <Package className="h-3.5 w-3.5" />
-                          {(() => {
-                      const count = allProducts.filter((p: any) => p.excelfileId === file.id && (includeInactive || p.isActive)).length;
-                      return count > 0 && <Badge variant="default" className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 flex items-center justify-center text-xs rounded-full">
-                                {count}
-                              </Badge>;
-                    })()}
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => downloadFile(file.id, file.fileName)} title="Descargar Excel" className="h-7 w-7 p-0">
-                          <Download className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => {
-                    setSelectedExcelFile(file);
-                    setIsUpdateExcelDialogOpen(true);
-                  }} title="Actualizar Excel" className="h-7 w-7 p-0">
-                          <Edit className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(file.id)} disabled={deleteMutation.isPending} title="Borrar Excel" className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>)}
+                {filteredFiles.map((file, idx) => {
+                  const prevFile = idx > 0 ? filteredFiles[idx - 1] : null;
+                  const showSeparator = isTradsis && prevFile?.isMaster && !file.isMaster;
+                  return (
+                    <>
+                      {showSeparator && (
+                        <TableRow key={`sep-${file.id}`}>
+                          <TableCell colSpan={6} className="py-1 px-3">
+                            <Separator className="my-1" />
+                          </TableCell>
+                        </TableRow>
+                      )}
+                      <TableRow key={file.id} className={`h-auto ${file.isMaster && isTradsis ? 'bg-accent/30' : ''}`}>
+                        <TableCell className="py-1.5 px-3 text-sm font-medium">
+                          <div className="flex items-center gap-2">
+                            <FileSpreadsheet className="h-3.5 w-3.5 flex-shrink-0" />
+                            <span className="truncate">{file.fileName}</span>
+                            {file.isMaster && isTradsis && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Badge variant="outline" className="text-xs px-1.5 py-0 h-5 gap-1 border-amber-500/50 text-amber-600">
+                                      <Crown className="h-3 w-3" />
+                                      Maestro
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {file.localReferenceName ? `Ref: ${file.localReferenceName}` : 'Archivo maestro'}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-1.5 px-3 text-sm">{formatFileSize(file.fileSizeKb)}</TableCell>
+                        <TableCell className="py-1.5 px-3">
+                          <Badge variant={file.isActive ? "default" : "secondary"} className="text-xs px-2 py-0 h-5">
+                            {file.isActive ? <>
+                                <CheckCircle2 className="h-3 w-3 mr-1" />
+                                Activo
+                              </> : <>
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                                Inactivo
+                              </>}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="w-24 py-1.5 px-3">
+                          <Badge variant={file.isPlanCompliant ? "default" : "destructive"} className="text-xs px-2 py-0 h-5">
+                            {file.isPlanCompliant ? <>
+                                <Check className="h-3 w-3 mr-1" />
+                                Sí
+                              </> : <>
+                                <AlertCircle className="h-3 w-3 mr-1" />
+                                No
+                              </>}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="py-1.5 px-3">
+                          <div className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(file.dateModified), {
+                        addSuffix: true,
+                        locale: es
+                      })}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right py-1.5 px-3">
+                          <div className="flex justify-end gap-1">
+                            {isTradsis && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleMaestroToggle(file)}
+                                title={file.isMaster ? "Quitar maestro" : "Marcar como maestro"}
+                                className={`h-7 w-7 p-0 ${file.isMaster ? 'text-amber-600 hover:text-amber-700' : ''}`}
+                                disabled={toggleMaestroMutation.isPending}
+                              >
+                                <Crown className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="sm" onClick={() => {
+                        setSelectedFileForProducts(file);
+                        setIsProductsDialogOpen(true);
+                      }} title="Ver productos asociados" className="relative h-7 w-7 p-0">
+                              <Package className="h-3.5 w-3.5" />
+                              {(() => {
+                          const count = allProducts.filter((p: any) => p.excelfileId === file.id && (includeInactive || p.isActive)).length;
+                          return count > 0 && <Badge variant="default" className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 flex items-center justify-center text-xs rounded-full">
+                                    {count}
+                                  </Badge>;
+                        })()}
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => downloadFile(file.id, file.fileName)} title="Descargar Excel" className="h-7 w-7 p-0">
+                              <Download className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => {
+                        setSelectedExcelFile(file);
+                        setIsUpdateExcelDialogOpen(true);
+                      }} title="Actualizar Excel" className="h-7 w-7 p-0">
+                              <Edit className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate(file.id)} disabled={deleteMutation.isPending} title="Borrar Excel" className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    </>
+                  );
+                })}
               </TableBody>
             </Table>}
         </CardContent>
@@ -1285,6 +1376,54 @@ export default function ExcelFiles() {
             }
           }} disabled={!selectedFileForUpdate || updateExcelMutation.isPending} className="w-full">
               {updateExcelMutation.isPending ? "Actualizando..." : "Actualizar Archivo"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Maestro Reference Name Dialog */}
+      <Dialog open={isMaestroDialogOpen} onOpenChange={setIsMaestroDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5 text-amber-600" />
+              Marcar como maestro
+            </DialogTitle>
+            <DialogDescription>
+              Introduce el nombre de referencia local que usa este archivo en las fórmulas Excel (ej: maestro.xlsx).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="maestroRefName">Nombre de referencia local</Label>
+              <Input
+                id="maestroRefName"
+                value={maestroRefName}
+                onChange={(e) => setMaestroRefName(e.target.value)}
+                placeholder="maestro.xlsx"
+              />
+              <p className="text-xs text-muted-foreground">
+                Este nombre se usará para identificar el archivo en las referencias de otros Excel.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsMaestroDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={() => {
+                if (maestroTargetFile) {
+                  toggleMaestroMutation.mutate({
+                    fileId: maestroTargetFile.id,
+                    isMaster: true,
+                    localReferenceName: maestroRefName || null
+                  });
+                }
+              }}
+              disabled={toggleMaestroMutation.isPending}
+            >
+              {toggleMaestroMutation.isPending ? "Guardando..." : "Confirmar"}
             </Button>
           </DialogFooter>
         </DialogContent>
