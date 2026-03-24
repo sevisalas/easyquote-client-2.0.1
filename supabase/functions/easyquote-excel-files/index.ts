@@ -72,6 +72,14 @@ serve(async (req: Request): Promise<Response> => {
 
     const data = await response.json();
     console.log("easyquote-excel-files: Files received:", data?.length || 0);
+    // Debug: log first file structure to see available fields
+    if (Array.isArray(data) && data.length > 0) {
+      console.log("easyquote-excel-files: First file keys:", JSON.stringify(Object.keys(data[0])));
+      console.log("easyquote-excel-files: First file sample:", JSON.stringify(data[0]));
+    } else if (data && !Array.isArray(data)) {
+      console.log("easyquote-excel-files: Single file keys:", JSON.stringify(Object.keys(data)));
+      console.log("easyquote-excel-files: Single file sample:", JSON.stringify(data));
+    }
 
     return new Response(JSON.stringify(data), {
       status: 200,
