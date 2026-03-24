@@ -169,7 +169,7 @@ async function replaceMasterReferences(
 
     let wsReplacementsCount = 0;
     const modified = content.replace(
-      /('|'')([^'<]*?\[([^\]]+)\])/g,
+      /(')([^'<]*?\[([^\]]+)\])/g,
       (fullMatch, quoteMark: string, _pathWithBracket: string, bracketFileName: string) => {
         const normalizedBracketName = safeDecodeURIComponent(bracketFileName)
           .toLowerCase()
