@@ -190,16 +190,6 @@ function extractPrompts(product: any): PromptDef[] {
     const visibility = f.visibleWhen ?? f.showIf ?? f.when ?? f.condition ?? f.conditions ?? undefined;
     const hiddenWhen = f.hiddenWhen ?? f.hideIf ?? undefined;
 
-    // DEBUG: Log visibility conditions for all prompts that have any condition-like property
-    if (visibility || hiddenWhen || f.dependsOn || f.conditionalOn || f.showWhen || f.displayCondition) {
-      console.log(`[PromptsForm DEBUG] Prompt "${label}" (id=${id}):`, {
-        visibility, hiddenWhen,
-        dependsOn: f.dependsOn, conditionalOn: f.conditionalOn,
-        showWhen: f.showWhen, displayCondition: f.displayCondition,
-        allKeys: Object.keys(f),
-      });
-    }
-
     return {
       id,
       label,
