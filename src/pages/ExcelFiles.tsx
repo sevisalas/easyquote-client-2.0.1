@@ -655,15 +655,10 @@ export default function ExcelFiles() {
   });
 
   const handleMaestroToggle = (file: any) => {
-    if (file.isMaster) {
-      // Unmark as maestro directly
-      toggleMaestroMutation.mutate({ fileId: file.id, isMaster: false, localReferenceName: null });
-    } else {
-      // Open dialog to set reference name
-      setMaestroTargetFile(file);
-      setMaestroRefName(file.localReferenceName || file.fileName);
-      setIsMaestroDialogOpen(true);
-    }
+    // Always open dialog — for both marking and editing/unmarking
+    setMaestroTargetFile(file);
+    setMaestroRefName(file.localReferenceName || file.fileName);
+    setIsMaestroDialogOpen(true);
   };
 
   
@@ -1424,7 +1419,7 @@ export default function ExcelFiles() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Crown className="h-5 w-5 text-amber-600" />
-              Marcar como maestro
+              {maestroTargetFile?.isMaster ? "Configuración de maestro" : "Marcar como maestro"}
             </DialogTitle>
             <DialogDescription>
               Introduce el nombre de referencia local que usa este archivo en las fórmulas Excel (ej: maestro.xlsx).
@@ -1476,6 +1471,23 @@ export default function ExcelFiles() {
             <Button variant="outline" onClick={() => setIsMaestroDialogOpen(false)}>
               Cancelar
             </Button>
+            {maestroTargetFile?.isMaster && (
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (maestroTargetFile) {
+                    toggleMaestroMutation.mutate({
+                      fileId: maestroTargetFile.id,
+                      isMaster: false,
+                      localReferenceName: null
+                    });
+                  }
+                }}
+                disabled={toggleMaestroMutation.isPending}
+              >
+                Desmarcar maestro
+              </Button>
+            )}
             <Button
               onClick={() => {
                 if (maestroTargetFile) {
