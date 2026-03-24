@@ -324,26 +324,30 @@ serve(async (req: Request): Promise<Response> => {
     }
 
     // ── Upload to EasyQuote API ────────────────────────────────────────
-    const requestBody = {
-      FileName: fileName,
-      File: finalFileContent,
-    };
-
-    console.log("easyquote-upload-excel: Request body keys:", Object.keys(requestBody));
-
-    const response = await fetch(
-      "https://api.easyquote.cloud/api/v1/excelfiles",
-      {
+    async function uploadToEasyQuote(content: string): Promise<Response> {
+      return fetch("https://api.easyquote.cloud/api/v1/excelfiles", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(requestBody),
-      },
-    );
+        body: JSON.stringify({ FileName: fileName, File: content }),
+      });
+    }
 
+    let response = await uploadToEasyQuote(finalFileContent);
     console.log("easyquote-upload-excel: Response status:", response.status);
+
+    // If modified file failed and we did replacements, retry with original
+    if (!response.ok && masterReplacements.length > 0 && finalFileContent !== fileContent) {
+      console.warn(
+        "easyquote-upload-excel: Modified file rejected (status " + response.status + "), retrying with original file...",
+      );
+      await response.text(); // consume body
+      response = await uploadToEasyQuote(fileContent);
+      console.log("easyquote-upload-excel: Retry response status:", response.status);
+      masterReplacements = []; // clear since we used original
+    }
 
     const responseText = await response.text();
     console.log(
