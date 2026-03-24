@@ -44,6 +44,7 @@ export default function ExcelFiles() {
   } = useSubscription();
   const navigate = useNavigate();
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [uploadMasterFileId, setUploadMasterFileId] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedExcelFile, setSelectedExcelFile] = useState<EasyQuoteExcelFile | null>(null);
@@ -269,9 +270,12 @@ export default function ExcelFiles() {
     }
   }, [files]);
 
+  // Available master files for association
+  const masterFiles = filesWithMeta.filter(f => f.isMaster && f.isActive);
+
   // Upload Excel file to EasyQuote API
   const uploadMutation = useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async ({ file, masterFileId }: { file: File; masterFileId: string | null }) => {
       if (!file) throw new Error("No file selected");
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) {
@@ -284,7 +288,6 @@ export default function ExcelFiles() {
         reader.readAsDataURL(file);
         reader.onload = () => {
           const result = reader.result as string;
-          // Remove the data URL prefix (data:application/...;base64,)
           const base64Data = result.split(',')[1];
           resolve(base64Data);
         };
@@ -299,7 +302,8 @@ export default function ExcelFiles() {
         body: {
           token,
           fileName: file.name,
-          fileContent: base64
+          fileContent: base64,
+          associatedMasterFileId: masterFileId || undefined
         }
       });
       if (error) {
@@ -311,15 +315,19 @@ export default function ExcelFiles() {
       return data;
     },
     onSuccess: data => {
+      const replacementMsg = data?.masterReplacements?.length
+        ? ` Se vincularon ${data.masterReplacements.length} referencia(s) al maestro.`
+        : '';
       toast({
         title: "Archivo subido exitosamente",
-        description: `El archivo ${data.fileName} se ha subido correctamente.`
+        description: `El archivo ${data.fileName} se ha subido correctamente.${replacementMsg}`
       });
       queryClient.invalidateQueries({
         queryKey: ["easyquote-excel-files"]
       });
       setIsUploadDialogOpen(false);
       setSelectedFile(null);
+      setUploadMasterFileId(null);
     },
     onError: error => {
       toast({
@@ -731,7 +739,7 @@ export default function ExcelFiles() {
     if (!selectedFile) return;
     setIsUploading(true);
     try {
-      await uploadMutation.mutateAsync(selectedFile);
+      await uploadMutation.mutateAsync({ file: selectedFile, masterFileId: uploadMasterFileId });
     } finally {
       setIsUploading(false);
     }
@@ -1039,6 +1047,35 @@ export default function ExcelFiles() {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>}
+
+                {/* Master file association - only show if there are masters and org is Tradsis */}
+                {isTradsis && masterFiles.length > 0 && selectedFile && (
+                  <div className="space-y-2 p-3 border rounded-lg bg-accent/20">
+                    <div className="flex items-center gap-2">
+                      <Crown className="h-4 w-4 text-amber-600" />
+                      <Label className="text-sm font-medium">Asociar a un archivo maestro</Label>
+                    </div>
+                    <Select
+                      value={uploadMasterFileId || "none"}
+                      onValueChange={(v) => setUploadMasterFileId(v === "none" ? null : v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sin maestro asociado" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Sin maestro asociado</SelectItem>
+                        {masterFiles.map((mf) => (
+                          <SelectItem key={mf.id} value={mf.id}>
+                            {mf.fileName} {mf.localReferenceName ? `(ref: ${mf.localReferenceName})` : ''}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      Si este archivo referencia un maestro, selecciónalo para vincular automáticamente las fórmulas.
+                    </p>
+                  </div>
+                )}
               </div>
               <DialogFooter>
                 <Button onClick={handleUpload} disabled={!selectedFile || isUploading} className="w-full">

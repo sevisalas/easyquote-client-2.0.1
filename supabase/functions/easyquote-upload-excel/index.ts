@@ -208,7 +208,7 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const { token, fileName, fileContent } = await req.json();
+    const { token, fileName, fileContent, associatedMasterFileId } = await req.json();
 
     if (!token) {
       return new Response(
@@ -255,13 +255,19 @@ serve(async (req: Request): Promise<Response> => {
       } = await sb.auth.getUser(supabaseToken);
 
       if (user) {
-        // Find master files for this user's organization
-        const { data: masters } = await sb
+        // Find master files - if a specific master was selected, use only that one
+        let mastersQuery = sb
           .from("excel_files")
           .select("file_id, filename, original_filename, local_reference_name")
           .eq("user_id", user.id)
           .eq("is_master", true)
           .not("local_reference_name", "is", null);
+
+        if (associatedMasterFileId) {
+          mastersQuery = mastersQuery.eq("file_id", associatedMasterFileId);
+        }
+
+        const { data: masters } = await mastersQuery;
 
         if (masters?.length) {
           // Extract subscriberId from EasyQuote JWT for URL construction
