@@ -133,6 +133,13 @@ function extractPrompts(product: any): PromptDef[] {
   ];
   const raw: any[] = (candidates.find((r) => Array.isArray(r)) as any[]) || [];
 
+  // DEBUG: Log raw prompt data to diagnose visibility issues
+  if (raw.length > 0) {
+    console.log("[PromptsForm DEBUG] Raw prompts from API:", raw.map((f: any) => ({
+      id: f.id, name: f.name, promptText: f.promptText, promptCell: f.promptCell,
+      keys: Object.keys(f).filter(k => !['valueOptions','options'].includes(k)),
+    })));
+  }
   return raw.map((f: any, idx: number): PromptDef => {
     const id = String(f.id ?? f.key ?? f.code ?? f.slug ?? f.name ?? `field_${idx}`);
     
@@ -189,6 +196,16 @@ function extractPrompts(product: any): PromptDef[] {
 
     const visibility = f.visibleWhen ?? f.showIf ?? f.when ?? f.condition ?? f.conditions ?? undefined;
     const hiddenWhen = f.hiddenWhen ?? f.hideIf ?? undefined;
+
+    // DEBUG: Log visibility conditions for all prompts that have any condition-like property
+    if (visibility || hiddenWhen || f.dependsOn || f.conditionalOn || f.showWhen || f.displayCondition) {
+      console.log(`[PromptsForm DEBUG] Prompt "${label}" (id=${id}):`, {
+        visibility, hiddenWhen,
+        dependsOn: f.dependsOn, conditionalOn: f.conditionalOn,
+        showWhen: f.showWhen, displayCondition: f.displayCondition,
+        allKeys: Object.keys(f),
+      });
+    }
 
     return {
       id,
