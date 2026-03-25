@@ -1190,7 +1190,7 @@ export default function ExcelFiles() {
               <TableBody>
                 {filteredFiles.map((file, idx) => {
                   const prevFile = idx > 0 ? filteredFiles[idx - 1] : null;
-                  const showSeparator = isTradsis && prevFile?.isMaster && !file.isMaster;
+                  const showSeparator = prevFile?.isMaster && !file.isMaster;
                   return (
                     <>
                       {showSeparator && (
@@ -1200,12 +1200,12 @@ export default function ExcelFiles() {
                           </TableCell>
                         </TableRow>
                       )}
-                      <TableRow key={file.id} className={`h-auto ${file.isMaster && isTradsis ? 'bg-accent/30' : ''}`}>
+                      <TableRow key={file.id} className={`h-auto ${file.isMaster ? 'bg-accent/30' : ''}`}>
                         <TableCell className="py-1.5 px-3 text-sm font-medium">
                           <div className="flex items-center gap-2">
                             <FileSpreadsheet className="h-3.5 w-3.5 flex-shrink-0" />
                             <span className="truncate">{file.fileName}</span>
-                            {file.isMaster && isTradsis && (
+                            {file.isMaster && (
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -1255,7 +1255,7 @@ export default function ExcelFiles() {
                         </TableCell>
                         <TableCell className="text-right py-1.5 px-3">
                           <div className="flex justify-end gap-1">
-                            {isTradsis && (
+                            {(
                               <Button
                                 variant="ghost"
                                 size="sm"
