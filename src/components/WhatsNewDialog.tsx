@@ -25,23 +25,23 @@ interface ReleaseNote {
 const RELEASE_NOTES: ReleaseNote[] = [
   {
     icon: <FileSpreadsheet className="h-5 w-5 text-primary" />,
-    title: "Excel maestros",
+    title: "Excel maestros para todos",
     description:
-      "Vincula archivos Excel hijos con maestros alojados en la nube. El sistema sustituye automáticamente las referencias externas por URLs públicas para que las fórmulas funcionen sin intervención.",
+      "La funcionalidad de archivos maestros ya está disponible para todas las organizaciones. Vincula archivos hijos con maestros y las fórmulas se actualizan automáticamente.",
     badge: "Admin",
   },
   {
     icon: <Search className="h-5 w-5 text-primary" />,
-    title: "Revisión previa de Excel",
+    title: "Recuerda: revisión previa de Excel",
     description:
-      "Nuevo escáner que detecta errores de fórmulas (#REF!, #DIV/0!…), enlaces rotos, hojas vacías y otros problemas antes de subir un archivo.",
+      "Usa el botón de lupa en cada archivo para detectar errores de fórmulas, enlaces rotos y otros problemas antes de asociarlo a un producto.",
     badge: "Admin",
   },
   {
     icon: <BookOpen className="h-5 w-5 text-primary" />,
-    title: "Documentación de ayuda ampliada",
+    title: "Nueva documentación de ayuda",
     description:
-      "Se añaden artículos en el centro de ayuda explicando el funcionamiento de los archivos maestros y el escáner de errores.",
+      "Se añaden artículos en el centro de ayuda sobre archivos maestros y el escáner de errores.",
     badge: "Todos",
   },
 ];
