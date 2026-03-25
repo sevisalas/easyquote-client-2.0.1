@@ -364,6 +364,66 @@ Configura las cuentas contables para:
     tags: ['holded', 'integración', 'facturación', 'api'],
   },
 
+  // ====== ARCHIVOS EXCEL (admin+) ======
+  {
+    id: 'excel-master-files',
+    title: 'Archivos Excel maestros',
+    summary: 'Cómo funcionan los archivos maestros y la vinculación con archivos hijos.',
+    content: `
+## ¿Qué son los archivos maestros?
+
+Los archivos maestros centralizan la lógica de cálculo compartida entre varios productos. En lugar de duplicar fórmulas en cada archivo Excel, los archivos hijos referencian al maestro para obtener datos comunes (tarifas, tablas de precios, configuraciones).
+
+## Ventajas
+
+- **Mantenimiento centralizado**: Cambia una tarifa en el maestro y se refleja en todos los productos hijos
+- **Menos errores**: Evita inconsistencias entre archivos duplicados
+- **Sin pérdida de rendimiento**: Los tiempos de cálculo son equivalentes a archivos independientes
+
+## Configurar un archivo como maestro
+
+1. Ve a **Archivos Excel**
+2. Localiza el archivo que quieres usar como maestro
+3. Activa el interruptor **Es maestro**
+4. Asigna un **nombre de referencia local** (ej: "maestro EQ01.xlsx")
+5. Se generará una URL pública que puedes copiar
+
+## Subir un archivo hijo vinculado
+
+1. En **Archivos Excel**, haz clic en **Subir archivo**
+2. Selecciona el archivo .xlsx
+3. En el selector **Asociar maestro**, elige el archivo maestro correspondiente
+4. Al subir, el sistema reemplaza automáticamente las referencias externas por la URL del maestro
+
+## Actualizar un archivo hijo
+
+Al actualizar un archivo existente:
+1. Haz clic en **Actualizar** junto al archivo
+2. Selecciona el nuevo .xlsx
+3. Elige el maestro a asociar (si aplica)
+4. El sistema vuelve a procesar las referencias automáticamente
+
+## ¿Cómo funciona internamente?
+
+El sistema analiza el archivo .xlsx y busca referencias externas (enlaces a otros archivos Excel). Al encontrarlas, las sustituye por la URL pública del maestro alojado en EasyQuote. Esto permite que las fórmulas funcionen tanto en la nube como al descargar el archivo.
+
+## Preguntas frecuentes
+
+**¿Afecta al rendimiento?**
+No. Las pruebas de benchmark confirman tiempos equivalentes (~500ms) entre productos con y sin maestro.
+
+**¿Puedo tener varios maestros?**
+Sí. Puedes marcar varios archivos como maestros, cada uno con su nombre de referencia local.
+
+**¿Qué pasa si actualizo el maestro?**
+Los archivos hijos que ya fueron subidos con la referencia al maestro seguirán funcionando. Si cambias la estructura del maestro, deberás re-subir los archivos hijos.
+    `,
+    category: 'excel',
+    icon: 'Crown',
+    minRole: 'admin',
+    tags: ['excel', 'maestro', 'master', 'archivos', 'vinculación', 'fórmulas'],
+  },
+
   // ====== CONFIGURACIÓN (admin+) ======
   {
     id: 'numbering-formats',
