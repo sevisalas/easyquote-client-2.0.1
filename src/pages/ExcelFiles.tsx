@@ -1205,7 +1205,7 @@ export default function ExcelFiles() {
                           <div className="flex items-center gap-2">
                             <FileSpreadsheet className="h-3.5 w-3.5 flex-shrink-0" />
                             <span className="truncate">{file.fileName}</span>
-                            {file.isMaster && isTradsis && (
+                            {file.isMaster && (
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
