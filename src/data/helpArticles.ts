@@ -75,6 +75,13 @@ export const helpCategories: HelpCategory[] = [
     minRole: 'admin',
   },
   {
+    id: 'excel',
+    name: 'Archivos Excel',
+    icon: 'FileSpreadsheet',
+    description: 'Gestión de archivos Excel y maestros',
+    minRole: 'admin',
+  },
+  {
     id: 'settings',
     name: 'Configuración',
     icon: 'Settings',
