@@ -1349,10 +1349,16 @@ export default function ExcelFiles() {
       </Dialog>
 
       {/* Update Excel File Dialog */}
-      <Dialog open={isUpdateExcelDialogOpen} onOpenChange={setIsUpdateExcelDialogOpen}>
+      <Dialog open={isUpdateExcelDialogOpen} onOpenChange={(open) => {
+        setIsUpdateExcelDialogOpen(open);
+        if (!open) {
+          setUpdateMasterFileId(null);
+          setSelectedFileForUpdate(null);
+        }
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Actualizar Archivo Excel</DialogTitle>
+            <DialogTitle>Actualizar archivo Excel</DialogTitle>
             <DialogDescription>
               Actualiza el archivo Excel "{selectedExcelFile?.fileName}" con uno nuevo.
             </DialogDescription>
@@ -1379,13 +1385,41 @@ export default function ExcelFiles() {
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>}
+
+            {/* Master file selector */}
+            {masterFiles.length > 0 && (
+              <div className="space-y-2">
+                <Label>Asociar maestro (opcional)</Label>
+                <Select
+                  value={updateMasterFileId || "none"}
+                  onValueChange={(val) => setUpdateMasterFileId(val === "none" ? null : val)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sin maestro" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sin maestro</SelectItem>
+                    {masterFiles.map(m => (
+                      <SelectItem key={m.id} value={m.id}>
+                        <span className="flex items-center gap-1">
+                          <Crown className="h-3 w-3 text-amber-600" />
+                          {m.fileName}
+                          {m.localReferenceName && <span className="text-muted-foreground text-xs ml-1">({m.localReferenceName})</span>}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button onClick={() => {
             if (selectedFileForUpdate && selectedExcelFile?.id) {
               updateExcelMutation.mutate({
                 fileId: selectedExcelFile.id,
-                file: selectedFileForUpdate
+                file: selectedFileForUpdate,
+                masterFileId: updateMasterFileId
               });
             }
           }} disabled={!selectedFileForUpdate || updateExcelMutation.isPending} className="w-full">
