@@ -288,7 +288,7 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const { token, fileName, fileContent, associatedMasterFileId } = await req.json();
+    const { token, fileName, fileContent, associatedMasterFileId, updateFileId } = await req.json();
 
     if (!token) {
       return new Response(
@@ -403,10 +403,16 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // ── Upload to EasyQuote API ────────────────────────────────────────
+    // ── Upload/Update to EasyQuote API ───────────────────────────────
     async function uploadToEasyQuote(content: string): Promise<Response> {
-      return fetch("https://api.easyquote.cloud/api/v1/excelfiles", {
-        method: "POST",
+      const isUpdate = !!updateFileId;
+      const url = isUpdate
+        ? `https://api.easyquote.cloud/api/v1/excelfiles/${updateFileId}`
+        : "https://api.easyquote.cloud/api/v1/excelfiles";
+      const method = isUpdate ? "PUT" : "POST";
+      console.log(`easyquote-upload-excel: ${method} to ${url}`);
+      return fetch(url, {
+        method,
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
