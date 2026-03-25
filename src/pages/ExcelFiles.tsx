@@ -1200,7 +1200,7 @@ export default function ExcelFiles() {
                           </TableCell>
                         </TableRow>
                       )}
-                      <TableRow key={file.id} className={`h-auto ${file.isMaster && isTradsis ? 'bg-accent/30' : ''}`}>
+                      <TableRow key={file.id} className={`h-auto ${file.isMaster ? 'bg-accent/30' : ''}`}>
                         <TableCell className="py-1.5 px-3 text-sm font-medium">
                           <div className="flex items-center gap-2">
                             <FileSpreadsheet className="h-3.5 w-3.5 flex-shrink-0" />
