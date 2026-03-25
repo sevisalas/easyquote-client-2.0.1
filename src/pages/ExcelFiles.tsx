@@ -1255,7 +1255,7 @@ export default function ExcelFiles() {
                         </TableCell>
                         <TableCell className="text-right py-1.5 px-3">
                           <div className="flex justify-end gap-1">
-                            {isTradsis && (
+                            {(
                               <Button
                                 variant="ghost"
                                 size="sm"
