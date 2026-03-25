@@ -424,6 +424,60 @@ Los archivos hijos que ya fueron subidos con la referencia al maestro seguirán 
     tags: ['excel', 'maestro', 'master', 'archivos', 'vinculación', 'fórmulas'],
   },
 
+  {
+    id: 'excel-error-scanner',
+    title: 'Revisión previa de archivos Excel',
+    summary: 'Escanea tu archivo Excel antes de subirlo para detectar errores y problemas.',
+    content: `
+## ¿Para qué sirve?
+
+Antes de subir un archivo Excel a EasyQuote, puedes escanearlo para detectar problemas que podrían causar errores de cálculo o fallos en la API. Esto te ahorra tiempo y evita incidencias.
+
+## Cómo usar el escáner
+
+1. Ve a **Archivos Excel**
+2. Haz clic en el botón **Revisar Excel** (icono de lupa)
+3. Selecciona o arrastra el archivo .xlsx que quieres analizar
+4. El sistema analizará el archivo y mostrará un informe
+
+## ¿Qué detecta?
+
+El escáner busca los problemas más comunes:
+
+### Errores de fórmulas
+- **#REF!**: Referencias a celdas que no existen (celdas eliminadas)
+- **#DIV/0!**: Divisiones entre cero
+- **#VALUE!**: Tipos de datos incorrectos en fórmulas
+- **#NAME?**: Nombres de funciones no reconocidos
+- **#N/A**: Valores no encontrados en búsquedas
+
+### Problemas estructurales
+- **Enlaces externos rotos**: Referencias a otros archivos que no están disponibles
+- **Hojas vacías**: Hojas sin contenido que pueden causar confusión
+- **Celdas con texto muy largo**: Valores que podrían causar problemas en la API
+
+### Advertencias
+- **Fórmulas circulares**: Celdas que se referencian a sí mismas
+- **Rangos con nombre inválidos**: Nombres definidos que apuntan a celdas inexistentes
+
+## Interpretar los resultados
+
+- 🟢 **Sin errores**: El archivo está listo para subir
+- 🟡 **Advertencias**: El archivo puede funcionar, pero conviene revisar los puntos señalados
+- 🔴 **Errores**: Se recomienda corregir los problemas antes de subir
+
+## Recomendaciones
+
+- Ejecuta siempre el escáner **antes de subir** un archivo nuevo o actualizado
+- Presta especial atención a los errores **#REF!** ya que suelen causar fallos en el motor de cálculo
+- Si el archivo tiene enlaces externos, considera usar la función de **archivos maestros** para gestionarlos
+    `,
+    category: 'excel',
+    icon: 'Search',
+    minRole: 'admin',
+    tags: ['excel', 'errores', 'revisión', 'escanear', 'problemas', 'fórmulas', 'diagnóstico'],
+  },
+
   // ====== CONFIGURACIÓN (admin+) ======
   {
     id: 'numbering-formats',
