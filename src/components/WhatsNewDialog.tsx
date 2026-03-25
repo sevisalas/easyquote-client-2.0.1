@@ -9,10 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Ban, FileX, DollarSign } from "lucide-react";
+import { Sparkles, FileSpreadsheet, Search, BookOpen } from "lucide-react";
 
-const CURRENT_VERSION = "2.6.11";
-const SILENT_UPDATE = true; // Bug fixes only, no dialog
+const CURRENT_VERSION = "2.7.1";
+const SILENT_UPDATE = false;
 const LS_KEY = "whats_new_seen_version";
 
 interface ReleaseNote {
@@ -24,24 +24,24 @@ interface ReleaseNote {
 
 const RELEASE_NOTES: ReleaseNote[] = [
   {
-    icon: <Ban className="h-5 w-5 text-primary" />,
-    title: "Anulación de presupuestos",
+    icon: <FileSpreadsheet className="h-5 w-5 text-primary" />,
+    title: "Excel maestros",
     description:
-      "Los presupuestos enviados o aprobados pueden anularse con motivo obligatorio, visible en el detalle y filtrable en listados.",
+      "Vincula archivos Excel hijos con maestros alojados en la nube. El sistema sustituye automáticamente las referencias externas por URLs públicas para que las fórmulas funcionen sin intervención.",
     badge: "Admin",
   },
   {
-    icon: <FileX className="h-5 w-5 text-primary" />,
-    title: "Motivo de anulación en pedidos",
+    icon: <Search className="h-5 w-5 text-primary" />,
+    title: "Revisión previa de Excel",
     description:
-      "Al anular un pedido se solicita un motivo obligatorio que queda registrado y visible en detalle y tarjetas.",
+      "Nuevo escáner que detecta errores de fórmulas (#REF!, #DIV/0!…), enlaces rotos, hojas vacías y otros problemas antes de subir un archivo.",
     badge: "Admin",
   },
   {
-    icon: <DollarSign className="h-5 w-5 text-primary" />,
-    title: "Corrección de precios en Holded",
+    icon: <BookOpen className="h-5 w-5 text-primary" />,
+    title: "Documentación de ayuda ampliada",
     description:
-      "Los ajustes a nivel de artículo ahora se integran correctamente en el precio al exportar pedidos a Holded.",
+      "Se añaden artículos en el centro de ayuda explicando el funcionamiento de los archivos maestros y el escáner de errores.",
     badge: "Todos",
   },
 ];
