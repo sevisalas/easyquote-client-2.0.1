@@ -515,14 +515,19 @@ export default function ExcelFiles() {
     }
   });
 
-  // Update Excel file
+  // State for master association during update
+  const [updateMasterFileId, setUpdateMasterFileId] = useState<string | null>(null);
+
+  // Update Excel file — now routed through the edge function for master replacement
   const updateExcelMutation = useMutation({
     mutationFn: async ({
       fileId,
-      file
+      file,
+      masterFileId
     }: {
       fileId: string;
       file: File;
+      masterFileId: string | null;
     }) => {
       if (!file) throw new Error("No se ha seleccionado ningún archivo");
 
@@ -531,70 +536,43 @@ export default function ExcelFiles() {
       if (!validTypes.includes(file.type)) {
         throw new Error(`Tipo de archivo no válido: ${file.type}. Selecciona un archivo Excel (.xlsx o .xls)`);
       }
-      console.log('📄 Archivo seleccionado para actualización:', {
-        name: file.name,
-        type: file.type,
-        size: file.size
-      });
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No hay token de autenticación");
 
-      // Convert file to base64 (same as original EasyQuote code)
+      // Convert file to base64
       const base64 = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = () => {
           const result = reader.result as string;
-          // Remove the data URL prefix (data:application/...;base64,)
           const base64Data = result.split(',')[1];
           resolve(base64Data);
         };
         reader.onerror = reject;
       });
 
-      // Payload structure for EasyQuote API - uses PascalCase
-      // FileName: nombre del archivo
-      // File: contenido en base64
-      const payload = {
-        FileName: file.name,
-        File: base64
-      };
-      console.log('📤 Actualizando archivo con PUT:', {
-        url: `https://api.easyquote.cloud/api/v1/excelfiles/${fileId}`,
-        fileId,
-        fileName: file.name,
-        payloadKeys: Object.keys(payload),
-        base64Length: base64.length
-      });
-      const response = await fetch(`https://api.easyquote.cloud/api/v1/excelfiles/${fileId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
-      if (!response.ok) {
-        let errorMessage = "Error al actualizar el archivo";
-        try {
-          const errorData = await response.json();
-          if (errorData?.[""]?.errors?.[0]?.errorMessage) {
-            errorMessage = errorData[""].errors[0].errorMessage;
-          } else if (typeof errorData === 'string') {
-            errorMessage = errorData;
-          }
-        } catch {
-          errorMessage = `Error ${response.status}: ${response.statusText}`;
+      // Route through edge function for master reference replacement
+      const { data, error } = await supabase.functions.invoke('easyquote-upload-excel', {
+        body: {
+          token,
+          fileName: file.name,
+          fileContent: base64,
+          updateFileId: fileId,
+          associatedMasterFileId: masterFileId || undefined
         }
-        throw new Error(errorMessage);
-      }
-      console.log('✅ Archivo actualizado correctamente');
+      });
 
-      // Note: In the original EasyQuote code, the ID doesn't change on update
-      // Only the fileName is updated in the local list
+      if (error) {
+        throw new Error(error.message || "Error al actualizar el archivo");
+      }
+      if (data?.error) {
+        throw new Error(data.message || data.error);
+      }
+
       return {
         fileId,
-        fileName: file.name
+        fileName: file.name,
+        masterReplacements: data?.masterReplacements || []
       };
     },
     onSuccess: async data => {
@@ -610,12 +588,16 @@ export default function ExcelFiles() {
           filename: data.fileName
         }).eq("file_id", data.fileId).eq("user_id", user.id);
       }
+      const replacementMsg = data.masterReplacements.length
+        ? ` Se vincularon ${data.masterReplacements.length} referencia(s) al maestro.`
+        : '';
       toast({
         title: "Archivo Excel actualizado",
-        description: "El archivo se ha actualizado correctamente."
+        description: `El archivo se ha actualizado correctamente.${replacementMsg}`
       });
       setIsUpdateExcelDialogOpen(false);
       setSelectedFileForUpdate(null);
+      setUpdateMasterFileId(null);
       queryClient.invalidateQueries({
         queryKey: ["easyquote-excel-files"]
       });
