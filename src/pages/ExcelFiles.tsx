@@ -1190,7 +1190,7 @@ export default function ExcelFiles() {
               <TableBody>
                 {filteredFiles.map((file, idx) => {
                   const prevFile = idx > 0 ? filteredFiles[idx - 1] : null;
-                  const showSeparator = isTradsis && prevFile?.isMaster && !file.isMaster;
+                  const showSeparator = prevFile?.isMaster && !file.isMaster;
                   return (
                     <>
                       {showSeparator && (
