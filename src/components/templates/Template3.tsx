@@ -89,32 +89,23 @@ export default function Template3({ data }: Template3Props) {
           <tbody>
             {items.map((item: any, index: number) => (
               <React.Fragment key={index}>
-                {/* Fila principal del producto */}
-                <tr className="border-b border-gray-100">
+                <tr className={`border-b ${(item.description || (item.prompts && item.prompts.length > 0)) ? 'border-transparent' : 'border-gray-100'}`}>
                   <td className="py-1.5">
                     <div className="flex items-start gap-1.5">
-                      {/* Miniaturas de imágenes */}
                       {item.images && item.images.length > 0 && (
                         <div className="flex gap-0.5 flex-shrink-0">
                           {item.images.map((imgUrl: string, imgIdx: number) => (
-                            <img 
-                              key={imgIdx}
-                              src={imgUrl} 
-                              alt="" 
-                              className="w-8 h-8 object-cover border border-gray-200"
-                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                            />
+                            <img key={imgIdx} src={imgUrl} alt="" className="w-8 h-8 object-cover border border-gray-200" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                           ))}
                         </div>
                       )}
                       <p className="font-medium text-xs leading-tight">{item.name}</p>
                     </div>
                   </td>
-                  <td className="py-1.5 text-right font-medium text-xs whitespace-nowrap">{fmtEUR(item.price || 0)}</td>
-                  <td className="py-1.5 text-center text-xs">{item.quantity || 1}</td>
-                  <td className="py-1.5 text-right font-medium text-xs whitespace-nowrap">{fmtEUR((item.price || 0) * (item.quantity || 1))}</td>
+                  <td className="py-1.5"></td>
+                  <td className="py-1.5"></td>
+                  <td className="py-1.5"></td>
                 </tr>
-                {/* Description (when prompts are hidden at org level) */}
                 {(!item.prompts || item.prompts.length === 0) && item.description && (
                   <tr className="border-b border-gray-100">
                     <td colSpan={4} className="pl-4 py-1">
@@ -122,7 +113,6 @@ export default function Template3({ data }: Template3Props) {
                     </td>
                   </tr>
                 )}
-                {/* Prompts debajo en fila separada */}
                 {item.prompts && item.prompts.length > 0 && (
                   <tr className="border-b border-gray-100">
                     <td colSpan={4} className="pl-4 py-1">
@@ -136,7 +126,6 @@ export default function Template3({ data }: Template3Props) {
                     </td>
                   </tr>
                 )}
-                {/* Component details for composite products */}
                 {item.components && item.components.length > 0 && (
                   <tr className="border-b border-gray-100">
                     <td colSpan={4} className="pl-4 py-1">
@@ -155,6 +144,13 @@ export default function Template3({ data }: Template3Props) {
                     </td>
                   </tr>
                 )}
+                {/* Price row */}
+                <tr className="border-b border-gray-100">
+                  <td className="py-1.5"></td>
+                  <td className="py-1.5 text-right font-medium text-xs whitespace-nowrap">{fmtEUR(item.price || 0)}</td>
+                  <td className="py-1.5 text-center text-xs">{item.quantity || 1}</td>
+                  <td className="py-1.5 text-right font-medium text-xs whitespace-nowrap">{fmtEUR((item.price || 0) * (item.quantity || 1))}</td>
+                </tr>
               </React.Fragment>
             ))}
           </tbody>
