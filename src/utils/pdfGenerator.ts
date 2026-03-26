@@ -305,12 +305,17 @@ const isDescriptionLabelHidden = (label: string, hiddenKeys: Set<string>): boole
     .map((key) => normalizeDescriptionLabel(key))
     .filter(Boolean);
 
-  if (normalizedHiddenKeys.includes(normalizedLabel)) return true;
-
-  const labelTokens = new Set(normalizedLabel.split(' ').filter((t) => t.length >= 4));
   return normalizedHiddenKeys.some((hidden) => {
-    const hiddenTokens = hidden.split(' ').filter((t) => t.length >= 4);
-    return hiddenTokens.some((token) => labelTokens.has(token));
+    // Exact label match
+    if (hidden === normalizedLabel) return true;
+
+    // Hide variants with suffixes (e.g. "Lomo" -> "Lomo mm")
+    if (normalizedLabel.startsWith(`${hidden} `)) return true;
+
+    // Keep explicit compatibility for lomo variants
+    if (hidden.startsWith('LOMO') && normalizedLabel.startsWith('LOMO')) return true;
+
+    return false;
   });
 };
 
@@ -348,6 +353,9 @@ const sanitizeDescriptionForDocs = (
     const value = line.slice(colonIndex + 1).trim();
     if (!value) continue;
     if (value.toLowerCase() === 'no') continue;
+
+    const normalizedLabel = normalizeDescriptionLabel(label);
+    if (normalizedLabel.startsWith('SOLAPAS')) continue;
 
     const activeHiddenKeys = currentSectionAlias === '__PARENT__'
       ? parentHiddenKeys
