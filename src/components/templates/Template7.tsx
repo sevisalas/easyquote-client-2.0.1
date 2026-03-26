@@ -301,7 +301,7 @@ export default function Template7({ data }: Template7Props) {
                     adjTotal += adj.is_discount ? -subtotal : subtotal;
                   });
                   return (
-                    <tr key={`multi-${meIdx}`} style={{ borderBottom: '1px solid #ddd' }}>
+                    <tr key={`multi-${meIdx}`} style={{ borderBottom: meIdx === item.multi_extra.length - 1 ? '1px solid #ddd' : 'none' }}>
                       <td style={{ padding: '4px 8px' }}></td>
                       <td style={{ padding: '4px 8px', textAlign: 'center', fontSize: '12px' }}>
                         {new Intl.NumberFormat('es-ES').format(me.qty)}
