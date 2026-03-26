@@ -13,10 +13,10 @@ export default function Template2({ data }: Template2Props) {
   const items = data.items || [];
   
   const fmtEUR = (amount: number) => {
-    return new Intl.NumberFormat('es-ES', {
-      style: 'currency',
-      currency: 'EUR'
-    }).format(amount);
+    const parts = Math.abs(amount).toFixed(2).split('.');
+    const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    const sign = amount < 0 ? '-' : '';
+    return `${sign}${intPart},${parts[1]} €`;
   };
 
   const primaryColor = config.brandColor || '#8b5cf6';

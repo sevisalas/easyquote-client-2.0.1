@@ -27,7 +27,10 @@ const statusLabels = {
 const fmtEUR = (n: any) => {
   const num = typeof n === "number" ? n : parseFloat(String(n ?? "").replace(/\./g, "").replace(",", "."));
   if (Number.isNaN(num)) return String(n ?? "");
-  return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 2 }).format(num);
+  const parts = Math.abs(num).toFixed(2).split('.');
+  const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const sign = num < 0 ? '-' : '';
+  return `${sign}${intPart},${parts[1]} €`;
 };
 
 interface SalesOrderCardProps {
