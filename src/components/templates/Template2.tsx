@@ -124,7 +124,7 @@ export default function Template2({ data }: Template2Props) {
                     </tr>
                   )}
                   {item.prompts && item.prompts.length > 0 && (
-                    <tr className="border-b border-gray-300">
+                    <tr>
                       <td colSpan={4} className="pl-4 pr-1.5 py-1">
                         <div className="text-[10px] text-gray-700 space-y-0.5 leading-tight">
                           {item.prompts.map((prompt: any, pIdx: number) => (
