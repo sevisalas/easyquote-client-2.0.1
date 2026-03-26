@@ -634,8 +634,9 @@ export const generateQuotePDF = async (
         }
       }
 
-      // If user wrote a manual description, show ONLY that — no prompts, no components
-      if (hasManualDescription) {
+      // If description has content, it's the sole source of truth — no individual prompts or components.
+      // If description is empty, show prompts + components as usual.
+      if (!descriptionIsEmpty) {
         return {
           name: item.name || item.product_name || 'Producto',
           description: safeDescription,
@@ -650,18 +651,17 @@ export const generateQuotePDF = async (
         };
       }
 
-      // If org flag hides all prompts, return only name + description.
-      // If there's already a description, components are redundant (info is in the description).
+      // Description is empty — use prompts + components
       if (hideAllPromptsInDocs) {
         return {
           name: item.name || item.product_name || 'Producto',
-          description: safeDescription,
+          description: '',
           prompts: [],
           price: item.price || 0,
           quantity: item.quantity || 1,
           displayQuantity,
           images: images,
-          components: safeDescription ? [] : componentSections,
+          components: componentSections,
           item_additionals: formattedAdditionals,
           multi_extra: multiExtraRows,
         };
@@ -675,7 +675,7 @@ export const generateQuotePDF = async (
         quantity: item.quantity || 1,
         displayQuantity,
         images: images,
-        components: safeDescription ? [] : componentSections,
+        components: componentSections,
         item_additionals: formattedAdditionals,
         multi_extra: multiExtraRows,
       };
