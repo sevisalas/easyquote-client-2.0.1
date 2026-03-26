@@ -9,9 +9,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, FileSpreadsheet, Search, BookOpen } from "lucide-react";
+import { Sparkles, FileSpreadsheet } from "lucide-react";
 
-const CURRENT_VERSION = "2.7.1";
+const CURRENT_VERSION = "2.7.2";
 const SILENT_UPDATE = false;
 const LS_KEY = "whats_new_seen_version";
 
@@ -25,23 +25,9 @@ interface ReleaseNote {
 const RELEASE_NOTES: ReleaseNote[] = [
   {
     icon: <FileSpreadsheet className="h-5 w-5 text-primary" />,
-    title: "Excel maestros para todos",
+    title: "Filtrado de campos en PDF",
     description:
-      "La funcionalidad de archivos maestros ya está disponible para todas las organizaciones. Vincula archivos hijos con maestros y las fórmulas se actualizan automáticamente.",
-    badge: "Admin",
-  },
-  {
-    icon: <Search className="h-5 w-5 text-primary" />,
-    title: "Recuerda: revisión previa de Excel",
-    description:
-      "Usa el botón de lupa en cada archivo para detectar errores de fórmulas, enlaces rotos y otros problemas antes de asociarlo a un producto.",
-    badge: "Admin",
-  },
-  {
-    icon: <BookOpen className="h-5 w-5 text-primary" />,
-    title: "Nueva documentación de ayuda",
-    description:
-      "Se añaden artículos en el centro de ayuda sobre archivos maestros y el escáner de errores.",
+      "Los campos marcados como 'ocultar en documentos', con valor 'No' y las solapas se excluyen automáticamente de los presupuestos y órdenes de trabajo en PDF.",
     badge: "Todos",
   },
 ];
