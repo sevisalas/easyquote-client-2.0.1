@@ -578,7 +578,7 @@ export const generateQuotePDF = async (
       if (hideAllPromptsInDocs) {
         return {
           name: item.name || item.product_name || 'Producto',
-          description: item.description || '',
+          description: safeDescription,
           prompts: [],
           price: item.price || 0,
           quantity: item.quantity || 1,
