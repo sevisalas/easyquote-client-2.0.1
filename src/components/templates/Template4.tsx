@@ -160,7 +160,7 @@ export default function Template4({ data }: Template4Props) {
                       </tr>
                     )}
                     {item.components && item.components.length > 0 && (
-                      <tr className="border-b border-gray-300 bg-gray-50/50">
+                      <tr className="bg-gray-50/50">
                         <td colSpan={4} className="pl-4 py-1">
                           {item.components.map((comp: any, cIdx: number) => (
                             <div key={cIdx} className="mb-1">

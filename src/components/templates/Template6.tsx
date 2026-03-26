@@ -146,7 +146,7 @@ export default function Template6({ data }: Template6Props) {
                     </tr>
                   )}
                   {item.components && item.components.length > 0 && (
-                    <tr className={`${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'} border-b border-slate-300`}>
+                    <tr className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                       <td colSpan={4} className="pl-4 py-1">
                         {item.components.map((comp: any, cIdx: number) => (
                           <div key={cIdx} className="mb-1">

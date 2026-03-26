@@ -127,7 +127,7 @@ export default function Template3({ data }: Template3Props) {
                   </tr>
                 )}
                 {item.components && item.components.length > 0 && (
-                  <tr className="border-b border-gray-100">
+                  <tr>
                     <td colSpan={4} className="pl-4 py-1">
                       {item.components.map((comp: any, cIdx: number) => (
                         <div key={cIdx} className="mb-1">
