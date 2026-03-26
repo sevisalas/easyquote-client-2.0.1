@@ -98,32 +98,24 @@ export default function Template2({ data }: Template2Props) {
             <tbody>
               {items.map((item: any, index: number) => (
                 <React.Fragment key={index}>
-                  {/* Fila principal del producto */}
-                  <tr className="border-b border-gray-300">
+                  {/* Item name row */}
+                  <tr className={`border-b ${(item.description || (item.prompts && item.prompts.length > 0)) ? 'border-transparent' : 'border-gray-300'}`}>
                     <td className="p-1.5">
                       <div className="flex items-start gap-1.5">
-                        {/* Miniaturas de imágenes */}
                         {item.images && item.images.length > 0 && (
                           <div className="flex gap-0.5 flex-shrink-0">
                             {item.images.map((imgUrl: string, imgIdx: number) => (
-                              <img 
-                                key={imgIdx}
-                                src={imgUrl} 
-                                alt="" 
-                                className="w-8 h-8 object-cover border border-gray-200"
-                                onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                              />
+                              <img key={imgIdx} src={imgUrl} alt="" className="w-8 h-8 object-cover border border-gray-200" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                             ))}
                           </div>
                         )}
                         <p className="font-semibold text-xs leading-tight">{item.name}</p>
                       </div>
                     </td>
-                    <td className="p-1.5 text-right text-xs font-medium whitespace-nowrap">{fmtEUR(item.price || 0)}</td>
-                    <td className="p-1.5 text-center text-xs">{item.quantity || 1}</td>
-                    <td className="p-1.5 text-right text-xs font-semibold whitespace-nowrap">{fmtEUR((item.price || 0) * (item.quantity || 1))}</td>
+                    <td className="p-1.5"></td>
+                    <td className="p-1.5"></td>
+                    <td className="p-1.5"></td>
                   </tr>
-                  {/* Description (when prompts are hidden at org level) */}
                   {(!item.prompts || item.prompts.length === 0) && item.description && (
                     <tr className="border-b border-gray-300">
                       <td colSpan={4} className="pl-4 pr-1.5 py-1">
@@ -131,7 +123,6 @@ export default function Template2({ data }: Template2Props) {
                       </td>
                     </tr>
                   )}
-                  {/* Prompts debajo en fila separada */}
                   {item.prompts && item.prompts.length > 0 && (
                     <tr className="border-b border-gray-300">
                       <td colSpan={4} className="pl-4 pr-1.5 py-1">
@@ -145,25 +136,31 @@ export default function Template2({ data }: Template2Props) {
                       </td>
                     </tr>
                   )}
-                {/* Component details for composite products */}
-                {item.components && item.components.length > 0 && (
-                  <tr className="border-b border-gray-300">
-                    <td colSpan={4} className="pl-4 pr-1.5 py-1">
-                      {item.components.map((comp: any, cIdx: number) => (
-                        <div key={cIdx} className="mb-1">
-                          <div className="text-[10px] font-semibold text-gray-800 uppercase mb-0.5">── {comp.alias} ──</div>
-                          <div className="text-[10px] text-gray-700 space-y-0.5 leading-tight pl-2">
-                            {comp.prompts.map((p: any, pIdx: number) => (
-                              <div key={pIdx}>
-                                <span className="font-medium">{p.label}:</span> {p.value}
-                              </div>
-                            ))}
+                  {item.components && item.components.length > 0 && (
+                    <tr className="border-b border-gray-300">
+                      <td colSpan={4} className="pl-4 pr-1.5 py-1">
+                        {item.components.map((comp: any, cIdx: number) => (
+                          <div key={cIdx} className="mb-1">
+                            <div className="text-[10px] font-semibold text-gray-800 uppercase mb-0.5">── {comp.alias} ──</div>
+                            <div className="text-[10px] text-gray-700 space-y-0.5 leading-tight pl-2">
+                              {comp.prompts.map((p: any, pIdx: number) => (
+                                <div key={pIdx}>
+                                  <span className="font-medium">{p.label}:</span> {p.value}
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </td>
+                        ))}
+                      </td>
+                    </tr>
+                  )}
+                  {/* Price row */}
+                  <tr className="border-b border-gray-300">
+                    <td className="p-1.5"></td>
+                    <td className="p-1.5 text-right text-xs font-medium whitespace-nowrap">{fmtEUR(item.price || 0)}</td>
+                    <td className="p-1.5 text-center text-xs">{item.quantity || 1}</td>
+                    <td className="p-1.5 text-right text-xs font-semibold whitespace-nowrap">{fmtEUR((item.price || 0) * (item.quantity || 1))}</td>
                   </tr>
-                )}
                 </React.Fragment>
               ))}
             </tbody>
