@@ -493,16 +493,61 @@ export default function QuoteNew() {
         const isManual = item.descriptionManual || false;
         if (!isManual && !description && promptsArray.length > 0) {
           const excludeLabels = ["tarifa", "forzar máquina", "forzar maquina", "tira y retira", "forzar poses", "forzar poses/pags.", "modelos"];
+          const filterPrompt = (p: any) => {
+            const val = String(p.value ?? "").trim();
+            const label = String(p.label ?? "").toLowerCase();
+            if (!val || val === "" || val.toLowerCase() === "no") return false;
+            if (excludeLabels.some(ex => label.includes(ex))) return false;
+            return true;
+          };
           description = promptsArray
-            .filter((p: any) => {
-              const val = String(p.value ?? "").trim();
-              const label = String(p.label ?? "").toLowerCase();
-              if (!val || val === "" || val.toLowerCase() === "no") return false;
-              if (excludeLabels.some(ex => label.includes(ex))) return false;
-              return true;
-            })
+            .filter(filterPrompt)
             .map((p: any) => `${p.label}: ${String(p.value).trim()}`)
             .join("\n");
+
+          // Añadir descripción de componentes para productos compuestos
+          const compositeData = item.compositeData;
+          if (compositeData?.components && Object.keys(compositeData.components).length > 0) {
+            const activeComponents = compositeData.activeComponents || [];
+            // Build parent prompt signatures to skip duplicates
+            const parentSigs = new Set(
+              promptsArray.filter(filterPrompt).map((p: any) => 
+                `${String(p.label ?? "").toLowerCase().trim()}:${String(p.value ?? "").trim()}`
+              )
+            );
+
+            const sortedKeys = Object.keys(compositeData.components).sort((a: string, b: string) => {
+              const orderA = activeComponents.find((ac: any) => a.startsWith(ac.id))?.display_order ?? 99;
+              const orderB = activeComponents.find((ac: any) => b.startsWith(ac.id))?.display_order ?? 99;
+              return orderA !== orderB ? orderA - orderB : a.localeCompare(b);
+            });
+
+            const compSections: string[] = [];
+            for (const compKey of sortedKeys) {
+              const comp = compositeData.components[compKey];
+              if (!comp) continue;
+              const alias = comp.alias || "Componente";
+              const compPrompts = Array.isArray(comp.prompts) ? comp.prompts : [];
+              const lines = compPrompts
+                .filter((p: any) => {
+                  const val = String(p.currentValue ?? p.value ?? "").trim();
+                  const label = String(p.promptText ?? p.label ?? "").toLowerCase().trim();
+                  if (!val || val.toLowerCase() === "no") return false;
+                  if (excludeLabels.some(ex => label.includes(ex))) return false;
+                  // Skip prompts already shown in parent
+                  if (parentSigs.has(`${label}:${val}`)) return false;
+                  return true;
+                })
+                .sort((a: any, b: any) => (a.promptSequence || 0) - (b.promptSequence || 0))
+                .map((p: any) => `${p.promptText || p.label || ""}: ${p.currentValue ?? p.value ?? ""}`);
+              if (lines.length > 0) {
+                compSections.push(`── ${alias} ──\n${lines.join("\n")}`);
+              }
+            }
+            if (compSections.length > 0) {
+              description = description ? `${description}\n\n${compSections.join("\n\n")}` : compSections.join("\n\n");
+            }
+          }
         }
 
         return {
