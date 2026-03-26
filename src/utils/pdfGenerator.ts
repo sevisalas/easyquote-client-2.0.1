@@ -635,6 +635,22 @@ export const generateQuotePDF = async (
         }
       }
 
+      // If user wrote a manual description, show ONLY that — no prompts, no components
+      if (hasManualDescription) {
+        return {
+          name: item.name || item.product_name || 'Producto',
+          description: safeDescription,
+          prompts: [],
+          price: item.price || 0,
+          quantity: item.quantity || 1,
+          displayQuantity,
+          images: images,
+          components: [],
+          item_additionals: formattedAdditionals,
+          multi_extra: multiExtraRows,
+        };
+      }
+
       // If org flag hides all prompts, return only name + description
       if (hideAllPromptsInDocs) {
         return {
