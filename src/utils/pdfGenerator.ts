@@ -113,16 +113,18 @@ const getTemplateConfig = async (overrideOrgId?: string | null) => {
 const isCellRef = (v: string) => /^[A-Z]+\d+$/i.test(v.trim());
 
 // Get prompt settings for hiding in documents (quotes only)
-const getHiddenPromptSettings = async (): Promise<Map<string, Set<string>>> => {
-  // Get organization_id from sessionStorage first
-  let orgId: string | null = null;
-  const stored = sessionStorage.getItem('selectedOrganization');
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored);
-      orgId = parsed.id || null;
-    } catch {
-      // continue to fallback
+const getHiddenPromptSettings = async (overrideOrgId?: string | null): Promise<Map<string, Set<string>>> => {
+  // Prioritize explicit org (document org), fallback to session org
+  let orgId: string | null = overrideOrgId || null;
+  if (!orgId) {
+    const stored = sessionStorage.getItem('selectedOrganization');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        orgId = parsed.id || null;
+      } catch {
+        // continue to fallback
+      }
     }
   }
   
