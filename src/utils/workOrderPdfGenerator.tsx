@@ -819,10 +819,10 @@ export const generateWorkOrderPDF = async (
           .maybeSingle();
 
         if (orgData?.api_user_id) {
-          // Load prompt settings (admin_only + ot_section)
+          // Load prompt settings (admin_only + ot_section + hide_in_documents)
           const { data: promptSettings } = await supabase
             .from('product_prompt_settings')
-            .select('prompt_name, label, admin_only, show_in_ot, ot_section')
+            .select('easyquote_product_id, prompt_name, label, admin_only, show_in_ot, ot_section, hide_in_documents')
             .eq('api_user_id', orgData.api_user_id);
 
           promptSettings?.forEach(s => {
@@ -834,6 +834,15 @@ export const generateWorkOrderPDF = async (
               useSections = true;
               if (s.label) promptSections.set(s.label.trim().toUpperCase(), s.ot_section);
               if (s.prompt_name) promptSections.set(s.prompt_name.trim().toUpperCase(), s.ot_section);
+            }
+            // Build hiddenPromptSettings for description sanitization
+            if (s.hide_in_documents || s.admin_only) {
+              if (!hiddenPromptSettings.has(s.easyquote_product_id)) {
+                hiddenPromptSettings.set(s.easyquote_product_id, new Set());
+              }
+              const set = hiddenPromptSettings.get(s.easyquote_product_id)!;
+              if (s.prompt_name) set.add(s.prompt_name.trim().toUpperCase());
+              if (s.label && s.label !== s.prompt_name) set.add(s.label.trim().toUpperCase());
             }
           });
 
