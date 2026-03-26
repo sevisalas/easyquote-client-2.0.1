@@ -1255,7 +1255,7 @@ const SalesOrderDetail = () => {
                           </div>
                           <div className="text-right ml-4 flex-shrink-0">
                             {viewMode === 'administrative' && (
-                              <p className={`font-bold text-primary ${isMobile ? 'text-lg' : 'text-xl'}`}>{item.price.toFixed(2)} €</p>
+                              <p className={`font-bold text-primary ${isMobile ? 'text-lg' : 'text-xl'}`}>{(() => { const parts = Math.abs(item.price).toFixed(2).split('.'); const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.'); return `${item.price < 0 ? '-' : ''}${intPart},${parts[1]} €`; })()}</p>
                             )}
                           </div>
                         </div>
