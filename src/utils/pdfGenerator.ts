@@ -651,7 +651,8 @@ export const generateQuotePDF = async (
         };
       }
 
-      // If org flag hides all prompts, return only name + description
+      // If org flag hides all prompts, return only name + description.
+      // If there's already a description, components are redundant (info is in the description).
       if (hideAllPromptsInDocs) {
         return {
           name: item.name || item.product_name || 'Producto',
@@ -661,7 +662,7 @@ export const generateQuotePDF = async (
           quantity: item.quantity || 1,
           displayQuantity,
           images: images,
-          components: componentSections,
+          components: safeDescription ? [] : componentSections,
           item_additionals: formattedAdditionals,
           multi_extra: multiExtraRows,
         };
