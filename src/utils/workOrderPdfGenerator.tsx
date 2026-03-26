@@ -907,6 +907,7 @@ export const generateWorkOrderPDF = async (
         promptSections={promptSections}
         outputSections={outputSections}
         useSections={useSections}
+        hiddenPromptSettings={hiddenPromptSettings}
       />
     ).toBlob();
 
