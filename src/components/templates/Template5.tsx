@@ -141,7 +141,7 @@ export default function Template5({ data }: Template5Props) {
                     </tr>
                   )}
                   {item.prompts && item.prompts.length > 0 && (
-                    <tr className="border-b border-gray-300 bg-gray-50/50">
+                    <tr className="bg-gray-50/50">
                       <td colSpan={4} className="pl-4 py-1">
                         <div className="text-[10px] text-gray-700 space-y-0.5 leading-tight">
                           {item.prompts.map((prompt: any, pIdx: number) => (
