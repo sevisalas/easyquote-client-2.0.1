@@ -594,7 +594,10 @@ export const generateQuotePDF = async (
             .filter((p: any) => {
               const val = p?.currentValue ?? p?.value;
               if (val === null || val === undefined || String(val).trim() === '') return false;
+              if (String(val).trim() === '0') return false;
               if (String(val).trim().toLowerCase() === 'no') return false;
+              const pLabel = normalize(p?.promptText || p?.label || '');
+              if (pLabel.startsWith('SOLAPAS')) return false;
               if (isCompHidden(p)) return false;
               return true;
             })
