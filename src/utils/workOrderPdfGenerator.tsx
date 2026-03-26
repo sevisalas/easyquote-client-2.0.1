@@ -1,6 +1,7 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, pdf, Image } from '@react-pdf/renderer';
 import { supabase } from '@/integrations/supabase/client';
+import { sanitizeDescriptionForDocs, normalizeDescriptionLabel } from '@/utils/pdfGenerator';
 
 const styles = StyleSheet.create({
   page: {
@@ -202,6 +203,8 @@ interface WorkOrderPDFOptions {
   outputSections?: Map<string, string>;
   /** Whether to use section-based layout */
   useSections?: boolean;
+  /** Hidden prompt settings per product (for description sanitization) */
+  hiddenPromptSettings?: Map<string, Set<string>>;
 }
 
 // ─── Visual Imposition Diagram (mirrors ImpositionScheme.tsx logic) ──────
@@ -346,6 +349,7 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
   promptSections,
   outputSections,
   useSections,
+  hiddenPromptSettings,
 }) => {
   const formatVal = (v: any): string => {
     if (v === null || v === undefined) return '-';
@@ -495,9 +499,19 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
               <Text style={styles.sectionTitle}>
                 ARTÍCULO{items.length > 1 ? ` ${itemIndex + 1}` : ''}: {item.product_name}
               </Text>
-              {item.description && (
-                <Text style={{ fontSize: 9, color: '#444', marginTop: 2 }}>{item.description}</Text>
-              )}
+              {item.description && (() => {
+                const parentHidden = item.product_id && hiddenPromptSettings ? (hiddenPromptSettings.get(item.product_id) || new Set<string>()) : new Set<string>();
+                const compHiddenByAlias = new Map<string, Set<string>>();
+                if (item.composite_data?.activeComponents && Array.isArray(item.composite_data.activeComponents)) {
+                  item.composite_data.activeComponents.forEach((ac: any) => {
+                    if (!ac?.component_product_id || !ac?.component_alias) return;
+                    const ch = hiddenPromptSettings?.get(ac.component_product_id);
+                    if (ch) compHiddenByAlias.set(normalizeDescriptionLabel(ac.component_alias), new Set(ch));
+                  });
+                }
+                const sanitized = sanitizeDescriptionForDocs(item.description, parentHidden, compHiddenByAlias);
+                return sanitized ? <Text style={{ fontSize: 9, color: '#444', marginTop: 2 }}>{sanitized}</Text> : null;
+              })()}
             </View>
 
             <View style={styles.thinSeparator} />
@@ -774,6 +788,7 @@ export const generateWorkOrderPDF = async (
     let promptSections = new Map<string, string>();
     let outputSections = new Map<string, string>();
     let useSections = false;
+    let hiddenPromptSettings = new Map<string, Set<string>>();
 
     if (options.orderId) {
       const { data: order } = await supabase
@@ -804,10 +819,10 @@ export const generateWorkOrderPDF = async (
           .maybeSingle();
 
         if (orgData?.api_user_id) {
-          // Load prompt settings (admin_only + ot_section)
+          // Load prompt settings (admin_only + ot_section + hide_in_documents)
           const { data: promptSettings } = await supabase
             .from('product_prompt_settings')
-            .select('prompt_name, label, admin_only, show_in_ot, ot_section')
+            .select('easyquote_product_id, prompt_name, label, admin_only, show_in_ot, ot_section, hide_in_documents')
             .eq('api_user_id', orgData.api_user_id);
 
           promptSettings?.forEach(s => {
@@ -819,6 +834,15 @@ export const generateWorkOrderPDF = async (
               useSections = true;
               if (s.label) promptSections.set(s.label.trim().toUpperCase(), s.ot_section);
               if (s.prompt_name) promptSections.set(s.prompt_name.trim().toUpperCase(), s.ot_section);
+            }
+            // Build hiddenPromptSettings for description sanitization
+            if (s.hide_in_documents || s.admin_only) {
+              if (!hiddenPromptSettings.has(s.easyquote_product_id)) {
+                hiddenPromptSettings.set(s.easyquote_product_id, new Set());
+              }
+              const set = hiddenPromptSettings.get(s.easyquote_product_id)!;
+              if (s.prompt_name) set.add(s.prompt_name.trim().toUpperCase());
+              if (s.label && s.label !== s.prompt_name) set.add(s.label.trim().toUpperCase());
             }
           });
 
@@ -883,6 +907,7 @@ export const generateWorkOrderPDF = async (
         promptSections={promptSections}
         outputSections={outputSections}
         useSections={useSections}
+        hiddenPromptSettings={hiddenPromptSettings}
       />
     ).toBlob();
 

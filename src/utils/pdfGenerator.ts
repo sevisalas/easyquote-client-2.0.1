@@ -285,7 +285,7 @@ const getHiddenPromptSettings = async (overrideOrgId?: string | null): Promise<M
   return hiddenMap;
 };
 
-const normalizeDescriptionLabel = (value: string): string =>
+export const normalizeDescriptionLabel = (value: string): string =>
   String(value ?? '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -295,7 +295,7 @@ const normalizeDescriptionLabel = (value: string): string =>
     .trim()
     .toUpperCase();
 
-const isDescriptionLabelHidden = (label: string, hiddenKeys: Set<string>): boolean => {
+export const isDescriptionLabelHidden = (label: string, hiddenKeys: Set<string>): boolean => {
   if (!hiddenKeys || hiddenKeys.size === 0) return false;
 
   const normalizedLabel = normalizeDescriptionLabel(label);
@@ -319,7 +319,7 @@ const isDescriptionLabelHidden = (label: string, hiddenKeys: Set<string>): boole
   });
 };
 
-const sanitizeDescriptionForDocs = (
+export const sanitizeDescriptionForDocs = (
   description: string,
   parentHiddenKeys: Set<string>,
   componentHiddenByAlias: Map<string, Set<string>>
