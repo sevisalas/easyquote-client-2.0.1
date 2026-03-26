@@ -126,7 +126,7 @@ export default function Template6({ data }: Template6Props) {
                     <td className="p-1.5"></td>
                   </tr>
                   {(!item.prompts || item.prompts.length === 0) && item.description && (
-                    <tr className={`${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'} border-b border-slate-300`}>
+                    <tr className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                       <td colSpan={4} className="pl-4 py-1">
                         <div className="text-[10px] text-slate-700 leading-tight whitespace-pre-line" dangerouslySetInnerHTML={{ __html: item.description.replace(/\n/g, '<br/>') }} />
                       </td>
