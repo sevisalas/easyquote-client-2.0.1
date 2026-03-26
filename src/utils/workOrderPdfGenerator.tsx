@@ -499,9 +499,19 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
               <Text style={styles.sectionTitle}>
                 ARTÍCULO{items.length > 1 ? ` ${itemIndex + 1}` : ''}: {item.product_name}
               </Text>
-              {item.description && (
-                <Text style={{ fontSize: 9, color: '#444', marginTop: 2 }}>{item.description}</Text>
-              )}
+              {item.description && (() => {
+                const parentHidden = item.product_id && hiddenPromptSettings ? (hiddenPromptSettings.get(item.product_id) || new Set<string>()) : new Set<string>();
+                const compHiddenByAlias = new Map<string, Set<string>>();
+                if (item.composite_data?.activeComponents && Array.isArray(item.composite_data.activeComponents)) {
+                  item.composite_data.activeComponents.forEach((ac: any) => {
+                    if (!ac?.component_product_id || !ac?.component_alias) return;
+                    const ch = hiddenPromptSettings?.get(ac.component_product_id);
+                    if (ch) compHiddenByAlias.set(normalizeDescriptionLabel(ac.component_alias), new Set(ch));
+                  });
+                }
+                const sanitized = sanitizeDescriptionForDocs(item.description, parentHidden, compHiddenByAlias);
+                return sanitized ? <Text style={{ fontSize: 9, color: '#444', marginTop: 2 }}>{sanitized}</Text> : null;
+              })()}
             </View>
 
             <View style={styles.thinSeparator} />
