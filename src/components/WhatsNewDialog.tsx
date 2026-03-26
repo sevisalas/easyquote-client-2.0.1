@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, FileSpreadsheet, Search, BookOpen } from "lucide-react";
+import { Sparkles, FileSpreadsheet } from "lucide-react";
 
 const CURRENT_VERSION = "2.7.2";
 const SILENT_UPDATE = false;
