@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, FileSpreadsheet } from "lucide-react";
 
-const CURRENT_VERSION = "2.7.2";
+const CURRENT_VERSION = "2.7.3";
 const SILENT_UPDATE = true;
 const LS_KEY = "whats_new_seen_version";
 
