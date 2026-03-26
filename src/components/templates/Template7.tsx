@@ -163,9 +163,31 @@ export default function Template7({ data }: Template7Props) {
             </tr>
           </thead>
           <tbody>
-            {items.map((item: any, index: number) => (
+            {items.map((item: any, index: number) => {
+              // Calculate Q1 price with adjustments for multi-qty items
+              const calcQ1PriceWithAdj = () => {
+                let adjTotal = 0;
+                const adjs = item._raw_additionals || item.item_additionals || [];
+                adjs.forEach((adj: any) => {
+                  let baseValue = (adj.type === 'net_amount' && Array.isArray(adj.multiValues) && adj.multiValues[0] != null)
+                    ? adj.multiValues[0] : adj.value;
+                  let subtotal = baseValue;
+                  const q1Qty = typeof getItemQuantity(item) === 'string'
+                    ? parseFloat(String(getItemQuantity(item)).replace(/\./g, '').replace(',', '.')) : (getItemQuantity(item) || 1);
+                  if (adj.type === 'percentage') subtotal = ((item.price || 0) * adj.value) / 100;
+                  else if (adj.type === 'quantity_multiplier') subtotal = adj.value * q1Qty;
+                  else if (adj.type === 'capacity_divider') subtotal = adj.value * Math.ceil(q1Qty / (adj.capacity_value || 1));
+                  adjTotal += adj.is_discount ? -subtotal : subtotal;
+                });
+                return (item.price || 0) + adjTotal;
+              };
+
+              const hasMulti = item.multi_extra && item.multi_extra.length > 0;
+
+              return (
               <React.Fragment key={index}>
-                <tr style={{ borderBottom: '1px solid #ddd' }}>
+                {/* Item name row */}
+                <tr style={{ borderBottom: item.description || (item.prompts && item.prompts.length > 0) ? 'none' : '1px solid #ddd' }}>
                   <td style={{ padding: '6px 8px' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
                       {item.images && item.images.length > 0 && (
@@ -178,9 +200,10 @@ export default function Template7({ data }: Template7Props) {
                       <span style={{ fontWeight: 'bold', fontSize: '12px' }}>{item.name}</span>
                     </div>
                   </td>
-                  <td style={{ padding: '6px 8px', textAlign: 'center', fontSize: '12px' }}>{getItemQuantity(item)}</td>
-                  <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold' }}>{fmtEUR(item.price || 0)}</td>
+                  <td style={{ padding: '6px 8px' }}></td>
+                  <td style={{ padding: '6px 8px' }}></td>
                 </tr>
+                {/* Description */}
                 {(!item.prompts || item.prompts.length === 0) && item.description && (
                   <tr style={{ borderBottom: '1px solid #eee' }}>
                     <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
@@ -188,6 +211,7 @@ export default function Template7({ data }: Template7Props) {
                     </td>
                   </tr>
                 )}
+                {/* Prompts */}
                 {item.prompts && item.prompts.length > 0 && (
                   <tr style={{ borderBottom: '1px solid #eee' }}>
                     <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
@@ -199,6 +223,7 @@ export default function Template7({ data }: Template7Props) {
                     </td>
                   </tr>
                 )}
+                {/* Components */}
                 {item.components && item.components.length > 0 && (
                   <tr style={{ borderBottom: '1px solid #eee' }}>
                     <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
@@ -215,6 +240,7 @@ export default function Template7({ data }: Template7Props) {
                     </td>
                   </tr>
                 )}
+                {/* Item additionals */}
                 {item.item_additionals && item.item_additionals.length > 0 && (
                   <tr style={{ borderBottom: '1px solid #eee' }}>
                     <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
@@ -240,7 +266,6 @@ export default function Template7({ data }: Template7Props) {
                           return (
                             <div key={aIdx}>
                               <span style={{ fontWeight: 600 }}>
-                                
                                 {adj.name}:
                               </span>{' '}
                               {fmtEUR(subtotal)}{detail}
@@ -251,46 +276,45 @@ export default function Template7({ data }: Template7Props) {
                     </td>
                   </tr>
                 )}
-                {item.multi_extra && item.multi_extra.length > 0 && (
-                  <tr style={{ borderBottom: '1px solid #eee' }}>
-                    <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
-                      <div style={{ fontSize: '11px', color: '#555', lineHeight: '1.5' }}>
-                        {item.multi_extra.map((me: any, meIdx: number) => {
-                          // Calculate adjustments total for this specific quantity
-                          let adjTotal = 0;
-                          const adjs = item._raw_additionals || item.item_additionals || [];
-                          if (adjs.length > 0) {
-                            adjs.forEach((adj: any) => {
-                              // For net_amount with multiValues, use the value for this specific quantity index
-                              const qtyIndex = meIdx + 1; // meIdx is 0-based for Q2,Q3... so +1 to skip Q1
-                              let baseValue = (adj.type === 'net_amount' && Array.isArray(adj.multiValues) && adj.multiValues[qtyIndex] != null)
-                                ? adj.multiValues[qtyIndex]
-                                : adj.value;
-                              let subtotal = baseValue;
-                              if (adj.type === 'percentage') {
-                                subtotal = (me.price * adj.value) / 100;
-                              } else if (adj.type === 'quantity_multiplier') {
-                                subtotal = adj.value * me.qty;
-                              } else if (adj.type === 'capacity_divider') {
-                                const cap = adj.capacity_value || 1;
-                                subtotal = adj.value * Math.ceil(me.qty / cap);
-                              }
-                              adjTotal += adj.is_discount ? -subtotal : subtotal;
-                            });
-                          }
-                          return (
-                            <div key={meIdx}>
-                              <span style={{ fontWeight: 600 }}>Precio para {new Intl.NumberFormat('es-ES').format(me.qty)} ejemplares:</span>{' '}
-                              {fmtEUR(me.price + adjTotal)}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </td>
-                  </tr>
-                )}
+                {/* Q1 price row */}
+                <tr style={{ borderBottom: '1px solid #ddd' }}>
+                  <td style={{ padding: '4px 8px' }}></td>
+                  <td style={{ padding: '4px 8px', textAlign: 'center', fontSize: '12px' }}>
+                    {new Intl.NumberFormat('es-ES').format(typeof getItemQuantity(item) === 'string' ? parseFloat(String(getItemQuantity(item)).replace(/\./g, '').replace(',', '.')) : (getItemQuantity(item) || 1))}
+                  </td>
+                  <td style={{ padding: '4px 8px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold' }}>
+                    {fmtEUR(hasMulti ? calcQ1PriceWithAdj() : (item.price || 0))}
+                  </td>
+                </tr>
+                {/* Additional quantity rows */}
+                {hasMulti && item.multi_extra.map((me: any, meIdx: number) => {
+                  let adjTotal = 0;
+                  const adjs = item._raw_additionals || item.item_additionals || [];
+                  adjs.forEach((adj: any) => {
+                    const qtyIndex = meIdx + 1;
+                    let baseValue = (adj.type === 'net_amount' && Array.isArray(adj.multiValues) && adj.multiValues[qtyIndex] != null)
+                      ? adj.multiValues[qtyIndex] : adj.value;
+                    let subtotal = baseValue;
+                    if (adj.type === 'percentage') subtotal = (me.price * adj.value) / 100;
+                    else if (adj.type === 'quantity_multiplier') subtotal = adj.value * me.qty;
+                    else if (adj.type === 'capacity_divider') subtotal = adj.value * Math.ceil(me.qty / (adj.capacity_value || 1));
+                    adjTotal += adj.is_discount ? -subtotal : subtotal;
+                  });
+                  return (
+                    <tr key={`multi-${meIdx}`} style={{ borderBottom: '1px solid #ddd' }}>
+                      <td style={{ padding: '4px 8px' }}></td>
+                      <td style={{ padding: '4px 8px', textAlign: 'center', fontSize: '12px' }}>
+                        {new Intl.NumberFormat('es-ES').format(me.qty)}
+                      </td>
+                      <td style={{ padding: '4px 8px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold' }}>
+                        {fmtEUR(me.price + adjTotal)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </React.Fragment>
-            ))}
+              );
+            })}
             {quoteAdditionals.length > 0 && quoteAdditionals.map((adj: any, aIdx: number) => {
               let amount = adj.value;
               let label = adj.name;
