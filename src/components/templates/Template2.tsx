@@ -99,7 +99,7 @@ export default function Template2({ data }: Template2Props) {
               {items.map((item: any, index: number) => (
                 <React.Fragment key={index}>
                   {/* Item name row */}
-                  <tr className={`border-b ${(item.description || (item.prompts && item.prompts.length > 0)) ? 'border-transparent' : 'border-gray-300'}`}>
+                  <tr>
                     <td className="p-1.5">
                       <div className="flex items-start gap-1.5">
                         {item.images && item.images.length > 0 && (
