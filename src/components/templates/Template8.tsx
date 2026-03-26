@@ -329,30 +329,32 @@ export default function Template8({ data }: Template8Props) {
         </table>
 
         {/* Totales */}
-        <div style={{ marginLeft: 'auto', width: '200px', marginBottom: '14px' }}>
-          {hasSubtotalDifference && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '3px' }}>
-              <span style={{ color: '#666' }}>Subtotal:</span>
-              <span style={{ fontWeight: 500 }}>{fmtEUR(quote.subtotal || 0)}</span>
+        {(items.length > 1 || quoteAdditionals.length > 0 || quote.tax_amount > 0 || quote.discount_amount > 0) && (
+          <div style={{ marginLeft: 'auto', width: '200px', marginBottom: '14px' }}>
+            {hasSubtotalDifference && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '3px' }}>
+                <span style={{ color: '#666' }}>Subtotal:</span>
+                <span style={{ fontWeight: 500 }}>{fmtEUR(quote.subtotal || 0)}</span>
+              </div>
+            )}
+            {quote.tax_amount > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '3px' }}>
+                <span style={{ color: '#666' }}>IVA (21%):</span>
+                <span style={{ fontWeight: 500 }}>{fmtEUR(quote.tax_amount || 0)}</span>
+              </div>
+            )}
+            {quote.discount_amount > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#dc2626', marginBottom: '3px' }}>
+                <span>Descuento:</span>
+                <span>-{fmtEUR(quote.discount_amount || 0)}</span>
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', fontWeight: 'bold', color: BRAND.totalColor, borderTop: `2px solid ${BRAND.totalColor}`, paddingTop: '6px' }}>
+              <span>TOTAL (sin I.V.A.):</span>
+              <span>{fmtEUR(quote.final_price || 0)}</span>
             </div>
-          )}
-          {quote.tax_amount > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '3px' }}>
-              <span style={{ color: '#666' }}>IVA (21%):</span>
-              <span style={{ fontWeight: 500 }}>{fmtEUR(quote.tax_amount || 0)}</span>
-            </div>
-          )}
-          {quote.discount_amount > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#dc2626', marginBottom: '3px' }}>
-              <span>Descuento:</span>
-              <span>-{fmtEUR(quote.discount_amount || 0)}</span>
-            </div>
-          )}
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', fontWeight: 'bold', color: BRAND.totalColor, borderTop: `2px solid ${BRAND.totalColor}`, paddingTop: '6px' }}>
-            <span>TOTAL (sin I.V.A.):</span>
-            <span>{fmtEUR(quote.final_price || 0)}</span>
           </div>
-        </div>
+        )}
 
         {/* Notas */}
         {quote.notes && (

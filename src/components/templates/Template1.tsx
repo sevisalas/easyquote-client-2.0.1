@@ -190,10 +190,12 @@ export default function Template1({ data }: Template1Props) {
               <span>-{fmtEUR(quote.discount_amount || 0)}</span>
             </div>
           )}
-          <div className="flex justify-between pt-1.5 border-t-2 font-bold text-sm" style={{ borderColor: config.brandColor || '#0ea5e9', color: config.brandColor || '#0ea5e9' }}>
-            <span>TOTAL:</span>
-            <span>{fmtEUR(quote.final_price || 0)}</span>
-          </div>
+          {(items.length > 1 || quote.tax_amount > 0 || quote.discount_amount > 0) && (
+            <div className="flex justify-between pt-1.5 border-t-2 font-bold text-sm" style={{ borderColor: config.brandColor || '#0ea5e9', color: config.brandColor || '#0ea5e9' }}>
+              <span>TOTAL:</span>
+              <span>{fmtEUR(quote.final_price || 0)}</span>
+            </div>
+          )}
         </div>
       </section>
 

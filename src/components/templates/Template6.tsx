@@ -200,10 +200,12 @@ export default function Template6({ data }: Template6Props) {
                   <span className="font-semibold">-{fmtEUR(quote.discount_amount || 0)}</span>
                 </div>
               )}
-              <div className="flex justify-between pt-1.5 border-t border-white/30 text-sm font-serif font-bold">
-                <span>TOTAL:</span>
-                <span>{fmtEUR(quote.final_price || 0)}</span>
-              </div>
+              {(items.length > 1 || quote.tax_amount > 0 || quote.discount_amount > 0) && (
+                <div className="flex justify-between pt-1.5 border-t border-white/30 text-sm font-serif font-bold">
+                  <span>TOTAL:</span>
+                  <span>{fmtEUR(quote.final_price || 0)}</span>
+                </div>
+              )}
             </div>
           </div>
         </section>

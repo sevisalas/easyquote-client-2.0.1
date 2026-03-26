@@ -180,10 +180,12 @@ export default function Template3({ data }: Template3Props) {
               <span className="font-medium">-{fmtEUR(quote.discount_amount || 0)}</span>
             </div>
           )}
-          <div className="flex justify-between pt-1.5 border-t-2 border-gray-900">
-            <span className="font-medium text-sm uppercase tracking-wide">Total</span>
-            <span className="font-medium text-base">{fmtEUR(quote.final_price || 0)}</span>
-          </div>
+          {(items.length > 1 || quote.tax_amount > 0 || quote.discount_amount > 0) && (
+            <div className="flex justify-between pt-1.5 border-t-2 border-gray-900">
+              <span className="font-medium text-sm uppercase tracking-wide">Total</span>
+              <span className="font-medium text-base">{fmtEUR(quote.final_price || 0)}</span>
+            </div>
+          )}
         </div>
       </section>
 

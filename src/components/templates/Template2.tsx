@@ -189,10 +189,12 @@ export default function Template2({ data }: Template2Props) {
                 <span className="font-semibold">-{fmtEUR(quote.discount_amount || 0)}</span>
               </div>
             )}
-            <div className="flex justify-between pt-1.5 border-t-2 border-gray-300">
-              <span className="font-bold text-sm">TOTAL:</span>
-              <span className="font-bold text-base text-gray-900">{fmtEUR(quote.final_price || 0)}</span>
-            </div>
+            {(items.length > 1 || quote.tax_amount > 0 || quote.discount_amount > 0) && (
+              <div className="flex justify-between pt-1.5 border-t-2 border-gray-300">
+                <span className="font-bold text-sm">TOTAL:</span>
+                <span className="font-bold text-base text-gray-900">{fmtEUR(quote.final_price || 0)}</span>
+              </div>
+            )}
           </div>
         </section>
 
