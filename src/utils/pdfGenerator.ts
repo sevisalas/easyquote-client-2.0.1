@@ -319,7 +319,7 @@ export const isDescriptionLabelHidden = (label: string, hiddenKeys: Set<string>)
   });
 };
 
-const sanitizeDescriptionForDocs = (
+export const sanitizeDescriptionForDocs = (
   description: string,
   parentHiddenKeys: Set<string>,
   componentHiddenByAlias: Map<string, Set<string>>
