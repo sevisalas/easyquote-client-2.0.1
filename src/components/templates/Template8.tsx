@@ -200,7 +200,7 @@ export default function Template8({ data }: Template8Props) {
               return (
               <React.Fragment key={index}>
                 {/* Item name row */}
-                <tr style={{ borderBottom: item.description || (item.prompts && item.prompts.length > 0) ? 'none' : '1px solid #ddd' }}>
+                <tr style={{ borderBottom: 'none' }}>
                   <td style={{ padding: '6px 8px' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
                       {item.images && item.images.length > 0 && (
