@@ -349,6 +349,7 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
   promptSections,
   outputSections,
   useSections,
+  hiddenPromptSettings,
 }) => {
   const formatVal = (v: any): string => {
     if (v === null || v === undefined) return '-';
