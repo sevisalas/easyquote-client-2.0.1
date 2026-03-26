@@ -5,6 +5,14 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.7.2] - 2026-03-26
+
+### Mejorado
+- **Filtrado de campos en PDF**: Los campos marcados como "ocultar en documentos", con valor "No" y las solapas se excluyen automáticamente de presupuestos y órdenes de trabajo en PDF
+- **Sanitización de descripción**: La descripción de artículos en OT aplica las mismas reglas de visibilidad que los presupuestos
+
+---
+
 ## [2.6.11] - 2026-03-23
 
 ### Corregido
