@@ -482,12 +482,26 @@ export const generateQuotePDF = async (
             return candidates.some(c => compHiddenPrompts.has(c));
           };
           
+          // Build parent prompt values map for deduplication
+          const parentPromptValues = new Map<string, string>();
+          if (item.prompts && Array.isArray(item.prompts)) {
+            item.prompts.forEach((p: any) => {
+              const label = normalize(p.label || '');
+              const val = String(p.value || '').trim();
+              if (label && val) parentPromptValues.set(label, val);
+            });
+          }
+          
           const compPromptsFormatted = compPrompts
             .filter((p: any) => {
               const val = p?.currentValue ?? p?.value;
               if (val === null || val === undefined || String(val).trim() === '') return false;
               if (String(val).trim().toLowerCase() === 'no') return false;
               if (isCompHidden(p)) return false;
+              // Filter out prompts inherited from parent with same value
+              const pLabel = normalize(p.promptText || p.label || '');
+              const pVal = String(val).trim();
+              if (pLabel && parentPromptValues.has(pLabel) && parentPromptValues.get(pLabel) === pVal) return false;
               return true;
             })
             .sort((a: any, b: any) => (a.promptSequence || 0) - (b.promptSequence || 0))
