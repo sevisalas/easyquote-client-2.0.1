@@ -113,16 +113,18 @@ const getTemplateConfig = async (overrideOrgId?: string | null) => {
 const isCellRef = (v: string) => /^[A-Z]+\d+$/i.test(v.trim());
 
 // Get prompt settings for hiding in documents (quotes only)
-const getHiddenPromptSettings = async (): Promise<Map<string, Set<string>>> => {
-  // Get organization_id from sessionStorage first
-  let orgId: string | null = null;
-  const stored = sessionStorage.getItem('selectedOrganization');
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored);
-      orgId = parsed.id || null;
-    } catch {
-      // continue to fallback
+const getHiddenPromptSettings = async (overrideOrgId?: string | null): Promise<Map<string, Set<string>>> => {
+  // Prioritize explicit org (document org), fallback to session org
+  let orgId: string | null = overrideOrgId || null;
+  if (!orgId) {
+    const stored = sessionStorage.getItem('selectedOrganization');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        orgId = parsed.id || null;
+      } catch {
+        // continue to fallback
+      }
     }
   }
   
@@ -283,6 +285,38 @@ const getHiddenPromptSettings = async (): Promise<Map<string, Set<string>>> => {
   return hiddenMap;
 };
 
+const sanitizeDescriptionForDocs = (description: string, hiddenKeys: Set<string>): string => {
+  if (!description) return '';
+
+  const cleaned = description
+    .split(/\r?\n/)
+    .filter((rawLine) => {
+      const line = rawLine.trim();
+      if (!line) return true;
+
+      // Keep component section separators like "── Interior ──"
+      if (/^─+\s*.+\s*─+$/.test(line)) return true;
+
+      const colonIndex = line.indexOf(':');
+      if (colonIndex === -1) return true;
+
+      const label = line.slice(0, colonIndex).trim();
+      const value = line.slice(colonIndex + 1).trim();
+      if (!value) return false;
+      if (value.toLowerCase() === 'no') return false;
+
+      const normalizedLabel = String(label).replace(/\$/g, '').trim().toUpperCase();
+      if (normalizedLabel && hiddenKeys.has(normalizedLabel)) return false;
+
+      return true;
+    })
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  return cleaned;
+};
+
 // Generate PDF from a quote ID
 export const generateQuotePDF = async (
   quoteId: string,
@@ -324,8 +358,8 @@ export const generateQuotePDF = async (
     // Get template configuration using the quote's own organization_id
     const config = await getTemplateConfig(quote.organization_id);
 
-    // Get hidden prompt settings for quotes
-    const hiddenPromptSettings = await getHiddenPromptSettings();
+    // Get hidden prompt settings for this quote org
+    const hiddenPromptSettings = await getHiddenPromptSettings(quote.organization_id);
 
     // Check organization-level flag: hide ALL prompts in documents
     let hideAllPromptsInDocs = false;
@@ -380,6 +414,20 @@ export const generateQuotePDF = async (
         const candidates = [prompt?.id, prompt?.name, prompt?.label].filter(Boolean).map(normalize);
         return candidates.some(c => hiddenPrompts.has(c));
       };
+
+      // Merge hidden keys from parent + component products for description sanitization
+      const allHiddenPromptKeys = new Set<string>(hiddenPrompts ? Array.from(hiddenPrompts) : []);
+      if (item.composite_data?.activeComponents && Array.isArray(item.composite_data.activeComponents)) {
+        item.composite_data.activeComponents.forEach((ac: any) => {
+          const componentProductId = ac?.component_product_id;
+          if (!componentProductId) return;
+          const componentHidden = hiddenPromptSettings.get(componentProductId);
+          if (!componentHidden) return;
+          componentHidden.forEach((k) => allHiddenPromptKeys.add(k));
+        });
+      }
+
+      const safeDescription = sanitizeDescriptionForDocs(item.description || '', allHiddenPromptKeys);
       
       // Extract displayQuantity: prefer Q1 from multi, then is_quantity prompt, then heuristic
       let displayQuantity: string | number | null = null;
@@ -530,7 +578,7 @@ export const generateQuotePDF = async (
       if (hideAllPromptsInDocs) {
         return {
           name: item.name || item.product_name || 'Producto',
-          description: item.description || '',
+          description: safeDescription,
           prompts: [],
           price: item.price || 0,
           quantity: item.quantity || 1,
