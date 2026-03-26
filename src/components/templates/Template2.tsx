@@ -99,7 +99,7 @@ export default function Template2({ data }: Template2Props) {
               {items.map((item: any, index: number) => (
                 <React.Fragment key={index}>
                   {/* Item name row */}
-                  <tr className={`border-b ${(item.description || (item.prompts && item.prompts.length > 0)) ? 'border-transparent' : 'border-gray-300'}`}>
+                  <tr>
                     <td className="p-1.5">
                       <div className="flex items-start gap-1.5">
                         {item.images && item.images.length > 0 && (
@@ -117,14 +117,14 @@ export default function Template2({ data }: Template2Props) {
                     <td className="p-1.5"></td>
                   </tr>
                   {(!item.prompts || item.prompts.length === 0) && item.description && (
-                    <tr className="border-b border-gray-300">
+                    <tr>
                       <td colSpan={4} className="pl-4 pr-1.5 py-1">
                         <div className="text-[10px] text-gray-700 leading-tight whitespace-pre-line" dangerouslySetInnerHTML={{ __html: item.description.replace(/\n/g, '<br/>') }} />
                       </td>
                     </tr>
                   )}
                   {item.prompts && item.prompts.length > 0 && (
-                    <tr className="border-b border-gray-300">
+                    <tr>
                       <td colSpan={4} className="pl-4 pr-1.5 py-1">
                         <div className="text-[10px] text-gray-700 space-y-0.5 leading-tight">
                           {item.prompts.map((prompt: any, pIdx: number) => (
@@ -137,7 +137,7 @@ export default function Template2({ data }: Template2Props) {
                     </tr>
                   )}
                   {item.components && item.components.length > 0 && (
-                    <tr className="border-b border-gray-300">
+                    <tr>
                       <td colSpan={4} className="pl-4 pr-1.5 py-1">
                         {item.components.map((comp: any, cIdx: number) => (
                           <div key={cIdx} className="mb-1">

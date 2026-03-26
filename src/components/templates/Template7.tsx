@@ -187,7 +187,7 @@ export default function Template7({ data }: Template7Props) {
               return (
               <React.Fragment key={index}>
                 {/* Item name row */}
-                <tr style={{ borderBottom: item.description || (item.prompts && item.prompts.length > 0) ? 'none' : '1px solid #ddd' }}>
+                <tr style={{ borderBottom: 'none' }}>
                   <td style={{ padding: '6px 8px' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
                       {item.images && item.images.length > 0 && (
@@ -205,7 +205,7 @@ export default function Template7({ data }: Template7Props) {
                 </tr>
                 {/* Description */}
                 {(!item.prompts || item.prompts.length === 0) && item.description && (
-                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                  <tr style={{ borderBottom: 'none' }}>
                     <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
                       <div style={{ fontSize: '11px', color: '#555', lineHeight: '1.4', whiteSpace: 'pre-line' }} dangerouslySetInnerHTML={{ __html: item.description.replace(/\n/g, '<br/>') }} />
                     </td>
@@ -213,7 +213,7 @@ export default function Template7({ data }: Template7Props) {
                 )}
                 {/* Prompts */}
                 {item.prompts && item.prompts.length > 0 && (
-                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                  <tr style={{ borderBottom: 'none' }}>
                     <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
                       <div style={{ fontSize: '11px', color: '#555', lineHeight: '1.4' }}>
                         {item.prompts.map((prompt: any, pIdx: number) => (
@@ -225,7 +225,7 @@ export default function Template7({ data }: Template7Props) {
                 )}
                 {/* Components */}
                 {item.components && item.components.length > 0 && (
-                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                  <tr style={{ borderBottom: 'none' }}>
                     <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
                       {item.components.map((comp: any, cIdx: number) => (
                         <div key={cIdx} style={{ marginBottom: '4px' }}>
@@ -242,7 +242,7 @@ export default function Template7({ data }: Template7Props) {
                 )}
                 {/* Item additionals */}
                 {item.item_additionals && item.item_additionals.length > 0 && (
-                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                  <tr style={{ borderBottom: 'none' }}>
                     <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
                       <div style={{ fontSize: '11px', color: '#555', lineHeight: '1.4' }}>
                         {item.item_additionals.map((adj: any, aIdx: number) => {
