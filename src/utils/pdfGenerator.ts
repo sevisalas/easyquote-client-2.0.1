@@ -285,36 +285,80 @@ const getHiddenPromptSettings = async (overrideOrgId?: string | null): Promise<M
   return hiddenMap;
 };
 
-const sanitizeDescriptionForDocs = (description: string, hiddenKeys: Set<string>): string => {
+const normalizeDescriptionLabel = (value: string): string =>
+  String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\$/g, '')
+    .replace(/[^a-zA-Z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase();
+
+const isDescriptionLabelHidden = (label: string, hiddenKeys: Set<string>): boolean => {
+  if (!hiddenKeys || hiddenKeys.size === 0) return false;
+
+  const normalizedLabel = normalizeDescriptionLabel(label);
+  if (!normalizedLabel) return false;
+
+  const normalizedHiddenKeys = Array.from(hiddenKeys)
+    .map((key) => normalizeDescriptionLabel(key))
+    .filter(Boolean);
+
+  if (normalizedHiddenKeys.includes(normalizedLabel)) return true;
+
+  const labelTokens = new Set(normalizedLabel.split(' ').filter((t) => t.length >= 4));
+  return normalizedHiddenKeys.some((hidden) => {
+    const hiddenTokens = hidden.split(' ').filter((t) => t.length >= 4);
+    return hiddenTokens.some((token) => labelTokens.has(token));
+  });
+};
+
+const sanitizeDescriptionForDocs = (
+  description: string,
+  parentHiddenKeys: Set<string>,
+  componentHiddenByAlias: Map<string, Set<string>>
+): string => {
   if (!description) return '';
 
-  const cleaned = description
-    .split(/\r?\n/)
-    .filter((rawLine) => {
-      const line = rawLine.trim();
-      if (!line) return true;
+  const cleaned: string[] = [];
+  let currentSectionAlias = '__PARENT__';
 
-      // Keep component section separators like "── Interior ──"
-      if (/^─+\s*.+\s*─+$/.test(line)) return true;
+  for (const rawLine of description.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line) {
+      cleaned.push(rawLine);
+      continue;
+    }
 
-      const colonIndex = line.indexOf(':');
-      if (colonIndex === -1) return true;
+    const sectionMatch = line.match(/^─+\s*(.+?)\s*─+$/);
+    if (sectionMatch) {
+      currentSectionAlias = normalizeDescriptionLabel(sectionMatch[1]);
+      cleaned.push(rawLine);
+      continue;
+    }
 
-      const label = line.slice(0, colonIndex).trim();
-      const value = line.slice(colonIndex + 1).trim();
-      if (!value) return false;
-      if (value.toLowerCase() === 'no') return false;
+    const colonIndex = line.indexOf(':');
+    if (colonIndex === -1) {
+      cleaned.push(rawLine);
+      continue;
+    }
 
-      const normalizedLabel = String(label).replace(/\$/g, '').trim().toUpperCase();
-      if (normalizedLabel && hiddenKeys.has(normalizedLabel)) return false;
+    const label = line.slice(0, colonIndex).trim();
+    const value = line.slice(colonIndex + 1).trim();
+    if (!value) continue;
+    if (value.toLowerCase() === 'no') continue;
 
-      return true;
-    })
-    .join('\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+    const activeHiddenKeys = currentSectionAlias === '__PARENT__'
+      ? parentHiddenKeys
+      : (componentHiddenByAlias.get(currentSectionAlias) ?? new Set<string>());
 
-  return cleaned;
+    if (isDescriptionLabelHidden(label, activeHiddenKeys)) continue;
+
+    cleaned.push(rawLine);
+  }
+
+  return cleaned.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 };
 
 // Generate PDF from a quote ID
