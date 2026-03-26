@@ -203,6 +203,8 @@ interface WorkOrderPDFOptions {
   outputSections?: Map<string, string>;
   /** Whether to use section-based layout */
   useSections?: boolean;
+  /** Hidden prompt settings per product (for description sanitization) */
+  hiddenPromptSettings?: Map<string, Set<string>>;
 }
 
 // ─── Visual Imposition Diagram (mirrors ImpositionScheme.tsx logic) ──────
