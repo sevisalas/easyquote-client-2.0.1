@@ -450,9 +450,10 @@ export const generateQuotePDF = async (
         });
       }
 
-      // Extract component details from composite_data
+      // Extract component details from composite_data (only if user hasn't written a manual description)
       const componentSections: Array<{alias: string, prompts: Array<{label: string, value: string}>}> = [];
-      if (item.composite_data?.components) {
+      const hasManualDescription = item.description_manual === true && item.description;
+      if (!hasManualDescription && item.composite_data?.components) {
         const componentsMap = item.composite_data.components;
         const activeComponents = item.composite_data.activeComponents || [];
         
