@@ -235,7 +235,7 @@ export default function Template8({ data }: Template8Props) {
                   </tr>
                 )}
                 {item.components && item.components.length > 0 && (
-                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                  <tr style={{ borderBottom: 'none' }}>
                     <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
                       {item.components.map((comp: any, cIdx: number) => (
                         <div key={cIdx} style={{ marginBottom: '4px' }}>
