@@ -133,7 +133,7 @@ export default function Template6({ data }: Template6Props) {
                     </tr>
                   )}
                   {item.prompts && item.prompts.length > 0 && (
-                    <tr className={`${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'} border-b border-slate-300`}>
+                    <tr className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                       <td colSpan={4} className="pl-4 py-1">
                         <div className="text-[10px] text-slate-700 space-y-0.5 leading-tight">
                           {item.prompts.map((prompt: any, pIdx: number) => (
