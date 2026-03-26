@@ -594,7 +594,10 @@ export const generateQuotePDF = async (
             .filter((p: any) => {
               const val = p?.currentValue ?? p?.value;
               if (val === null || val === undefined || String(val).trim() === '') return false;
+              if (String(val).trim() === '0') return false;
               if (String(val).trim().toLowerCase() === 'no') return false;
+              const pLabel = normalize(p?.promptText || p?.label || '');
+              if (pLabel.startsWith('SOLAPAS')) return false;
               if (isCompHidden(p)) return false;
               return true;
             })
@@ -630,6 +633,22 @@ export const generateQuotePDF = async (
             multiExtraRows.push({ qty: row.qty, price });
           }
         }
+      }
+
+      // If user wrote a manual description, show ONLY that — no prompts, no components
+      if (hasManualDescription) {
+        return {
+          name: item.name || item.product_name || 'Producto',
+          description: safeDescription,
+          prompts: [],
+          price: item.price || 0,
+          quantity: item.quantity || 1,
+          displayQuantity,
+          images: images,
+          components: [],
+          item_additionals: formattedAdditionals,
+          multi_extra: multiExtraRows,
+        };
       }
 
       // If org flag hides all prompts, return only name + description
