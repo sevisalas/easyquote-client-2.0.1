@@ -89,7 +89,7 @@ export default function Template3({ data }: Template3Props) {
           <tbody>
             {items.map((item: any, index: number) => (
               <React.Fragment key={index}>
-                <tr className={`border-b ${(item.description || (item.prompts && item.prompts.length > 0)) ? 'border-transparent' : 'border-gray-100'}`}>
+                <tr>
                   <td className="py-1.5">
                     <div className="flex items-start gap-1.5">
                       {item.images && item.images.length > 0 && (
