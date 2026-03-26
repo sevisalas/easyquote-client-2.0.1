@@ -35,8 +35,11 @@ export default function Template8({ data }: Template8Props) {
   const items = data.items || [];
   const quoteAdditionals = data.quote_additionals || [];
 
-  const fmtEUR = (amount: number) =>
-    new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(amount);
+  const fmtEUR = (amount: number) => {
+    const parts = amount.toFixed(2).split('.');
+    const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return `${intPart},${parts[1]} €`;
+  };
 
   const getItemQuantity = (item: any) => {
     if (item.displayQuantity != null) return item.displayQuantity;
