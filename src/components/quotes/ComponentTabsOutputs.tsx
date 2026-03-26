@@ -10,7 +10,10 @@ import { type BoundProductConfig, getActiveComponents } from "./BoundProductConf
 // Función para formatear precio en EUR
 function formatEUR(value: any): string {
   const num = typeof value === "number" ? value : parseFloat(String(value ?? 0).replace(/\./g, "").replace(",", ".")) || 0;
-  return num.toLocaleString("es-ES", { style: "currency", currency: "EUR" });
+  const parts = Math.abs(num).toFixed(2).split('.');
+  const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const sign = num < 0 ? '-' : '';
+  return `${sign}${intPart},${parts[1]} €`;
 }
 
 // Función para parsear precio desde string

@@ -1616,7 +1616,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const formatEUR = (val: any) => {
     const num = typeof val === "number" ? val : parseFloat(String(val).replace(/\./g, "").replace(",", "."));
     if (isNaN(num)) return `${String(val)} €`;
-    return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num);
+    const parts = Math.abs(num).toFixed(2).split('.');
+    const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    const sign = num < 0 ? '-' : '';
+    return `${sign}${intPart},${parts[1]} €`;
   };
 
   // CONSTANTE DE SEGURIDAD: PostgreSQL numeric(15,2) soporta hasta ~10^13.
