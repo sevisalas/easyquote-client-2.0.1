@@ -108,7 +108,7 @@ export default function Template6({ data }: Template6Props) {
             <tbody>
               {items.map((item: any, index: number) => (
                 <React.Fragment key={index}>
-                  <tr className={`${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'} border-b ${(item.description || (item.prompts && item.prompts.length > 0)) ? 'border-transparent' : 'border-slate-300'}`}>
+                  <tr className={index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
                     <td className="p-1.5">
                       <div className="flex items-start gap-1.5">
                         {item.images && item.images.length > 0 && (
