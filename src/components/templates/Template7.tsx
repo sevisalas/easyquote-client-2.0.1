@@ -213,7 +213,7 @@ export default function Template7({ data }: Template7Props) {
                 )}
                 {/* Prompts */}
                 {item.prompts && item.prompts.length > 0 && (
-                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                  <tr style={{ borderBottom: 'none' }}>
                     <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
                       <div style={{ fontSize: '11px', color: '#555', lineHeight: '1.4' }}>
                         {item.prompts.map((prompt: any, pIdx: number) => (
