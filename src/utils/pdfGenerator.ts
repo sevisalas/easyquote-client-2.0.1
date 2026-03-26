@@ -295,7 +295,7 @@ export const normalizeDescriptionLabel = (value: string): string =>
     .trim()
     .toUpperCase();
 
-const isDescriptionLabelHidden = (label: string, hiddenKeys: Set<string>): boolean => {
+export const isDescriptionLabelHidden = (label: string, hiddenKeys: Set<string>): boolean => {
   if (!hiddenKeys || hiddenKeys.size === 0) return false;
 
   const normalizedLabel = normalizeDescriptionLabel(label);
