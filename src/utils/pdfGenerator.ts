@@ -358,8 +358,8 @@ export const generateQuotePDF = async (
     // Get template configuration using the quote's own organization_id
     const config = await getTemplateConfig(quote.organization_id);
 
-    // Get hidden prompt settings for quotes
-    const hiddenPromptSettings = await getHiddenPromptSettings();
+    // Get hidden prompt settings for this quote org
+    const hiddenPromptSettings = await getHiddenPromptSettings(quote.organization_id);
 
     // Check organization-level flag: hide ALL prompts in documents
     let hideAllPromptsInDocs = false;
