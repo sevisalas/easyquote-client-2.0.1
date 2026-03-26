@@ -788,6 +788,7 @@ export const generateWorkOrderPDF = async (
     let promptSections = new Map<string, string>();
     let outputSections = new Map<string, string>();
     let useSections = false;
+    let hiddenPromptSettings = new Map<string, Set<string>>();
 
     if (options.orderId) {
       const { data: order } = await supabase
