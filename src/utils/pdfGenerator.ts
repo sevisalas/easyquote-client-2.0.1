@@ -450,10 +450,12 @@ export const generateQuotePDF = async (
         });
       }
 
-      // Extract component details from composite_data (only if user hasn't written a manual description)
+      // Extract component details from composite_data.
+      // If description already includes component blocks ("── Interior ──"), avoid duplicating them.
       const componentSections: Array<{alias: string, prompts: Array<{label: string, value: string}>}> = [];
       const hasManualDescription = item.description_manual === true && item.description;
-      if (!hasManualDescription && item.composite_data?.components) {
+      const hasDescriptionComponentBlocks = typeof item.description === 'string' && /──\s*.+?\s*──/.test(item.description);
+      if (!hasManualDescription && !hasDescriptionComponentBlocks && item.composite_data?.components) {
         const componentsMap = item.composite_data.components;
         const activeComponents = item.composite_data.activeComponents || [];
         
@@ -482,26 +484,12 @@ export const generateQuotePDF = async (
             return candidates.some(c => compHiddenPrompts.has(c));
           };
           
-          // Build parent prompt values map for deduplication
-          const parentPromptValues = new Map<string, string>();
-          if (item.prompts && Array.isArray(item.prompts)) {
-            item.prompts.forEach((p: any) => {
-              const label = normalize(p.label || '');
-              const val = String(p.value || '').trim();
-              if (label && val) parentPromptValues.set(label, val);
-            });
-          }
-          
           const compPromptsFormatted = compPrompts
             .filter((p: any) => {
               const val = p?.currentValue ?? p?.value;
               if (val === null || val === undefined || String(val).trim() === '') return false;
               if (String(val).trim().toLowerCase() === 'no') return false;
               if (isCompHidden(p)) return false;
-              // Filter out prompts inherited from parent with same value
-              const pLabel = normalize(p.promptText || p.label || '');
-              const pVal = String(val).trim();
-              if (pLabel && parentPromptValues.has(pLabel) && parentPromptValues.get(pLabel) === pVal) return false;
               return true;
             })
             .sort((a: any, b: any) => (a.promptSequence || 0) - (b.promptSequence || 0))
