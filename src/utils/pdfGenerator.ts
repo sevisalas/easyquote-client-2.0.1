@@ -285,7 +285,7 @@ const getHiddenPromptSettings = async (overrideOrgId?: string | null): Promise<M
   return hiddenMap;
 };
 
-const normalizeDescriptionLabel = (value: string): string =>
+export const normalizeDescriptionLabel = (value: string): string =>
   String(value ?? '')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
