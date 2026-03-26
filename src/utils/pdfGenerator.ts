@@ -285,6 +285,38 @@ const getHiddenPromptSettings = async (overrideOrgId?: string | null): Promise<M
   return hiddenMap;
 };
 
+const sanitizeDescriptionForDocs = (description: string, hiddenKeys: Set<string>): string => {
+  if (!description) return '';
+
+  const cleaned = description
+    .split(/\r?\n/)
+    .filter((rawLine) => {
+      const line = rawLine.trim();
+      if (!line) return true;
+
+      // Keep component section separators like "── Interior ──"
+      if (/^─+\s*.+\s*─+$/.test(line)) return true;
+
+      const colonIndex = line.indexOf(':');
+      if (colonIndex === -1) return true;
+
+      const label = line.slice(0, colonIndex).trim();
+      const value = line.slice(colonIndex + 1).trim();
+      if (!value) return false;
+      if (value.toLowerCase() === 'no') return false;
+
+      const normalizedLabel = String(label).replace(/\$/g, '').trim().toUpperCase();
+      if (normalizedLabel && hiddenKeys.has(normalizedLabel)) return false;
+
+      return true;
+    })
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  return cleaned;
+};
+
 // Generate PDF from a quote ID
 export const generateQuotePDF = async (
   quoteId: string,
