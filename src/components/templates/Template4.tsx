@@ -140,7 +140,7 @@ export default function Template4({ data }: Template4Props) {
                       <td className="p-1.5"></td>
                     </tr>
                     {(!item.prompts || item.prompts.length === 0) && item.description && (
-                      <tr className="border-b border-gray-300">
+                      <tr>
                         <td colSpan={4} className="pl-4 py-1">
                           <div className="text-[10px] text-gray-700 leading-tight whitespace-pre-line" dangerouslySetInnerHTML={{ __html: item.description.replace(/\n/g, '<br/>') }} />
                         </td>
