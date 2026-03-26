@@ -556,12 +556,11 @@ export const generateQuotePDF = async (
         });
       }
 
-      // Extract component details from composite_data.
-      // If description already includes component blocks ("── Interior ──"), avoid duplicating them.
+      // Extract component details from composite_data — ONLY if description is empty.
+      // If user filled the description, it's the sole source of truth for the PDF.
       const componentSections: Array<{alias: string, prompts: Array<{label: string, value: string}>}> = [];
-      const hasManualDescription = item.description_manual === true && item.description;
-      const hasDescriptionComponentBlocks = typeof item.description === 'string' && /──\s*.+?\s*──/.test(item.description);
-      if (!hasManualDescription && !hasDescriptionComponentBlocks && item.composite_data?.components) {
+      const descriptionIsEmpty = !item.description || String(item.description).trim() === '';
+      if (descriptionIsEmpty && item.composite_data?.components) {
         const componentsMap = item.composite_data.components;
         const activeComponents = item.composite_data.activeComponents || [];
         
