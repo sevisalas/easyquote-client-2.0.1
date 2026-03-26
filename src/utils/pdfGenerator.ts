@@ -676,7 +676,7 @@ export const generateQuotePDF = async (
         quantity: item.quantity || 1,
         displayQuantity,
         images: images,
-        components: componentSections,
+        components: safeDescription ? [] : componentSections,
         item_additionals: formattedAdditionals,
         multi_extra: multiExtraRows,
       };
