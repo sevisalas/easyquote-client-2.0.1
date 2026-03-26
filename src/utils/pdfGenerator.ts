@@ -459,19 +459,25 @@ export const generateQuotePDF = async (
         return candidates.some(c => hiddenPrompts.has(c));
       };
 
-      // Merge hidden keys from parent + component products for description sanitization
-      const allHiddenPromptKeys = new Set<string>(hiddenPrompts ? Array.from(hiddenPrompts) : []);
+      // Build hidden keys by section for description sanitization
+      const parentHiddenPromptKeys = new Set<string>(hiddenPrompts ? Array.from(hiddenPrompts) : []);
+      const componentHiddenByAlias = new Map<string, Set<string>>();
       if (item.composite_data?.activeComponents && Array.isArray(item.composite_data.activeComponents)) {
         item.composite_data.activeComponents.forEach((ac: any) => {
           const componentProductId = ac?.component_product_id;
-          if (!componentProductId) return;
+          const componentAlias = ac?.component_alias;
+          if (!componentProductId || !componentAlias) return;
           const componentHidden = hiddenPromptSettings.get(componentProductId);
           if (!componentHidden) return;
-          componentHidden.forEach((k) => allHiddenPromptKeys.add(k));
+          componentHiddenByAlias.set(normalizeDescriptionLabel(componentAlias), new Set(componentHidden));
         });
       }
 
-      const safeDescription = sanitizeDescriptionForDocs(item.description || '', allHiddenPromptKeys);
+      const safeDescription = sanitizeDescriptionForDocs(
+        item.description || '',
+        parentHiddenPromptKeys,
+        componentHiddenByAlias
+      );
       
       // Extract displayQuantity: prefer Q1 from multi, then is_quantity prompt, then heuristic
       let displayQuantity: string | number | null = null;
