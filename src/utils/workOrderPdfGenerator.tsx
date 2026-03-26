@@ -1,6 +1,7 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, pdf, Image } from '@react-pdf/renderer';
 import { supabase } from '@/integrations/supabase/client';
+import { sanitizeDescriptionForDocs, normalizeDescriptionLabel } from '@/utils/pdfGenerator';
 
 const styles = StyleSheet.create({
   page: {
