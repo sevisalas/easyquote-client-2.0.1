@@ -283,7 +283,7 @@ export default function Template7({ data }: Template7Props) {
                     {new Intl.NumberFormat('es-ES').format(typeof getItemQuantity(item) === 'string' ? parseFloat(String(getItemQuantity(item)).replace(/\./g, '').replace(',', '.')) : (getItemQuantity(item) || 1))}
                   </td>
                   <td style={{ padding: '4px 8px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold' }}>
-                    {fmtEUR(hasMulti ? calcQ1PriceWithAdj() : (item.price || 0))}
+                    {fmtEUR(item.price || 0)}
                   </td>
                 </tr>
                 {/* Additional quantity rows */}
