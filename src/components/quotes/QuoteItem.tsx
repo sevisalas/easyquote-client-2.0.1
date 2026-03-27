@@ -3123,7 +3123,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                                           ))}
                                           <div className="flex justify-between text-xs font-medium pt-1 border-t">
                                             <span>Total</span>
-                                            <span>{new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalWithAdditionals)} €</span>
+                                            <span>{formatEUR(totalWithAdditionals)}</span>
                                           </div>
                                         </div>
                                       )}
