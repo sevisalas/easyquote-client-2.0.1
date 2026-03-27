@@ -116,10 +116,10 @@ const statusLabels: Record<string, string> = {
 };
 
 const fmtEUR = (amount: number) => {
-  return new Intl.NumberFormat("es-ES", {
-    style: "currency",
-    currency: "EUR",
-  }).format(amount);
+  const parts = Math.abs(amount).toFixed(2).split('.');
+  const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  const sign = amount < 0 ? '-' : '';
+  return `${sign}${intPart},${parts[1]} €`;
 };
 
 export default function QuoteEdit() {

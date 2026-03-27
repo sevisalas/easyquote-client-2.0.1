@@ -3035,8 +3035,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                               const modifiedPrice = multiModifiedPrices[idx];
                               const hasModified = modifiedPrice !== null && modifiedPrice !== undefined && modifiedPrice !== calculatedPrice;
                               const displayPrice = hasModified ? modifiedPrice : calculatedPrice;
-                              const formattedPrice = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(displayPrice);
-                              const formattedCalculated = new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(calculatedPrice);
+                              const formattedPrice = formatEUR(displayPrice).replace(' €', '');
+                              const formattedCalculated = formatEUR(calculatedPrice).replace(' €', '');
                               
                               // Calculate additionals for this specific quantity
                               const additionals = calculateAdditionalsForQty(r.qty, idx);
@@ -3117,13 +3117,13 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                                             <div key={addIdx} className="flex justify-between text-[10px] text-muted-foreground">
                                               <span className="truncate max-w-[80px]">{add.name}</span>
                                               <span className={add.value >= 0 ? "" : "text-green-600"}>
-                                                {add.value >= 0 ? "+" : ""}{new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(add.value)} €
+                                                {add.value >= 0 ? "+" : ""}{formatEUR(add.value)}
                                               </span>
                                             </div>
                                           ))}
                                           <div className="flex justify-between text-xs font-medium pt-1 border-t">
                                             <span>Total</span>
-                                            <span>{new Intl.NumberFormat("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalWithAdditionals)} €</span>
+                                            <span>{formatEUR(totalWithAdditionals)}</span>
                                           </div>
                                         </div>
                                       )}
