@@ -164,24 +164,6 @@ export default function Template7({ data }: Template7Props) {
           </thead>
           <tbody>
             {items.map((item: any, index: number) => {
-              // Calculate Q1 price with adjustments for multi-qty items
-              const calcQ1PriceWithAdj = () => {
-                let adjTotal = 0;
-                const adjs = item._raw_additionals || item.item_additionals || [];
-                adjs.forEach((adj: any) => {
-                  let baseValue = (adj.type === 'net_amount' && Array.isArray(adj.multiValues) && adj.multiValues[0] != null)
-                    ? adj.multiValues[0] : adj.value;
-                  let subtotal = baseValue;
-                  const q1Qty = typeof getItemQuantity(item) === 'string'
-                    ? parseFloat(String(getItemQuantity(item)).replace(/\./g, '').replace(',', '.')) : (getItemQuantity(item) || 1);
-                  if (adj.type === 'percentage') subtotal = ((item.price || 0) * adj.value) / 100;
-                  else if (adj.type === 'quantity_multiplier') subtotal = adj.value * q1Qty;
-                  else if (adj.type === 'capacity_divider') subtotal = adj.value * Math.ceil(q1Qty / (adj.capacity_value || 1));
-                  adjTotal += adj.is_discount ? -subtotal : subtotal;
-                });
-                return (item.price || 0) + adjTotal;
-              };
-
               const hasMulti = item.multi_extra && item.multi_extra.length > 0;
 
               return (
@@ -283,7 +265,7 @@ export default function Template7({ data }: Template7Props) {
                     {new Intl.NumberFormat('es-ES').format(typeof getItemQuantity(item) === 'string' ? parseFloat(String(getItemQuantity(item)).replace(/\./g, '').replace(',', '.')) : (getItemQuantity(item) || 1))}
                   </td>
                   <td style={{ padding: '4px 8px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold' }}>
-                    {fmtEUR(hasMulti ? calcQ1PriceWithAdj() : (item.price || 0))}
+                    {fmtEUR(item.price || 0)}
                   </td>
                 </tr>
                 {/* Additional quantity rows */}
