@@ -799,7 +799,7 @@ export const generateQuotePDF = async (
         const imgData = canvas.toDataURL('image/jpeg', 0.65);
         pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, Math.min(scaledHeight, pdfHeight));
       } else {
-        const imgData = canvas.toDataURL('image/jpeg', 0.85);
+        const imgData = canvas.toDataURL('image/jpeg', 0.65);
         let heightLeft = scaledHeight;
         let position = 0;
 
