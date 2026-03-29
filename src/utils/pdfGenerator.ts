@@ -796,7 +796,7 @@ export const generateQuotePDF = async (
       const scaledHeight = imgHeight * ratio;
 
       if (scaledHeight <= pdfHeight) {
-        const imgData = canvas.toDataURL('image/jpeg', 0.85);
+        const imgData = canvas.toDataURL('image/jpeg', 0.65);
         pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, Math.min(scaledHeight, pdfHeight));
       } else {
         const imgData = canvas.toDataURL('image/jpeg', 0.85);
