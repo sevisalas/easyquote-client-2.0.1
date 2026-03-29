@@ -376,7 +376,7 @@ export const generateQuotePDF = async (
 ): Promise<void> => {
   const { 
     filename = 'presupuesto.pdf', 
-    quality = 3 
+    quality = 2 
   } = options;
 
   try {
