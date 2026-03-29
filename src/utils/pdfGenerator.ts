@@ -376,7 +376,7 @@ export const generateQuotePDF = async (
 ): Promise<void> => {
   const { 
     filename = 'presupuesto.pdf', 
-    quality = 3 
+    quality = 2 
   } = options;
 
   try {
@@ -771,7 +771,7 @@ export const generateQuotePDF = async (
           windowHeight: 1123,
         });
 
-        const imgData = canvas.toDataURL('image/jpeg', 0.85);
+        const imgData = canvas.toDataURL('image/jpeg', 0.65);
         const ratio = pdfWidth / canvas.width;
         const scaledHeight = canvas.height * ratio;
 
@@ -796,10 +796,10 @@ export const generateQuotePDF = async (
       const scaledHeight = imgHeight * ratio;
 
       if (scaledHeight <= pdfHeight) {
-        const imgData = canvas.toDataURL('image/jpeg', 0.85);
+        const imgData = canvas.toDataURL('image/jpeg', 0.65);
         pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, Math.min(scaledHeight, pdfHeight));
       } else {
-        const imgData = canvas.toDataURL('image/jpeg', 0.85);
+        const imgData = canvas.toDataURL('image/jpeg', 0.65);
         let heightLeft = scaledHeight;
         let position = 0;
 
