@@ -649,7 +649,49 @@ const SalesOrderDetail = () => {
     }
   };
 
-  const handleDownloadHoldedPdf = async () => {
+  const handleUpdateInHolded = async () => {
+    if (!id || !order?.holded_document_id) return;
+    
+    setIsUpdatingHolded(true);
+    const toastId = toast.loading('Actualizando en Holded...');
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        toast.dismiss(toastId);
+        toast.error('No hay sesión activa');
+        return;
+      }
+
+      const response = await fetch(
+        `https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/holded-update-order`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.session.access_token}`
+          },
+          body: JSON.stringify({ orderId: id })
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Error al actualizar en Holded');
+      }
+
+      toast.dismiss(toastId);
+      toast.success('Pedido actualizado en Holded correctamente');
+    } catch (error: any) {
+      console.error('Error updating in Holded:', error);
+      toast.dismiss(toastId);
+      toast.error(error.message || 'Error al actualizar en Holded');
+    } finally {
+      setIsUpdatingHolded(false);
+    }
+  };
+
+
     if (!order?.holded_document_id) return;
 
     const toastId = toast.loading('Descargando PDF...');
