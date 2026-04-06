@@ -169,11 +169,7 @@ export const useQuoteApproval = () => {
         }
       }
 
-      const resolveItemQuantityFromPrompts = (item: any): number => {
-        const promptsArray = Array.isArray(item.prompts)
-          ? item.prompts
-          : Object.values(item.prompts || {});
-
+      const findQuantityPromptIndex = (item: any, promptsArray: any[]): number => {
         const qtySetting = item.product_id
           ? quantityPromptByProduct.get(String(item.product_id))
           : undefined;
@@ -182,7 +178,7 @@ export const useQuoteApproval = () => {
           const normalizedSettingName = normalizePromptKey(qtySetting.promptName);
           const normalizedSettingLabel = qtySetting.label ? normalizePromptKey(qtySetting.label) : '';
 
-          const qtyPrompt = promptsArray.find((p: any) => {
+          const configuredIndex = promptsArray.findIndex((p: any) => {
             const promptName = normalizePromptKey(p?.name || p?.id || '');
             const promptLabel = normalizePromptKey(p?.label || '');
 
@@ -194,12 +190,12 @@ export const useQuoteApproval = () => {
             );
           });
 
-          if (qtyPrompt?.value !== undefined && qtyPrompt?.value !== null) {
-            return parseQuantity(qtyPrompt.value);
+          if (configuredIndex >= 0) {
+            return configuredIndex;
           }
         }
 
-        const heuristicPrompt = promptsArray.find((p: any) => {
+        return promptsArray.findIndex((p: any) => {
           const text = normalizePromptKey(p?.label || p?.name || p?.id || '');
           return (
             text.includes('CANTIDAD') ||
@@ -209,12 +205,53 @@ export const useQuoteApproval = () => {
             text === 'QTY'
           );
         });
+      };
 
-        if (heuristicPrompt?.value !== undefined && heuristicPrompt?.value !== null) {
-          return parseQuantity(heuristicPrompt.value);
+      const resolveItemQuantityFromPrompts = (item: any): number => {
+        const promptsArray = Array.isArray(item.prompts)
+          ? item.prompts
+          : Object.values(item.prompts || {});
+
+        const qtyPromptIndex = findQuantityPromptIndex(item, promptsArray);
+        if (qtyPromptIndex >= 0) {
+          const qtyPrompt = promptsArray[qtyPromptIndex];
+          if (qtyPrompt?.value !== undefined && qtyPrompt?.value !== null) {
+            return parseQuantity(qtyPrompt.value);
+          }
         }
 
         return parseQuantity(item.quantity ?? 1);
+      };
+
+      const syncPromptsWithSelectedQuantity = (item: any, quantity: number) => {
+        const promptsArray = Array.isArray(item.prompts)
+          ? [...item.prompts]
+          : Object.values(item.prompts || {});
+
+        const qtyPromptIndex = findQuantityPromptIndex(item, promptsArray);
+        if (qtyPromptIndex >= 0) {
+          promptsArray[qtyPromptIndex] = {
+            ...promptsArray[qtyPromptIndex],
+            value: String(quantity),
+          };
+        }
+
+        return promptsArray;
+      };
+
+      const buildAutoDescriptionFromPrompts = (promptsArray: any[]) => {
+        const excludeLabels = ['tarifa', 'forzar máquina', 'forzar maquina', 'tira y retira', 'forzar poses', 'forzar poses/pags.', 'modelos'];
+
+        return promptsArray
+          .filter((p: any) => {
+            const value = String(p?.value ?? '').trim();
+            const label = String(p?.label ?? '').toLowerCase().trim();
+            if (!value || value.toLowerCase() === 'no') return false;
+            if (excludeLabels.some((excluded) => label.includes(excluded))) return false;
+            return true;
+          })
+          .map((p: any) => `${p.label}: ${String(p.value).trim()}`)
+          .join('\n');
       };
 
       // Helper: apply item_additionals to a base price
@@ -361,8 +398,13 @@ export const useQuoteApproval = () => {
         if (multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1 && itemQuantities?.[item.id]) {
           finalQuantity = itemQuantities[item.id];
         }
+
         let finalPrice = item.price || 0;
         let finalMulti = item.multi;
+        let finalOutputs = Array.isArray(item.outputs) ? item.outputs : [];
+        let finalPrompts = syncPromptsWithSelectedQuantity(item, finalQuantity);
+        const isDescriptionManual = item.description_manual === true;
+        let finalDescription = item.description;
 
         // ONLY modify price if user explicitly selected a quantity from multi options
         if (multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1 && itemQuantities?.[item.id]) {
@@ -370,6 +412,8 @@ export const useQuoteApproval = () => {
           const selectedRow = multi.rows.find((row: any) =>
             Number(row.qty) === selectedQuantity || Number(row.quantity) === selectedQuantity
           );
+
+          finalPrompts = syncPromptsWithSelectedQuantity(item, selectedQuantity);
 
           if (selectedRow) {
             const basePrice = parseFloat(
@@ -380,6 +424,7 @@ export const useQuoteApproval = () => {
             );
             // Apply item_additionals to the selected row's base price
             finalPrice = applyItemAdditionals(basePrice, item, selectedQuantity);
+            finalOutputs = Array.isArray(selectedRow.outs) ? selectedRow.outs : finalOutputs;
             // Keep only the selected row in multi
             finalMulti = {
               ...multi,
@@ -399,17 +444,23 @@ export const useQuoteApproval = () => {
           );
           const rowQty = Number(singleRow.qty) || Number(singleRow.quantity) || finalQuantity;
           finalPrice = applyItemAdditionals(basePrice, item, rowQty);
+          finalOutputs = Array.isArray(singleRow.outs) ? singleRow.outs : finalOutputs;
+        }
+
+        if (!isDescriptionManual) {
+          finalDescription = buildAutoDescriptionFromPrompts(finalPrompts) || item.description;
         }
 
         return {
           sales_order_id: salesOrder.id,
           product_id: item.product_id,
           product_name: item.name || item.product_name,
-          description: item.description,
+          description: finalDescription,
+          description_manual: isDescriptionManual,
           quantity: finalQuantity,
           price: finalPrice,
-          outputs: item.outputs,
-          prompts: item.prompts,
+          outputs: finalOutputs,
+          prompts: finalPrompts,
           multi: finalMulti,
           position: index,
           composite_data: item.composite_data || null,
