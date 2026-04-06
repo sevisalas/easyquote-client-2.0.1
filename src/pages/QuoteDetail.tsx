@@ -560,16 +560,16 @@ export default function QuoteDetail() {
           <CardTitle className="text-base">Información del presupuesto</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            <div>
+          <div className="flex flex-wrap items-start gap-x-6 gap-y-2">
+            <div className="shrink-0">
               <label className="text-xs font-medium text-muted-foreground">cliente</label>
               <p className="text-sm font-medium mt-0.5">
                 <CustomerName customerId={quote.customer_id} fallback="No especificado" />
               </p>
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <label className="text-xs font-medium text-muted-foreground">estado</label>
-              <div className="mt-0.5 flex flex-wrap items-center gap-2">
+              <div className="mt-0.5 flex items-center gap-1.5 overflow-x-auto">
                 <Badge variant={getStatusVariant(quote.status)}>
                   {statusLabel(quote.status)}
                 </Badge>
@@ -672,11 +672,11 @@ export default function QuoteDetail() {
                 )}
               </div>
             </div>
-            <div>
+            <div className="shrink-0 ml-auto">
               <label className="text-xs font-medium text-muted-foreground">total</label>
-              <p className="text-base font-semibold mt-0.5">{fmtEUR(quote.final_price || 0)}</p>
+              <p className="text-base font-semibold mt-0.5 whitespace-nowrap">{fmtEUR(quote.final_price || 0)}</p>
             </div>
-            <div>
+            <div className="shrink-0">
               <label className="text-xs font-medium text-muted-foreground">válido hasta</label>
               <p className="text-sm mt-0.5">
                 {quote.valid_until 
