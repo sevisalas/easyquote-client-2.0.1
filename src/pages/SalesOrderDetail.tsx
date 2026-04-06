@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Download, ChevronDown, Edit, FileText, LayoutGrid, Wrench, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Trash2, Download, ChevronDown, Edit, FileText, LayoutGrid, Wrench, ShieldAlert, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -65,6 +65,7 @@ const SalesOrderDetail = () => {
   const [items, setItems] = useState<SalesOrderItem[]>([]);
   const [additionals, setAdditionals] = useState<SalesOrderAdditional[]>([]);
   const [isExporting, setIsExporting] = useState(false);
+  const [isUpdatingHolded, setIsUpdatingHolded] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
@@ -648,6 +649,48 @@ const SalesOrderDetail = () => {
     }
   };
 
+  const handleUpdateInHolded = async () => {
+    if (!id || !order?.holded_document_id) return;
+    
+    setIsUpdatingHolded(true);
+    const toastId = toast.loading('Actualizando en Holded...');
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        toast.dismiss(toastId);
+        toast.error('No hay sesión activa');
+        return;
+      }
+
+      const response = await fetch(
+        `https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/holded-update-order`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.session.access_token}`
+          },
+          body: JSON.stringify({ orderId: id })
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Error al actualizar en Holded');
+      }
+
+      toast.dismiss(toastId);
+      toast.success('Pedido actualizado en Holded correctamente');
+    } catch (error: any) {
+      console.error('Error updating in Holded:', error);
+      toast.dismiss(toastId);
+      toast.error(error.message || 'Error al actualizar en Holded');
+    } finally {
+      setIsUpdatingHolded(false);
+    }
+  };
+
   const handleDownloadHoldedPdf = async () => {
     if (!order?.holded_document_id) return;
 
@@ -867,6 +910,18 @@ const SalesOrderDetail = () => {
                 >
                   <Download className="h-4 w-4" />
                   {!isMobile && "PDF Holded"}
+                </Button>
+              )}
+              {order.holded_document_id && viewMode === 'administrative' && userRole === 'admin' && (
+                <Button 
+                  onClick={handleUpdateInHolded}
+                  size={isMobile ? "default" : "sm"}
+                  variant="outline"
+                  className={`gap-2 ${isMobile ? 'h-10 flex-1' : ''}`}
+                  disabled={isUpdatingHolded}
+                >
+                  <RefreshCw className={`h-4 w-4 ${isUpdatingHolded ? 'animate-spin' : ''}`} />
+                  {!isMobile && "Actualizar en Holded"}
                 </Button>
               )}
               {viewMode === 'production' && (
