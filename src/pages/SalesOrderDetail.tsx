@@ -691,7 +691,7 @@ const SalesOrderDetail = () => {
     }
   };
 
-
+  const handleDownloadHoldedPdf = async () => {
     if (!order?.holded_document_id) return;
 
     const toastId = toast.loading('Descargando PDF...');
