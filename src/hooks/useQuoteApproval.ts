@@ -221,9 +221,20 @@ export const useQuoteApproval = () => {
       const applyItemAdditionals = (basePrice: number, item: any, quantity: number): number => {
         const additionals = item.item_additionals;
         if (!Array.isArray(additionals) || additionals.length === 0) return basePrice;
+
+        // Resolve the quantity tier index for multiValues lookup
+        const multi = item.multi as any;
+        const qtyInputs: number[] = multi?.qtyInputs || [];
+        const qtyIndex = qtyInputs.findIndex((q: number) => Number(q) === Number(quantity));
+
         let total = basePrice;
         for (const additional of additionals) {
-          const value = additional.value || 0;
+          // For net_amount with multiValues, pick the value for the selected quantity tier
+          let value = additional.value || 0;
+          if (additional.type === 'net_amount' && Array.isArray(additional.multiValues) && qtyIndex >= 0 && qtyIndex < additional.multiValues.length) {
+            value = Number(additional.multiValues[qtyIndex]) || value;
+          }
+
           const isDiscount = additional.is_discount === true || value < 0;
           if (isDiscount) {
             switch (additional.type) {
