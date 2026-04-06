@@ -345,7 +345,11 @@ export const useQuoteApproval = () => {
       // Create sales order items - quantity source of truth is prompts (is_quantity)
       const orderItems = itemsToApprove.map((item: any, index: number) => {
         const multi = item.multi as any;
-        const finalQuantity = resolveItemQuantityFromPrompts(item);
+        // If multi-quantity and user selected a specific quantity, use that; otherwise fall back to prompts
+        let finalQuantity = resolveItemQuantityFromPrompts(item);
+        if (multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1 && itemQuantities?.[item.id]) {
+          finalQuantity = itemQuantities[item.id];
+        }
         let finalPrice = item.price || 0;
         let finalMulti = item.multi;
 
