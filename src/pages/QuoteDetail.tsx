@@ -466,7 +466,7 @@ export default function QuoteDetail() {
       {/* Header */}
       <Card>
         <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <CardTitle className="text-lg">
                 Presupuesto {quote.quote_number}
@@ -475,7 +475,7 @@ export default function QuoteDetail() {
                 Fecha: {format(new Date(quote.created_at), 'dd/MM/yyyy', { locale: es })}
               </CardDescription>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 lg:justify-end">
               {canApprove && (
                 <>
                   {isApprovable ? (
@@ -560,123 +560,127 @@ export default function QuoteDetail() {
           <CardTitle className="text-base">Información del presupuesto</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            <div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4">
+            <div className="min-w-0 xl:col-span-2">
               <label className="text-xs font-medium text-muted-foreground">cliente</label>
-              <p className="text-sm font-medium mt-0.5">
+              <p className="mt-0.5 text-sm font-medium break-words">
                 <CustomerName customerId={quote.customer_id} fallback="No especificado" />
               </p>
             </div>
-            <div>
+            <div className="min-w-0 xl:col-span-2">
               <label className="text-xs font-medium text-muted-foreground">estado</label>
-              <div className="mt-0.5 flex items-center gap-2">
-                <Badge variant={getStatusVariant(quote.status)}>
-                  {statusLabel(quote.status)}
-                </Badge>
-                {/* Action buttons based on current status */}
-                {quote.status === 'draft' && (!isComercial || isOwnQuote) && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => updateStatusMutation.mutate({ quoteId: quote.id, status: 'sent' })}
-                    disabled={updateStatusMutation.isPending}
-                    className="h-6 text-xs px-2"
-                  >
-                    {canExportQuotesOnSend ? 'Enviar a Holded' : 'Enviar'}
-                  </Button>
-                )}
-                {quote.status === 'sent' && (!isComercial || isOwnQuote) && (
-                  <>
-                    {canExportQuotesOnSend && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={async () => {
-                          try {
-                            toast.info('Reenviando a Holded...');
-                            const { data: holdedData, error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
-                              body: { quoteId: quote.id }
-                            });
-                            if (holdedError) {
-                              const realMessage = holdedData?.error || holdedError.message;
-                              toast.error(`Error al reenviar a Holded: ${realMessage}`);
-                            } else {
-                              toast.success('Presupuesto reenviado a Holded correctamente');
-                              queryClient.invalidateQueries({ queryKey: ['quote', id] });
-                            }
-                          } catch (err: any) {
-                            toast.error(`Error al reenviar: ${err.message || 'Error desconocido'}`);
-                          }
-                        }}
-                        className="h-6 text-xs px-2"
-                      >
-                        Reenviar a Holded
-                      </Button>
-                    )}
+              <div className="mt-1 space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant={getStatusVariant(quote.status)}>
+                    {statusLabel(quote.status)}
+                  </Badge>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {/* Action buttons based on current status */}
+                  {quote.status === 'draft' && (!isComercial || isOwnQuote) && (
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => updateStatusMutation.mutate({ quoteId: quote.id, status: 'rejected' })}
+                      onClick={() => updateStatusMutation.mutate({ quoteId: quote.id, status: 'sent' })}
                       disabled={updateStatusMutation.isPending}
-                      className="h-6 text-xs px-2"
+                      className="h-8 text-xs px-2"
                     >
-                      Rechazar
+                      {canExportQuotesOnSend ? 'Enviar a Holded' : 'Enviar'}
                     </Button>
-                  </>
-                )}
-                {quote.status === 'approved' && canExportQuotes && (!isComercial || isOwnQuote) && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={async () => {
-                      try {
-                        toast.info('Reenviando a Holded...');
-                        const { data: holdedData, error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
-                          body: { quoteId: quote.id }
-                        });
-                        if (holdedError) {
-                          const realMessage = holdedData?.error || holdedError.message;
-                          toast.error(`Error al reenviar a Holded: ${realMessage}`);
-                        } else {
-                          toast.success('Presupuesto reenviado a Holded correctamente');
-                          queryClient.invalidateQueries({ queryKey: ['quote', id] });
+                  )}
+                  {quote.status === 'sent' && (!isComercial || isOwnQuote) && (
+                    <>
+                      {canExportQuotesOnSend && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={async () => {
+                            try {
+                              toast.info('Reenviando a Holded...');
+                              const { data: holdedData, error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
+                                body: { quoteId: quote.id }
+                              });
+                              if (holdedError) {
+                                const realMessage = holdedData?.error || holdedError.message;
+                                toast.error(`Error al reenviar a Holded: ${realMessage}`);
+                              } else {
+                                toast.success('Presupuesto reenviado a Holded correctamente');
+                                queryClient.invalidateQueries({ queryKey: ['quote', id] });
+                              }
+                            } catch (err: any) {
+                              toast.error(`Error al reenviar: ${err.message || 'Error desconocido'}`);
+                            }
+                          }}
+                          className="h-8 text-xs px-2"
+                        >
+                          Reenviar a Holded
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => updateStatusMutation.mutate({ quoteId: quote.id, status: 'rejected' })}
+                        disabled={updateStatusMutation.isPending}
+                        className="h-8 text-xs px-2"
+                      >
+                        Rechazar
+                      </Button>
+                    </>
+                  )}
+                  {quote.status === 'approved' && canExportQuotes && (!isComercial || isOwnQuote) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          toast.info('Reenviando a Holded...');
+                          const { data: holdedData, error: holdedError } = await supabase.functions.invoke('holded-export-estimate', {
+                            body: { quoteId: quote.id }
+                          });
+                          if (holdedError) {
+                            const realMessage = holdedData?.error || holdedError.message;
+                            toast.error(`Error al reenviar a Holded: ${realMessage}`);
+                          } else {
+                            toast.success('Presupuesto reenviado a Holded correctamente');
+                            queryClient.invalidateQueries({ queryKey: ['quote', id] });
+                          }
+                        } catch (err: any) {
+                          toast.error(`Error al reenviar: ${err.message || 'Error desconocido'}`);
                         }
-                      } catch (err: any) {
-                        toast.error(`Error al reenviar: ${err.message || 'Error desconocido'}`);
-                      }
-                    }}
-                    className="h-6 text-xs px-2"
-                  >
-                    Reenviar a Holded
-                  </Button>
-                )}
-                {/* Cancel button - available on sent or approved for admin/gestor */}
-                {(quote.status === 'sent' || quote.status === 'approved') && 
-                  (membership?.role === 'admin' || membership?.role === 'gestor') && (
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => { setCancellationReason(''); setShowCancelDialog(true); }}
-                    className="h-6 text-xs px-2"
-                  >
-                    <Ban className="h-3 w-3 mr-1" />
-                    Anular
-                  </Button>
-                )}
-                {/* Show cancellation reason if cancelled */}
+                      }}
+                      className="h-8 text-xs px-2"
+                    >
+                      Reenviar a Holded
+                    </Button>
+                  )}
+                  {(quote.status === 'sent' || quote.status === 'approved') && 
+                    (membership?.role === 'admin' || membership?.role === 'gestor') && (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => { setCancellationReason(''); setShowCancelDialog(true); }}
+                      className="h-8 text-xs px-2"
+                    >
+                      <Ban className="h-3 w-3 mr-1" />
+                      Anular
+                    </Button>
+                  )}
+                </div>
+
                 {quote.status === 'cancelled' && quote.cancellation_reason && (
-                  <div className="bg-destructive/10 border border-destructive/20 rounded-md px-2 py-1">
-                    <span className="text-xs text-destructive font-medium">Motivo: </span>
+                  <div className="rounded-md border border-destructive/20 bg-destructive/10 px-2 py-1">
+                    <span className="text-xs font-medium text-destructive">Motivo: </span>
                     <span className="text-xs">{quote.cancellation_reason}</span>
                   </div>
                 )}
               </div>
             </div>
-            <div>
+            <div className="min-w-0 xl:text-right">
               <label className="text-xs font-medium text-muted-foreground">total</label>
               <p className="text-base font-semibold mt-0.5">{fmtEUR(quote.final_price || 0)}</p>
             </div>
-            <div>
+            <div className="min-w-0 xl:text-right">
               <label className="text-xs font-medium text-muted-foreground">válido hasta</label>
               <p className="text-sm mt-0.5">
                 {quote.valid_until 
