@@ -912,6 +912,18 @@ const SalesOrderDetail = () => {
                   {!isMobile && "PDF Holded"}
                 </Button>
               )}
+              {order.holded_document_id && viewMode === 'administrative' && userRole === 'admin' && (
+                <Button 
+                  onClick={handleUpdateInHolded}
+                  size={isMobile ? "default" : "sm"}
+                  variant="outline"
+                  className={`gap-2 ${isMobile ? 'h-10 flex-1' : ''}`}
+                  disabled={isUpdatingHolded}
+                >
+                  <RefreshCw className={`h-4 w-4 ${isUpdatingHolded ? 'animate-spin' : ''}`} />
+                  {!isMobile && "Actualizar en Holded"}
+                </Button>
+              )}
               {viewMode === 'production' && (
                 <Button 
                   onClick={handleGeneratePDF}
