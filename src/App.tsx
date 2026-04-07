@@ -58,6 +58,7 @@ import ProductionBoardCompact from "./pages/ProductionBoardCompact";
 import ProductionBoardRedirect from "./pages/ProductionBoardRedirect";
 import Novedades from "./pages/Novedades";
 import ApiHome from "./pages/ApiHome";
+import CustomerDiscountsPage from "./pages/CustomerDiscountsPage";
 import HelpPage from "./pages/HelpPage";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { useSessionMonitor } from "./hooks/useSessionMonitor";
@@ -117,6 +118,16 @@ const AppContent = () => {
           <ProtectedRoute>
             <AppLayout>
               <ClienteForm />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/clientes/tarifas"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <CustomerDiscountsPage />
             </AppLayout>
           </ProtectedRoute>
         }
