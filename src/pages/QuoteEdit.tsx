@@ -145,6 +145,15 @@ export default function QuoteEdit() {
     quoteAdditionals: SelectedQuoteAdditional[];
   }>({ formData: {}, items: [], quoteAdditionals: [] });
 
+  // Customer discounts
+  const editCustomerId = formData.customer_id?.startsWith('holded:')
+    ? formData.customer_id.replace('holded:', '')
+    : formData.customer_id || null;
+  const { activeDiscounts, calculateDiscountAdjustment } = useActiveCustomerDiscounts(
+    editCustomerId || null,
+    organization?.id || null
+  );
+
 
   const { data: quote, isLoading } = useQuery({
     queryKey: ["quote", id],
