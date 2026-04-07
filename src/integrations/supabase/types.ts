@@ -540,6 +540,7 @@ export type Database = {
           phone: string | null
           province: string | null
           source: string
+          tariff_id: string | null
           updated_at: string
           user_id: string
           zip: string | null
@@ -558,6 +559,7 @@ export type Database = {
           phone?: string | null
           province?: string | null
           source?: string
+          tariff_id?: string | null
           updated_at?: string
           user_id: string
           zip?: string | null
@@ -576,6 +578,7 @@ export type Database = {
           phone?: string | null
           province?: string | null
           source?: string
+          tariff_id?: string | null
           updated_at?: string
           user_id?: string
           zip?: string | null
@@ -593,6 +596,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_tariff_id_fkey"
+            columns: ["tariff_id"]
+            isOneToOne: false
+            referencedRelation: "tariffs"
             referencedColumns: ["id"]
           },
         ]
@@ -3054,6 +3064,54 @@ export type Database = {
           },
           {
             foreignKeyName: "support_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tariffs: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          is_discount: boolean
+          name: string
+          organization_id: string
+          percentage: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_discount?: boolean
+          name: string
+          organization_id: string
+          percentage?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_discount?: boolean
+          name?: string
+          organization_id?: string
+          percentage?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tariffs_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "tariffs_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
