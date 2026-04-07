@@ -789,10 +789,16 @@ export default function QuoteNew() {
                 <span>IVA:</span>
                 <span>{formatEUR(totals.taxAmount)}</span>
               </div>}
-            {totals.discountAmount > 0 && <div className="flex justify-between text-green-600">
-                <span>Descuento:</span>
-                <span>-{formatEUR(totals.discountAmount)}</span>
-              </div>}
+            {/* Customer discount - admin only */}
+            {isAdmin && activeDiscounts.length > 0 && totals.customerDiscountAmount !== 0 && (
+              <div className="flex justify-between items-center text-muted-foreground">
+                <span className="text-sm flex items-center gap-1.5">
+                  <Badge variant="outline" className="text-[10px] font-normal">Tarifa cliente</Badge>
+                  {activeDiscounts.map(d => `${d.is_discount ? '-' : '+'}${d.percentage}%`).join(', ')}
+                </span>
+                <span className="text-sm">{formatEUR(totals.customerDiscountAmount)}</span>
+              </div>
+            )}
             <Separator />
             <div className="bg-card rounded-lg p-4 border border-border border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
               <div className="flex justify-between items-center">
