@@ -349,6 +349,30 @@ const ClienteForm = () => {
                 />
               </div>
 
+              {isAdmin && activeTariffs.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="tariff_id">Tarifa de cliente</Label>
+                  <Select
+                    value={formData.tariff_id || "none"}
+                    onValueChange={(value) => setFormData({ ...formData, tariff_id: value === "none" ? "" : value })}
+                  >
+                    <SelectTrigger className={isMobile ? 'h-11' : ''}>
+                      <SelectValue placeholder="Sin tarifa" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin tarifa</SelectItem>
+                      {activeTariffs.map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.name} ({t.is_discount ? `-${t.percentage}%` : `+${t.percentage}%`})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Se aplica automáticamente al calcular presupuestos. No visible en PDFs.
+                  </p>
+                </div>
+              )}
 
               <div className={`flex gap-4 pt-4 ${isMobile ? 'flex-col' : ''}`}>
                 <Button
