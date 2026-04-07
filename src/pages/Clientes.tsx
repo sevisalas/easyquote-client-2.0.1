@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Edit, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -11,6 +12,7 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { ClientCard } from "@/components/clientes/ClientCard";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
+import { useTariffs } from "@/hooks/useTariffs";
 
 interface LocalClient {
   id: string;
@@ -21,6 +23,7 @@ interface LocalClient {
   integration_id: string;
   created_at: string;
   source: 'local' | 'holded';
+  tariff_id: string | null;
 }
 
 export default function Clientes() {
@@ -28,6 +31,11 @@ export default function Clientes() {
   const isMobile = useIsMobile();
   const { organization, membership } = useSubscription();
   const { isHoldedActive } = useHoldedIntegration();
+  const selectedOrganizationId = typeof window !== "undefined" ? sessionStorage.getItem("selected_organization_id") : null;
+  const organizationId = selectedOrganizationId || organization?.id || membership?.organization?.id || null;
+  const isAdmin = membership?.role === "admin";
+  const { tariffs } = useTariffs(isAdmin ? organizationId : null);
+
   const [clientes, setClientes] = useState<LocalClient[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -35,6 +43,7 @@ export default function Clientes() {
   const [searchTerm, setSearchTerm] = useState("");
   const [totalClients, setTotalClients] = useState(0);
   const [isImportingContacts, setIsImportingContacts] = useState(false);
+  const [assigningTariffCustomerId, setAssigningTariffCustomerId] = useState<string | null>(null);
   const itemsPerPage = 25;
 
   const fetchClientes = async (isInitialLoad = false) => {
@@ -43,44 +52,38 @@ export default function Clientes() {
     } else {
       setSearchLoading(true);
     }
-    try {
-      console.log('🔍 Fetching customers with search term:', searchTerm);
 
-      // Get the SELECTED organization from sessionStorage (for multi-org users)
-      const selectedOrgId = sessionStorage.getItem('selected_organization_id');
-      // Fallback to context if no selection
-      const organizationId = selectedOrgId || organization?.id || membership?.organization?.id;
+    try {
+      console.log("🔍 Fetching customers with search term:", searchTerm);
 
       if (!organizationId) {
-        console.log('⚠️ No organization found');
+        console.log("⚠️ No organization found");
         setClientes([]);
         setTotalClients(0);
         setLoading(false);
         return;
       }
-      
-      console.log('🏢 Using organization:', organizationId, 'selected:', selectedOrgId);
+
+      console.log("🏢 Using organization:", organizationId, "selected:", selectedOrganizationId);
 
       const startIndex = (currentPage - 1) * itemsPerPage;
-      
-      // Get current user
+
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        console.log('⚠️ No authenticated user');
+        console.log("⚠️ No authenticated user");
         setClientes([]);
         setTotalClients(0);
         setLoading(false);
         return;
       }
 
-      console.log('🔑 Fetching with auth context:', { 
+      console.log("🔑 Fetching with auth context:", {
         userId: user.id,
         organizationId,
         searchTerm,
-        page: currentPage 
+        page: currentPage,
       });
 
-      // Fetch customers filtered by SELECTED organization only
       let customersQuery = supabase
         .from("customers")
         .select("*", { count: "exact" })
@@ -94,28 +97,28 @@ export default function Clientes() {
 
       const { data: customersData, error: customersError, count: customersCount } = await customersQuery;
 
-      console.log('📊 Customers query result:', { 
+      console.log("📊 Customers query result:", {
         data: customersData,
         error: customersError,
-        count: customersCount 
+        count: customersCount,
       });
 
       if (customersError) {
         console.error("❌ Error fetching customers:", customersError);
       }
 
-      // Format all contacts
-      const allClients: LocalClient[] = (customersData || []).map(c => ({
+      const allClients: LocalClient[] = (customersData || []).map((c) => ({
         id: c.id,
-        name: c.name || '',
-        email: c.email || '',
-        phone: c.phone || '',
-        notes: c.notes || '',
-        integration_id: c.integration_id || '',
+        name: c.name || "",
+        email: c.email || "",
+        phone: c.phone || "",
+        notes: c.notes || "",
+        integration_id: c.integration_id || "",
         created_at: c.created_at,
-        source: c.source as 'local' | 'holded'
+        source: c.source as 'local' | 'holded',
+        tariff_id: (c as any).tariff_id || null,
       }));
-      console.log('✅ Total clients combined:', allClients.length);
+      console.log("✅ Total clients combined:", allClients.length);
 
       setTotalClients(customersCount || 0);
       setClientes(allClients);
@@ -132,22 +135,17 @@ export default function Clientes() {
     }
   };
 
-  // Effect para cargar clientes cuando cambie la página u organización
   useEffect(() => {
-    const organizationId = organization?.id || membership?.organization?.id;
     if (organizationId) {
-      fetchClientes(true); // Initial load
+      fetchClientes(true);
     } else if (organization === null && membership === null) {
-      // Organization is explicitly null (not loading)
       setLoading(false);
       setClientes([]);
       setTotalClients(0);
     }
-  }, [currentPage, organization, membership]);
+  }, [currentPage, organizationId]);
 
-  // Effect separado para búsqueda con debounce (resetear página)
   useEffect(() => {
-    const organizationId = organization?.id || membership?.organization?.id;
     if (!organizationId) {
       if (organization === null && membership === null) {
         setLoading(false);
@@ -156,21 +154,19 @@ export default function Clientes() {
       }
       return;
     }
-    
-    // Debounce search - wait 300ms after user stops typing
+
     const timer = setTimeout(() => {
       if (currentPage !== 1) {
         setCurrentPage(1);
       } else {
-        fetchClientes(false); // Not initial load
+        fetchClientes(false);
       }
     }, 300);
-    
+
     return () => clearTimeout(timer);
-  }, [searchTerm, organization, membership]);
+  }, [searchTerm, organizationId]);
 
   const handleImportContacts = async () => {
-    const organizationId = organization?.id || membership?.organization?.id;
     if (!organizationId) {
       toast({
         title: "Error",
@@ -181,15 +177,15 @@ export default function Clientes() {
     }
 
     setIsImportingContacts(true);
-    
+
     toast({
       title: "Importando contactos...",
       description: "Este proceso puede tardar aproximadamente 1 minuto.",
     });
-    
+
     try {
-      const { data, error } = await supabase.functions.invoke('holded-import-customers', {
-        body: { organizationId }
+      const { data, error } = await supabase.functions.invoke("holded-import-customers", {
+        body: { organizationId },
       });
 
       if (error) throw error;
@@ -198,11 +194,10 @@ export default function Clientes() {
         title: "Contactos actualizados",
         description: `Se importaron ${data?.imported || 0} nuevos clientes de ${data?.total || 0} totales`,
       });
-      
-      // Recargar la lista
+
       fetchClientes(true);
     } catch (error: any) {
-      console.error('Error importing Holded contacts:', error);
+      console.error("Error importing Holded contacts:", error);
       toast({
         title: "Error",
         description: error.message || "No se pudieron importar los contactos",
@@ -210,6 +205,37 @@ export default function Clientes() {
       });
     } finally {
       setIsImportingContacts(false);
+    }
+  };
+
+  const handleAssignTariff = async (customerId: string, tariffId: string | null) => {
+    const previousClientes = clientes;
+    setAssigningTariffCustomerId(customerId);
+    setClientes((prev) => prev.map((cliente) => (cliente.id === customerId ? { ...cliente, tariff_id: tariffId } : cliente)));
+
+    try {
+      const { error } = await supabase
+        .from("customers")
+        .update({ tariff_id: tariffId })
+        .eq("id", customerId);
+
+      if (error) throw error;
+
+      const selectedTariff = tariffs.find((tariff) => tariff.id === tariffId);
+      toast({
+        title: "Tarifa actualizada",
+        description: selectedTariff ? `Asignada: ${selectedTariff.name}` : "Cliente sin tarifa",
+      });
+    } catch (error) {
+      console.error("Error assigning tariff:", error);
+      setClientes(previousClientes);
+      toast({
+        title: "Error",
+        description: "No se pudo asignar la tarifa",
+        variant: "destructive",
+      });
+    } finally {
+      setAssigningTariffCustomerId(null);
     }
   };
 
@@ -248,9 +274,9 @@ export default function Clientes() {
 
   return (
     <div className={isMobile ? "p-0 md:p-2" : "container mx-auto p-6"}>
-      <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 ${isMobile ? 'px-3 py-4' : 'mb-6'}`}>
+      <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 ${isMobile ? "px-3 py-4" : "mb-6"}`}>
         <div>
-          <h1 className={`font-bold tracking-tight ${isMobile ? 'text-2xl' : 'text-3xl'}`}>Clientes</h1>
+          <h1 className={`font-bold tracking-tight ${isMobile ? "text-2xl" : "text-3xl"}`}>Clientes</h1>
           <p className="text-muted-foreground text-sm">Gestiona tus clientes</p>
         </div>
         <div className="flex gap-2">
@@ -266,9 +292,9 @@ export default function Clientes() {
               {isImportingContacts ? "Importando..." : "Actualizar contactos"}
             </Button>
           )}
-          <Button 
-            onClick={() => navigate("/clientes/nuevo")} 
-            className={`flex items-center gap-2 ${isMobile ? 'h-10' : ''}`}
+          <Button
+            onClick={() => navigate("/clientes/nuevo")}
+            className={`flex items-center gap-2 ${isMobile ? "h-10" : ""}`}
           >
             <Plus className="h-4 w-4" />
             Nuevo Cliente
@@ -276,16 +302,17 @@ export default function Clientes() {
         </div>
       </div>
 
-      <div className={`flex items-center gap-4 ${isMobile ? 'px-3 mb-4' : 'mb-6'}`}>
+      <div className={`flex items-center gap-4 ${isMobile ? "px-3 mb-4" : "mb-6"}`}>
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             placeholder="Buscar clientes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className={`pl-10 ${isMobile ? 'h-10' : ''}`}
+            className={`pl-10 ${isMobile ? "h-10" : ""}`}
           />
         </div>
+        {searchLoading && <span className="text-xs text-muted-foreground">Actualizando…</span>}
       </div>
 
       {isMobile ? (
@@ -302,6 +329,10 @@ export default function Clientes() {
                 key={`${cliente.source}-${cliente.id}`}
                 cliente={cliente}
                 onDelete={deleteCliente}
+                isAdmin={isAdmin}
+                tariffs={tariffs}
+                onAssignTariff={handleAssignTariff}
+                isAssigningTariff={assigningTariffCustomerId === cliente.id}
               />
             ))
           )}
@@ -309,62 +340,83 @@ export default function Clientes() {
       ) : (
         <div className="rounded-md border">
           <Table>
-          <TableHeader>
-            <TableRow className="h-9">
-              <TableHead className="py-2 text-xs font-semibold">Nombre</TableHead>
-              <TableHead className="py-2 text-xs font-semibold">Email</TableHead>
-              <TableHead className="py-2 text-xs font-semibold">Teléfono</TableHead>
-              <TableHead className="py-2 text-xs font-semibold">Origen</TableHead>
-              <TableHead className="py-2 text-right text-xs font-semibold">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {clientes.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-6">
-                  {searchTerm
-                    ? "No se encontraron clientes que coincidan con la búsqueda."
-                    : "No hay clientes registrados."}
-                </TableCell>
+            <TableHeader>
+              <TableRow className="h-9">
+                <TableHead className="py-2 text-xs font-semibold">Nombre</TableHead>
+                <TableHead className="py-2 text-xs font-semibold">Email</TableHead>
+                <TableHead className="py-2 text-xs font-semibold">Teléfono</TableHead>
+                <TableHead className="py-2 text-xs font-semibold">Origen</TableHead>
+                {isAdmin && <TableHead className="py-2 text-xs font-semibold">Tarifa</TableHead>}
+                <TableHead className="py-2 text-right text-xs font-semibold">Acciones</TableHead>
               </TableRow>
-            ) : (
-              clientes.map((cliente) => (
-                <TableRow key={`${cliente.source}-${cliente.id}`} className="h-auto">
-                  <TableCell className="py-1.5 px-3 text-sm font-medium">{cliente.name || "Sin nombre"}</TableCell>
-                  <TableCell className="py-1.5 px-3 text-sm">{cliente.email}</TableCell>
-                  <TableCell className="py-1.5 px-3 text-sm">{cliente.phone}</TableCell>
-                  <TableCell className="py-1.5 px-3">
-                    <Badge variant={cliente.source === 'local' ? 'default' : 'secondary'} className="text-xs px-2 py-0 h-5">
-                      {cliente.source === 'local' ? 'Local' : 'Holded'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="py-1.5 px-3 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      {cliente.source === 'local' ? (
-                        <>
-                          <Button variant="ghost" size="sm" onClick={() => navigate(`/clientes/${cliente.id}/editar`)} className="h-7 w-7 p-0">
-                            <Edit className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => deleteCliente(cliente.id)} className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10">
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">Solo lectura</span>
-                      )}
-                    </div>
+            </TableHeader>
+            <TableBody>
+              {clientes.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={isAdmin ? 6 : 5} className="text-center py-6">
+                    {searchTerm
+                      ? "No se encontraron clientes que coincidan con la búsqueda."
+                      : "No hay clientes registrados."}
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                clientes.map((cliente) => (
+                  <TableRow key={`${cliente.source}-${cliente.id}`} className="h-auto">
+                    <TableCell className="py-1.5 px-3 text-sm font-medium">{cliente.name || "Sin nombre"}</TableCell>
+                    <TableCell className="py-1.5 px-3 text-sm">{cliente.email}</TableCell>
+                    <TableCell className="py-1.5 px-3 text-sm">{cliente.phone}</TableCell>
+                    <TableCell className="py-1.5 px-3">
+                      <Badge variant={cliente.source === "local" ? "default" : "secondary"} className="text-xs px-2 py-0 h-5">
+                        {cliente.source === "local" ? "Local" : "Holded"}
+                      </Badge>
+                    </TableCell>
+                    {isAdmin && (
+                      <TableCell className="py-1.5 px-3 min-w-[250px]">
+                        <Select
+                          value={cliente.tariff_id ?? "none"}
+                          onValueChange={(value) => handleAssignTariff(cliente.id, value === "none" ? null : value)}
+                          disabled={assigningTariffCustomerId === cliente.id || tariffs.length === 0}
+                        >
+                          <SelectTrigger className="h-8">
+                            <SelectValue placeholder={tariffs.length > 0 ? "Sin tarifa" : "No hay tarifas"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Sin tarifa</SelectItem>
+                            {tariffs.map((tariff) => (
+                              <SelectItem key={tariff.id} value={tariff.id}>
+                                {tariff.name} ({tariff.is_discount ? `-${tariff.percentage}%` : `+${tariff.percentage}%`}{!tariff.is_active ? " · inactiva" : ""})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    )}
+                    <TableCell className="py-1.5 px-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {cliente.source === "local" ? (
+                          <>
+                            <Button variant="ghost" size="sm" onClick={() => navigate(`/clientes/${cliente.id}/editar`)} className="h-7 w-7 p-0">
+                              <Edit className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => deleteCliente(cliente.id)} className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Solo lectura</span>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
       )}
 
-      {/* Paginación */}
-      <div className={`flex ${isMobile ? 'flex-col gap-3 px-3 mt-4' : 'flex-row items-center justify-between mt-4'}`}>
-        <div className={`text-sm text-muted-foreground ${isMobile ? 'text-center' : ''}`}>
+      <div className={`flex ${isMobile ? "flex-col gap-3 px-3 mt-4" : "flex-row items-center justify-between mt-4"}`}>
+        <div className={`text-sm text-muted-foreground ${isMobile ? "text-center" : ""}`}>
           Mostrando {clientes.length > 0 ? ((currentPage - 1) * itemsPerPage + 1) : 0} -{" "}
           {Math.min(currentPage * itemsPerPage, totalClients)} de {totalClients} clientes
         </div>
@@ -389,20 +441,19 @@ export default function Clientes() {
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          
-          {/* Números de página */}
+
           {(() => {
             const totalPages = Math.ceil(totalClients / itemsPerPage);
             const pageNumbers = [];
             const showPages = 5;
-            
+
             let startPage = Math.max(1, currentPage - Math.floor(showPages / 2));
             let endPage = Math.min(totalPages, startPage + showPages - 1);
-            
+
             if (endPage - startPage < showPages - 1) {
               startPage = Math.max(1, endPage - showPages + 1);
             }
-            
+
             if (startPage > 1) {
               pageNumbers.push(
                 <Button
@@ -421,7 +472,7 @@ export default function Clientes() {
                 );
               }
             }
-            
+
             for (let i = startPage; i <= endPage; i++) {
               pageNumbers.push(
                 <Button
@@ -435,7 +486,7 @@ export default function Clientes() {
                 </Button>
               );
             }
-            
+
             if (endPage < totalPages) {
               if (endPage < totalPages - 1) {
                 pageNumbers.push(
@@ -454,10 +505,10 @@ export default function Clientes() {
                 </Button>
               );
             }
-            
+
             return pageNumbers;
           })()}
-          
+
           <Button
             variant="outline"
             size={isMobile ? "default" : "sm"}
