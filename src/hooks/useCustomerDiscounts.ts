@@ -112,7 +112,8 @@ export function useActiveCustomerDiscounts(customerId: string | null, organizati
         .eq("organization_id", organizationId)
         .maybeSingle();
 
-      const assignedTariffId = customerData?.tariff_id ?? null;
+      const customerRecord = customerData as unknown as { tariff_id?: string | null } | null;
+      const assignedTariffId = customerRecord?.tariff_id ?? null;
 
       let assignedTariff: {
         id: string;
@@ -134,7 +135,16 @@ export function useActiveCustomerDiscounts(customerId: string | null, organizati
           .maybeSingle();
 
         if (!tariffError && tariffData) {
-          assignedTariff = tariffData as typeof assignedTariff;
+          assignedTariff = tariffData as unknown as {
+            id: string;
+            name: string;
+            percentage: number;
+            is_discount: boolean;
+            is_active: boolean;
+            created_at: string;
+            updated_at: string;
+            organization_id: string;
+          };
         }
       }
 
