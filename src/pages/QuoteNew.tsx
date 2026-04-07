@@ -264,17 +264,20 @@ export default function QuoteNew() {
     });
 
     const finalSubtotal = safePrice(subtotal + additionalsTotal);
-    const taxAmount = 0; // TODO: Implement tax calculation
-    const discountAmount = 0; // TODO: Implement discount
-    const finalPrice = safePrice(finalSubtotal + taxAmount - discountAmount);
+    const taxAmount = 0;
+    
+    // Apply customer discounts (invisible adjustment)
+    const customerDiscountAmount = calculateDiscountAdjustment(finalSubtotal);
+    const finalPrice = safePrice(finalSubtotal + taxAmount + customerDiscountAmount);
 
     return {
       subtotal: finalSubtotal,
       taxAmount,
-      discountAmount,
+      discountAmount: Math.abs(customerDiscountAmount),
+      customerDiscountAmount,
       finalPrice,
     };
-  }, [items, quoteAdditionals]);
+  }, [items, quoteAdditionals, activeDiscounts]);
   const formatEUR = (amount: number) => {
     return new Intl.NumberFormat("es-ES", {
       style: "currency",
