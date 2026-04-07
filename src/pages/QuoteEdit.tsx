@@ -17,6 +17,8 @@ import QuoteItem from "@/components/quotes/QuoteItem";
 import { CustomerSelector } from "@/components/quotes/CustomerSelector";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 import { isVisiblePrompt, type PromptDef } from "@/utils/promptVisibility";
+import { useSubscription } from "@/contexts/SubscriptionContext";
+import { useActiveCustomerDiscounts } from "@/hooks/useCustomerDiscounts";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -127,6 +129,8 @@ export default function QuoteEdit() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { isHoldedActive, canExportQuotesOnSend } = useHoldedIntegration();
+  const { organization, membership } = useSubscription();
+  const isAdmin = membership?.role === 'admin';
 
   const [formData, setFormData] = useState<Partial<Quote>>({});
   const [items, setItems] = useState<QuoteItem[]>([]);
@@ -140,6 +144,15 @@ export default function QuoteEdit() {
     items: QuoteItem[];
     quoteAdditionals: SelectedQuoteAdditional[];
   }>({ formData: {}, items: [], quoteAdditionals: [] });
+
+  // Customer discounts
+  const editCustomerId = formData.customer_id?.startsWith('holded:')
+    ? formData.customer_id.replace('holded:', '')
+    : formData.customer_id || null;
+  const { activeDiscounts, calculateDiscountAdjustment } = useActiveCustomerDiscounts(
+    editCustomerId || null,
+    organization?.id || null
+  );
 
 
   const { data: quote, isLoading } = useQuery({
@@ -615,6 +628,10 @@ export default function QuoteEdit() {
           total += additional.value;
       }
     });
+
+    // Apply customer discounts (invisible)
+    const customerAdj = calculateDiscountAdjustment(total);
+    total += customerAdj;
 
     console.log("🔢 Total final calculado:", total);
     return total;
@@ -1269,6 +1286,17 @@ export default function QuoteEdit() {
                       return null;
                     })}
                   </>
+                )}
+
+                {/* Customer discount - admin only */}
+                {isAdmin && activeDiscounts.length > 0 && (
+                  <div className="flex justify-between items-center text-muted-foreground">
+                    <span className="text-sm flex items-center gap-1.5">
+                      <Badge variant="outline" className="text-[10px] font-normal">Tarifa cliente</Badge>
+                      {activeDiscounts.map((d: any) => `${d.is_discount ? '-' : '+'}${d.percentage}%`).join(', ')}
+                    </span>
+                    <span className="text-sm">{fmtEUR(calculateDiscountAdjustment(calculateSubtotal()))}</span>
+                  </div>
                 )}
 
                 <div className="flex justify-between items-center pt-3">

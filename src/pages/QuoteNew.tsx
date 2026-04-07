@@ -22,6 +22,7 @@ import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelect
 import { getEasyQuoteToken } from "@/lib/easyquoteApi";
 import { useNumberingFormat, generateDocumentNumber } from "@/hooks/useNumberingFormat";
 import DocumentAttachments, { type DocumentAttachmentsHandle } from "@/components/quotes/DocumentAttachments";
+import { useActiveCustomerDiscounts } from "@/hooks/useCustomerDiscounts";
 
 type QuotesInsert = Database["public"]["Tables"]["quotes"]["Insert"];
 type ItemSnapshot = {
@@ -73,6 +74,14 @@ export default function QuoteNew() {
     membership
   } = useSubscription();
   const currentOrganization = organization || membership?.organization;
+  const isAdmin = membership?.role === 'admin';
+
+  // Customer discounts
+  const actualCustomerIdForDiscounts = customerId?.startsWith('holded:') ? customerId.replace('holded:', '') : customerId;
+  const { activeDiscounts, calculateDiscountAdjustment } = useActiveCustomerDiscounts(
+    actualCustomerIdForDiscounts || null,
+    currentOrganization?.id || null
+  );
 
   // Numbering format
   const {
@@ -255,17 +264,20 @@ export default function QuoteNew() {
     });
 
     const finalSubtotal = safePrice(subtotal + additionalsTotal);
-    const taxAmount = 0; // TODO: Implement tax calculation
-    const discountAmount = 0; // TODO: Implement discount
-    const finalPrice = safePrice(finalSubtotal + taxAmount - discountAmount);
+    const taxAmount = 0;
+    
+    // Apply customer discounts (invisible adjustment)
+    const customerDiscountAmount = calculateDiscountAdjustment(finalSubtotal);
+    const finalPrice = safePrice(finalSubtotal + taxAmount + customerDiscountAmount);
 
     return {
       subtotal: finalSubtotal,
       taxAmount,
-      discountAmount,
+      discountAmount: Math.abs(customerDiscountAmount),
+      customerDiscountAmount,
       finalPrice,
     };
-  }, [items, quoteAdditionals]);
+  }, [items, quoteAdditionals, activeDiscounts]);
   const formatEUR = (amount: number) => {
     return new Intl.NumberFormat("es-ES", {
       style: "currency",
@@ -777,10 +789,16 @@ export default function QuoteNew() {
                 <span>IVA:</span>
                 <span>{formatEUR(totals.taxAmount)}</span>
               </div>}
-            {totals.discountAmount > 0 && <div className="flex justify-between text-green-600">
-                <span>Descuento:</span>
-                <span>-{formatEUR(totals.discountAmount)}</span>
-              </div>}
+            {/* Customer discount - admin only */}
+            {isAdmin && activeDiscounts.length > 0 && totals.customerDiscountAmount !== 0 && (
+              <div className="flex justify-between items-center text-muted-foreground">
+                <span className="text-sm flex items-center gap-1.5">
+                  <Badge variant="outline" className="text-[10px] font-normal">Tarifa cliente</Badge>
+                  {activeDiscounts.map(d => `${d.is_discount ? '-' : '+'}${d.percentage}%`).join(', ')}
+                </span>
+                <span className="text-sm">{formatEUR(totals.customerDiscountAmount)}</span>
+              </div>
+            )}
             <Separator />
             <div className="bg-card rounded-lg p-4 border border-border border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
               <div className="flex justify-between items-center">
