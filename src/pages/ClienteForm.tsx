@@ -339,12 +339,6 @@ const ClienteForm = () => {
                 />
               </div>
 
-              {/* Discounts Section - Admin only, editing only */}
-              {isEditing && id && membership?.role === 'admin' && organization?.id && (
-                <div className="pt-2 border-t border-border">
-                  <CustomerDiscountsSection customerId={id} organizationId={organization.id} />
-                </div>
-              )}
 
               <div className={`flex gap-4 pt-4 ${isMobile ? 'flex-col' : ''}`}>
                 <Button
