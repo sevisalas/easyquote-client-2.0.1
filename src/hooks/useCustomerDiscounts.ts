@@ -107,25 +107,36 @@ export function useActiveCustomerDiscounts(customerId: string | null, organizati
 
       const { data: customerData, error: customerError } = await supabase
         .from("customers" as any)
-        .select(`
-          tariff:tariff_id (
-            id,
-            name,
-            percentage,
-            is_discount,
-            is_active,
-            created_at,
-            updated_at,
-            organization_id
-          )
-        `)
+        .select("tariff_id")
         .eq("id", customerId)
         .eq("organization_id", organizationId)
         .maybeSingle();
 
-      const assignedTariff = Array.isArray(customerData?.tariff)
-        ? customerData.tariff[0]
-        : customerData?.tariff;
+      const assignedTariffId = customerData?.tariff_id ?? null;
+
+      let assignedTariff: {
+        id: string;
+        name: string;
+        percentage: number;
+        is_discount: boolean;
+        is_active: boolean;
+        created_at: string;
+        updated_at: string;
+        organization_id: string;
+      } | null = null;
+
+      if (!customerError && assignedTariffId) {
+        const { data: tariffData, error: tariffError } = await supabase
+          .from("tariffs" as any)
+          .select("id, name, percentage, is_discount, is_active, created_at, updated_at, organization_id")
+          .eq("id", assignedTariffId)
+          .eq("organization_id", organizationId)
+          .maybeSingle();
+
+        if (!tariffError && tariffData) {
+          assignedTariff = tariffData as typeof assignedTariff;
+        }
+      }
 
       if (!customerError && assignedTariff?.is_active) {
         return [
