@@ -22,6 +22,7 @@ import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelect
 import { getEasyQuoteToken } from "@/lib/easyquoteApi";
 import { useNumberingFormat, generateDocumentNumber } from "@/hooks/useNumberingFormat";
 import DocumentAttachments, { type DocumentAttachmentsHandle } from "@/components/quotes/DocumentAttachments";
+import { useActiveCustomerDiscounts } from "@/hooks/useCustomerDiscounts";
 
 type QuotesInsert = Database["public"]["Tables"]["quotes"]["Insert"];
 type ItemSnapshot = {
@@ -73,6 +74,14 @@ export default function QuoteNew() {
     membership
   } = useSubscription();
   const currentOrganization = organization || membership?.organization;
+  const isAdmin = membership?.role === 'admin';
+
+  // Customer discounts
+  const actualCustomerIdForDiscounts = customerId?.startsWith('holded:') ? customerId.replace('holded:', '') : customerId;
+  const { activeDiscounts, calculateDiscountAdjustment } = useActiveCustomerDiscounts(
+    actualCustomerIdForDiscounts || null,
+    currentOrganization?.id || null
+  );
 
   // Numbering format
   const {
