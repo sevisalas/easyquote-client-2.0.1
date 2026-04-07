@@ -10,6 +10,7 @@ import { ArrowLeft, Save } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import CustomerDiscountsSection from "@/components/clientes/CustomerDiscountsSection";
 interface ClienteData {
   name: string;
   email: string;
@@ -337,6 +338,13 @@ const ClienteForm = () => {
                   className={isMobile ? 'min-h-[100px]' : ''}
                 />
               </div>
+
+              {/* Discounts Section - Admin only, editing only */}
+              {isEditing && id && membership?.role === 'admin' && organization?.id && (
+                <div className="pt-2 border-t border-border">
+                  <CustomerDiscountsSection customerId={id} organizationId={organization.id} />
+                </div>
+              )}
 
               <div className={`flex gap-4 pt-4 ${isMobile ? 'flex-col' : ''}`}>
                 <Button
