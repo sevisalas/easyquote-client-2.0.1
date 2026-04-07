@@ -17,6 +17,8 @@ import QuoteItem from "@/components/quotes/QuoteItem";
 import { CustomerSelector } from "@/components/quotes/CustomerSelector";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 import { isVisiblePrompt, type PromptDef } from "@/utils/promptVisibility";
+import { useSubscription } from "@/contexts/SubscriptionContext";
+import { useActiveCustomerDiscounts } from "@/hooks/useCustomerDiscounts";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -127,6 +129,8 @@ export default function QuoteEdit() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const { isHoldedActive, canExportQuotesOnSend } = useHoldedIntegration();
+  const { organization, membership } = useSubscription();
+  const isAdmin = membership?.role === 'admin';
 
   const [formData, setFormData] = useState<Partial<Quote>>({});
   const [items, setItems] = useState<QuoteItem[]>([]);
