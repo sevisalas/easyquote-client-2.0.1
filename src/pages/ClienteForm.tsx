@@ -10,7 +10,7 @@ import { ArrowLeft, Save } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import CustomerDiscountsSection from "@/components/clientes/CustomerDiscountsSection";
+
 interface ClienteData {
   name: string;
   email: string;
