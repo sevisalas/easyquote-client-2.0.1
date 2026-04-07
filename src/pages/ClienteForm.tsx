@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft, Save } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/contexts/SubscriptionContext";
+import { useTariffs } from "@/hooks/useTariffs";
 
 interface ClienteData {
   name: string;
@@ -21,6 +23,7 @@ interface ClienteData {
   province: string;
   notes: string;
   integration_id: string;
+  tariff_id: string;
 }
 
 const isValidUuid = (value: string | null | undefined): value is string =>
@@ -32,6 +35,9 @@ const ClienteForm = () => {
   const isMobile = useIsMobile();
   const { organization, membership } = useSubscription();
   const isEditing = !!id;
+  const isAdmin = (membership as any)?.role === 'admin';
+  const { tariffs } = useTariffs(organization?.id);
+  const activeTariffs = tariffs.filter(t => t.is_active);
   
   const [formData, setFormData] = useState<ClienteData>({
     name: "",
@@ -42,7 +48,8 @@ const ClienteForm = () => {
     city: "",
     province: "",
     notes: "",
-    integration_id: ""
+    integration_id: "",
+    tariff_id: ""
   });
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(isEditing);
@@ -72,7 +79,8 @@ const ClienteForm = () => {
         city: (data as any).city || "",
         province: (data as any).province || "",
         notes: data.notes || "",
-        integration_id: data.integration_id || ""
+        integration_id: data.integration_id || "",
+        tariff_id: (data as any).tariff_id || ""
       });
     } catch (error) {
       toast({
@@ -91,17 +99,19 @@ const ClienteForm = () => {
     setLoading(true);
 
     try {
-      const preparedCustomerPayload = {
-        ...formData,
-        name: formData.name.trim(),
-        email: formData.email.trim() || null,
-        phone: formData.phone.trim() || null,
-        address: formData.address.trim() || null,
-        zip: formData.zip.trim() || null,
-        city: formData.city.trim() || null,
-        province: formData.province.trim() || null,
-        notes: formData.notes.trim() || null,
-        integration_id: formData.integration_id.trim() || null,
+      const { tariff_id, ...rest } = formData;
+      const preparedCustomerPayload: any = {
+        ...rest,
+        name: rest.name.trim(),
+        email: rest.email.trim() || null,
+        phone: rest.phone.trim() || null,
+        address: rest.address.trim() || null,
+        zip: rest.zip.trim() || null,
+        city: rest.city.trim() || null,
+        province: rest.province.trim() || null,
+        notes: rest.notes.trim() || null,
+        integration_id: rest.integration_id.trim() || null,
+        tariff_id: tariff_id || null,
       };
 
       if (!preparedCustomerPayload.name) {
