@@ -371,7 +371,7 @@ export default function Clientes() {
                       </Badge>
                     </TableCell>
                     {isAdmin && (
-                      <TableCell className="py-1.5 px-3 min-w-[250px]">
+                      <TableCell className="py-1.5 px-3 min-w-[200px]">
                         <Select
                           value={cliente.tariff_id ?? "none"}
                           onValueChange={(value) => handleAssignTariff(cliente.id, value === "none" ? null : value)}
