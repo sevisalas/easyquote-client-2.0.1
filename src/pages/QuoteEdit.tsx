@@ -629,6 +629,10 @@ export default function QuoteEdit() {
       }
     });
 
+    // Apply customer discounts (invisible)
+    const customerAdj = calculateDiscountAdjustment(total);
+    total += customerAdj;
+
     console.log("🔢 Total final calculado:", total);
     return total;
   };
