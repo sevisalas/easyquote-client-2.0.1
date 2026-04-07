@@ -79,24 +79,30 @@ export const ClientCard = ({ cliente, onDelete }: ClientCardProps) => {
 
           {/* Acciones */}
           <div className="flex gap-2 pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate(`/clientes/${cliente.id}/editar`)}
-              className="flex-1 h-9"
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              Editar
-            </Button>
-            {cliente.source === 'local' && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onDelete(cliente.id)}
-                className="h-9 px-3 text-destructive hover:text-destructive hover:bg-destructive/10"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+            {cliente.source === 'local' ? (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/clientes/${cliente.id}/editar`)}
+                  className="flex-1 h-9"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Editar
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onDelete(cliente.id)}
+                  className="h-9 px-3 text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </>
+            ) : (
+              <div className="flex-1 text-center py-2">
+                <span className="text-sm text-muted-foreground">Solo lectura</span>
+              </div>
             )}
           </div>
         </div>
