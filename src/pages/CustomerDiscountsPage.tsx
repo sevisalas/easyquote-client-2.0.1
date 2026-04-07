@@ -1,159 +1,200 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTariffs, Tariff } from "@/hooks/useTariffs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Search, ChevronRight, Percent, ExternalLink } from "lucide-react";
-import CustomerDiscountsSection from "@/components/clientes/CustomerDiscountsSection";
-
-interface CustomerWithDiscountCount {
-  id: string;
-  name: string;
-  email: string | null;
-  discount_count: number;
-}
+import { Percent, Plus, Trash2, Pencil, X, Check } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 export default function CustomerDiscountsPage() {
-  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { organization } = useSubscription();
-  const [search, setSearch] = useState("");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-
   const orgId = organization?.id;
+  const { tariffs, isLoading, createTariff, updateTariff, deleteTariff } = useTariffs(orgId);
 
-  const { data: customers = [], isLoading } = useQuery({
-    queryKey: ["customers_with_discounts", orgId],
-    queryFn: async () => {
-      if (!orgId) return [];
+  const [showForm, setShowForm] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newPercentage, setNewPercentage] = useState("");
+  const [newIsDiscount, setNewIsDiscount] = useState(true);
 
-      // Fetch customers
-      const { data: custs, error: custErr } = await supabase
-        .from("customers")
-        .select("id, name, email")
-        .eq("organization_id", orgId)
-        .order("name");
-      if (custErr) throw custErr;
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editPercentage, setEditPercentage] = useState("");
+  const [editIsDiscount, setEditIsDiscount] = useState(true);
 
-      // Fetch discount counts
-      const { data: discounts, error: discErr } = await supabase
-        .from("customer_discounts" as any)
-        .select("customer_id")
-        .eq("organization_id", orgId)
-        .eq("is_active", true);
-      if (discErr) {
-        console.log("[CustomerDiscountsPage] No discount access");
-        return (custs || []).map((c: any) => ({ ...c, discount_count: 0 }));
-      }
+  const handleCreate = async () => {
+    const pct = parseFloat(newPercentage);
+    if (!newName.trim() || isNaN(pct) || pct <= 0) {
+      toast({ title: "Error", description: "Nombre y porcentaje válido son obligatorios", variant: "destructive" });
+      return;
+    }
+    try {
+      await createTariff.mutateAsync({ name: newName.trim(), percentage: pct, is_discount: newIsDiscount });
+      setNewName(""); setNewPercentage(""); setNewIsDiscount(true); setShowForm(false);
+      toast({ title: "Éxito", description: "Tarifa creada correctamente" });
+    } catch {
+      toast({ title: "Error", description: "No se pudo crear la tarifa", variant: "destructive" });
+    }
+  };
 
-      const countMap: Record<string, number> = {};
-      (discounts || []).forEach((d: any) => {
-        countMap[d.customer_id] = (countMap[d.customer_id] || 0) + 1;
-      });
+  const startEdit = (t: Tariff) => {
+    setEditingId(t.id);
+    setEditName(t.name);
+    setEditPercentage(String(t.percentage));
+    setEditIsDiscount(t.is_discount);
+  };
 
-      return (custs || []).map((c: any) => ({
-        ...c,
-        discount_count: countMap[c.id] || 0,
-      })) as CustomerWithDiscountCount[];
-    },
-    enabled: !!orgId,
-  });
+  const handleUpdate = async () => {
+    if (!editingId) return;
+    const pct = parseFloat(editPercentage);
+    if (!editName.trim() || isNaN(pct) || pct <= 0) {
+      toast({ title: "Error", description: "Datos inválidos", variant: "destructive" });
+      return;
+    }
+    try {
+      await updateTariff.mutateAsync({ id: editingId, name: editName.trim(), percentage: pct, is_discount: editIsDiscount });
+      setEditingId(null);
+      toast({ title: "Actualizado", description: "Tarifa actualizada" });
+    } catch {
+      toast({ title: "Error", description: "No se pudo actualizar", variant: "destructive" });
+    }
+  };
 
-  const filtered = customers.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const handleToggleActive = async (id: string, current: boolean) => {
+    try {
+      await updateTariff.mutateAsync({ id, is_active: !current });
+    } catch {
+      toast({ title: "Error", description: "No se pudo actualizar", variant: "destructive" });
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteTariff.mutateAsync(id);
+      toast({ title: "Eliminada", description: "Tarifa eliminada" });
+    } catch {
+      toast({ title: "Error", description: "No se pudo eliminar", variant: "destructive" });
+    }
+  };
 
   return (
     <div className={`min-h-screen bg-background ${isMobile ? "p-3" : "p-6"}`}>
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-2xl mx-auto">
         <header className={isMobile ? "mb-4" : "mb-6"}>
           <h1 className={`font-bold text-foreground mb-1 ${isMobile ? "text-2xl" : "text-3xl"}`}>
-            Tarifas de cliente
+            Tarifas
           </h1>
           <p className="text-sm text-muted-foreground">
-            Gestiona descuentos y recargos por cliente. Solo visible para administradores.
+            Define tarifas (descuentos o recargos) que luego puedes asignar a cada cliente. Solo visible para administradores.
           </p>
         </header>
 
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar cliente..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground py-8 text-center">Cargando clientes...</p>
-        ) : filtered.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-8 text-center italic">
-            {search ? "Sin resultados" : "No hay clientes"}
-          </p>
-        ) : (
-          <Card>
-            <CardHeader className="pb-2">
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
                 <Percent className="h-4 w-4" />
-                Clientes ({filtered.length})
+                Tarifas de la organización
               </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="divide-y divide-border">
-                {filtered.map((c) => (
-                  <Collapsible
-                    key={c.id}
-                    open={expandedId === c.id}
-                    onOpenChange={(open) => setExpandedId(open ? c.id : null)}
-                  >
-                    <CollapsibleTrigger asChild>
-                      <button className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-muted/40 transition-colors">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <ChevronRight
-                            className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
-                              expandedId === c.id ? "rotate-90" : ""
-                            }`}
-                          />
-                          <span className="text-sm font-medium truncate">{c.name}</span>
-                          {c.discount_count > 0 && (
-                            <Badge variant="secondary" className="text-[10px] shrink-0">
-                              {c.discount_count} tarifa{c.discount_count !== 1 ? "s" : ""}
-                            </Badge>
-                          )}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 shrink-0"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/clientes/${c.id}/editar`);
-                          }}
-                        >
-                          <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
-                        </Button>
-                      </button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="px-4 pb-4 pt-1">
-                        {orgId && (
-                          <CustomerDiscountsSection customerId={c.id} organizationId={orgId} />
-                        )}
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                ))}
+              <Button variant="outline" size="sm" onClick={() => setShowForm(!showForm)}>
+                <Plus className="w-3.5 h-3.5 mr-1" />
+                Nueva tarifa
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {showForm && (
+              <div className="border border-border rounded-md p-3 space-y-3 bg-muted/20">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Nombre</Label>
+                    <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Tarifa mayorista" />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Porcentaje (%)</Label>
+                    <Input type="number" min="0" step="0.5" value={newPercentage} onChange={(e) => setNewPercentage(e.target.value)} placeholder="10" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={newIsDiscount} onCheckedChange={setNewIsDiscount} />
+                  <span className="text-xs text-muted-foreground">
+                    {newIsDiscount ? "Descuento (resta)" : "Recargo (suma)"}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={handleCreate} disabled={createTariff.isPending}>Guardar</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setShowForm(false)}>Cancelar</Button>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
+            )}
+
+            {isLoading ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">Cargando tarifas...</p>
+            ) : tariffs.length === 0 && !showForm ? (
+              <p className="text-sm text-muted-foreground py-4 text-center italic">
+                No hay tarifas definidas. Crea una para poder asignarla a clientes.
+              </p>
+            ) : (
+              tariffs.map((t) => (
+                <div
+                  key={t.id}
+                  className={`flex items-center justify-between border rounded-md px-3 py-2 ${
+                    t.is_active ? "border-border bg-background" : "border-border/50 bg-muted/30 opacity-60"
+                  }`}
+                >
+                  {editingId === t.id ? (
+                    <div className="flex-1 space-y-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-8 text-sm" />
+                        <Input type="number" min="0" step="0.5" value={editPercentage} onChange={(e) => setEditPercentage(e.target.value)} className="h-8 text-sm" />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Switch checked={editIsDiscount} onCheckedChange={setEditIsDiscount} className="scale-75" />
+                          <span className="text-xs text-muted-foreground">
+                            {editIsDiscount ? "Descuento" : "Recargo"}
+                          </span>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleUpdate}>
+                            <Check className="w-3.5 h-3.5 text-primary" />
+                          </Button>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingId(null)}>
+                            <X className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Badge variant={t.is_discount ? "destructive" : "default"} className="text-[10px] shrink-0">
+                          {t.is_discount ? `-${t.percentage}%` : `+${t.percentage}%`}
+                        </Badge>
+                        <span className="text-sm truncate">{t.name}</span>
+                        {!t.is_active && <Badge variant="outline" className="text-[10px]">Inactiva</Badge>}
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Switch checked={t.is_active} onCheckedChange={() => handleToggleActive(t.id, t.is_active)} className="scale-75" />
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => startEdit(t)}>
+                          <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDelete(t.id)}>
+                          <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
