@@ -1314,7 +1314,20 @@ const SalesOrderDetail = () => {
                               </div>
                             )}
                           </div>
-                          <div className="text-right ml-4 flex-shrink-0">
+                          <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+                            {/* Notes button */}
+                            <button
+                              type="button"
+                              className="p-1 rounded hover:bg-muted transition-colors"
+                              title={item.notes ? "Ver/editar notas" : "Añadir notas"}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setNotesText(item.notes || '');
+                                setNotesDialogItem(item);
+                              }}
+                            >
+                              <StickyNote className={`h-4 w-4 ${item.notes ? 'text-amber-500' : 'text-muted-foreground'}`} />
+                            </button>
                             {viewMode === 'administrative' && (
                               <p className={`font-bold text-primary ${isMobile ? 'text-lg' : 'text-xl'}`}>{(() => { const parts = Math.abs(item.price).toFixed(2).split('.'); const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.'); return `${item.price < 0 ? '-' : ''}${intPart},${parts[1]} €`; })()}</p>
                             )}
