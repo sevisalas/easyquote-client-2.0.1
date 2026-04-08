@@ -1316,11 +1316,10 @@ const SalesOrderDetail = () => {
                         </div>
                       </CollapsibleTrigger>
 
-                      {item.description && (
-                        <p className={`text-sm text-muted-foreground whitespace-pre-line ${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>{item.description}</p>
-                      )}
-
                       <CollapsibleContent>
+                        {item.description && (
+                          <p className={`text-sm text-muted-foreground whitespace-pre-line ${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>{item.description}</p>
+                        )}
                         <div className={`space-y-4 ${isMobile ? 'px-3 pb-3 pt-2' : 'px-4 pb-4 pt-2'}`}>
                           <WorkOrderItem
                             item={{
