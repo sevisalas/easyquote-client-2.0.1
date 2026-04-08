@@ -126,18 +126,6 @@ export const EditOrderItemDialog = ({ open, onOpenChange, item, onSave, saving }
               rows={3}
             />
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notas (opcional)</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              disabled={saving}
-              rows={2}
-              placeholder="Observaciones internas sobre este artículo..."
-            />
-          </div>
         </div>
         
         <DialogFooter>
