@@ -263,6 +263,47 @@ Si tienes integración con Holded:
     minRole: 'user',
     tags: ['clientes', 'contactos', 'holded'],
   },
+  {
+    id: 'customer-tariffs',
+    title: 'Tarifas de cliente',
+    summary: 'Aplica descuentos o recargos automáticos a presupuestos y pedidos de un cliente.',
+    content: `
+## ¿Qué son las tarifas?
+
+Las tarifas permiten aplicar un descuento o recargo porcentual de forma automática a todos los presupuestos y pedidos de un cliente concreto. Son invisibles en el PDF y en las exportaciones a Holded.
+
+## Cómo se aplican
+
+La tarifa se aplica sobre:
+
+- **Precio base del artículo**: el precio que devuelve la API de EasyQuote se ajusta con el porcentaje de la tarifa.
+- **Ajustes de importe fijo** (€): tanto de artículo como de presupuesto/pedido, se les aplica el mismo porcentaje.
+- **Ajustes multiplicadores** (×): el valor unitario se ajusta con la tarifa antes de multiplicar.
+
+**No se aplica** a los ajustes porcentuales (%), porque estos ya actúan sobre el precio base que ya tiene la tarifa incorporada.
+
+## Asignar una tarifa a un cliente
+
+1. Ve a **Clientes** → selecciona el cliente
+2. En la sección **Descuentos / Tarifas**, asigna una tarifa existente o crea una nueva
+3. Indica si es descuento (resta) o recargo (suma) y el porcentaje
+
+## Indicador en presupuestos y pedidos
+
+Cuando un cliente tiene tarifa activa, se muestra un aviso debajo del selector de cliente con el nombre y porcentaje de la tarifa aplicada.
+
+## Ejemplo
+
+Si un cliente tiene una tarifa del **−10%** y el precio base de un artículo es **100 €**:
+- Precio ajustado del artículo: **90 €**
+- Un ajuste fijo de **20 €** pasa a ser **18 €**
+- Un ajuste porcentual del **5%** se calcula sobre **90 €** → **4,50 €**
+    `,
+    category: 'customers',
+    icon: 'Percent',
+    minRole: 'admin',
+    tags: ['tarifas', 'descuentos', 'recargos', 'clientes', 'precios'],
+  },
 
   // ====== PEDIDOS (comercial+) ======
   {
