@@ -217,17 +217,33 @@ export default function QuoteDetail() {
       console.log('Items originales:', originalQuote.items);
       console.log('Additionals originales:', originalQuote.quote_additionals);
 
-      // Generar nuevo número de presupuesto con formato YYYY-NNNN
-      const year = new Date().getFullYear();
-      
-      // Obtener el último presupuesto del año
-      const { count } = await supabase
-        .from('quotes')
-        .select('*', { count: 'exact', head: true })
-        .like('quote_number', `${year}-%`);
+      // Obtener organization_id del sessionStorage
+      const organizationId = sessionStorage.getItem('selected_organization_id');
 
-      const nextNumber = (count || 0) + 1;
-      const newNumber = `${year}-${String(nextNumber).padStart(4, '0')}`;
+      // Generar nuevo número usando la función RPC estándar
+      let newNumber: string;
+      if (organizationId) {
+        const { data: rpcNumber, error: rpcError } = await supabase
+          .rpc('next_document_number', {
+            p_organization_id: organizationId,
+            p_document_type: 'quote',
+          });
+
+        if (rpcError) {
+          console.error('Error generando número de documento:', rpcError);
+          throw rpcError;
+        }
+        newNumber = rpcNumber;
+      } else {
+        // Fallback legacy: sin organización
+        const year = new Date().getFullYear();
+        const { count } = await supabase
+          .from('quotes')
+          .select('*', { count: 'exact', head: true })
+          .like('quote_number', `${year}-%`);
+        const nextNumber = (count || 0) + 1;
+        newNumber = `${year}-${String(nextNumber).padStart(4, '0')}`;
+      }
       console.log('Nuevo número de presupuesto:', newNumber);
 
       // Obtener organization_id del sessionStorage
