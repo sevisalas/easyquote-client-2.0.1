@@ -881,6 +881,7 @@ const SalesOrderDetail = () => {
             prompts: item.prompts as any,
             outputs: filteredOutputs,
             description: item.description || undefined,
+            instructions: (item as any).instructions || undefined,
             imposition_data: item.imposition_data as any,
             composite_data: (item as any).composite_data || undefined,
           };
