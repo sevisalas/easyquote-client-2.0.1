@@ -89,6 +89,7 @@ const SalesOrderDetail = () => {
   const [notesDialogItem, setNotesDialogItem] = useState<SalesOrderItem | null>(null);
   const [notesText, setNotesText] = useState('');
   const [savingNotes, setSavingNotes] = useState(false);
+  const [editingNoteIndex, setEditingNoteIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (!canViewProduction) {
