@@ -1327,6 +1327,22 @@ const SalesOrderDetail = () => {
                         {item.description && (
                           <p className={`text-sm text-muted-foreground whitespace-pre-line ${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>{item.description}</p>
                         )}
+
+                        {/* Indicaciones editables */}
+                        {viewMode === 'administrative' && !['in_production', 'completed'].includes(order.status) && (
+                          <div className={`${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>
+                            <InstructionsField
+                              value={(item as any).instructions || ''}
+                              onSave={async (val) => {
+                                const success = await updateSalesOrderItem(item.id, { instructions: val || null } as any);
+                                if (success) {
+                                  setItems(prev => prev.map(it => it.id === item.id ? { ...it, instructions: val || null } as any : it));
+                                }
+                              }}
+                            />
+                          </div>
+                        )}
+
                         <div className={`space-y-4 ${isMobile ? 'px-3 pb-3 pt-2' : 'px-4 pb-4 pt-2'}`}>
                           <WorkOrderItem
                             item={{
@@ -1340,6 +1356,7 @@ const SalesOrderDetail = () => {
                               composite_data: (item as any).composite_data || undefined,
                               notes: Array.isArray(item.notes) ? item.notes : undefined,
                             }}
+                            instructions={(item as any).instructions || undefined}
                             onAddNote={() => {
                               setEditingNoteIndex(null);
                               setNotesText('');
