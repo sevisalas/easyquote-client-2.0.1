@@ -858,6 +858,17 @@ Deno.serve(async (req) => {
           console.log('⚠️ No outputs available, using item.price fallback');
           totalPrice = parseFloat(item.price) || 0;
         }
+
+        // For custom products: use base price (qty × unit_price) instead of item.price
+        // because item.price already includes item_additionals and would be double-applied
+        if (isCustomProduct) {
+          const basePrice = (typeof customUnitPrice === 'number' ? customUnitPrice : parseFloat(String(customUnitPrice) || '0')) *
+                            (typeof customQuantity === 'number' ? customQuantity : parseInt(String(customQuantity) || '1'));
+          if (basePrice > 0) {
+            totalPrice = basePrice;
+            console.log('💰 Custom product: using base price (qty × unit_price):', { totalPrice, customQuantity, customUnitPrice });
+          }
+        }
         
         // Detect quantity from prompts ONLY (never from outputs)
         // Priority: 1) prompt marked with is_quantity in product_prompt_settings
