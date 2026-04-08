@@ -447,8 +447,10 @@ export const useQuoteApproval = () => {
           finalOutputs = Array.isArray(singleRow.outs) ? singleRow.outs : finalOutputs;
         }
 
-        if (!isDescriptionManual) {
-          finalDescription = buildAutoDescriptionFromPrompts(finalPrompts) || item.description;
+        // Si ya hay descripción guardada (manual o auto-generada), conservarla tal cual.
+        // Solo regenerar si está vacía.
+        if (!finalDescription || finalDescription.trim() === '') {
+          finalDescription = buildAutoDescriptionFromPrompts(finalPrompts) || '';
         }
 
         return {
