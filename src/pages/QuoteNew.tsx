@@ -241,39 +241,34 @@ export default function QuoteNew() {
       return n > MAX_PRICE ? MAX_PRICE : n;
     };
 
-    let subtotal = 0;
-
-    // Use item.price directly — it already includes base price + item additionals,
-    // calculated by QuoteItem's finalPrice logic.
+    // Sum of API prices (base price per item)
+    let apiPriceTotal = 0;
     Object.values(items).forEach((item) => {
-      subtotal += safePrice(item.price);
+      apiPriceTotal += safePrice(item.price);
     });
 
-    // Add quote-level additionals
+    // Apply customer tariff to the API price total (invisible adjustment)
+    const customerDiscountAmount = calculateDiscountAdjustment(apiPriceTotal);
+    const adjustedApiTotal = safePrice(apiPriceTotal + customerDiscountAmount);
+
+    // Add quote-level additionals on top of the adjusted total
     let additionalsTotal = 0;
     quoteAdditionals.forEach((additional) => {
       if (additional.type === 'net_amount') {
         additionalsTotal += additional.value;
       } else if (additional.type === 'quantity_multiplier') {
-        // For quantity type, we could implement total quantity calculation
         additionalsTotal += additional.value;
       } else if (additional.type === 'percentage') {
-        // For percentage type, apply to subtotal
-        additionalsTotal += subtotal * additional.value / 100;
+        additionalsTotal += adjustedApiTotal * additional.value / 100;
       }
     });
 
-    const finalSubtotal = safePrice(subtotal + additionalsTotal);
+    const finalSubtotal = safePrice(adjustedApiTotal + additionalsTotal);
     const taxAmount = 0;
-    
-    // Apply customer discounts (invisible adjustment)
-    const customerDiscountAmount = calculateDiscountAdjustment(finalSubtotal);
-    // Tariff is invisible: bake it into the subtotal so there's no visible discrepancy
-    const adjustedSubtotal = safePrice(finalSubtotal + customerDiscountAmount);
-    const finalPrice = safePrice(adjustedSubtotal + taxAmount);
+    const finalPrice = safePrice(finalSubtotal + taxAmount);
 
     return {
-      subtotal: adjustedSubtotal,
+      subtotal: finalSubtotal,
       taxAmount,
       discountAmount: Math.abs(customerDiscountAmount),
       customerDiscountAmount,

@@ -593,15 +593,14 @@ export default function QuoteEdit() {
       return n > MAX_PRICE ? MAX_PRICE : n;
     };
 
-    // Use item.price directly — it already includes base price + item additionals,
-    // calculated by QuoteItem's finalPrice logic.
-    const rawSubtotal = items.reduce((sum, item) => {
+    // Sum of API prices per item
+    const apiPriceTotal = items.reduce((sum, item) => {
       return sum + safePrice((item as any)?.price);
     }, 0);
 
-    // Tariff is invisible: bake it into the subtotal so there's no visible discrepancy
-    const customerAdj = calculateDiscountAdjustment(rawSubtotal);
-    return rawSubtotal + customerAdj;
+    // Apply customer tariff only to the API price total (invisible)
+    const customerAdj = calculateDiscountAdjustment(apiPriceTotal);
+    return apiPriceTotal + customerAdj;
   };
 
   const calculateTotal = () => {
