@@ -2840,7 +2840,7 @@ export type Database = {
           imposition_data: Json | null
           item_additionals: Json | null
           multi: Json | null
-          notes: string | null
+          notes: Json | null
           observations: Json | null
           outputs: Json | null
           position: number | null
@@ -2862,7 +2862,7 @@ export type Database = {
           imposition_data?: Json | null
           item_additionals?: Json | null
           multi?: Json | null
-          notes?: string | null
+          notes?: Json | null
           observations?: Json | null
           outputs?: Json | null
           position?: number | null
@@ -2884,7 +2884,7 @@ export type Database = {
           imposition_data?: Json | null
           item_additionals?: Json | null
           multi?: Json | null
-          notes?: string | null
+          notes?: Json | null
           observations?: Json | null
           outputs?: Json | null
           position?: number | null

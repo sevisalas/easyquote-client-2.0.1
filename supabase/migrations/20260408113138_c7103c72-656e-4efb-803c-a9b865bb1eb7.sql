@@ -1,0 +1,1 @@
+ALTER TABLE public.sales_order_items ALTER COLUMN notes TYPE jsonb USING CASE WHEN notes IS NOT NULL THEN jsonb_build_array(jsonb_build_object('text', notes, 'author', 'Sistema', 'date', now()::text)) ELSE NULL END;
