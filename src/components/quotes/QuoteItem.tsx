@@ -1656,7 +1656,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     return safePrice(safeBasePrice + adjustment);
   };
 
-    // STRICT: priorizar type=Price para evitar coger "Precio (IVA incluido)" por el nombre.
+  const isPriceOutput = (o: any) => {
     return String(o?.type || "").toLowerCase() === "price";
   };
 
@@ -2896,14 +2896,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                         multiEnabled={multiEnabled}
                         canEditPrice={canEditPrice}
                         renderPrice={() => {
-                          // MOSTRAR SIEMPRE el output con type=Price (sin IVA). Fallback: pricing.price.
                           const outputPrice = (priceOutput as any)?.value;
                           const pricingPrice = (pricing as any)?.price;
-                          const displayPrice = outputPrice !== undefined && outputPrice !== null
-                            ? outputPrice
-                            : pricingPrice;
-                          
-                          return displayPrice !== undefined && displayPrice !== null ? (
+                          const rawDisplayPrice = outputPrice !== undefined && outputPrice !== null
+                            ? parseEsNumber(outputPrice)
+                            : parseEsNumber(pricingPrice ?? 0);
+                          const displayPrice = applyCustomerTariffToBasePrice(rawDisplayPrice);
+
+                          return Number.isFinite(displayPrice) && displayPrice > 0 ? (
                             <div className="p-3 rounded-md border bg-card/50">
                               <div className="flex items-center justify-between">
                                 <span className="text-sm text-muted-foreground">Precio</span>
