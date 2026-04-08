@@ -11,7 +11,7 @@ interface EditOrderItemDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   item: SalesOrderItem | null;
-  onSave: (itemId: string, updates: { quantity: number; price?: number; description?: string }) => Promise<void>;
+  onSave: (itemId: string, updates: { quantity: number; price?: number; description?: string; notes?: string }) => Promise<void>;
   saving: boolean;
 }
 
@@ -22,6 +22,7 @@ export const EditOrderItemDialog = ({ open, onOpenChange, item, onSave, saving }
   const [quantity, setQuantity] = useState(item?.quantity?.toString() || "1");
   const [price, setPrice] = useState(item?.price?.toString() || "0");
   const [description, setDescription] = useState(item?.description || "");
+  const [notes, setNotes] = useState(item?.notes || "");
 
   // Reset form when item changes
   useEffect(() => {
@@ -29,6 +30,7 @@ export const EditOrderItemDialog = ({ open, onOpenChange, item, onSave, saving }
       setQuantity(item.quantity?.toString() || "1");
       setPrice(item.price?.toString() || "0");
       setDescription(item.description || "");
+      setNotes(item.notes || "");
     }
   }, [item]);
 
@@ -53,13 +55,15 @@ export const EditOrderItemDialog = ({ open, onOpenChange, item, onSave, saving }
       await onSave(item.id, {
         quantity: qty,
         price: prc,
-        description: description || undefined
+        description: description || undefined,
+        notes: notes || undefined
       });
     } else {
       // Sin permisos de precio, solo enviar cantidad y descripción
       await onSave(item.id, {
         quantity: qty,
-        description: description || undefined
+        description: description || undefined,
+        notes: notes || undefined
       });
     }
     
@@ -124,6 +128,18 @@ export const EditOrderItemDialog = ({ open, onOpenChange, item, onSave, saving }
               onChange={(e) => setDescription(e.target.value)}
               disabled={saving}
               rows={3}
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="notes">Notas (opcional)</Label>
+            <Textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              disabled={saving}
+              rows={2}
+              placeholder="Observaciones internas sobre este artículo..."
             />
           </div>
         </div>
