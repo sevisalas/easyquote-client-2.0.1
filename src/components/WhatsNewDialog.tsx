@@ -9,10 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, FileSpreadsheet } from "lucide-react";
+import { Sparkles, Percent, SlidersHorizontal } from "lucide-react";
 
-const CURRENT_VERSION = "2.7.6";
-const SILENT_UPDATE = true;
+const CURRENT_VERSION = "2.7.7";
+const SILENT_UPDATE = false;
 const LS_KEY = "whats_new_seen_version";
 
 interface ReleaseNote {
@@ -24,11 +24,18 @@ interface ReleaseNote {
 
 const RELEASE_NOTES: ReleaseNote[] = [
   {
-    icon: <FileSpreadsheet className="h-5 w-5 text-primary" />,
-    title: "Filtrado de campos en PDF",
+    icon: <Percent className="h-5 w-5 text-primary" />,
+    title: "Tarifas de cliente en precios",
     description:
-      "Los campos marcados como 'ocultar en documentos', con valor 'No' y las solapas se excluyen automáticamente de los presupuestos y órdenes de trabajo en PDF.",
-    badge: "Todos",
+      "La tarifa asignada a un cliente se aplica automáticamente al precio base de cada artículo en presupuestos y pedidos nuevos.",
+    badge: "Admin",
+  },
+  {
+    icon: <SlidersHorizontal className="h-5 w-5 text-primary" />,
+    title: "Tarifas en ajustes fijos",
+    description:
+      "Los ajustes de importe fijo y multiplicadores también se ajustan con la tarifa del cliente. Los porcentuales se excluyen para evitar doble aplicación.",
+    badge: "Admin",
   },
 ];
 
