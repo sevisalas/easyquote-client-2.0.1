@@ -11,7 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Edit, Download, Copy, CheckCircle, ChevronDown, Eye, EyeOff, FileText, StickyNote, Ban } from "lucide-react";
+import { Edit, Download, Copy, CheckCircle, ChevronDown, Eye, EyeOff, FileText, Ban } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
@@ -86,8 +86,8 @@ export default function QuoteDetail() {
   const { approveQuote, loading: isApproving } = useQuoteApproval();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
-  const [showDescription, setShowDescription] = useState(false);
-  const [showNotes, setShowNotes] = useState(false);
+  const [itemDescriptionVisibility, setItemDescriptionVisibility] = useState<Set<string>>(new Set());
+  const [itemNotesVisibility, setItemNotesVisibility] = useState<Set<string>>(new Set());
 
   const { data: quote, isLoading, error } = useQuery({
     queryKey: ['quote', id],
@@ -704,42 +704,19 @@ export default function QuoteDetail() {
           </div>
           
           {(quote.description || quote.notes) && (
-            <div className="flex items-center gap-1 pt-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
               {quote.description && (
-                <Button
-                  variant={showDescription ? "secondary" : "ghost"}
-                  size="sm"
-                  className="h-7 text-xs gap-1.5 px-2"
-                  onClick={() => setShowDescription(!showDescription)}
-                >
-                  <FileText className="h-3.5 w-3.5" />
-                  Descripción
-                  {showDescription ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                </Button>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">descripción</label>
+                  <p className="text-sm mt-0.5 whitespace-pre-line">{quote.description}</p>
+                </div>
               )}
               {quote.notes && (
-                <Button
-                  variant={showNotes ? "secondary" : "ghost"}
-                  size="sm"
-                  className="h-7 text-xs gap-1.5 px-2"
-                  onClick={() => setShowNotes(!showNotes)}
-                >
-                  <StickyNote className="h-3.5 w-3.5" />
-                  Notas
-                  {showNotes ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                </Button>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">notas</label>
+                  <p className="text-sm mt-0.5 whitespace-pre-line">{quote.notes}</p>
+                </div>
               )}
-            </div>
-          )}
-
-          {showDescription && quote.description && (
-            <div className="bg-muted/50 rounded-md p-2 mt-1">
-              <p className="text-sm whitespace-pre-line">{quote.description}</p>
-            </div>
-          )}
-          {showNotes && quote.notes && (
-            <div className="bg-muted/50 rounded-md p-2 mt-1">
-              <p className="text-sm whitespace-pre-line">{quote.notes}</p>
             </div>
           )}
 
@@ -839,6 +816,26 @@ export default function QuoteDetail() {
                                   No aprobado
                                 </Badge>
                               )}
+                              {item.description && (
+                                <Button
+                                  variant={itemDescriptionVisibility.has(String(item.id ?? index)) ? "secondary" : "ghost"}
+                                  size="sm"
+                                  className="h-6 px-2 gap-1 text-xs text-muted-foreground"
+                                  onClick={() => {
+                                    const key = String(item.id ?? index);
+                                    setItemDescriptionVisibility((prev) => {
+                                      const next = new Set(prev);
+                                      if (next.has(key)) next.delete(key);
+                                      else next.add(key);
+                                      return next;
+                                    });
+                                  }}
+                                >
+                                  <FileText className="h-3.5 w-3.5" />
+                                  Ver descripción
+                                  {itemDescriptionVisibility.has(String(item.id ?? index)) ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                                </Button>
+                              )}
                               {hasDetails && (
                                 <CollapsibleTrigger asChild>
                                   <Button variant="ghost" size="sm" className={`h-6 p-0 ${quote.status === 'approved' ? 'px-2 gap-1 text-xs text-muted-foreground' : 'w-6'}`}>
@@ -854,8 +851,13 @@ export default function QuoteDetail() {
                               )}
                             </div>
                             
-                            {/* Descripción solo visible cuando está expandido */}
-                            
+                            {itemDescriptionVisibility.has(String(item.id ?? index)) && item.description && (
+                              <div className="mt-2 rounded-md bg-muted/50 px-3 py-2">
+                                <p className="text-xs font-medium text-muted-foreground mb-1">descripción del artículo</p>
+                                <p className="text-sm whitespace-pre-line">{item.description}</p>
+                              </div>
+                            )}
+
                             {/* Resumen de prompts en vista colapsada */}
                             {!isExpanded && Object.keys(itemPrompts).length > 0 && (() => {
                               const summaryPrompts = Object.entries(itemPrompts)
