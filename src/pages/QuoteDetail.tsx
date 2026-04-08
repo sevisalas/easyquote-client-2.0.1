@@ -86,8 +86,8 @@ export default function QuoteDetail() {
   const { approveQuote, loading: isApproving } = useQuoteApproval();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
-  const [showDescription, setShowDescription] = useState(false);
-  const [showNotes, setShowNotes] = useState(false);
+  const [itemDescriptionVisibility, setItemDescriptionVisibility] = useState<Set<string>>(new Set());
+  const [itemNotesVisibility, setItemNotesVisibility] = useState<Set<string>>(new Set());
 
   const { data: quote, isLoading, error } = useQuery({
     queryKey: ['quote', id],
@@ -704,42 +704,19 @@ export default function QuoteDetail() {
           </div>
           
           {(quote.description || quote.notes) && (
-            <div className="flex items-center gap-1 pt-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-1">
               {quote.description && (
-                <Button
-                  variant={showDescription ? "secondary" : "ghost"}
-                  size="sm"
-                  className="h-7 text-xs gap-1.5 px-2"
-                  onClick={() => setShowDescription(!showDescription)}
-                >
-                  <FileText className="h-3.5 w-3.5" />
-                  Descripción
-                  {showDescription ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                </Button>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">descripción</label>
+                  <p className="text-sm mt-0.5 whitespace-pre-line">{quote.description}</p>
+                </div>
               )}
               {quote.notes && (
-                <Button
-                  variant={showNotes ? "secondary" : "ghost"}
-                  size="sm"
-                  className="h-7 text-xs gap-1.5 px-2"
-                  onClick={() => setShowNotes(!showNotes)}
-                >
-                  <StickyNote className="h-3.5 w-3.5" />
-                  Notas
-                  {showNotes ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                </Button>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">notas</label>
+                  <p className="text-sm mt-0.5 whitespace-pre-line">{quote.notes}</p>
+                </div>
               )}
-            </div>
-          )}
-
-          {showDescription && quote.description && (
-            <div className="bg-muted/50 rounded-md p-2 mt-1">
-              <p className="text-sm whitespace-pre-line">{quote.description}</p>
-            </div>
-          )}
-          {showNotes && quote.notes && (
-            <div className="bg-muted/50 rounded-md p-2 mt-1">
-              <p className="text-sm whitespace-pre-line">{quote.notes}</p>
             </div>
           )}
 
