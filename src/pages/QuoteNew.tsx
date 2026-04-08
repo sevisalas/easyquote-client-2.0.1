@@ -268,10 +268,12 @@ export default function QuoteNew() {
     
     // Apply customer discounts (invisible adjustment)
     const customerDiscountAmount = calculateDiscountAdjustment(finalSubtotal);
-    const finalPrice = safePrice(finalSubtotal + taxAmount + customerDiscountAmount);
+    // Tariff is invisible: bake it into the subtotal so there's no visible discrepancy
+    const adjustedSubtotal = safePrice(finalSubtotal + customerDiscountAmount);
+    const finalPrice = safePrice(adjustedSubtotal + taxAmount);
 
     return {
-      subtotal: finalSubtotal,
+      subtotal: adjustedSubtotal,
       taxAmount,
       discountAmount: Math.abs(customerDiscountAmount),
       customerDiscountAmount,
@@ -783,7 +785,7 @@ export default function QuoteNew() {
           <div className="space-y-3">
             <div className="flex justify-between">
               <span>Subtotal:</span>
-              <span>{formatEUR(totals.subtotal)}</span>
+              <span>{formatEUR(totals.finalPrice)}</span>
             </div>
             {totals.taxAmount > 0 && <div className="flex justify-between">
                 <span>IVA:</span>
@@ -793,7 +795,7 @@ export default function QuoteNew() {
             <div className="bg-card rounded-lg p-4 border border-border border-r-4 border-r-secondary hover:shadow-md transition-all duration-200">
               <div className="flex justify-between items-center">
                 <span className="text-lg font-semibold text-foreground">Total:</span>
-                <span className="text-2xl font-bold text-secondary">{formatEUR(totals.finalPrice)}</span>
+                <span className="text-2xl font-bold text-secondary">{formatEUR(totals.finalPrice)}</span>              
               </div>
             </div>
           </div>
