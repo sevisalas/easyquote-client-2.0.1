@@ -757,8 +757,7 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
               </View>
             )}
 
-            {/* Espacio vacío eliminado — ya no hay sección "Observaciones" en PDF */}
-          </Page>
+            {/* Sección "Observaciones" eliminada del PDF */}
           </Page>
         );
       })}
