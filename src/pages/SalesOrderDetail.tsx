@@ -1339,6 +1339,12 @@ const SalesOrderDetail = () => {
                         {item.description && (
                           <p className={`text-sm text-muted-foreground whitespace-pre-line ${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>{item.description}</p>
                         )}
+                        {item.notes && (
+                          <div className={`flex items-start gap-2 text-sm ${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>
+                            <StickyNote className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                            <p className="text-muted-foreground whitespace-pre-line">{item.notes}</p>
+                          </div>
+                        )}
                         <div className={`space-y-4 ${isMobile ? 'px-3 pb-3 pt-2' : 'px-4 pb-4 pt-2'}`}>
                           <WorkOrderItem
                             item={{
