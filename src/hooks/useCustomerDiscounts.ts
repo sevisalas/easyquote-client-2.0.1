@@ -103,7 +103,11 @@ export function useActiveCustomerDiscounts(customerId: string | null, organizati
   const normalizedCustomerId = customerId?.startsWith('holded:') ? customerId.replace('holded:', '') : customerId;
   const resolvedOrganizationId = organizationId || (typeof window !== "undefined" ? sessionStorage.getItem("selected_organization_id") : null);
 
-  const { data: activeDiscounts = [] } = useQuery({
+  const {
+    data: activeDiscounts = [],
+    isFetching,
+    refetch,
+  } = useQuery({
     queryKey: ["customer_discounts_active", normalizedCustomerId, resolvedOrganizationId],
     queryFn: async () => {
       if (!normalizedCustomerId || !resolvedOrganizationId) return [];
@@ -179,7 +183,6 @@ export function useActiveCustomerDiscounts(customerId: string | null, organizati
         .eq("is_active", true);
 
       if (error) {
-        // RLS may block legacy discounts for non-admins; silently return empty
         console.log("[CustomerDiscounts] No access or no discounts");
         return [];
       }
@@ -198,5 +201,5 @@ export function useActiveCustomerDiscounts(customerId: string | null, organizati
     return adjustment;
   };
 
-  return { activeDiscounts, calculateDiscountAdjustment };
+  return { activeDiscounts, calculateDiscountAdjustment, isFetching, refetch };
 }

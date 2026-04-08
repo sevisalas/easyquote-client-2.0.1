@@ -78,12 +78,17 @@ export default function QuoteNew() {
 
   // Customer discounts
   const actualCustomerIdForDiscounts = customerId?.startsWith('holded:') ? customerId.replace('holded:', '') : customerId;
-  const { activeDiscounts, calculateDiscountAdjustment } = useActiveCustomerDiscounts(
+  const { activeDiscounts, calculateDiscountAdjustment, refetch: refetchCustomerDiscounts } = useActiveCustomerDiscounts(
     actualCustomerIdForDiscounts || null,
     currentOrganization?.id || null
   );
 
-  // Numbering format
+  useEffect(() => {
+    if (!actualCustomerIdForDiscounts) return;
+    void refetchCustomerDiscounts();
+  }, [actualCustomerIdForDiscounts, refetchCustomerDiscounts]);
+
+
   const {
     data: quoteFormat,
     isLoading: isLoadingFormat
@@ -727,8 +732,6 @@ export default function QuoteNew() {
               <Textarea id="notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notas para uso interno..." rows={2} />
             </div>
           </div>
-
-
         </CardContent>
       </Card>
 
