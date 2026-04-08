@@ -1378,8 +1378,8 @@ const SalesOrderDetail = () => {
                           <p className={`text-sm text-muted-foreground whitespace-pre-line ${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>{item.description}</p>
                         )}
 
-                        {/* Indicaciones editables */}
-                        {viewMode === 'administrative' && !['in_production', 'completed'].includes(order.status) && (
+                        {/* Indicaciones editables — vista producción, antes de estar en producción */}
+                        {viewMode === 'production' && !['in_production', 'completed'].includes(order.status) && (
                           <div className={`${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>
                             <InstructionsField
                               value={(item as any).instructions || ''}
