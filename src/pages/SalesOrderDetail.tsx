@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Download, ChevronDown, Edit, FileText, LayoutGrid, Wrench, ShieldAlert, RefreshCw } from "lucide-react";
+import { ArrowLeft, Trash2, Download, ChevronDown, Edit, FileText, LayoutGrid, Wrench, ShieldAlert, RefreshCw, StickyNote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
