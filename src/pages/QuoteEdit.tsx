@@ -1288,17 +1288,6 @@ export default function QuoteEdit() {
                   </>
                 )}
 
-                {/* Customer discount - admin only */}
-                {isAdmin && activeDiscounts.length > 0 && (
-                  <div className="flex justify-between items-center text-muted-foreground">
-                    <span className="text-sm flex items-center gap-1.5">
-                      <Badge variant="outline" className="text-[10px] font-normal">Tarifa cliente</Badge>
-                      {activeDiscounts.map((d: any) => `${d.is_discount ? '-' : '+'}${d.percentage}%`).join(', ')}
-                    </span>
-                    <span className="text-sm">{fmtEUR(calculateDiscountAdjustment(calculateSubtotal()))}</span>
-                  </div>
-                )}
-
                 <div className="flex justify-between items-center pt-3">
                   <span className="text-base font-semibold text-foreground">Total del presupuesto:</span>
                   <span className="text-xl font-bold text-secondary">{fmtEUR(calculateTotal())}</span>
