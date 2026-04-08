@@ -2838,6 +2838,7 @@ export type Database = {
           description_manual: boolean
           id: string
           imposition_data: Json | null
+          instructions: string | null
           item_additionals: Json | null
           multi: Json | null
           notes: Json | null
@@ -2860,6 +2861,7 @@ export type Database = {
           description_manual?: boolean
           id?: string
           imposition_data?: Json | null
+          instructions?: string | null
           item_additionals?: Json | null
           multi?: Json | null
           notes?: Json | null
@@ -2882,6 +2884,7 @@ export type Database = {
           description_manual?: boolean
           id?: string
           imposition_data?: Json | null
+          instructions?: string | null
           item_additionals?: Json | null
           multi?: Json | null
           notes?: Json | null

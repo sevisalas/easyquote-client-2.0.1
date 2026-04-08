@@ -1,0 +1,1 @@
+ALTER TABLE public.sales_order_items ADD COLUMN instructions text;
