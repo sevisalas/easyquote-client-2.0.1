@@ -28,6 +28,8 @@ interface WorkOrderItemProps {
   filterPrompt?: (prompt: { label: string; value: any }) => boolean;
   /** Total number of items in the order (for hierarchical OT numbering) */
   totalItems?: number;
+  /** Special instructions for production */
+  instructions?: string;
 }
 
 export const WorkOrderItem = ({ 
@@ -44,6 +46,7 @@ export const WorkOrderItem = ({
   filterOutput,
   filterPrompt,
   totalItems = 1,
+  instructions,
 }: WorkOrderItemProps) => {
   const applyOutputFilter = (outputs: Array<{ name: string; type: string; value: any }>) =>
     filterOutput ? outputs.filter(filterOutput) : outputs;
@@ -246,6 +249,18 @@ export const WorkOrderItem = ({
 
       {/* Slot para imposición interactiva */}
       {children}
+
+      {/* Indicaciones */}
+      {instructions && (
+        <div className="border border-primary/30 bg-primary/5 rounded-sm">
+          <div className="px-2 py-1 bg-primary/10 border-b border-primary/20">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-primary">Indicaciones</p>
+          </div>
+          <div className="px-2 py-2">
+            <p className="text-[11px] whitespace-pre-line">{instructions}</p>
+          </div>
+        </div>
+      )}
 
       {/* Observaciones compactas */}
       <div className="border border-border rounded-sm">

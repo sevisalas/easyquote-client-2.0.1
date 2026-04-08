@@ -190,6 +190,7 @@ interface WorkOrderPDFOptions {
     prompts?: Array<{ label: string; value: any; order?: number }>;
     outputs?: Array<{ name: string; type: string; value: any }>;
     description?: string;
+    instructions?: string;
     imposition_data?: any;
     composite_data?: any;
   }>;
@@ -748,8 +749,16 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
 
             <View style={styles.thickSeparator} />
 
+            {/* ═══ INDICACIONES ═══ */}
+            {item.instructions && (
+              <View style={{ marginTop: 6, marginBottom: 6, borderWidth: 1, borderColor: '#333', padding: 8 }}>
+                <Text style={{ fontSize: 9, fontFamily: 'Helvetica-Bold', marginBottom: 4 }}>INDICACIONES</Text>
+                <Text style={{ fontSize: 9 }}>{item.instructions}</Text>
+              </View>
+            )}
+
             {/* ═══ OBSERVACIONES ═══ */}
-            <View style={{ marginTop: 6 }}>
+            <View style={{ marginTop: item.instructions ? 0 : 6 }}>
               <Text style={styles.sectionTitle}>OBSERVACIONES</Text>
             </View>
           </Page>
