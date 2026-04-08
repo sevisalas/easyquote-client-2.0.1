@@ -21,7 +21,7 @@ export const OT_SECTIONS = [
   { value: "acabados", label: "Acabados" },
   { value: "imposiciones", label: "Imposiciones" },
   { value: "ajustes", label: "Ajustes" },
-  { value: "observaciones", label: "Observaciones y notas" },
+  { value: "observaciones", label: "Observaciones" },
 ] as const;
 
 export function useProductOutputOtSettings(easyquoteProductId?: string) {

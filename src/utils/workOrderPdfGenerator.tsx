@@ -167,7 +167,7 @@ const OT_SECTION_LABELS: Record<string, string> = {
   acabados: 'ACABADOS',
   imposiciones: 'IMPOSICIONES',
   ajustes: 'AJUSTES',
-  observaciones: 'OBSERVACIONES Y NOTAS',
+  observaciones: 'OBSERVACIONES',
 };
 
 const OT_SECTION_ORDER = ['datos_destacados', 'impresion', 'acabados', 'imposiciones', 'ajustes', 'observaciones'];
@@ -750,14 +750,12 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
             <View style={styles.thickSeparator} />
 
             {/* ═══ OBSERVACIONES ═══ */}
-            {item.instructions && (
-              <View style={{ marginTop: 6, marginBottom: 6, borderWidth: 1, borderColor: '#333', padding: 8 }}>
-                <Text style={{ fontSize: 9, fontFamily: 'Helvetica-Bold', marginBottom: 4 }}>OBSERVACIONES</Text>
+            <View style={{ marginTop: 6 }}>
+              <Text style={styles.sectionTitle}>OBSERVACIONES</Text>
+              {item.instructions ? (
                 <Text style={{ fontSize: 9 }}>{item.instructions}</Text>
-              </View>
-            )}
-
-            {/* Sección "Observaciones" eliminada del PDF */}
+              ) : null}
+            </View>
           </Page>
         );
       })}
