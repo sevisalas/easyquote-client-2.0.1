@@ -233,7 +233,7 @@ export default function QuoteDetail() {
           console.error('Error generando número de documento:', rpcError);
           throw rpcError;
         }
-        newNumber = rpcNumber;
+        newNumber = typeof rpcNumber === 'string' ? rpcNumber : (rpcNumber as any)?.document_number ?? '';
       } else {
         // Fallback legacy: sin organización
         const year = new Date().getFullYear();
