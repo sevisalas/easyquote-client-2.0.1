@@ -54,6 +54,7 @@ export interface SalesOrderItem {
   production_status?: 'pending' | 'in_progress' | 'completed';
   imposition_data?: Record<string, any>;
   composite_data?: Record<string, any>;
+  notes?: string;
 }
 
 export const useSalesOrders = () => {
@@ -188,7 +189,7 @@ export const useSalesOrders = () => {
 
   const updateSalesOrderItem = async (
     itemId: string,
-    updates: { quantity?: number; price?: number; description?: string }
+    updates: { quantity?: number; price?: number; description?: string; notes?: string }
   ): Promise<boolean> => {
     try {
       setLoading(true);

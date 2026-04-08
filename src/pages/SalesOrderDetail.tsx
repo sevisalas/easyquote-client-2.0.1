@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Download, ChevronDown, Edit, FileText, LayoutGrid, Wrench, ShieldAlert, RefreshCw } from "lucide-react";
+import { ArrowLeft, Trash2, Download, ChevronDown, Edit, FileText, LayoutGrid, Wrench, ShieldAlert, RefreshCw, StickyNote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,9 +9,11 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useSalesOrders, SalesOrder, SalesOrderItem, SalesOrderAdditional } from "@/hooks/useSalesOrders";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
@@ -59,7 +61,7 @@ const SalesOrderDetail = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { canAccessProduccion } = useSubscription();
-  const { loading, fetchSalesOrderById, fetchSalesOrderItems, fetchSalesOrderAdditionals, updateSalesOrderStatus, deleteSalesOrder } = useSalesOrders();
+  const { loading, fetchSalesOrderById, fetchSalesOrderItems, fetchSalesOrderAdditionals, updateSalesOrderStatus, updateSalesOrderItem, deleteSalesOrder } = useSalesOrders();
   const { isVisibleIn } = useOutputTypeVisibility();
   const [order, setOrder] = useState<SalesOrder | null>(null);
   const [items, setItems] = useState<SalesOrderItem[]>([]);
@@ -82,6 +84,10 @@ const SalesOrderDetail = () => {
   // Cancellation dialog state
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
+  // Item notes dialog state
+  const [notesDialogItem, setNotesDialogItem] = useState<SalesOrderItem | null>(null);
+  const [notesText, setNotesText] = useState('');
+  const [savingNotes, setSavingNotes] = useState(false);
 
   useEffect(() => {
     if (!canAccessProduccion()) {
@@ -1308,7 +1314,20 @@ const SalesOrderDetail = () => {
                               </div>
                             )}
                           </div>
-                          <div className="text-right ml-4 flex-shrink-0">
+                          <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+                            {/* Notes button */}
+                            <button
+                              type="button"
+                              className="p-1 rounded hover:bg-muted transition-colors"
+                              title={item.notes ? "Ver/editar notas" : "Añadir notas"}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setNotesText(item.notes || '');
+                                setNotesDialogItem(item);
+                              }}
+                            >
+                              <StickyNote className={`h-4 w-4 ${item.notes ? 'text-amber-500' : 'text-muted-foreground'}`} />
+                            </button>
                             {viewMode === 'administrative' && (
                               <p className={`font-bold text-primary ${isMobile ? 'text-lg' : 'text-xl'}`}>{(() => { const parts = Math.abs(item.price).toFixed(2).split('.'); const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.'); return `${item.price < 0 ? '-' : ''}${intPart},${parts[1]} €`; })()}</p>
                             )}
@@ -1319,6 +1338,12 @@ const SalesOrderDetail = () => {
                       <CollapsibleContent>
                         {item.description && (
                           <p className={`text-sm text-muted-foreground whitespace-pre-line ${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>{item.description}</p>
+                        )}
+                        {item.notes && (
+                          <div className={`flex items-start gap-2 text-sm ${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>
+                            <StickyNote className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                            <p className="text-muted-foreground whitespace-pre-line">{item.notes}</p>
+                          </div>
                         )}
                         <div className={`space-y-4 ${isMobile ? 'px-3 pb-3 pt-2' : 'px-4 pb-4 pt-2'}`}>
                           <WorkOrderItem
@@ -1482,6 +1507,42 @@ const SalesOrderDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Item Notes Dialog */}
+      <Dialog open={!!notesDialogItem} onOpenChange={(open) => { if (!open) setNotesDialogItem(null); }}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Notas del artículo</DialogTitle>
+            <DialogDescription>{notesDialogItem?.product_name}</DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={notesText}
+            onChange={(e) => setNotesText(e.target.value)}
+            placeholder="Escribe notas o observaciones para este artículo..."
+            rows={4}
+            disabled={savingNotes}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNotesDialogItem(null)} disabled={savingNotes}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={savingNotes}
+              onClick={async () => {
+                if (!notesDialogItem) return;
+                setSavingNotes(true);
+                const success = await updateSalesOrderItem(notesDialogItem.id, { notes: notesText || undefined });
+                setSavingNotes(false);
+                if (success) {
+                  setItems(prev => prev.map(it => it.id === notesDialogItem.id ? { ...it, notes: notesText || undefined } : it));
+                  setNotesDialogItem(null);
+                }
+              }}
+            >
+              {savingNotes ? "Guardando..." : "Guardar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
