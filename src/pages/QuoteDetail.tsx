@@ -851,8 +851,13 @@ export default function QuoteDetail() {
                               )}
                             </div>
                             
-                            {/* Descripción solo visible cuando está expandido */}
-                            
+                            {itemDescriptionVisibility.has(String(item.id ?? index)) && item.description && (
+                              <div className="mt-2 rounded-md bg-muted/50 px-3 py-2">
+                                <p className="text-xs font-medium text-muted-foreground mb-1">descripción del artículo</p>
+                                <p className="text-sm whitespace-pre-line">{item.description}</p>
+                              </div>
+                            )}
+
                             {/* Resumen de prompts en vista colapsada */}
                             {!isExpanded && Object.keys(itemPrompts).length > 0 && (() => {
                               const summaryPrompts = Object.entries(itemPrompts)
