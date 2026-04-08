@@ -84,6 +84,10 @@ const SalesOrderDetail = () => {
   // Cancellation dialog state
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
+  // Item notes dialog state
+  const [notesDialogItem, setNotesDialogItem] = useState<SalesOrderItem | null>(null);
+  const [notesText, setNotesText] = useState('');
+  const [savingNotes, setSavingNotes] = useState(false);
 
   useEffect(() => {
     if (!canAccessProduccion()) {
