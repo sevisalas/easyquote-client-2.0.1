@@ -39,6 +39,12 @@ export interface SalesOrderAdditional {
   is_discount: boolean;
 }
 
+export interface SalesOrderItemNote {
+  text: string;
+  author: string;
+  date: string;
+}
+
 export interface SalesOrderItem {
   id: string;
   sales_order_id: string;
@@ -54,7 +60,7 @@ export interface SalesOrderItem {
   production_status?: 'pending' | 'in_progress' | 'completed';
   imposition_data?: Record<string, any>;
   composite_data?: Record<string, any>;
-  notes?: string;
+  notes?: any;
 }
 
 export const useSalesOrders = () => {
@@ -189,7 +195,7 @@ export const useSalesOrders = () => {
 
   const updateSalesOrderItem = async (
     itemId: string,
-    updates: { quantity?: number; price?: number; description?: string; notes?: string }
+    updates: { quantity?: number; price?: number; description?: string; notes?: any }
   ): Promise<boolean> => {
     try {
       setLoading(true);
