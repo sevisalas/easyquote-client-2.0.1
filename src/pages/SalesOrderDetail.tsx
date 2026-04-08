@@ -1290,50 +1290,40 @@ const SalesOrderDetail = () => {
                     }}
                   >
                       <div className="border rounded-lg">
-                      <div className={`flex items-center hover:bg-muted/50 transition-colors ${isMobile ? 'p-3' : 'p-4'}`}>
-                        <CollapsibleTrigger className="flex-1 text-left">
-                          <div className="flex justify-between items-center gap-2">
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <ChevronDown
-                                className={`h-5 w-5 transition-transform flex-shrink-0 ${
-                                  isExpanded ? "transform rotate-180" : ""
-                                }`}
-                              />
-                              <h3 className={`font-semibold truncate ${isMobile ? 'text-base' : 'text-lg'}`}>{item.product_name}</h3>
-                              {!isMobile && (
-                                <div className="flex items-center gap-1 ml-3">
-                                  <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                    ['pending', 'in_progress', 'completed'].includes(item.production_status || '') ? 'bg-orange-500' : 'bg-muted'
-                                  }`} title="Pendiente" />
-                                  <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                    ['in_progress', 'completed'].includes(item.production_status || '') ? 'bg-green-500' : 'bg-muted'
-                                  }`} title="En proceso" />
-                                  <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                    item.production_status === 'completed' ? 'bg-blue-500' : 'bg-muted'
-                                  }`} title="Completado" />
-                                </div>
-                              )}
-                            </div>
-                            {viewMode === 'administrative' && (
-                              <p className={`font-bold text-primary ml-4 flex-shrink-0 ${isMobile ? 'text-lg' : 'text-xl'}`}>{(() => { const parts = Math.abs(item.price).toFixed(2).split('.'); const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.'); return `${item.price < 0 ? '-' : ''}${intPart},${parts[1]} €`; })()}</p>
+                      <CollapsibleTrigger className={`w-full hover:bg-muted/50 transition-colors ${isMobile ? 'p-3' : 'p-4'}`}>
+                        <div className="flex justify-between items-center gap-2">
+                          <div className="flex items-center gap-3 flex-1 text-left min-w-0">
+                            <ChevronDown
+                              className={`h-5 w-5 transition-transform flex-shrink-0 ${
+                                isExpanded ? "transform rotate-180" : ""
+                              }`}
+                            />
+                            <h3 className={`font-semibold truncate ${isMobile ? 'text-base' : 'text-lg'}`}>{item.product_name}</h3>
+                            {!isMobile && (
+                              <div className="flex items-center gap-1 ml-3">
+                                <div className={`w-5 h-1.5 rounded-full transition-all ${
+                                  ['pending', 'in_progress', 'completed'].includes(item.production_status || '') ? 'bg-orange-500' : 'bg-muted'
+                                }`} title="Pendiente" />
+                                <div className={`w-5 h-1.5 rounded-full transition-all ${
+                                  ['in_progress', 'completed'].includes(item.production_status || '') ? 'bg-green-500' : 'bg-muted'
+                                }`} title="En proceso" />
+                                <div className={`w-5 h-1.5 rounded-full transition-all ${
+                                  item.production_status === 'completed' ? 'bg-blue-500' : 'bg-muted'
+                                }`} title="Completado" />
+                              </div>
+                            )}
+                            {/* Notes indicator in header */}
+                            {item.notes?.length > 0 && (
+                              <StickyNote className="h-4 w-4 text-amber-500 flex-shrink-0" />
                             )}
                           </div>
-                        </CollapsibleTrigger>
-                        {/* Notes button - outside CollapsibleTrigger to be clickable */}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="ml-2 flex-shrink-0 h-8 w-8"
-                          title={item.notes?.length ? "Ver/editar notas" : "Añadir notas"}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setNotesText('');
-                            setNotesDialogItem(item);
-                          }}
-                        >
-                          <StickyNote className={`h-4 w-4 ${item.notes?.length ? 'text-amber-500' : 'text-muted-foreground'}`} />
-                        </Button>
-                      </div>
+                          <div className="text-right ml-4 flex-shrink-0">
+                            {viewMode === 'administrative' && (
+                              <p className={`font-bold text-primary ${isMobile ? 'text-lg' : 'text-xl'}`}>{(() => { const parts = Math.abs(item.price).toFixed(2).split('.'); const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.'); return `${item.price < 0 ? '-' : ''}${intPart},${parts[1]} €`; })()}</p>
+                            )}
+                          </div>
+                        </div>
+                      </CollapsibleTrigger>
 
                       <CollapsibleContent>
                         {item.description && (
