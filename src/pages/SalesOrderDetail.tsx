@@ -1329,13 +1329,9 @@ const SalesOrderDetail = () => {
                         {item.description && (
                           <p className={`text-sm text-muted-foreground whitespace-pre-line ${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>{item.description}</p>
                         )}
-                        {/* Notas del artículo */}
-                        <div className={`${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>
-                          <div className="flex items-center justify-between mb-1">
-                            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                              <StickyNote className="h-3 w-3" />
-                              Observaciones
-                            </label>
+                        <div className={`space-y-4 ${isMobile ? 'px-3 pb-3 pt-2' : 'px-4 pb-4 pt-2'}`}>
+                          {/* Botón añadir nota */}
+                          <div className="flex justify-end">
                             <Button
                               variant="ghost"
                               size="sm"
@@ -1345,25 +1341,10 @@ const SalesOrderDetail = () => {
                                 setNotesDialogItem(item);
                               }}
                             >
-                              + Añadir nota
+                              <StickyNote className="h-3 w-3 mr-1" />
+                              Añadir nota
                             </Button>
                           </div>
-                          {item.notes && Array.isArray(item.notes) && item.notes.length > 0 ? (
-                            <div className="space-y-1.5">
-                              {item.notes.map((note: any, ni: number) => (
-                                <div key={ni} className="bg-muted/50 rounded p-2 text-sm">
-                                  <p className="whitespace-pre-line">{note.text}</p>
-                                  <p className="text-xs text-muted-foreground mt-1">
-                                    {note.author} · {new Date(note.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-xs text-muted-foreground italic">Sin observaciones</p>
-                          )}
-                        </div>
-                        <div className={`space-y-4 ${isMobile ? 'px-3 pb-3 pt-2' : 'px-4 pb-4 pt-2'}`}>
                           <WorkOrderItem
                             item={{
                               id: item.id,
@@ -1374,6 +1355,7 @@ const SalesOrderDetail = () => {
                               description: item.description || undefined,
                               imposition_data: (item.imposition_data as any) || undefined,
                               composite_data: (item as any).composite_data || undefined,
+                              notes: Array.isArray(item.notes) ? item.notes : undefined,
                             }}
                             orderNumber={order.order_number}
                             customerName={order.customer_id ? undefined : 'Sin cliente'}
