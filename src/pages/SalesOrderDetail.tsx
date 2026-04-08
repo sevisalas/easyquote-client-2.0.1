@@ -1290,70 +1290,79 @@ const SalesOrderDetail = () => {
                     }}
                   >
                       <div className="border rounded-lg">
-                      <div className={`flex items-center hover:bg-muted/50 transition-colors ${isMobile ? 'p-3' : 'p-4'}`}>
-                        <CollapsibleTrigger className="flex-1 text-left">
-                          <div className="flex justify-between items-center gap-2">
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <ChevronDown
-                                className={`h-5 w-5 transition-transform flex-shrink-0 ${
-                                  isExpanded ? "transform rotate-180" : ""
-                                }`}
-                              />
-                              <h3 className={`font-semibold truncate ${isMobile ? 'text-base' : 'text-lg'}`}>{item.product_name}</h3>
-                              {!isMobile && (
-                                <div className="flex items-center gap-1 ml-3">
-                                  <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                    ['pending', 'in_progress', 'completed'].includes(item.production_status || '') ? 'bg-orange-500' : 'bg-muted'
-                                  }`} title="Pendiente" />
-                                  <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                    ['in_progress', 'completed'].includes(item.production_status || '') ? 'bg-green-500' : 'bg-muted'
-                                  }`} title="En proceso" />
-                                  <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                    item.production_status === 'completed' ? 'bg-blue-500' : 'bg-muted'
-                                  }`} title="Completado" />
-                                </div>
-                              )}
-                            </div>
-                            {viewMode === 'administrative' && (
-                              <p className={`font-bold text-primary ml-4 flex-shrink-0 ${isMobile ? 'text-lg' : 'text-xl'}`}>{(() => { const parts = Math.abs(item.price).toFixed(2).split('.'); const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.'); return `${item.price < 0 ? '-' : ''}${intPart},${parts[1]} €`; })()}</p>
+                      <CollapsibleTrigger className={`w-full hover:bg-muted/50 transition-colors ${isMobile ? 'p-3' : 'p-4'}`}>
+                        <div className="flex justify-between items-center gap-2">
+                          <div className="flex items-center gap-3 flex-1 text-left min-w-0">
+                            <ChevronDown
+                              className={`h-5 w-5 transition-transform flex-shrink-0 ${
+                                isExpanded ? "transform rotate-180" : ""
+                              }`}
+                            />
+                            <h3 className={`font-semibold truncate ${isMobile ? 'text-base' : 'text-lg'}`}>{item.product_name}</h3>
+                            {!isMobile && (
+                              <div className="flex items-center gap-1 ml-3">
+                                <div className={`w-5 h-1.5 rounded-full transition-all ${
+                                  ['pending', 'in_progress', 'completed'].includes(item.production_status || '') ? 'bg-orange-500' : 'bg-muted'
+                                }`} title="Pendiente" />
+                                <div className={`w-5 h-1.5 rounded-full transition-all ${
+                                  ['in_progress', 'completed'].includes(item.production_status || '') ? 'bg-green-500' : 'bg-muted'
+                                }`} title="En proceso" />
+                                <div className={`w-5 h-1.5 rounded-full transition-all ${
+                                  item.production_status === 'completed' ? 'bg-blue-500' : 'bg-muted'
+                                }`} title="Completado" />
+                              </div>
+                            )}
+                            {/* Notes indicator in header */}
+                            {item.notes?.length > 0 && (
+                              <StickyNote className="h-4 w-4 text-amber-500 flex-shrink-0" />
                             )}
                           </div>
-                        </CollapsibleTrigger>
-                        {/* Notes button - outside CollapsibleTrigger to be clickable */}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="ml-2 flex-shrink-0 h-8 w-8"
-                          title={item.notes?.length ? "Ver/editar notas" : "Añadir notas"}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setNotesText('');
-                            setNotesDialogItem(item);
-                          }}
-                        >
-                          <StickyNote className={`h-4 w-4 ${item.notes?.length ? 'text-amber-500' : 'text-muted-foreground'}`} />
-                        </Button>
-                      </div>
+                          <div className="text-right ml-4 flex-shrink-0">
+                            {viewMode === 'administrative' && (
+                              <p className={`font-bold text-primary ${isMobile ? 'text-lg' : 'text-xl'}`}>{(() => { const parts = Math.abs(item.price).toFixed(2).split('.'); const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.'); return `${item.price < 0 ? '-' : ''}${intPart},${parts[1]} €`; })()}</p>
+                            )}
+                          </div>
+                        </div>
+                      </CollapsibleTrigger>
 
                       <CollapsibleContent>
                         {item.description && (
                           <p className={`text-sm text-muted-foreground whitespace-pre-line ${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>{item.description}</p>
                         )}
-                        {item.notes && Array.isArray(item.notes) && item.notes.length > 0 && (
-                          <div className={`space-y-1 ${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>
-                            {item.notes.map((note: any, ni: number) => (
-                              <div key={ni} className="flex items-start gap-2 text-sm">
-                                <StickyNote className="h-3.5 w-3.5 text-amber-500 mt-0.5 flex-shrink-0" />
-                                <div className="flex-1">
-                                  <p className="text-muted-foreground whitespace-pre-line">{note.text}</p>
-                                  <p className="text-xs text-muted-foreground/60 mt-0.5">
+                        {/* Notas del artículo */}
+                        <div className={`${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                              <StickyNote className="h-3 w-3" />
+                              Observaciones
+                            </label>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 text-xs px-2"
+                              onClick={() => {
+                                setNotesText('');
+                                setNotesDialogItem(item);
+                              }}
+                            >
+                              + Añadir nota
+                            </Button>
+                          </div>
+                          {item.notes && Array.isArray(item.notes) && item.notes.length > 0 ? (
+                            <div className="space-y-1.5">
+                              {item.notes.map((note: any, ni: number) => (
+                                <div key={ni} className="bg-muted/50 rounded p-2 text-sm">
+                                  <p className="whitespace-pre-line">{note.text}</p>
+                                  <p className="text-xs text-muted-foreground mt-1">
                                     {note.author} · {new Date(note.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                   </p>
                                 </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-muted-foreground italic">Sin observaciones</p>
+                          )}
+                        </div>
                         <div className={`space-y-4 ${isMobile ? 'px-3 pb-3 pt-2' : 'px-4 pb-4 pt-2'}`}>
                           <WorkOrderItem
                             item={{
