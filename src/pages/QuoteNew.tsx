@@ -728,6 +728,17 @@ export default function QuoteNew() {
             </div>
           </div>
 
+          {activeDiscounts.length > 0 && (
+            <div className="flex items-center gap-2 p-2.5 rounded-md bg-muted/40 border border-border text-sm">
+              <Badge variant="outline" className="shrink-0 text-xs">
+                {activeDiscounts[0].is_discount ? '−' : '+'}{activeDiscounts[0].percentage}%
+              </Badge>
+              <span className="text-muted-foreground">
+                Tarifa <strong className="text-foreground">{activeDiscounts[0].name}</strong> aplicada a precios y ajustes fijos
+              </span>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="description">Descripción</Label>
