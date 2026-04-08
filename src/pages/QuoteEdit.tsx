@@ -1240,7 +1240,7 @@ export default function QuoteEdit() {
               <div className="bg-muted/30 rounded-md p-3 border border-border space-y-1.5 mt-4">
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-muted-foreground">Subtotal:</span>
-                  <span className="text-sm font-medium">{fmtEUR(calculateTotal())}</span>
+                  <span className="text-sm font-medium">{fmtEUR(calculateSubtotal())}</span>
                 </div>
 
                 {/* Mostrar ajustes aplicados */}
