@@ -19,6 +19,7 @@ interface WorkOrderItemProps {
   deliveryDate?: string;
   itemIndex: number;
   children?: React.ReactNode;
+  onAddNote?: () => void;
   /** Filter function for output visibility (by output type) */
   filterOutput?: (output: { name: string; type: string; value: any }) => boolean;
   /** Filter function for prompt visibility (by prompt label) */
@@ -35,6 +36,7 @@ export const WorkOrderItem = ({
   deliveryDate,
   itemIndex,
   children,
+  onAddNote,
   filterOutput,
   filterPrompt,
   totalItems = 1,
@@ -243,8 +245,17 @@ export const WorkOrderItem = ({
 
       {/* Observaciones compactas */}
       <div className="border border-border rounded-sm">
-        <div className="px-2 py-1 bg-muted/30 border-b border-border/50">
+        <div className="px-2 py-1 bg-muted/30 border-b border-border/50 flex items-center justify-between gap-2">
           <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Observaciones</p>
+          {onAddNote && (
+            <button
+              type="button"
+              onClick={onAddNote}
+              className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Añadir nota
+            </button>
+          )}
         </div>
         <div className="px-2 py-2 min-h-[40px]">
           {item.notes && Array.isArray(item.notes) && item.notes.length > 0 ? (
