@@ -1256,6 +1256,58 @@ const SalesOrderDetail = () => {
         </CardContent>
       </Card>
 
+const InstructionsField = ({ value, onSave }: { value: string; onSave: (val: string) => Promise<void> }) => {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(value);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { setText(value); }, [value]);
+
+  if (!editing) {
+    return (
+      <div
+        className="cursor-pointer group"
+        onClick={() => setEditing(true)}
+      >
+        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Indicaciones</p>
+        {value ? (
+          <p className="text-sm whitespace-pre-line border border-transparent group-hover:border-border rounded-sm px-2 py-1">{value}</p>
+        ) : (
+          <p className="text-sm text-muted-foreground italic border border-dashed border-border/50 rounded-sm px-2 py-1 group-hover:border-border">
+            Haz clic para añadir indicaciones...
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Indicaciones</p>
+      <Textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Indicaciones para producción..."
+        className="min-h-[60px] text-sm"
+        autoFocus
+      />
+      <div className="flex gap-2 mt-1">
+        <Button size="sm" variant="default" disabled={saving} onClick={async () => {
+          setSaving(true);
+          await onSave(text);
+          setSaving(false);
+          setEditing(false);
+        }}>
+          {saving ? 'Guardando...' : 'Guardar'}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => { setText(value); setEditing(false); }}>
+          Cancelar
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 
       {/* Artículos del Pedido */}
       <Card className={isMobile ? "rounded-none" : ""}>
