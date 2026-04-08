@@ -268,7 +268,7 @@ export default function QuoteNew() {
     const finalPrice = safePrice(finalSubtotal + taxAmount);
 
     return {
-      subtotal: adjustedSubtotal,
+      subtotal: finalSubtotal,
       taxAmount,
       discountAmount: Math.abs(customerDiscountAmount),
       customerDiscountAmount,
