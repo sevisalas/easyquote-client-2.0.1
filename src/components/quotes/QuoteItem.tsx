@@ -77,6 +77,7 @@ interface QuoteItemProps {
   onFinishEdit?: (id: string | number) => void;
   shouldExpand?: boolean;
   hideMultiQuantities?: boolean;
+  customerDiscounts?: Array<{ percentage: number; is_discount: boolean }>;
 }
 
 interface Additional {
@@ -87,7 +88,7 @@ interface Additional {
   default_value: number;
 }
 
-export default function QuoteItem({ hasToken, id, initialData, onChange, onRemove, onFinishEdit, shouldExpand, hideMultiQuantities = false }: QuoteItemProps) {
+export default function QuoteItem({ hasToken, id, initialData, onChange, onRemove, onFinishEdit, shouldExpand, hideMultiQuantities = false, customerDiscounts = [] }: QuoteItemProps) {
   // Contexto de organización: SIEMPRE usar la organización seleccionada en sessionStorage
   // (es la fuente de verdad en multi-tenant / cambio de organización).
   const { organization, membership, isSuperAdmin, isOrgAdmin } = useSubscription();
@@ -1642,7 +1643,19 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     return price;
   };
 
-  const isPriceOutput = (o: any) => {
+  const applyCustomerTariffToBasePrice = (basePrice: number): number => {
+    const safeBasePrice = safePrice(basePrice);
+    if (!customerDiscounts.length) return safeBasePrice;
+
+    const adjustment = customerDiscounts.reduce((total, discount) => {
+      const percentage = Number(discount?.percentage) || 0;
+      const amount = (safeBasePrice * percentage) / 100;
+      return total + (discount?.is_discount ? -amount : amount);
+    }, 0);
+
+    return safePrice(safeBasePrice + adjustment);
+  };
+
     // STRICT: priorizar type=Price para evitar coger "Precio (IVA incluido)" por el nombre.
     return String(o?.type || "").toLowerCase() === "price";
   };
@@ -1759,7 +1772,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         quantity = multiRows[0]?.qty || 1;
       } else {
         baseCompositePrice = compositeTotalPrice;
-        // Obtener cantidad del prompt
         if (qtyPrompt && promptValues[qtyPrompt]) {
           const qtyValue = promptValues[qtyPrompt];
           const rawQty = (qtyValue && typeof qtyValue === 'object' && 'value' in qtyValue) 
@@ -1771,6 +1783,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           }
         }
       }
+
+      const adjustedCompositeBasePrice = applyCustomerTariffToBasePrice(baseCompositePrice);
       
       if (Array.isArray(itemAdditionals)) {
         itemAdditionals.forEach((additional) => {
@@ -1788,7 +1802,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         });
       }
       
-      return safePrice(baseCompositePrice + additionalsTotal);
+      return safePrice(adjustedCompositeBasePrice + additionalsTotal);
     }
     
     // Para productos API simples: el precio que queremos mostrar/guardar es el output con type=Price.
@@ -1800,13 +1814,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     
     // Si multi-cantidades está activo, usar el precio de Q1 como referencia para el total
     if (multiEnabled && multiRows.length > 0) {
-      // multiRows[0].totalStr ya es un número calculado por getCalculatedPriceFromOutputs
-      // NO hacer parsing adicional que pueda corromper el valor
       const q1Price = multiRows[0]?.totalStr;
       if (typeof q1Price === 'number' && Number.isFinite(q1Price)) {
         basePrice = safePrice(q1Price);
       } else {
-        // Fallback solo si no es número: parsear como string español
         basePrice = safePrice(parseEsNumber(q1Price ?? 0));
       }
     } else if (outputPrice !== undefined && outputPrice !== null) {
@@ -1814,12 +1825,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     } else {
       basePrice = safePrice(parseEsNumber(pricingPrice ?? 0));
     }
+
+    const adjustedBasePrice = applyCustomerTariffToBasePrice(basePrice);
     let additionalsTotal = 0;
     
-    // Get quantity from Q1 only (first row or prompt value) - alternatives are independent
     let quantity = 1;
     if (multiEnabled && multiRows.length > 0) {
-      // Use only Q1 (first row) for additionals calculation
       quantity = multiRows[0]?.qty || 1;
     } else if (qtyPrompt && promptValues[qtyPrompt]) {
       const qtyValue = promptValues[qtyPrompt];
@@ -1841,7 +1852,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         } else if (additional.type === 'quantity_multiplier') {
           additionalsTotal += additional.value * quantity;
         } else if (additional.type === 'capacity_divider') {
-          // Use Q1 only for capacity calculation
           const capacity = additional.capacity_value || 1;
           const unitsNeeded = Math.ceil(quantity / capacity);
           additionalsTotal += additional.value * unitsNeeded;
@@ -1849,9 +1859,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       });
     }
     
-    // Aplicar límite de seguridad al precio final
-    return safePrice(basePrice + additionalsTotal);
-  }, [priceOutput, itemAdditionals, multiEnabled, multiRows, isCustomProduct, customPrice, customQuantity, qtyPrompt, promptValues, hasConfiguredComponents, compositeTotalPrice, pricing]);
+    return safePrice(adjustedBasePrice + additionalsTotal);
+  }, [priceOutput, itemAdditionals, multiEnabled, multiRows, isCustomProduct, customPrice, customQuantity, qtyPrompt, promptValues, hasConfiguredComponents, compositeTotalPrice, pricing, customerDiscounts]);
 
   // Calculate additionals breakdown for a specific quantity
   const calculateAdditionalsForQty = useMemo(() => {
@@ -3032,11 +3041,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                             {multiRows.map((r, idx) => {
                               const calculatedPriceRaw = getCalculatedPriceFromOutputs(r.outs || []);
                               const calculatedPrice = Number.isFinite(calculatedPriceRaw) ? calculatedPriceRaw : 0;
+                              const tariffAdjustedCalculatedPrice = applyCustomerTariffToBasePrice(calculatedPrice);
                               const modifiedPrice = multiModifiedPrices[idx];
-                              const hasModified = modifiedPrice !== null && modifiedPrice !== undefined && modifiedPrice !== calculatedPrice;
-                              const displayPrice = hasModified ? modifiedPrice : calculatedPrice;
+                              const hasModified = modifiedPrice !== null && modifiedPrice !== undefined && modifiedPrice !== tariffAdjustedCalculatedPrice;
+                              const displayPrice = hasModified ? modifiedPrice : tariffAdjustedCalculatedPrice;
                               const formattedPrice = formatEUR(displayPrice).replace(' €', '');
-                              const formattedCalculated = formatEUR(calculatedPrice).replace(' €', '');
+                              const formattedCalculated = formatEUR(tariffAdjustedCalculatedPrice).replace(' €', '');
                               
                               // Calculate additionals for this specific quantity
                               const additionals = calculateAdditionalsForQty(r.qty, idx);
