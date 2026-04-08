@@ -60,7 +60,7 @@ const SalesOrderDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { canAccessProduccion } = useSubscription();
+  const { canAccessProduccion, membership } = useSubscription();
   const { loading, fetchSalesOrderById, fetchSalesOrderItems, fetchSalesOrderAdditionals, updateSalesOrderStatus, updateSalesOrderItem, deleteSalesOrder } = useSalesOrders();
   const { isVisibleIn } = useOutputTypeVisibility();
   const [order, setOrder] = useState<SalesOrder | null>(null);
@@ -1319,14 +1319,14 @@ const SalesOrderDetail = () => {
                             <button
                               type="button"
                               className="p-1 rounded hover:bg-muted transition-colors"
-                              title={item.notes ? "Ver/editar notas" : "Añadir notas"}
+                              title={item.notes?.length ? "Ver/editar notas" : "Añadir notas"}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setNotesText(item.notes || '');
+                                setNotesText('');
                                 setNotesDialogItem(item);
                               }}
                             >
-                              <StickyNote className={`h-4 w-4 ${item.notes ? 'text-amber-500' : 'text-muted-foreground'}`} />
+                              <StickyNote className={`h-4 w-4 ${item.notes?.length ? 'text-amber-500' : 'text-muted-foreground'}`} />
                             </button>
                             {viewMode === 'administrative' && (
                               <p className={`font-bold text-primary ${isMobile ? 'text-lg' : 'text-xl'}`}>{(() => { const parts = Math.abs(item.price).toFixed(2).split('.'); const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.'); return `${item.price < 0 ? '-' : ''}${intPart},${parts[1]} €`; })()}</p>
@@ -1339,10 +1339,19 @@ const SalesOrderDetail = () => {
                         {item.description && (
                           <p className={`text-sm text-muted-foreground whitespace-pre-line ${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>{item.description}</p>
                         )}
-                        {item.notes && (
-                          <div className={`flex items-start gap-2 text-sm ${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>
-                            <StickyNote className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                            <p className="text-muted-foreground whitespace-pre-line">{item.notes}</p>
+                        {item.notes && Array.isArray(item.notes) && item.notes.length > 0 && (
+                          <div className={`space-y-1 ${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>
+                            {item.notes.map((note: any, ni: number) => (
+                              <div key={ni} className="flex items-start gap-2 text-sm">
+                                <StickyNote className="h-3.5 w-3.5 text-amber-500 mt-0.5 flex-shrink-0" />
+                                <div className="flex-1">
+                                  <p className="text-muted-foreground whitespace-pre-line">{note.text}</p>
+                                  <p className="text-xs text-muted-foreground/60 mt-0.5">
+                                    {note.author} · {new Date(note.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         )}
                         <div className={`space-y-4 ${isMobile ? 'px-3 pb-3 pt-2' : 'px-4 pb-4 pt-2'}`}>
@@ -1509,36 +1518,64 @@ const SalesOrderDetail = () => {
       </AlertDialog>
       {/* Item Notes Dialog */}
       <Dialog open={!!notesDialogItem} onOpenChange={(open) => { if (!open) setNotesDialogItem(null); }}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Notas del artículo</DialogTitle>
             <DialogDescription>{notesDialogItem?.product_name}</DialogDescription>
           </DialogHeader>
-          <Textarea
-            value={notesText}
-            onChange={(e) => setNotesText(e.target.value)}
-            placeholder="Escribe notas o observaciones para este artículo..."
-            rows={4}
-            disabled={savingNotes}
-          />
+          
+          {/* Existing notes */}
+          {notesDialogItem?.notes && Array.isArray(notesDialogItem.notes) && notesDialogItem.notes.length > 0 && (
+            <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-3">
+              {notesDialogItem.notes.map((note: any, i: number) => (
+                <div key={i} className="text-sm border-b last:border-0 pb-2 last:pb-0">
+                  <p className="whitespace-pre-line">{note.text}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {note.author} · {new Date(note.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* New note input */}
+          <div className="space-y-1">
+            <Label className="text-sm">Nueva nota</Label>
+            <Textarea
+              value={notesText}
+              onChange={(e) => setNotesText(e.target.value)}
+              placeholder="Escribe una nueva nota..."
+              rows={3}
+              disabled={savingNotes}
+            />
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setNotesDialogItem(null)} disabled={savingNotes}>
-              Cancelar
+              Cerrar
             </Button>
             <Button
-              disabled={savingNotes}
+              disabled={savingNotes || !notesText.trim()}
               onClick={async () => {
-                if (!notesDialogItem) return;
+                if (!notesDialogItem || !notesText.trim()) return;
                 setSavingNotes(true);
-                const success = await updateSalesOrderItem(notesDialogItem.id, { notes: notesText || undefined });
+                const existingNotes = Array.isArray(notesDialogItem.notes) ? notesDialogItem.notes : [];
+                const newNote = {
+                  text: notesText.trim(),
+                  author: membership?.display_name || 'Usuario',
+                  date: new Date().toISOString(),
+                };
+                const updatedNotes = [...existingNotes, newNote];
+                const success = await updateSalesOrderItem(notesDialogItem.id, { notes: updatedNotes as any });
                 setSavingNotes(false);
                 if (success) {
-                  setItems(prev => prev.map(it => it.id === notesDialogItem.id ? { ...it, notes: notesText || undefined } : it));
-                  setNotesDialogItem(null);
+                  const updatedItem = { ...notesDialogItem, notes: updatedNotes };
+                  setItems(prev => prev.map(it => it.id === notesDialogItem.id ? updatedItem : it));
+                  setNotesDialogItem(updatedItem);
+                  setNotesText('');
                 }
               }}
             >
-              {savingNotes ? "Guardando..." : "Guardar"}
+              {savingNotes ? "Guardando..." : "Añadir nota"}
             </Button>
           </DialogFooter>
         </DialogContent>
