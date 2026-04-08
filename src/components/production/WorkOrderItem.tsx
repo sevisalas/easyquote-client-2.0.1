@@ -250,7 +250,11 @@ export const WorkOrderItem = ({
           {onAddNote && (
             <button
               type="button"
-              onClick={onAddNote}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onAddNote();
+              }}
               className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Añadir nota
