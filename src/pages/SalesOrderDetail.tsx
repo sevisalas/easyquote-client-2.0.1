@@ -1501,6 +1501,42 @@ const SalesOrderDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Item Notes Dialog */}
+      <Dialog open={!!notesDialogItem} onOpenChange={(open) => { if (!open) setNotesDialogItem(null); }}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Notas del artículo</DialogTitle>
+            <DialogDescription>{notesDialogItem?.product_name}</DialogDescription>
+          </DialogHeader>
+          <Textarea
+            value={notesText}
+            onChange={(e) => setNotesText(e.target.value)}
+            placeholder="Escribe notas o observaciones para este artículo..."
+            rows={4}
+            disabled={savingNotes}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNotesDialogItem(null)} disabled={savingNotes}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={savingNotes}
+              onClick={async () => {
+                if (!notesDialogItem) return;
+                setSavingNotes(true);
+                const success = await updateSalesOrderItem(notesDialogItem.id, { notes: notesText || undefined });
+                setSavingNotes(false);
+                if (success) {
+                  setItems(prev => prev.map(it => it.id === notesDialogItem.id ? { ...it, notes: notesText || undefined } : it));
+                  setNotesDialogItem(null);
+                }
+              }}
+            >
+              {savingNotes ? "Guardando..." : "Guardar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
