@@ -1,0 +1,1 @@
+UPDATE sales_orders SET final_price = 167.00, subtotal = 167.00 WHERE id = 'f28567b2-557f-465f-a42a-427300f3d716'
