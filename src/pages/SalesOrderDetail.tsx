@@ -1329,21 +1329,40 @@ const SalesOrderDetail = () => {
                         {item.description && (
                           <p className={`text-sm text-muted-foreground whitespace-pre-line ${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>{item.description}</p>
                         )}
-                        {item.notes && Array.isArray(item.notes) && item.notes.length > 0 && (
-                          <div className={`space-y-1 ${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>
-                            {item.notes.map((note: any, ni: number) => (
-                              <div key={ni} className="flex items-start gap-2 text-sm">
-                                <StickyNote className="h-3.5 w-3.5 text-amber-500 mt-0.5 flex-shrink-0" />
-                                <div className="flex-1">
-                                  <p className="text-muted-foreground whitespace-pre-line">{note.text}</p>
-                                  <p className="text-xs text-muted-foreground/60 mt-0.5">
+                        {/* Notas del artículo */}
+                        <div className={`${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                              <StickyNote className="h-3 w-3" />
+                              Observaciones
+                            </label>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 text-xs px-2"
+                              onClick={() => {
+                                setNotesText('');
+                                setNotesDialogItem(item);
+                              }}
+                            >
+                              + Añadir nota
+                            </Button>
+                          </div>
+                          {item.notes && Array.isArray(item.notes) && item.notes.length > 0 ? (
+                            <div className="space-y-1.5">
+                              {item.notes.map((note: any, ni: number) => (
+                                <div key={ni} className="bg-muted/50 rounded p-2 text-sm">
+                                  <p className="whitespace-pre-line">{note.text}</p>
+                                  <p className="text-xs text-muted-foreground mt-1">
                                     {note.author} · {new Date(note.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                   </p>
                                 </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-muted-foreground italic">Sin observaciones</p>
+                          )}
+                        </div>
                         <div className={`space-y-4 ${isMobile ? 'px-3 pb-3 pt-2' : 'px-4 pb-4 pt-2'}`}>
                           <WorkOrderItem
                             item={{
