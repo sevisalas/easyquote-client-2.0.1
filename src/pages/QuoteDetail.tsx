@@ -11,7 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Edit, Download, Copy, CheckCircle, ChevronDown, Eye, EyeOff, FileText, StickyNote, Ban } from "lucide-react";
+import { Edit, Download, Copy, CheckCircle, ChevronDown, Eye, EyeOff, FileText, Ban } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
