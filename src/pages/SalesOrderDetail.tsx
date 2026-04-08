@@ -1265,10 +1265,7 @@ const InstructionsField = ({ value, onSave }: { value: string; onSave: (val: str
 
   if (!editing) {
     return (
-      <div
-        className="cursor-pointer group"
-        onClick={() => setEditing(true)}
-      >
+      <div className="cursor-pointer group" onClick={() => setEditing(true)}>
         <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Indicaciones</p>
         {value ? (
           <p className="text-sm whitespace-pre-line border border-transparent group-hover:border-border rounded-sm px-2 py-1">{value}</p>
