@@ -96,13 +96,78 @@ export function useCustomerDiscounts(customerId: string | null, organizationId: 
 }
 
 /**
- * Lightweight hook to fetch active discounts for a customer (for quote pages).
+ * Lightweight hook to fetch the active tariff assigned to a customer for quote pages.
+ * Keeps backward compatibility with legacy customer_discounts records.
  */
 export function useActiveCustomerDiscounts(customerId: string | null, organizationId: string | null) {
   const { data: activeDiscounts = [] } = useQuery({
     queryKey: ["customer_discounts_active", customerId, organizationId],
     queryFn: async () => {
       if (!customerId || !organizationId) return [];
+
+      const { data: customerData, error: customerError } = await supabase
+        .from("customers" as any)
+        .select("tariff_id")
+        .eq("id", customerId)
+        .eq("organization_id", organizationId)
+        .maybeSingle();
+
+      const customerRecord = customerData as unknown as { tariff_id?: string | null } | null;
+      const assignedTariffId = customerRecord?.tariff_id ?? null;
+
+      let assignedTariff: {
+        id: string;
+        name: string;
+        percentage: number;
+        is_discount: boolean;
+        is_active: boolean;
+        created_at: string;
+        updated_at: string;
+        organization_id: string;
+      } | null = null;
+
+      if (!customerError && assignedTariffId) {
+        const { data: tariffData, error: tariffError } = await supabase
+          .from("tariffs" as any)
+          .select("id, name, percentage, is_discount, is_active, created_at, updated_at, organization_id")
+          .eq("id", assignedTariffId)
+          .eq("organization_id", organizationId)
+          .maybeSingle();
+
+        if (!tariffError && tariffData) {
+          assignedTariff = tariffData as unknown as {
+            id: string;
+            name: string;
+            percentage: number;
+            is_discount: boolean;
+            is_active: boolean;
+            created_at: string;
+            updated_at: string;
+            organization_id: string;
+          };
+        }
+      }
+
+      if (!customerError && assignedTariff?.is_active) {
+        return [
+          {
+            id: assignedTariff.id,
+            customer_id: customerId,
+            organization_id: assignedTariff.organization_id ?? organizationId,
+            name: assignedTariff.name,
+            percentage: assignedTariff.percentage,
+            is_discount: assignedTariff.is_discount,
+            is_active: true,
+            created_at: assignedTariff.created_at ?? new Date().toISOString(),
+            updated_at: assignedTariff.updated_at ?? new Date().toISOString(),
+          },
+        ] as CustomerDiscount[];
+      }
+
+      if (customerError) {
+        console.log("[CustomerDiscounts] No access to assigned tariff, checking legacy discounts");
+      }
+
       const { data, error } = await supabase
         .from("customer_discounts" as any)
         .select("*")
@@ -111,7 +176,7 @@ export function useActiveCustomerDiscounts(customerId: string | null, organizati
         .eq("is_active", true);
 
       if (error) {
-        // RLS will block non-admins; silently return empty
+        // RLS may block legacy discounts for non-admins; silently return empty
         console.log("[CustomerDiscounts] No access or no discounts");
         return [];
       }
