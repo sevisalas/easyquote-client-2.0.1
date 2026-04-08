@@ -100,16 +100,19 @@ export function useCustomerDiscounts(customerId: string | null, organizationId: 
  * Keeps backward compatibility with legacy customer_discounts records.
  */
 export function useActiveCustomerDiscounts(customerId: string | null, organizationId: string | null) {
+  const normalizedCustomerId = customerId?.startsWith('holded:') ? customerId.replace('holded:', '') : customerId;
+  const resolvedOrganizationId = organizationId || (typeof window !== "undefined" ? sessionStorage.getItem("selected_organization_id") : null);
+
   const { data: activeDiscounts = [] } = useQuery({
-    queryKey: ["customer_discounts_active", customerId, organizationId],
+    queryKey: ["customer_discounts_active", normalizedCustomerId, resolvedOrganizationId],
     queryFn: async () => {
-      if (!customerId || !organizationId) return [];
+      if (!normalizedCustomerId || !resolvedOrganizationId) return [];
 
       const { data: customerData, error: customerError } = await supabase
         .from("customers" as any)
         .select("tariff_id")
-        .eq("id", customerId)
-        .eq("organization_id", organizationId)
+        .eq("id", normalizedCustomerId)
+        .eq("organization_id", resolvedOrganizationId)
         .maybeSingle();
 
       const customerRecord = customerData as unknown as { tariff_id?: string | null } | null;
@@ -131,7 +134,7 @@ export function useActiveCustomerDiscounts(customerId: string | null, organizati
           .from("tariffs" as any)
           .select("id, name, percentage, is_discount, is_active, created_at, updated_at, organization_id")
           .eq("id", assignedTariffId)
-          .eq("organization_id", organizationId)
+          .eq("organization_id", resolvedOrganizationId)
           .maybeSingle();
 
         if (!tariffError && tariffData) {
@@ -152,8 +155,8 @@ export function useActiveCustomerDiscounts(customerId: string | null, organizati
         return [
           {
             id: assignedTariff.id,
-            customer_id: customerId,
-            organization_id: assignedTariff.organization_id ?? organizationId,
+            customer_id: normalizedCustomerId,
+            organization_id: assignedTariff.organization_id ?? resolvedOrganizationId,
             name: assignedTariff.name,
             percentage: assignedTariff.percentage,
             is_discount: assignedTariff.is_discount,
@@ -171,8 +174,8 @@ export function useActiveCustomerDiscounts(customerId: string | null, organizati
       const { data, error } = await supabase
         .from("customer_discounts" as any)
         .select("*")
-        .eq("customer_id", customerId)
-        .eq("organization_id", organizationId)
+        .eq("customer_id", normalizedCustomerId)
+        .eq("organization_id", resolvedOrganizationId)
         .eq("is_active", true);
 
       if (error) {
@@ -182,7 +185,8 @@ export function useActiveCustomerDiscounts(customerId: string | null, organizati
       }
       return (data || []) as unknown as CustomerDiscount[];
     },
-    enabled: !!customerId && !!organizationId,
+    enabled: !!normalizedCustomerId && !!resolvedOrganizationId,
+    refetchOnMount: "always",
   });
 
   const calculateDiscountAdjustment = (subtotal: number): number => {
