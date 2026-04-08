@@ -246,8 +246,6 @@ export default function QuoteDetail() {
       }
       console.log('Nuevo número de presupuesto:', newNumber);
 
-      // Obtener organization_id del sessionStorage
-      const organizationId = sessionStorage.getItem('selected_organization_id');
 
       // Crear nuevo presupuesto
       const { data: newQuote, error: insertError } = await supabase
