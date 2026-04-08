@@ -1312,10 +1312,6 @@ const SalesOrderDetail = () => {
                                 }`} title="Completado" />
                               </div>
                             )}
-                            {/* Notes indicator in header */}
-                            {item.notes?.length > 0 && (
-                              <StickyNote className="h-4 w-4 text-amber-500 flex-shrink-0" />
-                            )}
                           </div>
                           <div className="text-right ml-4 flex-shrink-0">
                             {viewMode === 'administrative' && (
@@ -1330,21 +1326,6 @@ const SalesOrderDetail = () => {
                           <p className={`text-sm text-muted-foreground whitespace-pre-line ${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>{item.description}</p>
                         )}
                         <div className={`space-y-4 ${isMobile ? 'px-3 pb-3 pt-2' : 'px-4 pb-4 pt-2'}`}>
-                          {/* Botón añadir nota */}
-                          <div className="flex justify-end">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 text-xs px-2"
-                              onClick={() => {
-                                setNotesText('');
-                                setNotesDialogItem(item);
-                              }}
-                            >
-                              <StickyNote className="h-3 w-3 mr-1" />
-                              Añadir nota
-                            </Button>
-                          </div>
                           <WorkOrderItem
                             item={{
                               id: item.id,
@@ -1356,6 +1337,10 @@ const SalesOrderDetail = () => {
                               imposition_data: (item.imposition_data as any) || undefined,
                               composite_data: (item as any).composite_data || undefined,
                               notes: Array.isArray(item.notes) ? item.notes : undefined,
+                            }}
+                            onAddNote={() => {
+                              setNotesText('');
+                              setNotesDialogItem(item);
                             }}
                             orderNumber={order.order_number}
                             customerName={order.customer_id ? undefined : 'Sin cliente'}
