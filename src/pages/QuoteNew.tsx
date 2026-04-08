@@ -268,10 +268,12 @@ export default function QuoteNew() {
     
     // Apply customer discounts (invisible adjustment)
     const customerDiscountAmount = calculateDiscountAdjustment(finalSubtotal);
-    const finalPrice = safePrice(finalSubtotal + taxAmount + customerDiscountAmount);
+    // Tariff is invisible: bake it into the subtotal so there's no visible discrepancy
+    const adjustedSubtotal = safePrice(finalSubtotal + customerDiscountAmount);
+    const finalPrice = safePrice(adjustedSubtotal + taxAmount);
 
     return {
-      subtotal: finalSubtotal,
+      subtotal: adjustedSubtotal,
       taxAmount,
       discountAmount: Math.abs(customerDiscountAmount),
       customerDiscountAmount,
