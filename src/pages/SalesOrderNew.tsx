@@ -18,6 +18,7 @@ import { getEasyQuoteToken } from "@/lib/easyquoteApi";
 import { useNumberingFormat, generateDocumentNumber } from "@/hooks/useNumberingFormat";
 import { findProductionPromptValue, calculateDeliveryDateFromProduction } from "@/utils/businessDays";
 import DocumentAttachments, { type DocumentAttachmentsHandle } from "@/components/quotes/DocumentAttachments";
+import { useActiveCustomerDiscounts } from "@/hooks/useCustomerDiscounts";
 
 type ItemSnapshot = {
   productId: string;
@@ -90,6 +91,18 @@ export default function SalesOrderNew() {
   const { isHoldedActive } = useHoldedIntegration();
   const { organization, membership, canAccessProduccion } = useSubscription();
   const currentOrganization = organization || membership?.organization;
+
+  // Customer discounts / tariff
+  const actualCustomerIdForDiscounts = customerId?.startsWith('holded:') ? customerId.replace('holded:', '') : customerId;
+  const { activeDiscounts, refetch: refetchCustomerDiscounts } = useActiveCustomerDiscounts(
+    actualCustomerIdForDiscounts || null,
+    currentOrganization?.id || null
+  );
+
+  useEffect(() => {
+    if (!actualCustomerIdForDiscounts) return;
+    void refetchCustomerDiscounts();
+  }, [actualCustomerIdForDiscounts, refetchCustomerDiscounts]);
 
   // Numbering format
   const { data: orderFormat, isLoading: isLoadingFormat } = useNumberingFormat('order');
@@ -208,6 +221,17 @@ export default function SalesOrderNew() {
 
   // Calculate totals
   const totals = useMemo(() => {
+    // Helper to apply customer tariff to a fixed value (not percentages)
+    const applyTariffToValue = (value: number): number => {
+      if (!activeDiscounts.length) return value;
+      const adjustment = activeDiscounts.reduce((total, discount) => {
+        const percentage = Number(discount?.percentage) || 0;
+        const amount = (value * percentage) / 100;
+        return total + (discount?.is_discount ? -amount : amount);
+      }, 0);
+      return value + adjustment;
+    };
+
     let subtotal = 0;
     
     Object.values(items).forEach(item => {
@@ -219,10 +243,11 @@ export default function SalesOrderNew() {
     let additionalsTotal = 0;
     orderAdditionals.forEach(additional => {
       if (additional.type === 'net_amount') {
-        additionalsTotal += additional.value;
+        additionalsTotal += applyTariffToValue(additional.value);
       } else if (additional.type === 'quantity_multiplier') {
-        additionalsTotal += additional.value;
+        additionalsTotal += applyTariffToValue(additional.value);
       } else if (additional.type === 'percentage') {
+        // Percentage NOT tariffed — already acts on subtotal that includes tariff
         additionalsTotal += (subtotal * additional.value) / 100;
       }
     });
@@ -238,7 +263,7 @@ export default function SalesOrderNew() {
       discountAmount,
       finalPrice,
     };
-  }, [items, orderAdditionals]);
+  }, [items, orderAdditionals, activeDiscounts]);
 
   const formatEUR = (amount: number) => {
     return new Intl.NumberFormat("es-ES", {
@@ -1074,6 +1099,7 @@ export default function SalesOrderNew() {
                 onFinishEdit={handleFinishItem}
                 shouldExpand={Number(id) === lastAddedItemId}
                 hideMultiQuantities={true}
+                customerDiscounts={activeDiscounts}
               />
             ))}
 
