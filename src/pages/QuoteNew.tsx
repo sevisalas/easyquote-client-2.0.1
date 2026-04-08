@@ -246,17 +246,11 @@ export default function QuoteNew() {
       return n > MAX_PRICE ? MAX_PRICE : n;
     };
 
-    // Sum of API prices (base price per item)
-    let apiPriceTotal = 0;
+    let subtotal = 0;
     Object.values(items).forEach((item) => {
-      apiPriceTotal += safePrice(item.price);
+      subtotal += safePrice(item.price);
     });
 
-    // Apply customer tariff to the API price total (invisible adjustment)
-    const customerDiscountAmount = calculateDiscountAdjustment(apiPriceTotal);
-    const adjustedApiTotal = safePrice(apiPriceTotal + customerDiscountAmount);
-
-    // Add quote-level additionals on top of the adjusted total
     let additionalsTotal = 0;
     quoteAdditionals.forEach((additional) => {
       if (additional.type === 'net_amount') {
@@ -264,22 +258,22 @@ export default function QuoteNew() {
       } else if (additional.type === 'quantity_multiplier') {
         additionalsTotal += additional.value;
       } else if (additional.type === 'percentage') {
-        additionalsTotal += adjustedApiTotal * additional.value / 100;
+        additionalsTotal += subtotal * additional.value / 100;
       }
     });
 
-    const finalSubtotal = safePrice(adjustedApiTotal + additionalsTotal);
+    const finalSubtotal = safePrice(subtotal + additionalsTotal);
     const taxAmount = 0;
     const finalPrice = safePrice(finalSubtotal + taxAmount);
 
     return {
       subtotal: finalSubtotal,
       taxAmount,
-      discountAmount: Math.abs(customerDiscountAmount),
-      customerDiscountAmount,
+      discountAmount: 0,
+      customerDiscountAmount: 0,
       finalPrice,
     };
-  }, [items, quoteAdditionals, activeDiscounts]);
+  }, [items, quoteAdditionals]);
   const formatEUR = (amount: number) => {
     return new Intl.NumberFormat("es-ES", {
       style: "currency",
@@ -755,7 +749,7 @@ export default function QuoteNew() {
           const isComplete = item.productId && item.price && item.price > 0;
           const shouldExpand = !item.isFinalized;
           return <div key={id}>
-                  <QuoteItem hasToken={hasToken} id={id} initialData={item} onChange={handleItemChange} onRemove={handleItemRemove} onFinishEdit={handleFinishItem} shouldExpand={shouldExpand} />
+                  <QuoteItem hasToken={hasToken} id={id} initialData={item} onChange={handleItemChange} onRemove={handleItemRemove} onFinishEdit={handleFinishItem} shouldExpand={shouldExpand} customerDiscounts={activeDiscounts} />
                 </div>;
         })}
         </CardContent>
