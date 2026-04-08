@@ -5,6 +5,16 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.7.7] - 2026-04-08
+
+### Añadido
+- **Tarifas de cliente en precios**: La tarifa asignada a un cliente se aplica automáticamente al precio base de cada artículo en presupuestos y pedidos nuevos
+- **Tarifas en ajustes fijos**: Los ajustes de importe fijo (€) y multiplicadores (×) también se ajustan con la tarifa del cliente; los porcentuales se excluyen para evitar doble aplicación
+- **Indicador de tarifa**: Se muestra un aviso debajo del selector de cliente con el nombre y porcentaje de la tarifa activa
+- **Artículo de ayuda**: Nueva documentación sobre tarifas de cliente en el centro de ayuda
+
+---
+
 ## [2.7.2] - 2026-03-26
 
 ### Mejorado
