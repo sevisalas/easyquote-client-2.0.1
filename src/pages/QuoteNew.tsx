@@ -78,7 +78,7 @@ export default function QuoteNew() {
 
   // Customer discounts
   const actualCustomerIdForDiscounts = customerId?.startsWith('holded:') ? customerId.replace('holded:', '') : customerId;
-  const { activeDiscounts, calculateDiscountAdjustment } = useActiveCustomerDiscounts(
+  const { activeDiscounts, calculateDiscountAdjustment, refetch: refetchCustomerDiscounts } = useActiveCustomerDiscounts(
     actualCustomerIdForDiscounts || null,
     currentOrganization?.id || null
   );
@@ -728,6 +728,10 @@ export default function QuoteNew() {
             </div>
           </div>
 
+  useEffect(() => {
+    if (!actualCustomerIdForDiscounts) return;
+    void refetchCustomerDiscounts();
+  }, [actualCustomerIdForDiscounts, refetchCustomerDiscounts]);
 
         </CardContent>
       </Card>
