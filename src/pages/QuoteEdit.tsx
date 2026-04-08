@@ -595,9 +595,13 @@ export default function QuoteEdit() {
 
     // Use item.price directly — it already includes base price + item additionals,
     // calculated by QuoteItem's finalPrice logic.
-    return items.reduce((sum, item) => {
+    const rawSubtotal = items.reduce((sum, item) => {
       return sum + safePrice((item as any)?.price);
     }, 0);
+
+    // Tariff is invisible: bake it into the subtotal so there's no visible discrepancy
+    const customerAdj = calculateDiscountAdjustment(rawSubtotal);
+    return rawSubtotal + customerAdj;
   };
 
   const calculateTotal = () => {
@@ -628,10 +632,6 @@ export default function QuoteEdit() {
           total += additional.value;
       }
     });
-
-    // Apply customer discounts (invisible)
-    const customerAdj = calculateDiscountAdjustment(total);
-    total += customerAdj;
 
     console.log("🔢 Total final calculado:", total);
     return total;
