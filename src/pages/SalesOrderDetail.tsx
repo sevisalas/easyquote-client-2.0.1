@@ -61,6 +61,7 @@ const SalesOrderDetail = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { canAccessProduccion, membership } = useSubscription();
+  const canViewProduction = canAccessProduccion();
   const { loading, fetchSalesOrderById, fetchSalesOrderItems, fetchSalesOrderAdditionals, updateSalesOrderStatus, updateSalesOrderItem, deleteSalesOrder } = useSalesOrders();
   const { isVisibleIn } = useOutputTypeVisibility();
   const [order, setOrder] = useState<SalesOrder | null>(null);
@@ -90,7 +91,7 @@ const SalesOrderDetail = () => {
   const [savingNotes, setSavingNotes] = useState(false);
 
   useEffect(() => {
-    if (!canAccessProduccion()) {
+    if (!canViewProduction) {
       navigate("/");
       return;
     }
@@ -98,7 +99,7 @@ const SalesOrderDetail = () => {
     if (id) {
       loadOrderData();
     }
-  }, [id, canAccessProduccion, navigate]);
+  }, [id, canViewProduction, navigate]);
 
   const loadUserRole = async () => {
     const { data: roleData } = await supabase.rpc('get_current_user_role').single();
