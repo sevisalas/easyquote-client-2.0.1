@@ -11,8 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Percent, SlidersHorizontal } from "lucide-react";
 
-const CURRENT_VERSION = "2.7.7";
-const SILENT_UPDATE = false;
+const CURRENT_VERSION = "2.7.8";
+const SILENT_UPDATE = true;
 const LS_KEY = "whats_new_seen_version";
 
 interface ReleaseNote {
