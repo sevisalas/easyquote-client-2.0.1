@@ -167,7 +167,7 @@ const OT_SECTION_LABELS: Record<string, string> = {
   acabados: 'ACABADOS',
   imposiciones: 'IMPOSICIONES',
   ajustes: 'AJUSTES',
-  observaciones: 'OBSERVACIONES Y NOTAS',
+  observaciones: 'OBSERVACIONES',
 };
 
 const OT_SECTION_ORDER = ['datos_destacados', 'impresion', 'acabados', 'imposiciones', 'ajustes', 'observaciones'];
