@@ -20,6 +20,8 @@ interface WorkOrderItemProps {
   itemIndex: number;
   children?: React.ReactNode;
   onAddNote?: () => void;
+  onEditNote?: (noteIndex: number) => void;
+  onDeleteNote?: (noteIndex: number) => void;
   /** Filter function for output visibility (by output type) */
   filterOutput?: (output: { name: string; type: string; value: any }) => boolean;
   /** Filter function for prompt visibility (by prompt label) */
@@ -37,6 +39,8 @@ export const WorkOrderItem = ({
   itemIndex,
   children,
   onAddNote,
+  onEditNote,
+  onDeleteNote,
   filterOutput,
   filterPrompt,
   totalItems = 1,
@@ -265,11 +269,23 @@ export const WorkOrderItem = ({
           {item.notes && Array.isArray(item.notes) && item.notes.length > 0 ? (
             <div className="space-y-1.5">
               {item.notes.map((note: any, ni: number) => (
-                <div key={ni}>
-                  <p className="text-[11px] whitespace-pre-line">{note.text}</p>
-                  <p className="text-[9px] text-muted-foreground">
-                    {note.author} · {new Date(note.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                  </p>
+                <div key={ni} className="group flex items-start gap-1">
+                  <div className="flex-1">
+                    <p className="text-[11px] whitespace-pre-line">{note.text}</p>
+                    <p className="text-[9px] text-muted-foreground">
+                      {note.author} · {new Date(note.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                  {(onEditNote || onDeleteNote) && (
+                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 pt-0.5">
+                      {onEditNote && (
+                        <button type="button" onClick={(e) => { e.stopPropagation(); onEditNote(ni); }} className="text-[9px] text-muted-foreground hover:text-foreground">✏️</button>
+                      )}
+                      {onDeleteNote && (
+                        <button type="button" onClick={(e) => { e.stopPropagation(); onDeleteNote(ni); }} className="text-[9px] text-muted-foreground hover:text-destructive">🗑</button>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

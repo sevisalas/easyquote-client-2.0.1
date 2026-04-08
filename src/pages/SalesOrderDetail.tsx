@@ -89,6 +89,7 @@ const SalesOrderDetail = () => {
   const [notesDialogItem, setNotesDialogItem] = useState<SalesOrderItem | null>(null);
   const [notesText, setNotesText] = useState('');
   const [savingNotes, setSavingNotes] = useState(false);
+  const [editingNoteIndex, setEditingNoteIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (!canViewProduction) {
@@ -1340,8 +1341,24 @@ const SalesOrderDetail = () => {
                               notes: Array.isArray(item.notes) ? item.notes : undefined,
                             }}
                             onAddNote={() => {
+                              setEditingNoteIndex(null);
                               setNotesText('');
                               setNotesDialogItem(item);
+                            }}
+                            onEditNote={(ni) => {
+                              const notes = Array.isArray(item.notes) ? item.notes : [];
+                              setEditingNoteIndex(ni);
+                              setNotesText(notes[ni]?.text || '');
+                              setNotesDialogItem(item);
+                            }}
+                            onDeleteNote={async (ni) => {
+                              const notes = Array.isArray(item.notes) ? [...item.notes] : [];
+                              notes.splice(ni, 1);
+                              const updatedNotes = notes.length > 0 ? notes : null;
+                              const success = await updateSalesOrderItem(item.id, { notes: updatedNotes as any });
+                              if (success) {
+                                setItems(prev => prev.map(it => it.id === item.id ? { ...it, notes: updatedNotes } : it));
+                              }
                             }}
                             orderNumber={order.order_number}
                             customerName={order.customer_id ? undefined : 'Sin cliente'}
@@ -1494,65 +1511,63 @@ const SalesOrderDetail = () => {
         </AlertDialogContent>
       </AlertDialog>
       {/* Item Notes Dialog */}
-      <Dialog open={!!notesDialogItem} onOpenChange={(open) => { if (!open) setNotesDialogItem(null); }}>
+      <Dialog open={!!notesDialogItem} onOpenChange={(open) => { if (!open) { setNotesDialogItem(null); setEditingNoteIndex(null); } }}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Notas del artículo</DialogTitle>
+            <DialogTitle>{editingNoteIndex !== null ? 'Editar nota' : 'Nueva nota'}</DialogTitle>
             <DialogDescription>{notesDialogItem?.product_name}</DialogDescription>
           </DialogHeader>
-          
-          {/* Existing notes */}
-          {notesDialogItem?.notes && Array.isArray(notesDialogItem.notes) && notesDialogItem.notes.length > 0 && (
-            <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-3">
-              {notesDialogItem.notes.map((note: any, i: number) => (
-                <div key={i} className="text-sm border-b last:border-0 pb-2 last:pb-0">
-                  <p className="whitespace-pre-line">{note.text}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {note.author} · {new Date(note.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
 
-          {/* New note input */}
           <div className="space-y-1">
-            <Label className="text-sm">Nueva nota</Label>
             <Textarea
               value={notesText}
               onChange={(e) => setNotesText(e.target.value)}
-              placeholder="Escribe una nueva nota..."
+              placeholder="Escribe la nota..."
               rows={3}
               disabled={savingNotes}
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setNotesDialogItem(null)} disabled={savingNotes}>
-              Cerrar
+            <Button variant="outline" onClick={() => { setNotesDialogItem(null); setEditingNoteIndex(null); }} disabled={savingNotes}>
+              Cancelar
             </Button>
             <Button
               disabled={savingNotes || !notesText.trim()}
               onClick={async () => {
                 if (!notesDialogItem || !notesText.trim()) return;
                 setSavingNotes(true);
-                const existingNotes = Array.isArray(notesDialogItem.notes) ? notesDialogItem.notes : [];
-                const newNote = {
-                  text: notesText.trim(),
-                  author: membership?.display_name || 'Usuario',
-                  date: new Date().toISOString(),
-                };
-                const updatedNotes = [...existingNotes, newNote];
+                const existingNotes = Array.isArray(notesDialogItem.notes) ? [...notesDialogItem.notes] : [];
+                
+                let updatedNotes;
+                if (editingNoteIndex !== null && editingNoteIndex < existingNotes.length) {
+                  // Edit existing note
+                  existingNotes[editingNoteIndex] = {
+                    ...existingNotes[editingNoteIndex],
+                    text: notesText.trim(),
+                    date: new Date().toISOString(),
+                  };
+                  updatedNotes = existingNotes;
+                } else {
+                  // Add new note
+                  updatedNotes = [...existingNotes, {
+                    text: notesText.trim(),
+                    author: membership?.display_name || 'Usuario',
+                    date: new Date().toISOString(),
+                  }];
+                }
+                
                 const success = await updateSalesOrderItem(notesDialogItem.id, { notes: updatedNotes as any });
                 setSavingNotes(false);
                 if (success) {
                   const updatedItem = { ...notesDialogItem, notes: updatedNotes };
                   setItems(prev => prev.map(it => it.id === notesDialogItem.id ? updatedItem : it));
-                  setNotesDialogItem(updatedItem);
+                  setNotesDialogItem(null);
+                  setEditingNoteIndex(null);
                   setNotesText('');
                 }
               }}
             >
-              {savingNotes ? "Guardando..." : "Añadir nota"}
+              {savingNotes ? "Guardando..." : editingNoteIndex !== null ? "Guardar" : "Añadir nota"}
             </Button>
           </DialogFooter>
         </DialogContent>
