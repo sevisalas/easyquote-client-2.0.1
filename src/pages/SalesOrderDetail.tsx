@@ -1341,8 +1341,24 @@ const SalesOrderDetail = () => {
                               notes: Array.isArray(item.notes) ? item.notes : undefined,
                             }}
                             onAddNote={() => {
+                              setEditingNoteIndex(null);
                               setNotesText('');
                               setNotesDialogItem(item);
+                            }}
+                            onEditNote={(ni) => {
+                              const notes = Array.isArray(item.notes) ? item.notes : [];
+                              setEditingNoteIndex(ni);
+                              setNotesText(notes[ni]?.text || '');
+                              setNotesDialogItem(item);
+                            }}
+                            onDeleteNote={async (ni) => {
+                              const notes = Array.isArray(item.notes) ? [...item.notes] : [];
+                              notes.splice(ni, 1);
+                              const updatedNotes = notes.length > 0 ? notes : null;
+                              const success = await updateSalesOrderItem(item.id, { notes: updatedNotes as any });
+                              if (success) {
+                                setItems(prev => prev.map(it => it.id === item.id ? { ...it, notes: updatedNotes } : it));
+                              }
                             }}
                             orderNumber={order.order_number}
                             customerName={order.customer_id ? undefined : 'Sin cliente'}
