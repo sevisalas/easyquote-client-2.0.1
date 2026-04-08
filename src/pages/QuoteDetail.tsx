@@ -816,6 +816,26 @@ export default function QuoteDetail() {
                                   No aprobado
                                 </Badge>
                               )}
+                              {item.description && (
+                                <Button
+                                  variant={itemDescriptionVisibility.has(String(item.id ?? index)) ? "secondary" : "ghost"}
+                                  size="sm"
+                                  className="h-6 px-2 gap-1 text-xs text-muted-foreground"
+                                  onClick={() => {
+                                    const key = String(item.id ?? index);
+                                    setItemDescriptionVisibility((prev) => {
+                                      const next = new Set(prev);
+                                      if (next.has(key)) next.delete(key);
+                                      else next.add(key);
+                                      return next;
+                                    });
+                                  }}
+                                >
+                                  <FileText className="h-3.5 w-3.5" />
+                                  Ver descripción
+                                  {itemDescriptionVisibility.has(String(item.id ?? index)) ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                                </Button>
+                              )}
                               {hasDetails && (
                                 <CollapsibleTrigger asChild>
                                   <Button variant="ghost" size="sm" className={`h-6 p-0 ${quote.status === 'approved' ? 'px-2 gap-1 text-xs text-muted-foreground' : 'w-6'}`}>
