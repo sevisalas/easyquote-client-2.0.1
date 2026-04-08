@@ -66,12 +66,12 @@ const InstructionsField = ({ value, onSave }: { value: string; onSave: (val: str
   if (!editing) {
     return (
       <div className="cursor-pointer group" onClick={() => setEditing(true)}>
-        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Indicaciones</p>
+        <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Observaciones</p>
         {value ? (
           <p className="text-sm whitespace-pre-line border border-transparent group-hover:border-border rounded-sm px-2 py-1">{value}</p>
         ) : (
           <p className="text-sm text-muted-foreground italic border border-dashed border-border/50 rounded-sm px-2 py-1 group-hover:border-border">
-            Haz clic para añadir indicaciones...
+            Haz clic para añadir observaciones...
           </p>
         )}
       </div>
@@ -80,11 +80,11 @@ const InstructionsField = ({ value, onSave }: { value: string; onSave: (val: str
 
   return (
     <div>
-      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Indicaciones</p>
+      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Observaciones</p>
       <Textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="Indicaciones para producción..."
+        placeholder="Observaciones para producción..."
         className="min-h-[60px] text-sm"
         autoFocus
       />
@@ -1378,7 +1378,7 @@ const SalesOrderDetail = () => {
                           <p className={`text-sm text-muted-foreground whitespace-pre-line ${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>{item.description}</p>
                         )}
 
-                        {/* Indicaciones editables — vista producción, antes de estar en producción */}
+                        {/* Observaciones editables — vista producción, antes de estar en producción */}
                         {viewMode === 'production' && !['in_production', 'completed'].includes(order.status) && (
                           <div className={`${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>
                             <InstructionsField

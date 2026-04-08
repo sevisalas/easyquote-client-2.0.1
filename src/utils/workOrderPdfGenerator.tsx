@@ -749,18 +749,15 @@ const WorkOrderDocument: React.FC<WorkOrderPDFOptions> = ({
 
             <View style={styles.thickSeparator} />
 
-            {/* ═══ INDICACIONES ═══ */}
+            {/* ═══ OBSERVACIONES ═══ */}
             {item.instructions && (
               <View style={{ marginTop: 6, marginBottom: 6, borderWidth: 1, borderColor: '#333', padding: 8 }}>
-                <Text style={{ fontSize: 9, fontFamily: 'Helvetica-Bold', marginBottom: 4 }}>INDICACIONES</Text>
+                <Text style={{ fontSize: 9, fontFamily: 'Helvetica-Bold', marginBottom: 4 }}>OBSERVACIONES</Text>
                 <Text style={{ fontSize: 9 }}>{item.instructions}</Text>
               </View>
             )}
 
-            {/* ═══ OBSERVACIONES ═══ */}
-            <View style={{ marginTop: item.instructions ? 0 : 6 }}>
-              <Text style={styles.sectionTitle}>OBSERVACIONES</Text>
-            </View>
+            {/* Sección "Observaciones" eliminada del PDF */}
           </Page>
         );
       })}
