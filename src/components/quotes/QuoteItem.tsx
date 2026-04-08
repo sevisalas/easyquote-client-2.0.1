@@ -1789,15 +1789,16 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       if (Array.isArray(itemAdditionals)) {
         itemAdditionals.forEach((additional) => {
           if (additional.type === 'net_amount') {
-            additionalsTotal += additional.value;
+            additionalsTotal += applyCustomerTariffToBasePrice(additional.value);
           } else if (additional.type === 'percentage') {
-            additionalsTotal += (baseCompositePrice * additional.value) / 100;
+            // Percentage already acts on tariff-adjusted base price via adjustedCompositeBasePrice
+            additionalsTotal += (adjustedCompositeBasePrice * additional.value) / 100;
           } else if (additional.type === 'quantity_multiplier') {
-            additionalsTotal += additional.value * quantity;
+            additionalsTotal += applyCustomerTariffToBasePrice(additional.value) * quantity;
           } else if (additional.type === 'capacity_divider') {
             const capacity = additional.capacity_value || 1;
             const unitsNeeded = Math.ceil(quantity / capacity);
-            additionalsTotal += additional.value * unitsNeeded;
+            additionalsTotal += applyCustomerTariffToBasePrice(additional.value) * unitsNeeded;
           }
         });
       }
@@ -1846,15 +1847,16 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     if (Array.isArray(itemAdditionals)) {
       itemAdditionals.forEach((additional) => {
         if (additional.type === 'net_amount') {
-          additionalsTotal += additional.value;
+          additionalsTotal += applyCustomerTariffToBasePrice(additional.value);
         } else if (additional.type === 'percentage') {
-          additionalsTotal += (basePrice * additional.value) / 100;
+          // Percentage already acts on tariff-adjusted base price via adjustedBasePrice
+          additionalsTotal += (adjustedBasePrice * additional.value) / 100;
         } else if (additional.type === 'quantity_multiplier') {
-          additionalsTotal += additional.value * quantity;
+          additionalsTotal += applyCustomerTariffToBasePrice(additional.value) * quantity;
         } else if (additional.type === 'capacity_divider') {
           const capacity = additional.capacity_value || 1;
           const unitsNeeded = Math.ceil(quantity / capacity);
-          additionalsTotal += additional.value * unitsNeeded;
+          additionalsTotal += applyCustomerTariffToBasePrice(additional.value) * unitsNeeded;
         }
       });
     }
@@ -1876,23 +1878,22 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         let additionalValue = 0;
         if (additional.type === 'net_amount') {
           // Use per-quantity value if multiValues is set and qtyIndex is provided
-          if (additional.multiValues && qtyIndex !== undefined && qtyIndex < additional.multiValues.length) {
-            additionalValue = additional.multiValues[qtyIndex];
-          } else {
-            additionalValue = additional.value;
-          }
+          const rawValue = (additional.multiValues && qtyIndex !== undefined && qtyIndex < additional.multiValues.length)
+            ? additional.multiValues[qtyIndex]
+            : additional.value;
+          additionalValue = applyCustomerTariffToBasePrice(rawValue);
         } else if (additional.type === 'percentage') {
-          // For per-qty breakdown, calculate percentage of THAT quantity's base price
+          // Percentage NOT tariffed — already acts on tariff-adjusted base price
           const rowIdx = qtyIndex !== undefined ? qtyIndex : 0;
           const row = multiRows.length > rowIdx ? multiRows[rowIdx] : multiRows[0];
           const rowPrice = row ? (typeof row.totalStr === 'number' ? row.totalStr : (parseFloat(String(row.totalStr || 0).replace(/\./g, '').replace(',', '.')) || 0)) : 0;
           additionalValue = (rowPrice * additional.value) / 100;
         } else if (additional.type === 'quantity_multiplier') {
-          additionalValue = additional.value * qty;
+          additionalValue = applyCustomerTariffToBasePrice(additional.value) * qty;
         } else if (additional.type === 'capacity_divider') {
           const capacity = additional.capacity_value || 1;
           const unitsNeeded = Math.ceil(qty / capacity);
-          additionalValue = additional.value * unitsNeeded;
+          additionalValue = applyCustomerTariffToBasePrice(additional.value) * unitsNeeded;
         }
         
         if (additionalValue !== 0) {
