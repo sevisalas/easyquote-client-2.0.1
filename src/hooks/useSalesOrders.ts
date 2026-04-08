@@ -238,7 +238,7 @@ export const useSalesOrders = () => {
       if (additionalsError) throw additionalsError;
 
       // Calculate items subtotal
-      const itemsSubtotal = items?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
+      const itemsSubtotal = items?.reduce((sum, item) => sum + (item.price || 0), 0) || 0;
 
       // Calculate additionals (same logic as quotes)
       let additionalsTotal = 0;
