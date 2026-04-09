@@ -156,7 +156,7 @@ export default function ProductionBoard() {
             }}
           >
             <LayoutGrid className="h-4 w-4 mr-2" />
-            Vista Compacta
+            Vista compacta
           </Button>
           <Button 
             variant="outline"
@@ -166,7 +166,7 @@ export default function ProductionBoard() {
             }}
           >
             <LayoutGrid className="h-4 w-4 mr-2" />
-            Vista Tablero
+            Vista tablero
           </Button>
         </div>
       </div>
