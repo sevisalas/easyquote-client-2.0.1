@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CustomerName } from "@/components/quotes/CustomerName";
 import { format, differenceInDays, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
-import { Package, Calendar, Clock, LayoutGrid, ChevronDown, ChevronRight, Check, ExternalLink } from "lucide-react";
+import { Package, Calendar, Clock, LayoutGrid, List, ChevronDown, ChevronRight, Check, ExternalLink } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import type { Json } from "@/integrations/supabase/types";
 import { useProductionBoardView } from "@/hooks/useProductionBoardView";
@@ -181,9 +181,11 @@ export default function ProductionBoard() {
               updateView('list');
               navigate("/panel-produccion-lista");
             }} 
+            size="sm"
             className="gap-2"
           >
             {view === 'list' && <Check className="h-4 w-4" />}
+            <List className="h-4 w-4" />
             Vista Lista
           </Button>
           <Button 
@@ -192,6 +194,7 @@ export default function ProductionBoard() {
               updateView('compact');
               navigate("/panel-produccion-compacta");
             }} 
+            size="sm"
             className="gap-2"
           >
             {view === 'compact' && <Check className="h-4 w-4" />}
@@ -204,6 +207,7 @@ export default function ProductionBoard() {
               updateView('kanban');
               navigate("/panel-produccion-tablero");
             }} 
+            size="sm"
             className="gap-2"
           >
             {view === 'kanban' && <Check className="h-4 w-4" />}

@@ -139,6 +139,7 @@ export default function ProductionBoardCompact() {
           navigate("/panel-produccion-lista");
         }} size="sm" className="gap-2">
             {view === 'list' && <Check className="h-4 w-4" />}
+            <List className="h-4 w-4" />
             <span className="hidden sm:inline">Vista Lista</span>
             <span className="sm:hidden">Lista</span>
           </Button>
