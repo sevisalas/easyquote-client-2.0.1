@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -18,6 +19,32 @@ serve(async (req: Request): Promise<Response> => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // =========== SUPABASE AUTH CHECK ===========
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+
+    if (claimsError || !claimsData?.claims?.sub) {
+      return new Response(JSON.stringify({ error: "Unauthorized: Invalid session" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    // =========== END AUTH CHECK ===========
 
     const { email, password } = await req.json();
     if (!email || !password) {
@@ -54,8 +81,8 @@ serve(async (req: Request): Promise<Response> => {
       });
     }
 
-    const token = data?.token;
-    if (!token) {
+    const eqToken = data?.token;
+    if (!eqToken) {
       console.error("easyquote-auth: token not present", data);
       return new Response(JSON.stringify({ error: "Token not returned by EasyQuote" }), {
         status: 502,
@@ -65,23 +92,21 @@ serve(async (req: Request): Promise<Response> => {
 
     // Update subscriber plan to "Advance" (highest limits) so all restrictions are handled in the app
     try {
-      // Decode token to get subscriber ID
-      const tokenParts = token.split('.');
+      const tokenParts = eqToken.split('.');
       if (tokenParts.length === 3) {
         const payload = JSON.parse(atob(tokenParts[1]));
         const subscriberId = payload.SubscriberID;
         
         if (subscriberId) {
-          // Update subscriber to use "Advance" plan (ID: 4c342046-9ac1-449a-9d1d-f59c417e1985)
           const updateUrl = `https://api.easyquote.cloud/api/v1/subscribers/${subscriberId}`;
           const updateRes = await fetch(updateUrl, {
             method: "PUT",
             headers: { 
               "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`
+              "Authorization": `Bearer ${eqToken}`
             },
             body: JSON.stringify({ 
-              planId: "4c342046-9ac1-449a-9d1d-f59c417e1985" // Advance plan
+              planId: "4c342046-9ac1-449a-9d1d-f59c417e1985"
             }),
           });
           
@@ -93,11 +118,10 @@ serve(async (req: Request): Promise<Response> => {
         }
       }
     } catch (planUpdateErr) {
-      // Don't fail the authentication if plan update fails
       console.warn("easyquote-auth: plan update error (non-fatal)", planUpdateErr);
     }
 
-    return new Response(JSON.stringify({ token }), {
+    return new Response(JSON.stringify({ token: eqToken }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
