@@ -110,9 +110,6 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
         )}
       </div>
 
-      {/* Imposition Section */}
-      <ImpositionSection item={item} onStatusUpdate={onStatusUpdate} />
-
       {/* Task Form */}
       {showTaskForm && (
         <ProductionTaskForm
@@ -124,6 +121,9 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
 
       {/* Task List */}
       <ProductionTaskList itemId={item.id} />
+
+      {/* Imposition Section */}
+      <ImpositionSection item={item} onStatusUpdate={onStatusUpdate} />
     </div>
   );
 }
