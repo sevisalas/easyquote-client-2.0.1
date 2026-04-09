@@ -4,9 +4,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { CustomerName } from "@/components/quotes/CustomerName";
+import { ProductionBoardViewSwitcher } from "@/components/production/ProductionBoardViewSwitcher";
 import { format, differenceInDays, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
-import { List, ChevronDown, ChevronRight, LayoutGrid, Check, ExternalLink } from "lucide-react";
+import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import type { Json } from "@/integrations/supabase/types";
 import { useProductionBoardView } from "@/hooks/useProductionBoardView";
@@ -133,35 +134,7 @@ export default function ProductionBoardKanban() {
   return <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-4xl font-bold mb-4">Panel de producción - Tablero</h1>
-        <div className="flex gap-2 overflow-x-auto pb-2">
-          <Button variant={view === 'list' ? 'default' : 'outline'} onClick={() => {
-          updateView('list');
-          navigate("/panel-produccion-lista");
-        }} size="sm" className="w-[168px] justify-center gap-2 shrink-0">
-            {view === 'list' && <Check className="h-4 w-4" />}
-            <List className="h-4 w-4" />
-            <span className="hidden sm:inline">Vista Lista</span>
-            <span className="sm:hidden">Lista</span>
-          </Button>
-          <Button variant={view === 'compact' ? 'default' : 'outline'} onClick={() => {
-          updateView('compact');
-          navigate("/panel-produccion-compacta");
-        }} size="sm" className="w-[168px] justify-center gap-2 shrink-0">
-            {view === 'compact' && <Check className="h-4 w-4" />}
-            <LayoutGrid className="h-4 w-4" />
-            <span className="hidden sm:inline">Vista Compacta</span>
-            <span className="sm:hidden">Compacta</span>
-          </Button>
-          <Button variant={view === 'kanban' ? 'default' : 'outline'} onClick={() => {
-          updateView('kanban');
-          navigate("/panel-produccion-tablero");
-        }} size="sm" className="w-[168px] justify-center gap-2 shrink-0">
-            {view === 'kanban' && <Check className="h-4 w-4" />}
-            <LayoutGrid className="h-4 w-4" />
-            <span className="hidden sm:inline">Vista Tablero</span>
-            <span className="sm:hidden">Tablero</span>
-          </Button>
-        </div>
+        <ProductionBoardViewSwitcher view={view} onViewChange={updateView} />
       </div>
 
       <div className="flex flex-col md:flex-row gap-3 pb-4">
