@@ -137,28 +137,28 @@ export default function ProductionBoardKanban() {
           <Button variant={view === 'list' ? 'default' : 'outline'} onClick={() => {
           updateView('list');
           navigate("/panel-produccion-lista");
-        }} size="sm" className="gap-2">
+        }} size="sm" className="min-w-[156px] justify-center gap-2 shrink-0">
             {view === 'list' && <Check className="h-4 w-4" />}
             <List className="h-4 w-4" />
-            <span className="hidden sm:inline">Vista lista</span>
+            <span className="hidden sm:inline">Vista Lista</span>
             <span className="sm:hidden">Lista</span>
           </Button>
           <Button variant={view === 'compact' ? 'default' : 'outline'} onClick={() => {
           updateView('compact');
           navigate("/panel-produccion-compacta");
-        }} size="sm" className="gap-2">
+        }} size="sm" className="min-w-[156px] justify-center gap-2 shrink-0">
             {view === 'compact' && <Check className="h-4 w-4" />}
             <LayoutGrid className="h-4 w-4" />
-            <span className="hidden sm:inline">Vista compacta</span>
+            <span className="hidden sm:inline">Vista Compacta</span>
             <span className="sm:hidden">Compacta</span>
           </Button>
           <Button variant={view === 'kanban' ? 'default' : 'outline'} onClick={() => {
           updateView('kanban');
           navigate("/panel-produccion-tablero");
-        }} size="sm" className="gap-2">
+        }} size="sm" className="min-w-[156px] justify-center gap-2 shrink-0">
             {view === 'kanban' && <Check className="h-4 w-4" />}
             <LayoutGrid className="h-4 w-4" />
-            <span className="hidden sm:inline">Vista tablero</span>
+            <span className="hidden sm:inline">Vista Tablero</span>
             <span className="sm:hidden">Tablero</span>
           </Button>
         </div>

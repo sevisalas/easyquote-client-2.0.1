@@ -182,7 +182,7 @@ export default function ProductionBoard() {
               navigate("/panel-produccion-lista");
             }} 
             size="sm"
-            className="gap-2"
+            className="min-w-[156px] justify-center gap-2"
           >
             {view === 'list' && <Check className="h-4 w-4" />}
             <List className="h-4 w-4" />
@@ -195,7 +195,7 @@ export default function ProductionBoard() {
               navigate("/panel-produccion-compacta");
             }} 
             size="sm"
-            className="gap-2"
+            className="min-w-[156px] justify-center gap-2"
           >
             {view === 'compact' && <Check className="h-4 w-4" />}
             <LayoutGrid className="h-4 w-4" />
@@ -208,7 +208,7 @@ export default function ProductionBoard() {
               navigate("/panel-produccion-tablero");
             }} 
             size="sm"
-            className="gap-2"
+            className="min-w-[156px] justify-center gap-2"
           >
             {view === 'kanban' && <Check className="h-4 w-4" />}
             <LayoutGrid className="h-4 w-4" />
