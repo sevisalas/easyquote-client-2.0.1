@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CustomerName } from "@/components/quotes/CustomerName";
 import { format, differenceInDays, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
-import { List, ChevronDown, ChevronRight, LayoutGrid, Check, Edit } from "lucide-react";
+import { List, ChevronDown, ChevronRight, LayoutGrid, Check, ExternalLink } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import type { Json } from "@/integrations/supabase/types";
 import { useProductionBoardView } from "@/hooks/useProductionBoardView";
@@ -180,9 +180,9 @@ export default function ProductionBoardKanban() {
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-lg">{order.order_number}</span>
-                        <Link to={`/pedidos/${order.id}/editar`}>
+                        <Link to={`/pedidos/${order.id}`}>
                           <Button variant="ghost" size="icon" className="h-6 w-6">
-                            <Edit className="h-3 w-3" />
+                            <ExternalLink className="h-3 w-3" />
                           </Button>
                         </Link>
                       </div>
@@ -246,9 +246,9 @@ export default function ProductionBoardKanban() {
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-lg">{order.order_number}</span>
-                        <Link to={`/pedidos/${order.id}/editar`}>
+                        <Link to={`/pedidos/${order.id}`}>
                           <Button variant="ghost" size="icon" className="h-6 w-6">
-                            <Edit className="h-3 w-3" />
+                            <ExternalLink className="h-3 w-3" />
                           </Button>
                         </Link>
                       </div>
@@ -312,9 +312,9 @@ export default function ProductionBoardKanban() {
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-lg">{order.order_number}</span>
-                        <Link to={`/pedidos/${order.id}/editar`}>
+                        <Link to={`/pedidos/${order.id}`}>
                           <Button variant="ghost" size="icon" className="h-6 w-6">
-                            <Edit className="h-3 w-3" />
+                            <ExternalLink className="h-3 w-3" />
                           </Button>
                         </Link>
                       </div>
@@ -378,9 +378,9 @@ export default function ProductionBoardKanban() {
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-lg">{order.order_number}</span>
-                        <Link to={`/pedidos/${order.id}/editar`}>
+                        <Link to={`/pedidos/${order.id}`}>
                           <Button variant="ghost" size="icon" className="h-6 w-6">
-                            <Edit className="h-3 w-3" />
+                            <ExternalLink className="h-3 w-3" />
                           </Button>
                         </Link>
                       </div>
@@ -444,9 +444,9 @@ export default function ProductionBoardKanban() {
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-lg">{order.order_number}</span>
-                        <Link to={`/pedidos/${order.id}/editar`}>
+                        <Link to={`/pedidos/${order.id}`}>
                           <Button variant="ghost" size="icon" className="h-6 w-6">
-                            <Edit className="h-3 w-3" />
+                            <ExternalLink className="h-3 w-3" />
                           </Button>
                         </Link>
                       </div>
