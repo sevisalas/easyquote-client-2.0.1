@@ -1345,9 +1345,7 @@ export type Database = {
       }
       organization_api_credentials: {
         Row: {
-          api_key: string | null
           api_key_encrypted: string | null
-          api_secret: string | null
           api_secret_encrypted: string | null
           created_at: string
           created_by: string
@@ -1359,9 +1357,7 @@ export type Database = {
           usage_count: number
         }
         Insert: {
-          api_key?: string | null
           api_key_encrypted?: string | null
-          api_secret?: string | null
           api_secret_encrypted?: string | null
           created_at?: string
           created_by: string
@@ -1373,9 +1369,7 @@ export type Database = {
           usage_count?: number
         }
         Update: {
-          api_key?: string | null
           api_key_encrypted?: string | null
-          api_secret?: string | null
           api_secret_encrypted?: string | null
           created_at?: string
           created_by?: string
