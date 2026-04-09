@@ -156,7 +156,7 @@ export default function ProductionBoard() {
             }}
           >
             <LayoutGrid className="h-4 w-4 mr-2" />
-            Vista Compacta
+            Vista compacta
           </Button>
           <Button 
             variant="outline"
@@ -166,7 +166,7 @@ export default function ProductionBoard() {
             }}
           >
             <LayoutGrid className="h-4 w-4 mr-2" />
-            Vista Tablero
+            Vista tablero
           </Button>
         </div>
       </div>
@@ -174,7 +174,7 @@ export default function ProductionBoard() {
       {/* Contenido normal para desktop */}
       <div className="hidden md:block">
         <div className="mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-4xl font-bold mb-4">Panel de producción - Lista</h1>
+          <h1 className="text-2xl md:text-4xl font-bold mb-4">Panel de producción - Listado</h1>
           <ProductionBoardViewSwitcher view={view} onViewChange={updateView} />
         </div>
 
