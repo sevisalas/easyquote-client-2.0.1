@@ -18,21 +18,21 @@ const views: Array<{
 }> = [
   {
     value: "list",
-    label: "Vista Lista",
+    label: "Vista listado",
     mobileLabel: "Lista",
     route: "/panel-produccion-lista",
     icon: List,
   },
   {
     value: "compact",
-    label: "Vista Compacta",
+    label: "Vista compacta",
     mobileLabel: "Compacta",
     route: "/panel-produccion-compacta",
     icon: LayoutGrid,
   },
   {
     value: "kanban",
-    label: "Vista Tablero",
+    label: "Vista tablero",
     mobileLabel: "Tablero",
     route: "/panel-produccion-tablero",
     icon: LayoutGrid,

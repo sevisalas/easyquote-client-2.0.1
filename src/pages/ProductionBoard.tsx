@@ -174,7 +174,7 @@ export default function ProductionBoard() {
       {/* Contenido normal para desktop */}
       <div className="hidden md:block">
         <div className="mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-4xl font-bold mb-4">Panel de producción - Lista</h1>
+          <h1 className="text-2xl md:text-4xl font-bold mb-4">Panel de producción - Listado</h1>
           <ProductionBoardViewSwitcher view={view} onViewChange={updateView} />
         </div>
 
