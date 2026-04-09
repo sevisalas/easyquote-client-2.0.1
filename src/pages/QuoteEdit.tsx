@@ -593,14 +593,13 @@ export default function QuoteEdit() {
       return n > MAX_PRICE ? MAX_PRICE : n;
     };
 
-    // Sum of API prices per item
+    // Sum of item prices — tariff is already applied inside QuoteItem via applyCustomerTariffToBasePrice
+    // Do NOT apply tariff again here to avoid double-discounting
     const apiPriceTotal = items.reduce((sum, item) => {
       return sum + safePrice((item as any)?.price);
     }, 0);
 
-    // Apply customer tariff only to the API price total (invisible)
-    const customerAdj = calculateDiscountAdjustment(apiPriceTotal);
-    return apiPriceTotal + customerAdj;
+    return apiPriceTotal;
   };
 
   const calculateTotal = () => {
