@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { CustomerName } from "@/components/quotes/CustomerName";
 import { format, differenceInDays, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
-import { Package, Calendar, Clock, LayoutGrid, ChevronDown, ChevronRight, Check, Edit } from "lucide-react";
+import { Package, Calendar, Clock, LayoutGrid, ChevronDown, ChevronRight, Check, ExternalLink } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import type { Json } from "@/integrations/supabase/types";
 import { useProductionBoardView } from "@/hooks/useProductionBoardView";
@@ -247,9 +247,9 @@ export default function ProductionBoard() {
                         <div className="text-sm mb-1 text-secondary">Pedido</div>
                         <div className="flex items-center gap-2">
                           <div className="text-xl font-bold">{order.order_number}</div>
-                          <Link to={`/pedidos/${order.id}/editar`}>
+                          <Link to={`/pedidos/${order.id}`}>
                             <Button variant="ghost" size="icon" className="h-6 w-6">
-                              <Edit className="h-3 w-3" />
+                              <ExternalLink className="h-3 w-3" />
                             </Button>
                           </Link>
                         </div>
