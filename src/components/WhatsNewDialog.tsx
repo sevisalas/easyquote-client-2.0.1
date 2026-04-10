@@ -9,10 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Percent, SlidersHorizontal } from "lucide-react";
+import { Sparkles, ClipboardList, LayoutDashboard } from "lucide-react";
 
-const CURRENT_VERSION = "2.7.9";
-const SILENT_UPDATE = true;
+const CURRENT_VERSION = "2.7.11";
+const SILENT_UPDATE = false;
 const LS_KEY = "whats_new_seen_version";
 
 interface ReleaseNote {
@@ -24,18 +24,16 @@ interface ReleaseNote {
 
 const RELEASE_NOTES: ReleaseNote[] = [
   {
-    icon: <Percent className="h-5 w-5 text-primary" />,
-    title: "Tarifas de cliente en precios",
+    icon: <ClipboardList className="h-5 w-5 text-primary" />,
+    title: "Seguimiento de pedidos mejorado",
     description:
-      "La tarifa asignada a un cliente se aplica automáticamente al precio base de cada artículo en presupuestos y pedidos nuevos.",
-    badge: "Admin",
+      "Nuevas opciones para gestionar el estado de los artículos y sincronización automática con el estado del pedido. Al crear una tarea, el artículo y el pedido pasan automáticamente a producción.",
   },
   {
-    icon: <SlidersHorizontal className="h-5 w-5 text-primary" />,
-    title: "Tarifas en ajustes fijos",
+    icon: <LayoutDashboard className="h-5 w-5 text-primary" />,
+    title: "Rediseño de la vista de artículos",
     description:
-      "Los ajustes de importe fijo y multiplicadores también se ajustan con la tarifa del cliente. Los porcentuales se excluyen para evitar doble aplicación.",
-    badge: "Admin",
+      "La vista de detalle de los pedidos se reorganiza en dos columnas: configuración a la izquierda e imposición, tareas y notas a la derecha, para una gestión de producción más ágil.",
   },
 ];
 
