@@ -71,6 +71,7 @@ export function ItemProductionCard({ item, onStatusUpdate, onTaskCreated }: Item
 
   return (
     <div className="space-y-3">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Tareas</p>
       {/* Compact Product Info */}
       <div className={`flex ${isMobile ? 'flex-col' : 'items-center justify-between'} gap-3`}>
         <div className={`flex ${isMobile ? 'flex-col' : 'flex-1 items-center'} gap-3`}>
