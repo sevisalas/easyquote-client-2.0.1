@@ -1,76 +1,35 @@
 
 
-## Plan: Gráficos en dashboard + Envío de presupuestos por email
+## Plan: Plantilla de email editable por organización
 
-### Resumen
+### Problema actual
+Cuando se envía un presupuesto por email, el diseño del email es siempre el mismo y no se puede cambiar. Cada organización debería poder personalizar su propio email.
 
-Dos bloques de trabajo:
+### Lo que se va a construir
 
-1. **Gráficos en el dashboard principal** (Index.tsx) - usando recharts (ya instalado)
-2. **Envío de presupuestos por email** desde la vista de detalle del presupuesto, usando el sistema de email integrado de Lovable
+**En la página de Configuración SMTP** (donde ya configuras el servidor de correo), se añade una nueva sección "Plantilla de email" con:
+- Campo para editar el **asunto** del email
+- Editor para el **cuerpo HTML** del email
+- Etiquetas con las **variables disponibles** que se pueden usar: nombre del cliente, numero de presupuesto, precio, enlace al PDF, nombre de la empresa
+- Botón de **vista previa** para ver cómo queda antes de guardar
+- Botón guardar
 
----
+Cuando se envía un presupuesto, el sistema usa la plantilla personalizada de esa organización. Si no ha creado ninguna, usa una por defecto.
 
-### Bloque 1: Gráficos en el dashboard
+### Cambios técnicos
 
-Se añadirá una nueva sección "Métricas" debajo de las tarjetas de estadísticas actuales, con tres gráficos:
+1. **Nueva tabla `email_templates`** en la base de datos
+   - Guarda el asunto y cuerpo HTML por organización
+   - Protegida para que cada org solo vea la suya
 
-**1.1 Presupuestos por mes y tasa de conversión**
-- Gráfico de barras agrupadas: creados vs aprobados por mes (últimos 6 meses)
-- Línea superpuesta con el % de conversión (aprobados/total)
-- Query: `quotes` agrupando por `created_at` mes y `status`
+2. **Nuevo hook `useEmailTemplates.ts`**
+   - Carga y guarda la plantilla de la organización actual
 
-**1.2 Facturación por periodo**
-- Gráfico de línea/área con el valor total (`final_price`) de presupuestos aprobados por mes
-- Últimos 6 meses
+3. **Modificar `SettingsSmtp.tsx`**
+   - Añadir la card de "Plantilla de email" debajo de la config SMTP
 
-**1.3 Actividad por usuario/comercial**
-- Gráfico de barras horizontal: ranking de usuarios por cantidad de presupuestos creados
-- Query: `quotes` agrupando por `user_id`, cruzando con `organization_members.display_name`
-
-**Archivos a crear/modificar:**
-- `src/components/dashboard/DashboardCharts.tsx` (nuevo) - componente con los 3 gráficos
-- `src/pages/Index.tsx` - integrar el componente entre las stats y las quick actions
-
----
-
-### Bloque 2: Envío de presupuestos por email
-
-Requiere configurar primero el dominio de email del proyecto. Como no hay dominio configurado aún, el flujo será:
-
-**2.1 Configurar dominio de email**
-- Se mostrará el diálogo de configuración de dominio de email
-
-**2.2 Configurar infraestructura de email**
-- Setup de la infraestructura (colas, Edge Functions)
-- Scaffold de email transaccional
-
-**2.3 Crear plantilla de email**
-- Template `quote-sent` en React Email con el estilo de la app
-- Incluirá: nombre del cliente, numero de presupuesto, precio total, y el PDF como link de descarga (se sube a Supabase Storage y se incluye enlace)
-
-**2.4 Botón "Enviar por email" en QuoteDetail**
-- Nuevo botón en la barra de acciones del presupuesto
-- Al pulsar: genera el PDF, lo sube a Storage, invoca `send-transactional-email` con la plantilla `quote-sent` y el email del cliente
-- Validación: el cliente debe tener email configurado
-
-**Archivos a crear/modificar:**
-- `supabase/functions/_shared/transactional-email-templates/quote-sent.tsx` (nuevo)
-- `supabase/functions/_shared/transactional-email-templates/registry.ts` (modificar)
-- `src/pages/QuoteDetail.tsx` - añadir botón de envío por email
-- Página de unsubscribe (ruta a determinar por el scaffold)
-
----
-
-### Orden de implementación
-
-1. Gráficos del dashboard (sin dependencias externas, se puede hacer ya)
-2. Configuración de dominio de email (requiere tu intervención para configurar DNS)
-3. Plantilla y botón de envío (tras verificar el dominio)
-
-### Notas
-
-- Las notificaciones se dejan para futuras peticiones de cada tenant, como indicaste
-- Los gráficos respetan el RBAC existente: cada usuario ve solo los datos que sus políticas RLS permiten
-- El email solo se envía si el cliente tiene dirección de correo configurada
+4. **Modificar Edge Function `send-quote-email`**
+   - Buscar si la organización tiene plantilla personalizada
+   - Si la tiene, usarla reemplazando las variables
+   - Si no, usar la plantilla por defecto
 
