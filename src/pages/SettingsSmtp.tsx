@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useSmtpSettings } from "@/hooks/useSmtpSettings";
 import { Mail, Save, Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 
 export default function SettingsSmtp() {
   const { settings, isLoading, saveMutation } = useSmtpSettings();
