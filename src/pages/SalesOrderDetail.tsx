@@ -1532,7 +1532,7 @@ const SalesOrderDetail = () => {
                             /* Desktop: two columns 3/5 + 2/5 */
                             <div className="flex gap-6">
                               {/* Left column 3/5: description, observations, configuration */}
-                              <div className="w-3/5 space-y-4">
+                              <div className="w-1/2 space-y-4">
                                 {item.description && (
                                   <p className="text-sm text-muted-foreground whitespace-pre-line">{item.description}</p>
                                 )}
@@ -1576,7 +1576,7 @@ const SalesOrderDetail = () => {
                               </div>
 
                               {/* Right column 2/5: imposition, tasks, notes */}
-                              <div className="w-2/5 space-y-4">
+                              <div className="w-1/2 space-y-4">
                                 {viewMode === 'production' && (
                                   <ImpositionSection item={{
                                     id: item.id,
