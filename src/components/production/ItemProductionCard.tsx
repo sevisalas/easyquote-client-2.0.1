@@ -124,8 +124,6 @@ export function ItemProductionCard({ item, onStatusUpdate, onTaskCreated }: Item
       {/* Task List */}
       <ProductionTaskList itemId={item.id} />
 
-      {/* Imposition Section */}
-      <ImpositionSection item={item} onStatusUpdate={() => onStatusUpdate?.(item.id, item.production_status || 'pending')} />
     </div>
   );
 }
