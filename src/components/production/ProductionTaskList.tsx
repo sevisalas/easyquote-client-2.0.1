@@ -1,4 +1,4 @@
-import { Trash2, ChevronDown } from "lucide-react";
+import { Trash2, ChevronDown, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProductionTask, useProductionTasks } from "@/hooks/useProductionTasks";
