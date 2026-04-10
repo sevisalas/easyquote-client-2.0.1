@@ -1490,7 +1490,7 @@ const SalesOrderDetail = () => {
                                 prompts: item.prompts,
                                 outputs: item.outputs,
                                 organization_id: sessionStorage.getItem('selected_organization_id') || undefined,
-                              }} onStatusUpdate={loadOrderData} />
+                              }} onStatusUpdate={() => loadOrderData()} />
                             </div>
                           )}
 
@@ -1501,7 +1501,7 @@ const SalesOrderDetail = () => {
                                 ...item,
                                 observations: (item as any).observations,
                                 organization_id: sessionStorage.getItem('selected_organization_id') || undefined,
-                              }} onStatusUpdate={loadOrderData} />
+                              }} onStatusUpdate={handleItemStatusUpdate} />
                             </div>
                           )}
                         </div>
