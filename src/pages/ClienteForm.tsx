@@ -256,7 +256,16 @@ const ClienteForm = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="trade_name">Nombre comercial</Label>
+                <Input
+                  id="trade_name"
+                  name="trade_name"
+                  value={formData.trade_name}
+                  onChange={handleChange}
+                  placeholder="Nombre comercial (si es diferente)"
+                  className={isMobile ? 'h-11' : ''}
+                />
+              </div>
                 <Input
                   id="email"
                   name="email"
