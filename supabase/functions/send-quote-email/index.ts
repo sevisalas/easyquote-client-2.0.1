@@ -94,6 +94,18 @@ Deno.serve(async (req) => {
 
     const fromName = smtp.from_name || org?.name || "EasyQuote";
 
+    // Get org theme for button color
+    const { data: orgTheme } = await supabaseAdmin
+      .from("organization_themes")
+      .select("primary_color")
+      .eq("organization_id", quote.organization_id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    const buttonColor = orgTheme?.primary_color
+      ? `hsl(${orgTheme.primary_color})`
+      : "#c83077";
+
     // Get custom email template
     const { data: emailTemplate } = await supabaseAdmin
       .from("email_templates")
@@ -108,7 +120,7 @@ Deno.serve(async (req) => {
       : "";
 
     const pdfButton = pdfUrl
-      ? `<p><a href="${pdfUrl}" style="display: inline-block; background-color: #c83077; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>`
+      ? `<p><a href="${pdfUrl}" style="display: inline-block; background-color: ${buttonColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>`
       : "";
 
     const priceText = priceFormatted
