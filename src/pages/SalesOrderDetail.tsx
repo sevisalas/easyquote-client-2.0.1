@@ -1412,96 +1412,189 @@ const SalesOrderDetail = () => {
                       </CollapsibleTrigger>
 
                       <CollapsibleContent>
-                        {item.description && (
-                          <p className={`text-sm text-muted-foreground whitespace-pre-line ${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>{item.description}</p>
-                        )}
+                        <div className={`${isMobile ? 'px-3 pb-3 pt-2' : 'px-4 pb-4 pt-2'}`}>
+                          {isMobile ? (
+                            /* Mobile: single column */
+                            <div className="space-y-4">
+                              {/* Description */}
+                              {item.description && (
+                                <p className="text-sm text-muted-foreground whitespace-pre-line">{item.description}</p>
+                              )}
 
-                        {/* Observaciones editables — vista producción, antes de estar en producción */}
-                        {viewMode === 'production' && (
-                          <div className={`${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>
-                            <InstructionsField
-                              value={(item as any).instructions || ''}
-                              onSave={async (val) => {
-                                const success = await updateSalesOrderItem(item.id, { instructions: val || null } as any);
-                                if (success) {
-                                  setItems(prev => prev.map(it => it.id === item.id ? { ...it, instructions: val || null } as any : it));
+                              {/* Observations */}
+                              {viewMode === 'production' && (
+                                <InstructionsField
+                                  value={(item as any).instructions || ''}
+                                  onSave={async (val) => {
+                                    const success = await updateSalesOrderItem(item.id, { instructions: val || null } as any);
+                                    if (success) {
+                                      setItems(prev => prev.map(it => it.id === item.id ? { ...it, instructions: val || null } as any : it));
+                                    }
+                                  }}
+                                />
+                              )}
+
+                              {/* Configuration (prompts + outputs) */}
+                              <WorkOrderItem
+                                item={{
+                                  id: item.id,
+                                  product_name: item.product_name,
+                                  quantity: item.quantity,
+                                  prompts: itemPrompts,
+                                  outputs: filteredOutputs,
+                                  description: item.description || undefined,
+                                  imposition_data: (item.imposition_data as any) || undefined,
+                                  composite_data: (item as any).composite_data || undefined,
+                                  notes: Array.isArray(item.notes) ? item.notes : undefined,
+                                }}
+                                instructions={undefined}
+                                onAddNote={() => {
+                                  setEditingNoteIndex(null);
+                                  setNotesText('');
+                                  setNotesDialogItem(item);
+                                }}
+                                onEditNote={(ni) => {
+                                  const notes = Array.isArray(item.notes) ? item.notes : [];
+                                  setEditingNoteIndex(ni);
+                                  setNotesText(notes[ni]?.text || '');
+                                  setNotesDialogItem(item);
+                                }}
+                                onDeleteNote={async (ni) => {
+                                  const notes = Array.isArray(item.notes) ? [...item.notes] : [];
+                                  notes.splice(ni, 1);
+                                  const updatedNotes = notes.length > 0 ? notes : null;
+                                  const success = await updateSalesOrderItem(item.id, { notes: updatedNotes as any });
+                                  if (success) {
+                                    setItems(prev => prev.map(it => it.id === item.id ? { ...it, notes: updatedNotes } : it));
+                                  }
+                                }}
+                                orderNumber={order.order_number}
+                                customerName={order.customer_id ? undefined : 'Sin cliente'}
+                                orderDate={format(new Date(order.order_date), 'dd/MM/yyyy', { locale: es })}
+                                deliveryDate={order.delivery_date 
+                                  ? format(new Date(order.delivery_date), 'dd/MM/yyyy', { locale: es })
+                                  : undefined
                                 }
-                              }}
-                            />
-                          </div>
-                        )}
+                                itemIndex={index}
+                                totalItems={items.length}
+                                filterOutput={(o) => isVisibleIn(o.type, visibilityContext)}
+                                filterPrompt={(p) => !isAdminOnlyPrompt(p.label || '')}
+                              />
 
-                        <div className={`space-y-4 ${isMobile ? 'px-3 pb-3 pt-2' : 'px-4 pb-4 pt-2'}`}>
-                          <WorkOrderItem
-                            item={{
-                              id: item.id,
-                              product_name: item.product_name,
-                              quantity: item.quantity,
-                              prompts: itemPrompts,
-                              outputs: filteredOutputs,
-                              description: item.description || undefined,
-                              imposition_data: (item.imposition_data as any) || undefined,
-                              composite_data: (item as any).composite_data || undefined,
-                              notes: Array.isArray(item.notes) ? item.notes : undefined,
-                            }}
-                            instructions={(item as any).instructions || undefined}
-                            onAddNote={() => {
-                              setEditingNoteIndex(null);
-                              setNotesText('');
-                              setNotesDialogItem(item);
-                            }}
-                            onEditNote={(ni) => {
-                              const notes = Array.isArray(item.notes) ? item.notes : [];
-                              setEditingNoteIndex(ni);
-                              setNotesText(notes[ni]?.text || '');
-                              setNotesDialogItem(item);
-                            }}
-                            onDeleteNote={async (ni) => {
-                              const notes = Array.isArray(item.notes) ? [...item.notes] : [];
-                              notes.splice(ni, 1);
-                              const updatedNotes = notes.length > 0 ? notes : null;
-                              const success = await updateSalesOrderItem(item.id, { notes: updatedNotes as any });
-                              if (success) {
-                                setItems(prev => prev.map(it => it.id === item.id ? { ...it, notes: updatedNotes } : it));
-                              }
-                            }}
-                            orderNumber={order.order_number}
-                            customerName={order.customer_id ? undefined : 'Sin cliente'}
-                            orderDate={format(new Date(order.order_date), 'dd/MM/yyyy', { locale: es })}
-                            deliveryDate={order.delivery_date 
-                              ? format(new Date(order.delivery_date), 'dd/MM/yyyy', { locale: es })
-                              : undefined
-                            }
-                            itemIndex={index}
-                            totalItems={items.length}
-                            filterOutput={(o) => isVisibleIn(o.type, visibilityContext)}
-                            filterPrompt={(p) => !isAdminOnlyPrompt(p.label || '')}
-                          />
-                          
-                          {/* Imposición - Solo en vista producción */}
-                          {viewMode === 'production' && !(order.status === 'in_production') && (
-                            <div className="pt-2 border-t">
-                              <ImpositionSection item={{
-                                id: item.id,
-                                imposition_data: item.imposition_data,
-                                composite_data: (item as any).composite_data,
-                                observations: (item as any).observations,
-                                product_id: item.product_id,
-                                prompts: item.prompts,
-                                outputs: item.outputs,
-                                organization_id: sessionStorage.getItem('selected_organization_id') || undefined,
-                              }} onStatusUpdate={() => loadOrderData()} />
+                              {/* Imposition */}
+                              {viewMode === 'production' && (
+                                <ImpositionSection item={{
+                                  id: item.id,
+                                  imposition_data: item.imposition_data,
+                                  composite_data: (item as any).composite_data,
+                                  observations: (item as any).observations,
+                                  product_id: item.product_id,
+                                  prompts: item.prompts,
+                                  outputs: item.outputs,
+                                  organization_id: sessionStorage.getItem('selected_organization_id') || undefined,
+                                }} onStatusUpdate={() => loadOrderData()} />
+                              )}
+
+                              {/* Tasks - always visible in production */}
+                              {viewMode === 'production' && (
+                                <ItemProductionCard item={{
+                                  ...item,
+                                  observations: (item as any).observations,
+                                  organization_id: sessionStorage.getItem('selected_organization_id') || undefined,
+                                }} onStatusUpdate={handleItemStatusUpdate} onTaskCreated={() => handleAutoProduction(item.id)} />
+                              )}
                             </div>
-                          )}
+                          ) : (
+                            /* Desktop: two columns 3/5 + 2/5 */
+                            <div className="flex gap-6">
+                              {/* Left column 3/5: description, observations, configuration */}
+                              <div className="w-3/5 space-y-4">
+                                {item.description && (
+                                  <p className="text-sm text-muted-foreground whitespace-pre-line">{item.description}</p>
+                                )}
 
-                          {/* Gestión de Producción integrada - Solo en vista producción y en producción */}
-                          {order.status === 'in_production' && viewMode === 'production' && (
-                            <div className="pt-2 border-t">
-                              <ItemProductionCard item={{
-                                ...item,
-                                observations: (item as any).observations,
-                                organization_id: sessionStorage.getItem('selected_organization_id') || undefined,
-                              }} onStatusUpdate={handleItemStatusUpdate} />
+                                {viewMode === 'production' && (
+                                  <InstructionsField
+                                    value={(item as any).instructions || ''}
+                                    onSave={async (val) => {
+                                      const success = await updateSalesOrderItem(item.id, { instructions: val || null } as any);
+                                      if (success) {
+                                        setItems(prev => prev.map(it => it.id === item.id ? { ...it, instructions: val || null } as any : it));
+                                      }
+                                    }}
+                                  />
+                                )}
+
+                                <WorkOrderItem
+                                  item={{
+                                    id: item.id,
+                                    product_name: item.product_name,
+                                    quantity: item.quantity,
+                                    prompts: itemPrompts,
+                                    outputs: filteredOutputs,
+                                    description: item.description || undefined,
+                                    imposition_data: (item.imposition_data as any) || undefined,
+                                    composite_data: (item as any).composite_data || undefined,
+                                    notes: Array.isArray(item.notes) ? item.notes : undefined,
+                                  }}
+                                  instructions={undefined}
+                                  onAddNote={() => {
+                                    setEditingNoteIndex(null);
+                                    setNotesText('');
+                                    setNotesDialogItem(item);
+                                  }}
+                                  onEditNote={(ni) => {
+                                    const notes = Array.isArray(item.notes) ? item.notes : [];
+                                    setEditingNoteIndex(ni);
+                                    setNotesText(notes[ni]?.text || '');
+                                    setNotesDialogItem(item);
+                                  }}
+                                  onDeleteNote={async (ni) => {
+                                    const notes = Array.isArray(item.notes) ? [...item.notes] : [];
+                                    notes.splice(ni, 1);
+                                    const updatedNotes = notes.length > 0 ? notes : null;
+                                    const success = await updateSalesOrderItem(item.id, { notes: updatedNotes as any });
+                                    if (success) {
+                                      setItems(prev => prev.map(it => it.id === item.id ? { ...it, notes: updatedNotes } : it));
+                                    }
+                                  }}
+                                  orderNumber={order.order_number}
+                                  customerName={order.customer_id ? undefined : 'Sin cliente'}
+                                  orderDate={format(new Date(order.order_date), 'dd/MM/yyyy', { locale: es })}
+                                  deliveryDate={order.delivery_date 
+                                    ? format(new Date(order.delivery_date), 'dd/MM/yyyy', { locale: es })
+                                    : undefined
+                                  }
+                                  itemIndex={index}
+                                  totalItems={items.length}
+                                  filterOutput={(o) => isVisibleIn(o.type, visibilityContext)}
+                                  filterPrompt={(p) => !isAdminOnlyPrompt(p.label || '')}
+                                />
+                              </div>
+
+                              {/* Right column 2/5: imposition, tasks, notes */}
+                              <div className="w-2/5 space-y-4">
+                                {viewMode === 'production' && (
+                                  <ImpositionSection item={{
+                                    id: item.id,
+                                    imposition_data: item.imposition_data,
+                                    composite_data: (item as any).composite_data,
+                                    observations: (item as any).observations,
+                                    product_id: item.product_id,
+                                    prompts: item.prompts,
+                                    outputs: item.outputs,
+                                    organization_id: sessionStorage.getItem('selected_organization_id') || undefined,
+                                  }} onStatusUpdate={() => loadOrderData()} />
+                                )}
+
+                                {viewMode === 'production' && (
+                                  <ItemProductionCard item={{
+                                    ...item,
+                                    observations: (item as any).observations,
+                                    organization_id: sessionStorage.getItem('selected_organization_id') || undefined,
+                                  }} onStatusUpdate={handleItemStatusUpdate} onTaskCreated={() => handleAutoProduction(item.id)} />
+                                )}
+                              </div>
                             </div>
                           )}
                         </div>
