@@ -25,7 +25,7 @@ interface ItemProductionCardProps {
     outputs?: any;
     organization_id?: string;
   };
-  onStatusUpdate?: () => void;
+  onStatusUpdate?: (itemId: string, newStatus: string) => void;
 }
 
 export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardProps) {
@@ -57,7 +57,7 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
 
       toast.success('Estado actualizado correctamente');
       if (onStatusUpdate) {
-        onStatusUpdate();
+        onStatusUpdate(item.id, newStatus);
       }
     } catch (error) {
       console.error('Error updating status:', error);
@@ -123,7 +123,7 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
       <ProductionTaskList itemId={item.id} />
 
       {/* Imposition Section */}
-      <ImpositionSection item={item} onStatusUpdate={onStatusUpdate} />
+      <ImpositionSection item={item} onStatusUpdate={() => onStatusUpdate?.(item.id, item.production_status || 'pending')} />
     </div>
   );
 }
