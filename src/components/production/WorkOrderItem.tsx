@@ -262,55 +262,6 @@ export const WorkOrderItem = ({
         </div>
       )}
 
-      {/* Notas de producción */}
-      <div className="border border-border rounded-sm">
-        <div className="px-2 py-1 bg-muted/30 border-b border-border/50 flex items-center justify-between gap-2">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Notas de producción</p>
-          {onAddNote && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onAddNote();
-              }}
-              className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
-            >
-              Añadir nota
-            </button>
-          )}
-        </div>
-        <div className="px-2 py-2 min-h-[40px]">
-          {item.notes && Array.isArray(item.notes) && item.notes.length > 0 ? (
-            <div className="space-y-1.5">
-              {item.notes.map((note: any, ni: number) => (
-                <div key={ni} className="group flex items-start gap-1">
-                  <div className="flex-1">
-                    <p className="text-[11px] whitespace-pre-line">{note.text}</p>
-                    <p className="text-[9px] text-muted-foreground">
-                      {note.author} · {new Date(note.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                  {(onEditNote || onDeleteNote) && (
-                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 pt-0.5">
-                      {onEditNote && (
-                        <button type="button" onClick={(e) => { e.stopPropagation(); onEditNote(ni); }} className="text-[9px] text-muted-foreground hover:text-foreground">✏️</button>
-                      )}
-                      {onDeleteNote && (
-                        <button type="button" onClick={(e) => { e.stopPropagation(); onDeleteNote(ni); }} className="text-[9px] text-muted-foreground hover:text-destructive">🗑</button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-[11px] text-muted-foreground italic">
-              Espacio para notas durante la producción...
-            </p>
-          )}
-        </div>
-      </div>
     </div>
   );
 };
