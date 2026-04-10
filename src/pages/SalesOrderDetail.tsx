@@ -626,6 +626,44 @@ const SalesOrderDetail = () => {
     }
   };
 
+  // Auto-sync order status when an item's production status changes
+  const handleItemStatusUpdate = async (itemId: string, newItemStatus: string) => {
+    if (!id || !order) {
+      await loadOrderData();
+      return;
+    }
+
+    // Update local items state optimistically
+    const updatedItems = items.map(i => i.id === itemId ? { ...i, production_status: newItemStatus as any } : i);
+    setItems(updatedItems);
+
+    const allCompleted = updatedItems.every(i => i.production_status === 'completed');
+    const anyInProgress = updatedItems.some(i => i.production_status === 'in_progress');
+
+    let newOrderStatus: SalesOrder['status'] | null = null;
+
+    if (allCompleted && order.status !== 'completed' && order.status !== 'cancelled') {
+      newOrderStatus = 'completed';
+    } else if (anyInProgress && (order.status === 'draft' || order.status === 'pending')) {
+      newOrderStatus = 'in_production';
+    } else if (!allCompleted && order.status === 'completed') {
+      // Un artículo se des-completó
+      newOrderStatus = 'in_production';
+    }
+
+    if (newOrderStatus) {
+      const success = await updateSalesOrderStatus(id, newOrderStatus);
+      if (success) {
+        setOrder(prev => prev ? { ...prev, status: newOrderStatus! } : null);
+        const label = statusLabels[newOrderStatus] || newOrderStatus;
+        toast.info(`Estado del pedido actualizado automáticamente a "${label}"`);
+      }
+    }
+
+    // Reload full data to stay in sync
+    await loadOrderData();
+  };
+
   const handleConfirmCancellation = async () => {
     if (!id || !order) return;
     if (!cancellationReason.trim()) {
