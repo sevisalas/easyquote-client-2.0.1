@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useSmtpSettings } from "@/hooks/useSmtpSettings";
 import { Mail, Save, Eye, EyeOff } from "lucide-react";
+import EmailTemplateCard from "@/components/settings/EmailTemplateCard";
 import { toast } from "sonner";
 
 export default function SettingsSmtp() {
@@ -202,6 +203,8 @@ export default function SettingsSmtp() {
           {saveMutation.isPending ? "Guardando..." : "Guardar configuración"}
         </Button>
       </div>
+
+      <EmailTemplateCard />
     </div>
   );
 }
