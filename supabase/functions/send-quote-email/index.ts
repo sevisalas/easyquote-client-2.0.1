@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
       : "";
 
     const pdfButton = pdfUrl
-      ? `<p><a href="${pdfUrl}" style="display: inline-block; background-color: #E91E8C; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>`
+      ? `<p><a href="${pdfUrl}" style="display: inline-block; background-color: #c83077; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>`
       : "";
 
     const priceText = priceFormatted
@@ -189,18 +189,14 @@ function buildDefaultHtml(
   fromName: string
 ): string {
   return `
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
-      <div style="background-color: #1B1B3A; padding: 24px 30px; border-radius: 8px 8px 0 0;">
-        <h2 style="color: #00D4FF; margin: 0; font-size: 22px;">Presupuesto ${quote.quote_number}</h2>
-      </div>
-      <div style="padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
-        <p style="color: #1B1B3A;">Estimado/a ${clientName},</p>
-        <p style="color: #333;">Le enviamos el presupuesto <strong>${quote.quote_number}</strong>${priceFormatted ? ` por un importe de <strong>${priceFormatted}</strong>` : ""}.</p>
-        ${pdfUrl ? `<p><a href="${pdfUrl}" style="display: inline-block; background-color: #E91E8C; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>` : ""}
-        <p style="color: #333;">Quedamos a su disposición para cualquier consulta.</p>
-        <hr style="border: none; border-top: 2px solid #E91E8C; margin: 30px 0; opacity: 0.3;" />
-        <p style="font-size: 12px; color: #999;">Enviado desde ${fromName}</p>
-      </div>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h2 style="color: #333;">Presupuesto ${quote.quote_number}</h2>
+      <p>Estimado/a ${clientName},</p>
+      <p>Le enviamos el presupuesto <strong>${quote.quote_number}</strong>${priceFormatted ? ` por un importe de <strong>${priceFormatted}</strong>` : ""}.</p>
+      ${pdfUrl ? `<p><a href="${pdfUrl}" style="display: inline-block; background-color: #c83077; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>` : ""}
+      <p>Quedamos a su disposición para cualquier consulta.</p>
+      <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+      <p style="font-size: 12px; color: #999;">Enviado desde ${fromName}</p>
     </div>
   `;
 }
