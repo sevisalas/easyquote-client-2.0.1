@@ -26,6 +26,7 @@ interface ItemProductionCardProps {
     organization_id?: string;
   };
   onStatusUpdate?: (itemId: string, newStatus: string) => void;
+  onTaskCreated?: () => void;
 }
 
 export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardProps) {
