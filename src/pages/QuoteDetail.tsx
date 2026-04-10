@@ -88,6 +88,7 @@ export default function QuoteDetail() {
   const [cancellationReason, setCancellationReason] = useState('');
   const [itemDescriptionVisibility, setItemDescriptionVisibility] = useState<Set<string>>(new Set());
   const [itemNotesVisibility, setItemNotesVisibility] = useState<Set<string>>(new Set());
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   const { data: quote, isLoading, error } = useQuery({
     queryKey: ['quote', id],
