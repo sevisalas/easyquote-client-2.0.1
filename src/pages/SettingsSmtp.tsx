@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useSmtpSettings } from "@/hooks/useSmtpSettings";
 import { Mail, Save, Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 
 export default function SettingsSmtp() {
   const { settings, isLoading, saveMutation } = useSmtpSettings();
@@ -42,7 +43,13 @@ export default function SettingsSmtp() {
   }, []);
 
   const handleSave = () => {
-    if (!form.smtp_host || !form.smtp_username || !form.smtp_password_encrypted || !form.from_email) {
+    const missing: string[] = [];
+    if (!form.smtp_host) missing.push("Host SMTP");
+    if (!form.smtp_username) missing.push("Usuario SMTP");
+    if (!form.smtp_password_encrypted) missing.push("Contraseña SMTP");
+    if (!form.from_email) missing.push("Email remitente");
+    if (missing.length > 0) {
+      toast.error(`Campos obligatorios: ${missing.join(", ")}`);
       return;
     }
     saveMutation.mutate(form);
