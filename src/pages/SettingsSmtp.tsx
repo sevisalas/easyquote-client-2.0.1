@@ -43,16 +43,26 @@ export default function SettingsSmtp() {
   }, []);
 
   const handleSave = () => {
-    const missing: string[] = [];
-    if (!form.smtp_host) missing.push("Host SMTP");
-    if (!form.smtp_username) missing.push("Usuario SMTP");
-    if (!form.smtp_password_encrypted) missing.push("Contraseña SMTP");
-    if (!form.from_email) missing.push("Email remitente");
-    if (missing.length > 0) {
-      toast.error(`Campos obligatorios: ${missing.join(", ")}`);
-      return;
+    if (form.is_active) {
+      const missing: string[] = [];
+      if (!form.smtp_host.trim()) missing.push("Host SMTP");
+      if (!form.smtp_username.trim()) missing.push("Usuario SMTP");
+      if (!form.smtp_password_encrypted.trim()) missing.push("Contraseña SMTP");
+      if (!form.from_email.trim()) missing.push("Email remitente");
+      if (missing.length > 0) {
+        toast.error(`Para activar el envío debes completar: ${missing.join(", ")}`);
+        return;
+      }
     }
-    saveMutation.mutate(form);
+
+    saveMutation.mutate({
+      ...form,
+      smtp_host: form.smtp_host.trim(),
+      smtp_username: form.smtp_username.trim(),
+      smtp_password_encrypted: form.smtp_password_encrypted.trim(),
+      from_email: form.from_email.trim(),
+      from_name: form.from_name.trim(),
+    });
   };
 
   if (isLoading) {
