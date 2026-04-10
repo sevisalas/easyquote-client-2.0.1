@@ -601,6 +601,16 @@ export default function QuoteDetail() {
                 <Download className="h-4 w-4" />
                 {isGeneratingPDF ? 'Generando...' : 'PDF'}
               </Button>
+              <Button
+                onClick={handleSendEmail}
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                disabled={isSendingEmail}
+              >
+                {isSendingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                {isSendingEmail ? 'Enviando...' : 'Email'}
+              </Button>
               <Button onClick={() => navigate('/presupuestos')} size="sm" variant="outline">
                 Volver
               </Button>
