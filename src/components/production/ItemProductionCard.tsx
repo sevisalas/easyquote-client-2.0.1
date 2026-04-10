@@ -26,9 +26,10 @@ interface ItemProductionCardProps {
     organization_id?: string;
   };
   onStatusUpdate?: (itemId: string, newStatus: string) => void;
+  onTaskCreated?: () => void;
 }
 
-export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardProps) {
+export function ItemProductionCard({ item, onStatusUpdate, onTaskCreated }: ItemProductionCardProps) {
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   
@@ -43,6 +44,7 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
   const handleTaskCreated = () => {
     setShowTaskForm(false);
     refetch();
+    onTaskCreated?.();
   };
 
   const handleStatusChange = async (newStatus: string) => {
