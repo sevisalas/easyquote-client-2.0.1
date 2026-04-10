@@ -10,6 +10,7 @@ import SuperAdminDashboard from "./SuperAdminDashboard";
 import { useQuery } from "@tanstack/react-query";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { QuickActionsPanel } from "@/components/mobile/QuickActionsPanel";
+import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
 const Index = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState<string>("");
@@ -365,6 +366,9 @@ const Index = () => {
               </CardContent>
             </Card>}
         </div>
+
+        {/* Dashboard Charts */}
+        <DashboardCharts />
 
         {/* Version Info */}
         <div className="mt-6 md:mt-8 flex justify-end">
