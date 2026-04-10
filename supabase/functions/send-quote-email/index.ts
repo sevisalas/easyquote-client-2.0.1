@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
       : "";
 
     const pdfButton = pdfUrl
-      ? `<p><a href="${pdfUrl}" style="display: inline-block; background-color: #c83077; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>`
+      ? `<p><a href="${pdfUrl}" style="display: inline-block; background-color: #E91E8C; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>`
       : "";
 
     const priceText = priceFormatted
