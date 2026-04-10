@@ -127,17 +127,34 @@ export function ProductionTaskList({ itemId }: ProductionTaskListProps) {
                         </span>
                       </div>
                       {task.status !== "completed" && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-9 w-9 shrink-0 text-destructive hover:text-destructive"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteTask(task.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9 shrink-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                            title="Finalizar tarea"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              updateTask(task.id, {
+                                status: 'completed',
+                                completed_at: new Date().toISOString(),
+                              });
+                            }}
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9 shrink-0 text-destructive hover:text-destructive"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteTask(task.id);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -172,17 +189,34 @@ export function ProductionTaskList({ itemId }: ProductionTaskListProps) {
                       </span>
                     </div>
                     {task.status !== "completed" && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteTask(task.id);
-                        }}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      <div className="flex items-center gap-0.5">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 shrink-0 text-green-600 hover:text-green-700 hover:bg-green-50"
+                          title="Finalizar tarea"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            updateTask(task.id, {
+                              status: 'completed',
+                              completed_at: new Date().toISOString(),
+                            });
+                          }}
+                        >
+                          <Check className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteTask(task.id);
+                          }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     )}
                   </div>
                 )}
