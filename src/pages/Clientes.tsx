@@ -17,6 +17,7 @@ import { useTariffs } from "@/hooks/useTariffs";
 interface LocalClient {
   id: string;
   name: string;
+  trade_name: string;
   email: string;
   phone: string;
   notes: string;
@@ -110,6 +111,7 @@ export default function Clientes() {
       const allClients: LocalClient[] = (customersData || []).map((c) => ({
         id: c.id,
         name: c.name || "",
+        trade_name: (c as any).trade_name || "",
         email: c.email || "",
         phone: c.phone || "",
         notes: c.notes || "",
