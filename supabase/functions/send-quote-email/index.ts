@@ -94,6 +94,18 @@ Deno.serve(async (req) => {
 
     const fromName = smtp.from_name || org?.name || "EasyQuote";
 
+    // Get org theme for button color
+    const { data: orgTheme } = await supabaseAdmin
+      .from("organization_themes")
+      .select("primary_color")
+      .eq("organization_id", quote.organization_id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    const buttonColor = orgTheme?.primary_color
+      ? `hsl(${orgTheme.primary_color})`
+      : "#c83077";
+
     // Get custom email template
     const { data: emailTemplate } = await supabaseAdmin
       .from("email_templates")
@@ -108,7 +120,7 @@ Deno.serve(async (req) => {
       : "";
 
     const pdfButton = pdfUrl
-      ? `<p><a href="${pdfUrl}" style="display: inline-block; background-color: #c83077; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>`
+      ? `<p><a href="${pdfUrl}" style="display: inline-block; background-color: ${buttonColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>`
       : "";
 
     const priceText = priceFormatted
@@ -132,7 +144,7 @@ Deno.serve(async (req) => {
     if (subject) {
       // If caller provides explicit subject/body, use them (backwards compat)
       emailSubject = subject;
-      htmlBody = body || buildDefaultHtml(quote, clientName, priceFormatted, pdfUrl, fromName);
+      htmlBody = body || buildDefaultHtml(quote, clientName, priceFormatted, pdfUrl, fromName, buttonColor);
     } else if (emailTemplate?.subject && emailTemplate?.body) {
       // Use custom template from DB
       emailSubject = replaceVars(emailTemplate.subject);
@@ -140,7 +152,7 @@ Deno.serve(async (req) => {
     } else {
       // Fallback: default hardcoded template
       emailSubject = `Presupuesto ${quote.quote_number}`;
-      htmlBody = buildDefaultHtml(quote, clientName, priceFormatted, pdfUrl, fromName);
+      htmlBody = buildDefaultHtml(quote, clientName, priceFormatted, pdfUrl, fromName, buttonColor);
     }
 
     // Send via SMTP
@@ -186,14 +198,15 @@ function buildDefaultHtml(
   clientName: string,
   priceFormatted: string,
   pdfUrl: string | undefined,
-  fromName: string
+  fromName: string,
+  buttonColor: string = "#c83077"
 ): string {
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
       <h2 style="color: #333;">Presupuesto ${quote.quote_number}</h2>
       <p>Estimado/a ${clientName},</p>
       <p>Le enviamos el presupuesto <strong>${quote.quote_number}</strong>${priceFormatted ? ` por un importe de <strong>${priceFormatted}</strong>` : ""}.</p>
-      ${pdfUrl ? `<p><a href="${pdfUrl}" style="display: inline-block; background-color: #c83077; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>` : ""}
+      ${pdfUrl ? `<p><a href="${pdfUrl}" style="display: inline-block; background-color: ${buttonColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>` : ""}
       <p>Quedamos a su disposición para cualquier consulta.</p>
       <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
       <p style="font-size: 12px; color: #999;">Enviado desde ${fromName}</p>
