@@ -13,14 +13,18 @@ interface EmailTemplate {
 type EmailTemplateValues = Pick<EmailTemplate, "subject" | "body">;
 
 const DEFAULT_SUBJECT = "Presupuesto {{numero}}";
-const DEFAULT_BODY = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <h2 style="color: #333;">Presupuesto {{numero}}</h2>
-  <p>Estimado/a {{cliente}},</p>
-  <p>Le enviamos el presupuesto <strong>{{numero}}</strong>{{precio}}.</p>
-  {{boton_pdf}}
-  <p>Quedamos a su disposición para cualquier consulta.</p>
-  <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
-  <p style="font-size: 12px; color: #999;">Enviado desde {{empresa}}</p>
+const DEFAULT_BODY = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+  <div style="background-color: #1B1B3A; padding: 24px 30px; border-radius: 8px 8px 0 0;">
+    <h2 style="color: #00D4FF; margin: 0; font-size: 22px;">Presupuesto {{numero}}</h2>
+  </div>
+  <div style="padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
+    <p style="color: #1B1B3A;">Estimado/a {{cliente}},</p>
+    <p style="color: #333;">Le enviamos el presupuesto <strong>{{numero}}</strong>{{precio}}.</p>
+    {{boton_pdf}}
+    <p style="color: #333;">Quedamos a su disposición para cualquier consulta.</p>
+    <hr style="border: none; border-top: 2px solid #E91E8C; margin: 30px 0; opacity: 0.3;" />
+    <p style="font-size: 12px; color: #999;">Enviado desde {{empresa}}</p>
+  </div>
 </div>`;
 
 export const EMAIL_TEMPLATE_VARIABLES = [
