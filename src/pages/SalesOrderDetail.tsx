@@ -1559,29 +1559,8 @@ const SalesOrderDetail = () => {
                                     description: item.description || undefined,
                                     imposition_data: (item.imposition_data as any) || undefined,
                                     composite_data: (item as any).composite_data || undefined,
-                                    notes: Array.isArray(item.notes) ? item.notes : undefined,
                                   }}
                                   instructions={undefined}
-                                  onAddNote={() => {
-                                    setEditingNoteIndex(null);
-                                    setNotesText('');
-                                    setNotesDialogItem(item);
-                                  }}
-                                  onEditNote={(ni) => {
-                                    const notes = Array.isArray(item.notes) ? item.notes : [];
-                                    setEditingNoteIndex(ni);
-                                    setNotesText(notes[ni]?.text || '');
-                                    setNotesDialogItem(item);
-                                  }}
-                                  onDeleteNote={async (ni) => {
-                                    const notes = Array.isArray(item.notes) ? [...item.notes] : [];
-                                    notes.splice(ni, 1);
-                                    const updatedNotes = notes.length > 0 ? notes : null;
-                                    const success = await updateSalesOrderItem(item.id, { notes: updatedNotes as any });
-                                    if (success) {
-                                      setItems(prev => prev.map(it => it.id === item.id ? { ...it, notes: updatedNotes } : it));
-                                    }
-                                  }}
                                   orderNumber={order.order_number}
                                   customerName={order.customer_id ? undefined : 'Sin cliente'}
                                   orderDate={format(new Date(order.order_date), 'dd/MM/yyyy', { locale: es })}
