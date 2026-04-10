@@ -541,6 +541,7 @@ export type Database = {
           province: string | null
           source: string
           tariff_id: string | null
+          trade_name: string | null
           updated_at: string
           user_id: string
           zip: string | null
@@ -560,6 +561,7 @@ export type Database = {
           province?: string | null
           source?: string
           tariff_id?: string | null
+          trade_name?: string | null
           updated_at?: string
           user_id: string
           zip?: string | null
@@ -579,6 +581,7 @@ export type Database = {
           province?: string | null
           source?: string
           tariff_id?: string | null
+          trade_name?: string | null
           updated_at?: string
           user_id?: string
           zip?: string | null
