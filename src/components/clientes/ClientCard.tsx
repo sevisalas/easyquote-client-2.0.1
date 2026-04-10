@@ -135,14 +135,16 @@ export const ClientCard = ({
               <Edit className="h-4 w-4 mr-2" />
               Editar
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onDelete(cliente.id)}
-              className="h-9 px-3 text-destructive hover:text-destructive hover:bg-destructive/10"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {cliente.source === 'local' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onDelete(cliente.id)}
+                className="h-9 px-3 text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </CardContent>

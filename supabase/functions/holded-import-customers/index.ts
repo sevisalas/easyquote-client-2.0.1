@@ -264,6 +264,7 @@ Deno.serve(async (req) => {
         source: 'holded',
         holded_id: contact.id,
         name: contact.name || contact.customName || 'Sin nombre',
+        trade_name: pickString(contact.tradeName, contact.trade_name) || null,
         email: pickString(contact.email) || null,
         phone: pickString(contact.phone, contact.mobile) || null,
         notes: pickString(contact.notes, contact.note) || null,

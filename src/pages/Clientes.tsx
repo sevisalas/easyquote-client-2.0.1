@@ -396,9 +396,11 @@ export default function Clientes() {
                         <Button variant="ghost" size="sm" onClick={() => navigate(`/clientes/${cliente.id}/editar`)} className="h-7 w-7 p-0">
                           <Edit className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => deleteCliente(cliente.id)} className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        {cliente.source === "local" && (
+                          <Button variant="ghost" size="sm" onClick={() => deleteCliente(cliente.id)} className="h-7 w-7 p-0 text-destructive hover:text-destructive hover:bg-destructive/10">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
