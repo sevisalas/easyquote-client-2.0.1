@@ -198,14 +198,15 @@ function buildDefaultHtml(
   clientName: string,
   priceFormatted: string,
   pdfUrl: string | undefined,
-  fromName: string
+  fromName: string,
+  buttonColor: string = "#c83077"
 ): string {
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
       <h2 style="color: #333;">Presupuesto ${quote.quote_number}</h2>
       <p>Estimado/a ${clientName},</p>
       <p>Le enviamos el presupuesto <strong>${quote.quote_number}</strong>${priceFormatted ? ` por un importe de <strong>${priceFormatted}</strong>` : ""}.</p>
-      ${pdfUrl ? `<p><a href="${pdfUrl}" style="display: inline-block; background-color: #c83077; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>` : ""}
+      ${pdfUrl ? `<p><a href="${pdfUrl}" style="display: inline-block; background-color: ${buttonColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>` : ""}
       <p>Quedamos a su disposición para cualquier consulta.</p>
       <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
       <p style="font-size: 12px; color: #999;">Enviado desde ${fromName}</p>
