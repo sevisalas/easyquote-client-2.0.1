@@ -366,9 +366,6 @@ const Index = () => {
             </Card>}
         </div>
 
-        {/* Dashboard Charts */}
-        <DashboardCharts />
-
         {/* Version Info */}
         <div className="mt-6 md:mt-8 flex justify-end">
           <button onClick={() => navigate("/novedades")} className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
