@@ -266,6 +266,9 @@ const ClienteForm = () => {
                   className={isMobile ? 'h-11' : ''}
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   name="email"
