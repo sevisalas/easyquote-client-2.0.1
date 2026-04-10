@@ -345,8 +345,7 @@ export default function Clientes() {
             <TableHeader>
               <TableRow className="h-9">
                 <TableHead className="py-2 text-xs font-semibold">Nombre</TableHead>
-                <TableHead className="py-2 text-xs font-semibold">Email</TableHead>
-                <TableHead className="py-2 text-xs font-semibold">Teléfono</TableHead>
+                <TableHead className="py-2 text-xs font-semibold">Nombre comercial</TableHead>
                 <TableHead className="py-2 text-xs font-semibold">Origen</TableHead>
                 {isAdmin && <TableHead className="py-2 text-xs font-semibold">Tarifa</TableHead>}
                 <TableHead className="py-2 text-right text-xs font-semibold">Acciones</TableHead>
