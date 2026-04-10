@@ -1559,29 +1559,8 @@ const SalesOrderDetail = () => {
                                     description: item.description || undefined,
                                     imposition_data: (item.imposition_data as any) || undefined,
                                     composite_data: (item as any).composite_data || undefined,
-                                    notes: Array.isArray(item.notes) ? item.notes : undefined,
                                   }}
                                   instructions={undefined}
-                                  onAddNote={() => {
-                                    setEditingNoteIndex(null);
-                                    setNotesText('');
-                                    setNotesDialogItem(item);
-                                  }}
-                                  onEditNote={(ni) => {
-                                    const notes = Array.isArray(item.notes) ? item.notes : [];
-                                    setEditingNoteIndex(ni);
-                                    setNotesText(notes[ni]?.text || '');
-                                    setNotesDialogItem(item);
-                                  }}
-                                  onDeleteNote={async (ni) => {
-                                    const notes = Array.isArray(item.notes) ? [...item.notes] : [];
-                                    notes.splice(ni, 1);
-                                    const updatedNotes = notes.length > 0 ? notes : null;
-                                    const success = await updateSalesOrderItem(item.id, { notes: updatedNotes as any });
-                                    if (success) {
-                                      setItems(prev => prev.map(it => it.id === item.id ? { ...it, notes: updatedNotes } : it));
-                                    }
-                                  }}
                                   orderNumber={order.order_number}
                                   customerName={order.customer_id ? undefined : 'Sin cliente'}
                                   orderDate={format(new Date(order.order_date), 'dd/MM/yyyy', { locale: es })}
@@ -1617,6 +1596,66 @@ const SalesOrderDetail = () => {
                                     observations: (item as any).observations,
                                     organization_id: sessionStorage.getItem('selected_organization_id') || undefined,
                                   }} onStatusUpdate={handleItemStatusUpdate} onTaskCreated={() => handleAutoProduction(item.id)} />
+                                )}
+
+                                {/* Production Notes */}
+                                {viewMode === 'production' && (
+                                  <div className="border border-border rounded-sm">
+                                    <div className="px-2 py-1 bg-muted/30 border-b border-border/50 flex items-center justify-between gap-2">
+                                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Notas de producción</p>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          setEditingNoteIndex(null);
+                                          setNotesText('');
+                                          setNotesDialogItem(item);
+                                        }}
+                                        className="text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+                                      >
+                                        Añadir nota
+                                      </button>
+                                    </div>
+                                    <div className="px-2 py-2 min-h-[40px]">
+                                      {item.notes && Array.isArray(item.notes) && item.notes.length > 0 ? (
+                                        <div className="space-y-1.5">
+                                          {(item.notes as any[]).map((note: any, ni: number) => (
+                                            <div key={ni} className="group flex items-start gap-1">
+                                              <div className="flex-1">
+                                                <p className="text-[11px] whitespace-pre-line">{note.text}</p>
+                                                <p className="text-[9px] text-muted-foreground">
+                                                  {note.author} · {new Date(note.date).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                </p>
+                                              </div>
+                                              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 pt-0.5">
+                                                <button type="button" onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setEditingNoteIndex(ni);
+                                                  setNotesText(note.text || '');
+                                                  setNotesDialogItem(item);
+                                                }} className="text-[9px] text-muted-foreground hover:text-foreground">✏️</button>
+                                                <button type="button" onClick={async (e) => {
+                                                  e.stopPropagation();
+                                                  const notes = Array.isArray(item.notes) ? [...item.notes] : [];
+                                                  notes.splice(ni, 1);
+                                                  const updatedNotes = notes.length > 0 ? notes : null;
+                                                  const success = await updateSalesOrderItem(item.id, { notes: updatedNotes as any });
+                                                  if (success) {
+                                                    setItems(prev => prev.map(it => it.id === item.id ? { ...it, notes: updatedNotes } : it));
+                                                  }
+                                                }} className="text-[9px] text-muted-foreground hover:text-destructive">🗑</button>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <p className="text-[11px] text-muted-foreground italic">
+                                          Espacio para notas durante la producción...
+                                        </p>
+                                      )}
+                                    </div>
+                                  </div>
                                 )}
                               </div>
                             </div>
