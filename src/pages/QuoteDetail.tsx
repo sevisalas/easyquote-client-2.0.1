@@ -11,7 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Edit, Download, Copy, CheckCircle, ChevronDown, Eye, EyeOff, FileText, Ban } from "lucide-react";
+import { Edit, Download, Copy, CheckCircle, ChevronDown, Eye, EyeOff, FileText, Ban, Mail, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
@@ -88,6 +88,7 @@ export default function QuoteDetail() {
   const [cancellationReason, setCancellationReason] = useState('');
   const [itemDescriptionVisibility, setItemDescriptionVisibility] = useState<Set<string>>(new Set());
   const [itemNotesVisibility, setItemNotesVisibility] = useState<Set<string>>(new Set());
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   const { data: quote, isLoading, error } = useQuery({
     queryKey: ['quote', id],
@@ -193,6 +194,44 @@ export default function QuoteDetail() {
       toast.error('Error al generar el PDF');
     } finally {
       setIsGeneratingPDF(false);
+    }
+  };
+
+  const handleSendEmail = async () => {
+    if (!quote?.id || !quote?.customer_id) return;
+
+    setIsSendingEmail(true);
+    try {
+      // Get customer email
+      const { data: customer } = await supabase
+        .from('customers')
+        .select('email, name')
+        .eq('id', quote.customer_id)
+        .maybeSingle();
+
+      if (!customer?.email) {
+        toast.error('El cliente no tiene email configurado. Edítalo primero.');
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('send-quote-email', {
+        body: {
+          quoteId: quote.id,
+          recipientEmail: customer.email,
+          recipientName: customer.name,
+        },
+      });
+
+      if (error) {
+        const errorMsg = data?.error || error.message;
+        toast.error(`Error al enviar: ${errorMsg}`);
+      } else {
+        toast.success(`Presupuesto enviado a ${customer.email}`);
+      }
+    } catch (error: any) {
+      toast.error(`Error al enviar email: ${error.message}`);
+    } finally {
+      setIsSendingEmail(false);
     }
   };
 
@@ -561,6 +600,16 @@ export default function QuoteDetail() {
               >
                 <Download className="h-4 w-4" />
                 {isGeneratingPDF ? 'Generando...' : 'PDF'}
+              </Button>
+              <Button
+                onClick={handleSendEmail}
+                size="sm"
+                variant="outline"
+                className="gap-2"
+                disabled={isSendingEmail}
+              >
+                {isSendingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                {isSendingEmail ? 'Enviando...' : 'Email'}
               </Button>
               <Button onClick={() => navigate('/presupuestos')} size="sm" variant="outline">
                 Volver
