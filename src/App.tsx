@@ -214,6 +214,16 @@ const AppContent = () => {
         }
       />
       <Route
+        path="/configuracion/smtp"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <SettingsSmtp />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/usuarios"
         element={
           <ProtectedRoute>
