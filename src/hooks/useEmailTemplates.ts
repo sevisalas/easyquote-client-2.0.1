@@ -16,7 +16,7 @@ const DEFAULT_SUBJECT = "Presupuesto {{numero}}";
 const DEFAULT_BODY = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
   <h2 style="color: #333;">Presupuesto {{numero}}</h2>
   <p>Estimado/a {{cliente}},</p>
-  <p>Adjunto encontrará el presupuesto <strong>{{numero}}</strong>{{precio}}.</p>
+  <p>Le enviamos el presupuesto <strong>{{numero}}</strong>{{precio}}.</p>
   {{boton_pdf}}
   <p>Quedamos a su disposición para cualquier consulta.</p>
   <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
