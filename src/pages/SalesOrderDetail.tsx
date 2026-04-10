@@ -1575,8 +1575,52 @@ const SalesOrderDetail = () => {
                                 />
                               </div>
 
-                              {/* Right column 2/5: imposition, tasks, notes */}
+                              {/* Right column 1/2: status, imposition, tasks, notes */}
                               <div className="w-1/2 space-y-4">
+                                {/* Item status selector */}
+                                {viewMode === 'production' && (
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <h3 className="font-semibold text-sm">{item.product_name}</h3>
+                                      <div className="flex items-center gap-1">
+                                        <div className={`w-5 h-1.5 rounded-full transition-all ${
+                                          ['pending', 'in_progress', 'completed'].includes(item.production_status || '') ? 'bg-amber-500' : 'bg-muted'
+                                        }`} title="Pendiente" />
+                                        <div className={`w-5 h-1.5 rounded-full transition-all ${
+                                          ['in_progress', 'completed'].includes(item.production_status || '') ? 'bg-emerald-500' : 'bg-muted'
+                                        }`} title="En proceso" />
+                                        <div className={`w-5 h-1.5 rounded-full transition-all ${
+                                          item.production_status === 'completed' ? 'bg-blue-500' : 'bg-muted'
+                                        }`} title="Completado" />
+                                      </div>
+                                    </div>
+                                    <Select
+                                      value={item.production_status || 'pending'}
+                                      onValueChange={async (newStatus) => {
+                                        const { error } = await supabase
+                                          .from('sales_order_items')
+                                          .update({ production_status: newStatus })
+                                          .eq('id', item.id);
+                                        if (!error) {
+                                          handleItemStatusUpdate(item.id, newStatus);
+                                          toast.success('Estado actualizado');
+                                        } else {
+                                          toast.error('Error al actualizar el estado');
+                                        }
+                                      }}
+                                    >
+                                      <SelectTrigger className="w-[150px] h-8">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="pending">Pendiente</SelectItem>
+                                        <SelectItem value="in_progress">En proceso</SelectItem>
+                                        <SelectItem value="completed">Completado</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                )}
+
                                 {viewMode === 'production' && (
                                   <ImpositionSection item={{
                                     id: item.id,
