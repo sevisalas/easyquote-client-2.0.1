@@ -73,30 +73,11 @@ export function ItemProductionCard({ item, onStatusUpdate, onTaskCreated }: Item
     <div className="space-y-3">
       <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Tareas</p>
       
-      {/* Status + time + actions row */}
+      {/* Time + new task row */}
       <div className={`flex ${isMobile ? 'flex-col' : 'items-center justify-between'} gap-2`}>
-        <div className="flex items-center gap-3">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Estado del artículo</p>
-            <Select
-              value={item.production_status || 'pending'}
-              onValueChange={handleStatusChange}
-              disabled={isUpdatingStatus}
-            >
-              <SelectTrigger className={isMobile ? "w-full h-11" : "w-[160px] h-8"}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">Pendiente</SelectItem>
-                <SelectItem value="in_progress">En proceso</SelectItem>
-                <SelectItem value="completed">Completado</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Tiempo total</p>
-            <p className="text-sm font-bold text-foreground">{totalHours}h {totalMinutes}m</p>
-          </div>
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1">Tiempo total</p>
+          <p className="text-sm font-bold text-foreground">{totalHours}h {totalMinutes}m</p>
         </div>
         {!showTaskForm && (
           <Button
