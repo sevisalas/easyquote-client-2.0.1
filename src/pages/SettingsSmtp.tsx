@@ -20,7 +20,7 @@ export default function SettingsSmtp() {
     from_email: "",
     from_name: "",
     use_tls: true,
-    is_active: true,
+    is_active: false,
   });
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export default function SettingsSmtp() {
         from_email: settings.from_email || "",
         from_name: settings.from_name || "",
         use_tls: settings.use_tls ?? true,
-        is_active: settings.is_active ?? true,
+        is_active: settings.is_active ?? false,
       });
     }
   }, [settings]);
@@ -42,17 +42,16 @@ export default function SettingsSmtp() {
     document.title = "Configuración SMTP | EasyQuote";
   }, []);
 
+  const isConfigured =
+    !!form.smtp_host.trim() &&
+    !!form.smtp_username.trim() &&
+    !!form.smtp_password_encrypted.trim() &&
+    !!form.from_email.trim();
+
   const handleSave = () => {
-    if (form.is_active) {
-      const missing: string[] = [];
-      if (!form.smtp_host.trim()) missing.push("Host SMTP");
-      if (!form.smtp_username.trim()) missing.push("Usuario SMTP");
-      if (!form.smtp_password_encrypted.trim()) missing.push("Contraseña SMTP");
-      if (!form.from_email.trim()) missing.push("Email remitente");
-      if (missing.length > 0) {
-        toast.error(`Para activar el envío debes completar: ${missing.join(", ")}`);
-        return;
-      }
+    if (!isConfigured && form.is_active) {
+      toast.error("No se puede activar el envío sin completar la configuración SMTP");
+      return;
     }
 
     saveMutation.mutate({
@@ -62,6 +61,7 @@ export default function SettingsSmtp() {
       smtp_password_encrypted: form.smtp_password_encrypted.trim(),
       from_email: form.from_email.trim(),
       from_name: form.from_name.trim(),
+      is_active: isConfigured ? form.is_active : false,
     });
   };
 
@@ -178,12 +178,20 @@ export default function SettingsSmtp() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <Switch
-              checked={form.is_active}
-              onCheckedChange={(checked) => setForm({ ...form, is_active: checked })}
-            />
-            <Label>Envío de email activo</Label>
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <Switch
+                checked={isConfigured ? form.is_active : false}
+                disabled={!isConfigured}
+                onCheckedChange={(checked) => setForm({ ...form, is_active: checked })}
+              />
+              <Label>Envío de email activo</Label>
+            </div>
+            {!isConfigured && (
+              <p className="text-sm text-muted-foreground">
+                Si faltan datos SMTP obligatorios, el envío permanece desactivado.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
