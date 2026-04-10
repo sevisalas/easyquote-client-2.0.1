@@ -1417,7 +1417,7 @@ const SalesOrderDetail = () => {
                         )}
 
                         {/* Observaciones editables — vista producción, antes de estar en producción */}
-                        {viewMode === 'production' && !['in_production', 'completed'].includes(order.status) && (
+                        {viewMode === 'production' && (
                           <div className={`${isMobile ? 'px-3 pt-2' : 'px-4 pt-2'}`}>
                             <InstructionsField
                               value={(item as any).instructions || ''}
