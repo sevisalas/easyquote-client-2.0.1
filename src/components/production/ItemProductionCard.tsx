@@ -123,7 +123,7 @@ export function ItemProductionCard({ item, onStatusUpdate }: ItemProductionCardP
       <ProductionTaskList itemId={item.id} />
 
       {/* Imposition Section */}
-      <ImpositionSection item={item} onStatusUpdate={onStatusUpdate} />
+      <ImpositionSection item={item} onStatusUpdate={() => onStatusUpdate?.(item.id, item.production_status || 'pending')} />
     </div>
   );
 }
