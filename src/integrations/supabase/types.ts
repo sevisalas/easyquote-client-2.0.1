@@ -1509,6 +1509,66 @@ export type Database = {
           },
         ]
       }
+      organization_smtp_settings: {
+        Row: {
+          created_at: string
+          from_email: string
+          from_name: string | null
+          id: string
+          is_active: boolean
+          organization_id: string
+          smtp_host: string
+          smtp_password_encrypted: string
+          smtp_port: number
+          smtp_username: string
+          updated_at: string
+          use_tls: boolean
+        }
+        Insert: {
+          created_at?: string
+          from_email: string
+          from_name?: string | null
+          id?: string
+          is_active?: boolean
+          organization_id: string
+          smtp_host: string
+          smtp_password_encrypted: string
+          smtp_port?: number
+          smtp_username: string
+          updated_at?: string
+          use_tls?: boolean
+        }
+        Update: {
+          created_at?: string
+          from_email?: string
+          from_name?: string | null
+          id?: string
+          is_active?: boolean
+          organization_id?: string
+          smtp_host?: string
+          smtp_password_encrypted?: string
+          smtp_port?: number
+          smtp_username?: string
+          updated_at?: string
+          use_tls?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_smtp_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "organization_smtp_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_themes: {
         Row: {
           accent_color: string
