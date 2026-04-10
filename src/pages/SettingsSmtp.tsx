@@ -203,6 +203,8 @@ export default function SettingsSmtp() {
           {saveMutation.isPending ? "Guardando..." : "Guardar configuración"}
         </Button>
       </div>
+
+      <EmailTemplateCard />
     </div>
   );
 }

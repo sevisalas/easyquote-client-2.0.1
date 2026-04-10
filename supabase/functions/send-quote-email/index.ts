@@ -93,24 +93,55 @@ Deno.serve(async (req) => {
       .single();
 
     const fromName = smtp.from_name || org?.name || "EasyQuote";
-    const emailSubject = subject || `Presupuesto ${quote.quote_number}`;
 
-    // Build HTML email body
+    // Get custom email template
+    const { data: emailTemplate } = await supabaseAdmin
+      .from("email_templates")
+      .select("subject, body")
+      .eq("organization_id", quote.organization_id)
+      .eq("template_key", "quote_sent")
+      .maybeSingle();
+
+    // Build dynamic values
     const priceFormatted = quote.final_price
       ? Number(quote.final_price).toLocaleString("es-ES", { style: "currency", currency: "EUR" })
       : "";
 
-    const htmlBody = body || `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #333;">Presupuesto ${quote.quote_number}</h2>
-        <p>Estimado/a ${recipientName || "cliente"},</p>
-        <p>Adjunto encontrará el presupuesto <strong>${quote.quote_number}</strong>${priceFormatted ? ` por un importe de <strong>${priceFormatted}</strong>` : ""}.</p>
-        ${pdfUrl ? `<p><a href="${pdfUrl}" style="display: inline-block; background-color: #c83077; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>` : ""}
-        <p>Quedamos a su disposición para cualquier consulta.</p>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
-        <p style="font-size: 12px; color: #999;">Enviado desde ${fromName}</p>
-      </div>
-    `;
+    const pdfButton = pdfUrl
+      ? `<p><a href="${pdfUrl}" style="display: inline-block; background-color: #c83077; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>`
+      : "";
+
+    const priceText = priceFormatted
+      ? ` por un importe de <strong>${priceFormatted}</strong>`
+      : "";
+
+    const clientName = recipientName || "cliente";
+
+    // Replace variables in template
+    const replaceVars = (text: string) =>
+      text
+        .replace(/\{\{numero\}\}/g, quote.quote_number || "")
+        .replace(/\{\{cliente\}\}/g, clientName)
+        .replace(/\{\{precio\}\}/g, priceText)
+        .replace(/\{\{boton_pdf\}\}/g, pdfButton)
+        .replace(/\{\{empresa\}\}/g, fromName);
+
+    let emailSubject: string;
+    let htmlBody: string;
+
+    if (subject) {
+      // If caller provides explicit subject/body, use them (backwards compat)
+      emailSubject = subject;
+      htmlBody = body || buildDefaultHtml(quote, clientName, priceFormatted, pdfUrl, fromName);
+    } else if (emailTemplate?.subject && emailTemplate?.body) {
+      // Use custom template from DB
+      emailSubject = replaceVars(emailTemplate.subject);
+      htmlBody = replaceVars(emailTemplate.body);
+    } else {
+      // Fallback: default hardcoded template
+      emailSubject = `Presupuesto ${quote.quote_number}`;
+      htmlBody = buildDefaultHtml(quote, clientName, priceFormatted, pdfUrl, fromName);
+    }
 
     // Send via SMTP
     const client = new SMTPClient({
@@ -149,3 +180,23 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+function buildDefaultHtml(
+  quote: { quote_number: string; final_price: number | null },
+  clientName: string,
+  priceFormatted: string,
+  pdfUrl: string | undefined,
+  fromName: string
+): string {
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h2 style="color: #333;">Presupuesto ${quote.quote_number}</h2>
+      <p>Estimado/a ${clientName},</p>
+      <p>Adjunto encontrará el presupuesto <strong>${quote.quote_number}</strong>${priceFormatted ? ` por un importe de <strong>${priceFormatted}</strong>` : ""}.</p>
+      ${pdfUrl ? `<p><a href="${pdfUrl}" style="display: inline-block; background-color: #c83077; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>` : ""}
+      <p>Quedamos a su disposición para cualquier consulta.</p>
+      <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+      <p style="font-size: 12px; color: #999;">Enviado desde ${fromName}</p>
+    </div>
+  `;
+}
