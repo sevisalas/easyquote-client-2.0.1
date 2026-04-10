@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 interface LocalClient {
   id: string;
   name: string;
+  trade_name: string;
   email: string;
   phone: string;
   notes: string;
@@ -45,7 +46,7 @@ export const ClientCard = ({
   const navigate = useNavigate();
 
   return (
-    <Card className="mb-3">
+    <Card className="mb-3 cursor-pointer" onClick={() => navigate(`/clientes/${cliente.id}/editar`)}>
       <CardContent className="p-4">
         <div className="space-y-3">
           <div className="flex items-start justify-between gap-2">
@@ -53,6 +54,9 @@ export const ClientCard = ({
               <h3 className="font-semibold text-base truncate">
                 {cliente.name || "Sin nombre"}
               </h3>
+              {cliente.trade_name && (
+                <p className="text-sm text-muted-foreground truncate">{cliente.trade_name}</p>
+              )}
               <Badge
                 variant={cliente.source === 'local' ? 'default' : 'secondary'}
                 className="text-xs mt-1"
@@ -121,32 +125,24 @@ export const ClientCard = ({
             </div>
           )}
 
-          <div className="flex gap-2 pt-2">
-            {cliente.source === 'local' ? (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate(`/clientes/${cliente.id}/editar`)}
-                  className="flex-1 h-9"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Editar
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onDelete(cliente.id)}
-                  className="h-9 px-3 text-destructive hover:text-destructive hover:bg-destructive/10"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </>
-            ) : (
-              <div className="flex-1 text-center py-2">
-                <span className="text-sm text-muted-foreground">Solo lectura</span>
-              </div>
-            )}
+          <div className="flex gap-2 pt-2" onClick={(e) => e.stopPropagation()}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/clientes/${cliente.id}/editar`)}
+              className="flex-1 h-9"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Editar
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDelete(cliente.id)}
+              className="h-9 px-3 text-destructive hover:text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </CardContent>

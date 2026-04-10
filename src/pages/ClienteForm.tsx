@@ -15,6 +15,7 @@ import { useTariffs } from "@/hooks/useTariffs";
 
 interface ClienteData {
   name: string;
+  trade_name: string;
   email: string;
   phone: string;
   address: string;
@@ -41,6 +42,7 @@ const ClienteForm = () => {
   
   const [formData, setFormData] = useState<ClienteData>({
     name: "",
+    trade_name: "",
     email: "",
     phone: "",
     address: "",
@@ -72,6 +74,7 @@ const ClienteForm = () => {
       
       setFormData({
         name: data.name || "",
+        trade_name: (data as any).trade_name || "",
         email: data.email || "",
         phone: data.phone || "",
         address: data.address || "",
@@ -103,6 +106,7 @@ const ClienteForm = () => {
       const preparedCustomerPayload: any = {
         ...rest,
         name: rest.name.trim(),
+        trade_name: rest.trade_name.trim() || null,
         email: rest.email.trim() || null,
         phone: rest.phone.trim() || null,
         address: rest.address.trim() || null,
@@ -247,6 +251,18 @@ const ClienteForm = () => {
                   onChange={handleChange}
                   placeholder="Nombre completo del cliente"
                   required
+                  className={isMobile ? 'h-11' : ''}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="trade_name">Nombre comercial</Label>
+                <Input
+                  id="trade_name"
+                  name="trade_name"
+                  value={formData.trade_name}
+                  onChange={handleChange}
+                  placeholder="Nombre comercial (si es diferente)"
                   className={isMobile ? 'h-11' : ''}
                 />
               </div>
