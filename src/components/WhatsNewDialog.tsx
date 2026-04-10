@@ -9,9 +9,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, ClipboardList, LayoutDashboard } from "lucide-react";
+import { Sparkles, Users, Mail, Globe } from "lucide-react";
 
-const CURRENT_VERSION = "2.7.11";
+const CURRENT_VERSION = "2.7.12";
 const SILENT_UPDATE = false;
 const LS_KEY = "whats_new_seen_version";
 
@@ -24,16 +24,23 @@ interface ReleaseNote {
 
 const RELEASE_NOTES: ReleaseNote[] = [
   {
-    icon: <ClipboardList className="h-5 w-5 text-primary" />,
-    title: "Seguimiento de pedidos mejorado",
+    icon: <Users className="h-5 w-5 text-primary" />,
+    title: "Información ampliada de clientes en ERP",
     description:
-      "Nuevas opciones para gestionar el estado de los artículos y sincronización automática con el estado del pedido. Al crear una tarea, el artículo y el pedido pasan automáticamente a producción.",
+      "Se amplía la información sincronizada de los clientes con la integración ERP, incluyendo más datos de contacto y comerciales.",
   },
   {
-    icon: <LayoutDashboard className="h-5 w-5 text-primary" />,
-    title: "Rediseño de la vista de artículos",
+    icon: <Mail className="h-5 w-5 text-primary" />,
+    title: "Envío de presupuestos por email",
     description:
-      "La vista de detalle de los pedidos se reorganiza en dos columnas: configuración a la izquierda e imposición, tareas y notas a la derecha, para una gestión de producción más ágil.",
+      "Nueva opción para enviar presupuestos directamente por correo electrónico desde la aplicación, con configuración SMTP personalizable y plantillas editables por organización.",
+  },
+  {
+    icon: <Globe className="h-5 w-5 text-primary" />,
+    title: "Primera fase del portal de cliente",
+    description:
+      "Sentamos las bases para el futuro portal de cliente: el enlace al PDF en el email es el primer paso hacia la aprobación online de presupuestos.",
+    badge: "Próximamente",
   },
 ];
 
