@@ -192,7 +192,7 @@ function buildDefaultHtml(
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
       <h2 style="color: #333;">Presupuesto ${quote.quote_number}</h2>
       <p>Estimado/a ${clientName},</p>
-      <p>Adjunto encontrará el presupuesto <strong>${quote.quote_number}</strong>${priceFormatted ? ` por un importe de <strong>${priceFormatted}</strong>` : ""}.</p>
+      <p>Le enviamos el presupuesto <strong>${quote.quote_number}</strong>${priceFormatted ? ` por un importe de <strong>${priceFormatted}</strong>` : ""}.</p>
       ${pdfUrl ? `<p><a href="${pdfUrl}" style="display: inline-block; background-color: #c83077; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>` : ""}
       <p>Quedamos a su disposición para cualquier consulta.</p>
       <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
