@@ -664,6 +664,30 @@ const SalesOrderDetail = () => {
     await loadOrderData();
   };
 
+  // Auto-transition item + order to production when a task is created
+  const handleAutoProduction = async (itemId: string) => {
+    if (!id || !order) return;
+
+    const targetItem = items.find(i => i.id === itemId);
+    if (targetItem && targetItem.production_status !== 'in_progress' && targetItem.production_status !== 'completed') {
+      const { error } = await supabase
+        .from('sales_order_items')
+        .update({ production_status: 'in_progress' })
+        .eq('id', itemId);
+      if (!error) {
+        setItems(prev => prev.map(i => i.id === itemId ? { ...i, production_status: 'in_progress' as any } : i));
+      }
+    }
+
+    if (order.status === 'draft' || order.status === 'pending') {
+      const success = await updateSalesOrderStatus(id, 'in_production');
+      if (success) {
+        setOrder(prev => prev ? { ...prev, status: 'in_production' } : null);
+        toast.info('Pedido movido automáticamente a "En Producción"');
+      }
+    }
+  };
+
   const handleConfirmCancellation = async () => {
     if (!id || !order) return;
     if (!cancellationReason.trim()) {
