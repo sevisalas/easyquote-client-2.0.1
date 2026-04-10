@@ -455,6 +455,16 @@ export function AppSidebar() {
                                   </NavLink>
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>}
+
+                            {/* SMTP - Solo admins */}
+                            {(isSuperAdmin || isOrgAdmin) && <SidebarMenuSubItem>
+                                <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/smtp"} className="h-6 px-2">
+                                  <NavLink to="/configuracion/smtp" end className={getNavCls}>
+                                    <Mail className="mr-2 h-4 w-4" />
+                                    {!isCollapsed && <span>Email (SMTP)</span>}
+                                  </NavLink>
+                                </SidebarMenuSubButton>
+                              </SidebarMenuSubItem>}
                          </SidebarMenuSub>
                        </CollapsibleContent>
                      </SidebarMenuItem>
