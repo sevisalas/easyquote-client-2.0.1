@@ -8,7 +8,6 @@ export const usePdfAccess = () => {
   const { organization, membership, isSuperAdmin } = useSubscription();
   const orgId = organization?.id || membership?.organization_id;
 
-  // Solo los propietarios de organizaciones y admins tienen acceso a plantillas PDF
   const isOrgOwner = organization !== null;
   const isOrgAdmin = membership?.role === 'admin';
   const hasRole = isSuperAdmin || isOrgOwner || isOrgAdmin;
@@ -16,44 +15,24 @@ export const usePdfAccess = () => {
   const { data: hasPdfAccess = false, isLoading: loading } = useQuery({
     queryKey: ['pdf-access', orgId, isSuperAdmin],
     queryFn: async () => {
-      // Superadmins always have access
-      if (isSuperAdmin) {
-        return true;
-      }
+      if (isSuperAdmin) return true;
+      if (!hasRole || !orgId) return false;
 
-      // Los usuarios normales (organization_members sin rol admin) NO tienen acceso
-      if (!hasRole) {
-        return false;
-      }
-
-      if (!orgId) {
-        return false;
-      }
-
-      // Check if the organization has an active integration
       const { data, error } = await supabase
-        .from('organization_integration_access')
-        .select('generate_pdfs, is_active')
-        .eq('organization_id', orgId)
-        .eq('is_active', true)
-        .limit(1)
+        .from('organizations')
+        .select('generate_pdfs')
+        .eq('id', orgId)
         .maybeSingle();
 
       if (error) {
         console.error('Error checking PDF access:', error);
-        return false; // Default to false on errors for security
+        return false;
       }
-      
-      if (!data) {
-        // If no integration exists, allow PDF access for admins by default
-        return true;
-      }
-      
-      // If integration exists and is active, check generate_pdfs flag
+
       return data?.generate_pdfs === true;
     },
     enabled: hasRole && !!orgId,
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
@@ -61,9 +40,5 @@ export const usePdfAccess = () => {
     queryClient.invalidateQueries({ queryKey: ['pdf-access', orgId, isSuperAdmin] });
   }, [queryClient, orgId, isSuperAdmin]);
 
-  return {
-    hasPdfAccess,
-    loading,
-    refreshPdfAccess
-  };
+  return { hasPdfAccess, loading, refreshPdfAccess };
 };
