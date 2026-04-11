@@ -96,6 +96,20 @@ export default function QuoteDetail() {
     enabled: !!id,
   });
 
+  // Portal actions for this quote
+  const { data: portalActions } = useQuery({
+    queryKey: ['portal-actions', id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('quote_portal_actions')
+        .select('action, created_at, comment')
+        .eq('quote_id', id!)
+        .order('created_at', { ascending: false });
+      return data || [];
+    },
+    enabled: !!id,
+  });
+
   // Check if customer has holded_id (needed for Holded exports)
   const { data: customerHoldedId } = useQuery({
     queryKey: ['customer-holded-id', quote?.customer_id],
