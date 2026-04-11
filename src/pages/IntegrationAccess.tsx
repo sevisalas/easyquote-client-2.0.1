@@ -23,6 +23,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface Organization {
   id: string;
   name: string;
+  hide_all_prompts_in_documents: boolean;
+  generate_pdfs: boolean;
+  client_portal: boolean;
 }
 
 interface Integration {
@@ -36,9 +39,7 @@ interface IntegrationAccess {
   id: string;
   organization_id: string;
   integration_id: string;
-  granted_by: string;
   created_at: string;
-  generate_pdfs: boolean;
   organization?: Organization;
   integration?: Integration;
 }
@@ -55,7 +56,6 @@ const IntegrationAccess = () => {
   const [selectedOrg, setSelectedOrg] = useState("");
   const [selectedIntegration, setSelectedIntegration] = useState("");
   const [granting, setGranting] = useState(false);
-  const [orgDocSettings, setOrgDocSettings] = useState<Record<string, boolean>>({});
 
   const { toast } = useToast();
   const { isSuperAdmin } = useSubscription();
@@ -67,23 +67,14 @@ const IntegrationAccess = () => {
 
   const loadData = async () => {
     try {
-      // Load organizations
       const { data: orgsData, error: orgsError } = await supabase
         .from("organizations")
-        .select("id, name, hide_all_prompts_in_documents")
+        .select("id, name, hide_all_prompts_in_documents, generate_pdfs, client_portal")
         .order("name");
 
       if (orgsError) throw orgsError;
-      setOrganizations(orgsData || []);
+      setOrganizations((orgsData || []) as Organization[]);
 
-      // Build doc settings map
-      const docSettings: Record<string, boolean> = {};
-      (orgsData || []).forEach((org: any) => {
-        docSettings[org.id] = org.hide_all_prompts_in_documents || false;
-      });
-      setOrgDocSettings(docSettings);
-
-      // Load integration accesses with integration details
       const { data: accessData, error: accessError } = await supabase
         .from("organization_integration_access")
         .select("*, integrations(id, name, integration_type, description)")
@@ -91,10 +82,8 @@ const IntegrationAccess = () => {
 
       if (accessError) throw accessError;
 
-      // Manually map organization and integration data
       const accessesWithOrgs = (accessData || []).map((access: any) => ({
         ...access,
-        granted_by: access.user_id || null,
         organization: orgsData?.find((org) => org.id === access.organization_id),
         integration: access.integrations,
       }));
@@ -117,7 +106,6 @@ const IntegrationAccess = () => {
 
     setGranting(true);
     try {
-      // Check if access already exists
       const { data: existingAccess } = await supabase
         .from("organization_integration_access")
         .select("id")
@@ -135,7 +123,6 @@ const IntegrationAccess = () => {
         return;
       }
 
-      // Crear con is_active: false - se activará cuando el usuario configure su API key
       const { error } = await supabase.from("organization_integration_access").insert({
         organization_id: selectedOrg,
         integration_id: selectedIntegration,
@@ -186,73 +173,32 @@ const IntegrationAccess = () => {
     }
   };
 
-  const toggleGeneratePdfs = async (accessId: string, currentValue: boolean) => {
-    try {
-      const { error } = await supabase
-        .from("organization_integration_access")
-        .update({ generate_pdfs: !currentValue })
-        .eq("id", accessId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Éxito",
-        description: `Configuración actualizada: ${!currentValue ? "Se generarán PDFs" : "Se usará el CRM/ERP integrado"}`,
-      });
-
-      loadData();
-    } catch (error) {
-      console.error("Error updating generate_pdfs:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar la configuración",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const toggleClientPortal = async (accessId: string, currentValue: boolean) => {
-    try {
-      const { error } = await supabase
-        .from("organization_integration_access")
-        .update({ client_portal: !currentValue } as any)
-        .eq("id", accessId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Éxito",
-        description: `Portal del cliente: ${!currentValue ? "activado" : "desactivado"}`,
-      });
-
-      loadData();
-    } catch (error) {
-      console.error("Error updating client_portal:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar la configuración",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const toggleHideAllPrompts = async (orgId: string, currentValue: boolean) => {
+  const toggleOrgFlag = async (orgId: string, field: 'generate_pdfs' | 'client_portal' | 'hide_all_prompts_in_documents', currentValue: boolean) => {
     try {
       const { error } = await supabase
         .from("organizations")
-        .update({ hide_all_prompts_in_documents: !currentValue } as any)
+        .update({ [field]: !currentValue } as any)
         .eq("id", orgId);
 
       if (error) throw error;
 
-      setOrgDocSettings((prev) => ({ ...prev, [orgId]: !currentValue }));
+      setOrganizations((prev) =>
+        prev.map((org) => (org.id === orgId ? { ...org, [field]: !currentValue } : org))
+      );
+
+      const labels: Record<string, [string, string]> = {
+        generate_pdfs: ["Generación de PDFs activada", "Generación de PDFs desactivada"],
+        client_portal: ["Portal del cliente activado", "Portal del cliente desactivado"],
+        hide_all_prompts_in_documents: ["Prompts ocultos en documentos", "Prompts visibles en documentos"],
+      };
+      const [onMsg, offMsg] = labels[field];
 
       toast({
         title: "Éxito",
-        description: `Prompts en documentos: ${!currentValue ? "ocultos" : "visibles"}`,
+        description: !currentValue ? onMsg : offMsg,
       });
     } catch (error) {
-      console.error("Error updating hide_all_prompts:", error);
+      console.error(`Error updating ${field}:`, error);
       toast({
         title: "Error",
         description: "No se pudo actualizar la configuración",
@@ -342,36 +288,65 @@ const IntegrationAccess = () => {
         </CardContent>
       </Card>
 
-      {/* Organization Document Settings */}
+      {/* Organization Feature Toggles */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <EyeOff className="h-5 w-5" />
-            Configuración de documentos por organización
+            <Settings className="h-5 w-5" />
+            Configuración por organización
           </CardTitle>
-          <CardDescription>Controla si los prompts se incluyen en PDFs y exportaciones a Holded</CardDescription>
+          <CardDescription>Funcionalidades y opciones activables por tenant</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {organizations.map((org) => (
-              <div key={org.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div>
-                  <div className="font-medium">{org.name}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {orgDocSettings[org.id]
-                      ? "Solo se muestra nombre del producto y descripción en documentos"
-                      : "Los prompts se incluyen en PDFs y exportaciones"}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Label htmlFor={`hide-prompts-${org.id}`} className="text-sm cursor-pointer">
-                    Ocultar prompts
-                  </Label>
-                  <Switch
-                    id={`hide-prompts-${org.id}`}
-                    checked={orgDocSettings[org.id] || false}
-                    onCheckedChange={() => toggleHideAllPrompts(org.id, orgDocSettings[org.id] || false)}
-                  />
+              <div key={org.id} className="p-4 border rounded-lg space-y-3">
+                <div className="font-medium text-base">{org.name}</div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Generate PDFs */}
+                  <div className="flex items-center justify-between gap-2 p-2 rounded-md bg-muted/30">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <Label htmlFor={`pdf-${org.id}`} className="text-sm cursor-pointer">
+                        Generación de PDFs
+                      </Label>
+                    </div>
+                    <Switch
+                      id={`pdf-${org.id}`}
+                      checked={org.generate_pdfs}
+                      onCheckedChange={() => toggleOrgFlag(org.id, 'generate_pdfs', org.generate_pdfs)}
+                    />
+                  </div>
+
+                  {/* Client Portal */}
+                  <div className="flex items-center justify-between gap-2 p-2 rounded-md bg-muted/30">
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-muted-foreground" />
+                      <Label htmlFor={`portal-${org.id}`} className="text-sm cursor-pointer">
+                        Portal del cliente
+                      </Label>
+                    </div>
+                    <Switch
+                      id={`portal-${org.id}`}
+                      checked={org.client_portal}
+                      onCheckedChange={() => toggleOrgFlag(org.id, 'client_portal', org.client_portal)}
+                    />
+                  </div>
+
+                  {/* Hide Prompts */}
+                  <div className="flex items-center justify-between gap-2 p-2 rounded-md bg-muted/30">
+                    <div className="flex items-center gap-2">
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      <Label htmlFor={`hide-prompts-${org.id}`} className="text-sm cursor-pointer">
+                        Ocultar prompts
+                      </Label>
+                    </div>
+                    <Switch
+                      id={`hide-prompts-${org.id}`}
+                      checked={org.hide_all_prompts_in_documents}
+                      onCheckedChange={() => toggleOrgFlag(org.id, 'hide_all_prompts_in_documents', org.hide_all_prompts_in_documents)}
+                    />
+                  </div>
                 </div>
               </div>
             ))}
@@ -382,8 +357,8 @@ const IntegrationAccess = () => {
       {/* Current Accesses */}
       <Card>
         <CardHeader>
-          <CardTitle>Accesos actuales</CardTitle>
-          <CardDescription>Lista de todos los accesos a integraciones concedidos</CardDescription>
+          <CardTitle>Accesos a integraciones</CardTitle>
+          <CardDescription>Lista de accesos a integraciones concedidos</CardDescription>
         </CardHeader>
         <CardContent>
           {integrationAccesses.length === 0 ? (
@@ -410,67 +385,25 @@ const IntegrationAccess = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    {access.integration?.integration_type === 'ERP/CRM' && (
-                      <div className="flex flex-col items-start gap-2 border-l pl-4">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <Label htmlFor={`generate-pdf-${access.id}`} className="text-sm font-medium cursor-pointer">
-                            Generación de PDFs
-                          </Label>
-                          <Switch
-                            id={`generate-pdf-${access.id}`}
-                            checked={access.generate_pdfs}
-                            onCheckedChange={() => toggleGeneratePdfs(access.id, access.generate_pdfs)}
-                          />
-                        </div>
-                        <p className="text-xs text-muted-foreground max-w-xs">
-                          {access.generate_pdfs
-                            ? "Los PDFs se generan localmente en la aplicación"
-                            : "Los presupuestos se exportan al CRM/ERP integrado (sin generar PDF local)"}
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="flex flex-col items-start gap-2 border-l pl-4">
-                      <div className="flex items-center gap-2">
-                        <Globe className="h-4 w-4 text-muted-foreground" />
-                        <Label htmlFor={`client-portal-${access.id}`} className="text-sm font-medium cursor-pointer">
-                          Portal del cliente
-                        </Label>
-                        <Switch
-                          id={`client-portal-${access.id}`}
-                          checked={(access as any).client_portal || false}
-                          onCheckedChange={() => toggleClientPortal(access.id, (access as any).client_portal || false)}
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground max-w-xs">
-                        {(access as any).client_portal
-                          ? "Los clientes pueden ver y aprobar presupuestos online"
-                          : "Portal desactivado — los emails envían solo PDF"}
-                      </p>
-                    </div>
-
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive" size="sm">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Esta acción revocará el acceso de la organización a esta integración. No se podrá deshacer.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => revokeAccess(access.id)}>Revocar Acceso</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" size="sm">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta acción revocará el acceso de la organización a esta integración. No se podrá deshacer.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => revokeAccess(access.id)}>Revocar Acceso</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               ))}
             </div>
