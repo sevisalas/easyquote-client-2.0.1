@@ -652,6 +652,15 @@ export default function QuoteDetail() {
                 <Badge variant={getStatusVariant(quote.status)}>
                   {statusLabel(quote.status)}
                 </Badge>
+                {/* Portal activity indicator */}
+                {portalActions && portalActions.length > 0 && (
+                  <Badge variant="outline" className="gap-1 text-xs">
+                    <Globe className="h-3 w-3" />
+                    {portalActions.find(a => a.action === 'approved') ? 'Aprobado vía portal' :
+                     portalActions.find(a => a.action === 'rejected') ? 'Rechazado vía portal' :
+                     portalActions.find(a => a.action === 'viewed') ? 'Visto en portal' : 'Portal'}
+                  </Badge>
+                )}
                 {/* Action buttons based on current status */}
                 {quote.status === 'draft' && (!isComercial || isOwnQuote) && (
                   <Button
