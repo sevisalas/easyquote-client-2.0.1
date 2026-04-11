@@ -11,7 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Edit, Download, Copy, CheckCircle, ChevronDown, Eye, EyeOff, FileText, Ban, Mail, Loader2 } from "lucide-react";
+import { Edit, Download, Copy, CheckCircle, ChevronDown, Eye, EyeOff, FileText, Ban, Mail, Loader2, Globe } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
@@ -93,6 +93,20 @@ export default function QuoteDetail() {
   const { data: quote, isLoading, error } = useQuery({
     queryKey: ['quote', id],
     queryFn: () => fetchQuote(id!),
+    enabled: !!id,
+  });
+
+  // Portal actions for this quote
+  const { data: portalActions } = useQuery({
+    queryKey: ['portal-actions', id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('quote_portal_actions')
+        .select('action, created_at, comment')
+        .eq('quote_id', id!)
+        .order('created_at', { ascending: false });
+      return data || [];
+    },
     enabled: !!id,
   });
 
@@ -638,6 +652,15 @@ export default function QuoteDetail() {
                 <Badge variant={getStatusVariant(quote.status)}>
                   {statusLabel(quote.status)}
                 </Badge>
+                {/* Portal activity indicator */}
+                {portalActions && portalActions.length > 0 && (
+                  <Badge variant="outline" className="gap-1 text-xs">
+                    <Globe className="h-3 w-3" />
+                    {portalActions.find(a => a.action === 'approved') ? 'Aprobado vía portal' :
+                     portalActions.find(a => a.action === 'rejected') ? 'Rechazado vía portal' :
+                     portalActions.find(a => a.action === 'viewed') ? 'Visto en portal' : 'Portal'}
+                  </Badge>
+                )}
                 {/* Action buttons based on current status */}
                 {quote.status === 'draft' && (!isComercial || isOwnQuote) && (
                   <Button

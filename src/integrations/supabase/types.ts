@@ -1448,6 +1448,7 @@ export type Database = {
       organization_integration_access: {
         Row: {
           access_token_encrypted: string | null
+          client_portal: boolean
           configuration: Json | null
           created_at: string
           expires_at: string | null
@@ -1461,6 +1462,7 @@ export type Database = {
         }
         Insert: {
           access_token_encrypted?: string | null
+          client_portal?: boolean
           configuration?: Json | null
           created_at?: string
           expires_at?: string | null
@@ -1474,6 +1476,7 @@ export type Database = {
         }
         Update: {
           access_token_encrypted?: string | null
+          client_portal?: boolean
           configuration?: Json | null
           created_at?: string
           expires_at?: string | null
@@ -2714,6 +2717,89 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_portal_actions: {
+        Row: {
+          action: string
+          client_ip: string | null
+          comment: string | null
+          created_at: string
+          id: string
+          quote_id: string
+          token_id: string
+        }
+        Insert: {
+          action: string
+          client_ip?: string | null
+          comment?: string | null
+          created_at?: string
+          id?: string
+          quote_id: string
+          token_id: string
+        }
+        Update: {
+          action?: string
+          client_ip?: string | null
+          comment?: string | null
+          created_at?: string
+          id?: string
+          quote_id?: string
+          token_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_portal_actions_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_portal_actions_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "quote_portal_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_portal_tokens: {
+        Row: {
+          accessed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          is_active: boolean
+          quote_id: string
+          token: string
+        }
+        Insert: {
+          accessed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          quote_id: string
+          token?: string
+        }
+        Update: {
+          accessed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          quote_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_portal_tokens_quote_id_fkey"
             columns: ["quote_id"]
             isOneToOne: false
             referencedRelation: "quotes"

@@ -55,6 +55,34 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Check if client portal is enabled for this org
+    const { data: portalAccess } = await supabaseAdmin
+      .from("organization_integration_access")
+      .select("client_portal")
+      .eq("organization_id", quote.organization_id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    const clientPortalEnabled = (portalAccess as any)?.client_portal === true;
+    let portalUrl: string | undefined;
+
+    if (clientPortalEnabled) {
+      // Generate portal token
+      const { data: tokenData, error: tokenError } = await supabaseAdmin
+        .from("quote_portal_tokens")
+        .insert({
+          quote_id: quoteId,
+        })
+        .select("token")
+        .single();
+
+      if (!tokenError && tokenData) {
+        // Use the app's published URL
+        const appUrl = "https://easyquote-client.lovable.app";
+        portalUrl = `${appUrl}/portal/${tokenData.token}`;
+      }
+    }
+
     // Verify user belongs to this org
     const { data: membership } = await supabaseAdmin
       .from("organization_members")
@@ -119,8 +147,14 @@ Deno.serve(async (req) => {
       ? Number(quote.final_price).toLocaleString("es-ES", { style: "currency", currency: "EUR" })
       : "";
 
+    const portalButton = portalUrl
+      ? `<p><a href="${portalUrl}" style="display: inline-block; background-color: ${buttonColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Ver y aprobar presupuesto</a></p>`
+      : "";
+
     const pdfButton = pdfUrl
-      ? `<p><a href="${pdfUrl}" style="display: inline-block; background-color: ${buttonColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>`
+      ? portalUrl
+        ? `<p><a href="${pdfUrl}" style="color: ${buttonColor}; text-decoration: underline; font-size: 14px;">Descargar PDF</a></p>`
+        : `<p><a href="${pdfUrl}" style="display: inline-block; background-color: ${buttonColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>`
       : "";
 
     const priceText = priceFormatted
@@ -135,6 +169,7 @@ Deno.serve(async (req) => {
         .replace(/\{\{numero\}\}/g, quote.quote_number || "")
         .replace(/\{\{cliente\}\}/g, clientName)
         .replace(/\{\{precio\}\}/g, priceText)
+        .replace(/\{\{boton_portal\}\}/g, portalButton)
         .replace(/\{\{boton_pdf\}\}/g, pdfButton)
         .replace(/\{\{empresa\}\}/g, fromName);
 
@@ -144,7 +179,7 @@ Deno.serve(async (req) => {
     if (subject) {
       // If caller provides explicit subject/body, use them (backwards compat)
       emailSubject = subject;
-      htmlBody = body || buildDefaultHtml(quote, clientName, priceFormatted, pdfUrl, fromName, buttonColor);
+      htmlBody = body || buildDefaultHtml(quote, clientName, priceFormatted, pdfUrl, portalUrl, fromName, buttonColor);
     } else if (emailTemplate?.subject && emailTemplate?.body) {
       // Use custom template from DB
       emailSubject = replaceVars(emailTemplate.subject);
@@ -152,7 +187,7 @@ Deno.serve(async (req) => {
     } else {
       // Fallback: default hardcoded template
       emailSubject = `Presupuesto ${quote.quote_number}`;
-      htmlBody = buildDefaultHtml(quote, clientName, priceFormatted, pdfUrl, fromName, buttonColor);
+      htmlBody = buildDefaultHtml(quote, clientName, priceFormatted, pdfUrl, portalUrl, fromName, buttonColor);
     }
 
     // Send via SMTP
@@ -198,15 +233,27 @@ function buildDefaultHtml(
   clientName: string,
   priceFormatted: string,
   pdfUrl: string | undefined,
+  portalUrl: string | undefined,
   fromName: string,
   buttonColor: string = "#c83077"
 ): string {
+  const primaryCta = portalUrl
+    ? `<p><a href="${portalUrl}" style="display: inline-block; background-color: ${buttonColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Ver y aprobar presupuesto</a></p>`
+    : pdfUrl
+      ? `<p><a href="${pdfUrl}" style="display: inline-block; background-color: ${buttonColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>`
+      : "";
+
+  const secondaryCta = portalUrl && pdfUrl
+    ? `<p><a href="${pdfUrl}" style="color: ${buttonColor}; text-decoration: underline; font-size: 14px;">Descargar PDF</a></p>`
+    : "";
+
   return `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
       <h2 style="color: #333;">Presupuesto ${quote.quote_number}</h2>
       <p>Estimado/a ${clientName},</p>
       <p>Le enviamos el presupuesto <strong>${quote.quote_number}</strong>${priceFormatted ? ` por un importe de <strong>${priceFormatted}</strong>` : ""}.</p>
-      ${pdfUrl ? `<p><a href="${pdfUrl}" style="display: inline-block; background-color: ${buttonColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>` : ""}
+      ${primaryCta}
+      ${secondaryCta}
       <p>Quedamos a su disposición para cualquier consulta.</p>
       <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
       <p style="font-size: 12px; color: #999;">Enviado desde ${fromName}</p>

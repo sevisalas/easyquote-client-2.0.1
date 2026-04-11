@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { Settings, Plus, Trash2, FileText, EyeOff } from "lucide-react";
+import { Settings, Plus, Trash2, FileText, EyeOff, Globe } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
@@ -211,6 +211,31 @@ const IntegrationAccess = () => {
     }
   };
 
+  const toggleClientPortal = async (accessId: string, currentValue: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("organization_integration_access")
+        .update({ client_portal: !currentValue } as any)
+        .eq("id", accessId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: `Portal del cliente: ${!currentValue ? "activado" : "desactivado"}`,
+      });
+
+      loadData();
+    } catch (error) {
+      console.error("Error updating client_portal:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la configuración",
+        variant: "destructive",
+      });
+    }
+  };
+
   const toggleHideAllPrompts = async (orgId: string, currentValue: boolean) => {
     try {
       const { error } = await supabase
@@ -406,6 +431,25 @@ const IntegrationAccess = () => {
                         </p>
                       </div>
                     )}
+
+                    <div className="flex flex-col items-start gap-2 border-l pl-4">
+                      <div className="flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-muted-foreground" />
+                        <Label htmlFor={`client-portal-${access.id}`} className="text-sm font-medium cursor-pointer">
+                          Portal del cliente
+                        </Label>
+                        <Switch
+                          id={`client-portal-${access.id}`}
+                          checked={(access as any).client_portal || false}
+                          onCheckedChange={() => toggleClientPortal(access.id, (access as any).client_portal || false)}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground max-w-xs">
+                        {(access as any).client_portal
+                          ? "Los clientes pueden ver y aprobar presupuestos online"
+                          : "Portal desactivado — los emails envían solo PDF"}
+                      </p>
+                    </div>
 
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
