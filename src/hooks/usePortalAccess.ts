@@ -14,11 +14,9 @@ export const usePortalAccess = () => {
       if (!orgId) return false;
 
       const { data, error } = await supabase
-        .from('organization_integration_access')
+        .from('organizations')
         .select('client_portal')
-        .eq('organization_id', orgId)
-        .eq('is_active', true)
-        .limit(1)
+        .eq('id', orgId)
         .maybeSingle();
 
       if (error) {
@@ -26,7 +24,7 @@ export const usePortalAccess = () => {
         return false;
       }
 
-      return (data as any)?.client_portal === true;
+      return data?.client_portal === true;
     },
     enabled: !!orgId,
     staleTime: 5 * 60 * 1000,

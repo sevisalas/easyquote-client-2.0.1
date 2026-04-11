@@ -20,6 +20,8 @@ interface Suscriptor {
   client_user_limit?: number;
   client_user_extra?: number;
   holded_external_customers?: boolean;
+  generate_pdfs?: boolean;
+  client_portal?: boolean;
 }
 
 const EditarSuscriptor = () => {
@@ -80,6 +82,8 @@ const EditarSuscriptor = () => {
       const updateData: any = {
         name: suscriptor.name,
         subscription_plan: suscriptor.subscription_plan,
+        generate_pdfs: suscriptor.generate_pdfs || false,
+        client_portal: suscriptor.client_portal || false,
       };
       
       // Solo actualizar límites si es plan personalizado
@@ -242,6 +246,29 @@ const EditarSuscriptor = () => {
               </div>
             </>
           )}
+
+          {/* Feature toggles */}
+          <div className="border-t pt-4 space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Funcionalidades</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <Label htmlFor="generate_pdfs" className="cursor-pointer">Generación de PDFs</Label>
+                <Checkbox
+                  id="generate_pdfs"
+                  checked={suscriptor.generate_pdfs || false}
+                  onCheckedChange={(checked) => setSuscriptor({ ...suscriptor, generate_pdfs: !!checked })}
+                />
+              </div>
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <Label htmlFor="client_portal" className="cursor-pointer">Portal del cliente</Label>
+                <Checkbox
+                  id="client_portal"
+                  checked={suscriptor.client_portal || false}
+                  onCheckedChange={(checked) => setSuscriptor({ ...suscriptor, client_portal: !!checked })}
+                />
+              </div>
+            </div>
+          </div>
 
           <div className="flex gap-3">
             <Button onClick={guardarCambios} disabled={saving}>

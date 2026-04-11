@@ -56,14 +56,13 @@ Deno.serve(async (req) => {
     }
 
     // Check if client portal is enabled for this org
-    const { data: portalAccess } = await supabaseAdmin
-      .from("organization_integration_access")
+    const { data: orgData } = await supabaseAdmin
+      .from("organizations")
       .select("client_portal")
-      .eq("organization_id", quote.organization_id)
-      .eq("is_active", true)
+      .eq("id", quote.organization_id)
       .maybeSingle();
 
-    const clientPortalEnabled = (portalAccess as any)?.client_portal === true;
+    const clientPortalEnabled = orgData?.client_portal === true;
     let portalUrl: string | undefined;
 
     if (clientPortalEnabled) {
