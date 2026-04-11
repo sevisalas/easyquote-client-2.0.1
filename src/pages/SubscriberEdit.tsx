@@ -20,6 +20,8 @@ interface Suscriptor {
   client_user_limit?: number;
   client_user_extra?: number;
   holded_external_customers?: boolean;
+  generate_pdfs?: boolean;
+  client_portal?: boolean;
 }
 
 const EditarSuscriptor = () => {
