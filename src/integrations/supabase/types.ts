@@ -1448,11 +1448,9 @@ export type Database = {
       organization_integration_access: {
         Row: {
           access_token_encrypted: string | null
-          client_portal: boolean
           configuration: Json | null
           created_at: string
           expires_at: string | null
-          generate_pdfs: boolean
           id: string
           integration_id: string
           is_active: boolean
@@ -1462,11 +1460,9 @@ export type Database = {
         }
         Insert: {
           access_token_encrypted?: string | null
-          client_portal?: boolean
           configuration?: Json | null
           created_at?: string
           expires_at?: string | null
-          generate_pdfs?: boolean
           id?: string
           integration_id: string
           is_active?: boolean
@@ -1476,11 +1472,9 @@ export type Database = {
         }
         Update: {
           access_token_encrypted?: string | null
-          client_portal?: boolean
           configuration?: Json | null
           created_at?: string
           expires_at?: string | null
-          generate_pdfs?: boolean
           id?: string
           integration_id?: string
           is_active?: boolean
@@ -1701,11 +1695,13 @@ export type Database = {
       organizations: {
         Row: {
           api_user_id: string
+          client_portal: boolean
           client_user_extra: number
           client_user_limit: number
           created_at: string
           excel_extra: number
           excel_limit: number
+          generate_pdfs: boolean
           hide_all_prompts_in_documents: boolean
           holded_external_customers: boolean
           id: string
@@ -1717,11 +1713,13 @@ export type Database = {
         }
         Insert: {
           api_user_id: string
+          client_portal?: boolean
           client_user_extra?: number
           client_user_limit?: number
           created_at?: string
           excel_extra?: number
           excel_limit?: number
+          generate_pdfs?: boolean
           hide_all_prompts_in_documents?: boolean
           holded_external_customers?: boolean
           id?: string
@@ -1733,11 +1731,13 @@ export type Database = {
         }
         Update: {
           api_user_id?: string
+          client_portal?: boolean
           client_user_extra?: number
           client_user_limit?: number
           created_at?: string
           excel_extra?: number
           excel_limit?: number
+          generate_pdfs?: boolean
           hide_all_prompts_in_documents?: boolean
           holded_external_customers?: boolean
           id?: string
