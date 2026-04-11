@@ -432,6 +432,25 @@ const IntegrationAccess = () => {
                       </div>
                     )}
 
+                    <div className="flex flex-col items-start gap-2 border-l pl-4">
+                      <div className="flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-muted-foreground" />
+                        <Label htmlFor={`client-portal-${access.id}`} className="text-sm font-medium cursor-pointer">
+                          Portal del cliente
+                        </Label>
+                        <Switch
+                          id={`client-portal-${access.id}`}
+                          checked={(access as any).client_portal || false}
+                          onCheckedChange={() => toggleClientPortal(access.id, (access as any).client_portal || false)}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground max-w-xs">
+                        {(access as any).client_portal
+                          ? "Los clientes pueden ver y aprobar presupuestos online"
+                          : "Portal desactivado — los emails envían solo PDF"}
+                      </p>
+                    </div>
+
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="destructive" size="sm">
