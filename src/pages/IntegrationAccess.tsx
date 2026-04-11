@@ -211,6 +211,31 @@ const IntegrationAccess = () => {
     }
   };
 
+  const toggleClientPortal = async (accessId: string, currentValue: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("organization_integration_access")
+        .update({ client_portal: !currentValue } as any)
+        .eq("id", accessId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: `Portal del cliente: ${!currentValue ? "activado" : "desactivado"}`,
+      });
+
+      loadData();
+    } catch (error) {
+      console.error("Error updating client_portal:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la configuración",
+        variant: "destructive",
+      });
+    }
+  };
+
   const toggleHideAllPrompts = async (orgId: string, currentValue: boolean) => {
     try {
       const { error } = await supabase
