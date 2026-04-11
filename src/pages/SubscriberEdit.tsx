@@ -268,6 +268,7 @@ const EditarSuscriptor = () => {
             </div>
           </div>
 
+          <div className="flex gap-3">
             <Button onClick={guardarCambios} disabled={saving}>
               <Save className="h-4 w-4 mr-2" />
               {saving ? 'Guardando...' : 'Guardar cambios'}
