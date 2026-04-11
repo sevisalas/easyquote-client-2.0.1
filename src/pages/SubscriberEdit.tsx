@@ -22,6 +22,7 @@ interface Suscriptor {
   holded_external_customers?: boolean;
   generate_pdfs?: boolean;
   client_portal?: boolean;
+  hide_all_prompts_in_documents?: boolean;
 }
 
 const EditarSuscriptor = () => {
