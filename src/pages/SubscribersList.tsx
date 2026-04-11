@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building, Users, Pencil } from "lucide-react";
+import { Building, Users, Pencil, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -17,6 +17,14 @@ interface Suscriptor {
   created_at: string;
 }
 
+const GROUP_COLORS = [
+  "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
+  "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
+  "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
+  "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300",
+  "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300",
+];
+
 const SubscribersList = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -25,18 +33,14 @@ const SubscribersList = () => {
   const [suscriptores, setSuscriptores] = useState<Suscriptor[]>([]);
 
   useEffect(() => {
-    // Si es org admin, redirigir a su página de usuarios
     if (!isSuperAdmin && organization) {
       navigate(`/suscriptores/${organization.id}/usuarios`);
       return;
     }
-
-    // Si no es superadmin ni org admin, redirigir al inicio
     if (!isSuperAdmin && !organization) {
       navigate('/');
       return;
     }
-
     obtenerSuscriptores();
   }, [isSuperAdmin, organization, navigate]);
 
@@ -48,7 +52,6 @@ const SubscribersList = () => {
         .order('name');
 
       if (error) throw error;
-
       setSuscriptores(data || []);
     } catch (error: any) {
       console.error('Error al obtener suscriptores:', error);
@@ -62,9 +65,44 @@ const SubscribersList = () => {
     }
   };
 
-  if (!isSuperAdmin) {
-    return null;
-  }
+  // Identify api_user_ids shared by multiple orgs
+  const groupMap = useMemo(() => {
+    const countByApi: Record<string, string[]> = {};
+    suscriptores.forEach((s) => {
+      if (!countByApi[s.api_user_id]) countByApi[s.api_user_id] = [];
+      countByApi[s.api_user_id].push(s.id);
+    });
+    const sharedApis = Object.entries(countByApi)
+      .filter(([, ids]) => ids.length > 1)
+      .map(([apiId]) => apiId);
+
+    const map: Record<string, { colorClass: string; index: number; members: string[] }> = {};
+    sharedApis.forEach((apiId, i) => {
+      const members = suscriptores
+        .filter((s) => s.api_user_id === apiId)
+        .map((s) => s.name);
+      map[apiId] = {
+        colorClass: GROUP_COLORS[i % GROUP_COLORS.length],
+        index: i + 1,
+        members,
+      };
+    });
+    return map;
+  }, [suscriptores]);
+
+  // Sort: grouped orgs first (by group index), then ungrouped alphabetically
+  const sortedSuscriptores = useMemo(() => {
+    return [...suscriptores].sort((a, b) => {
+      const aGroup = groupMap[a.api_user_id];
+      const bGroup = groupMap[b.api_user_id];
+      if (aGroup && !bGroup) return -1;
+      if (!aGroup && bGroup) return 1;
+      if (aGroup && bGroup && aGroup.index !== bGroup.index) return aGroup.index - bGroup.index;
+      return a.name.localeCompare(b.name);
+    });
+  }, [suscriptores, groupMap]);
+
+  if (!isSuperAdmin) return null;
 
   if (loading) {
     return (
@@ -104,51 +142,65 @@ const SubscribersList = () => {
               <TableRow>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Plan</TableHead>
+                <TableHead>Grupo</TableHead>
                 <TableHead>Fecha de creación</TableHead>
                 <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {suscriptores.length === 0 ? (
+              {sortedSuscriptores.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center text-muted-foreground">
                     No hay suscriptores registrados
                   </TableCell>
                 </TableRow>
               ) : (
-                suscriptores.map((suscriptor) => (
-                  <TableRow key={suscriptor.id}>
-                    <TableCell className="font-medium">{suscriptor.name}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">
-                        {suscriptor.subscription_plan}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(suscriptor.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex gap-2 justify-end">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate(`/suscriptores/${suscriptor.id}/editar`)}
-                        >
-                          <Pencil className="h-4 w-4 mr-2" />
-                          Editar
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => navigate(`/suscriptores/${suscriptor.id}/usuarios`)}
-                        >
-                          <Users className="h-4 w-4 mr-2" />
-                          Usuarios
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                sortedSuscriptores.map((suscriptor) => {
+                  const group = groupMap[suscriptor.api_user_id];
+                  return (
+                    <TableRow key={suscriptor.id}>
+                      <TableCell className="font-medium">{suscriptor.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {suscriptor.subscription_plan}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {group ? (
+                          <Badge className={`${group.colorClass} border-0 gap-1`} title={`Comparte recursos con: ${group.members.join(', ')}`}>
+                            <Link2 className="h-3 w-3" />
+                            Grupo {group.index}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {new Date(suscriptor.created_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex gap-2 justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/suscriptores/${suscriptor.id}/editar`)}
+                          >
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Editar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate(`/suscriptores/${suscriptor.id}/usuarios`)}
+                          >
+                            <Users className="h-4 w-4 mr-2" />
+                            Usuarios
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
