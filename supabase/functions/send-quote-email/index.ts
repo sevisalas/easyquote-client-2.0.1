@@ -55,6 +55,34 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Check if client portal is enabled for this org
+    const { data: portalAccess } = await supabaseAdmin
+      .from("organization_integration_access")
+      .select("client_portal")
+      .eq("organization_id", quote.organization_id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    const clientPortalEnabled = (portalAccess as any)?.client_portal === true;
+    let portalUrl: string | undefined;
+
+    if (clientPortalEnabled) {
+      // Generate portal token
+      const { data: tokenData, error: tokenError } = await supabaseAdmin
+        .from("quote_portal_tokens")
+        .insert({
+          quote_id: quoteId,
+        })
+        .select("token")
+        .single();
+
+      if (!tokenError && tokenData) {
+        // Use the app's published URL
+        const appUrl = "https://easyquote-client.lovable.app";
+        portalUrl = `${appUrl}/portal/${tokenData.token}`;
+      }
+    }
+
     // Verify user belongs to this org
     const { data: membership } = await supabaseAdmin
       .from("organization_members")
@@ -119,8 +147,14 @@ Deno.serve(async (req) => {
       ? Number(quote.final_price).toLocaleString("es-ES", { style: "currency", currency: "EUR" })
       : "";
 
+    const portalButton = portalUrl
+      ? `<p><a href="${portalUrl}" style="display: inline-block; background-color: ${buttonColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Ver y aprobar presupuesto</a></p>`
+      : "";
+
     const pdfButton = pdfUrl
-      ? `<p><a href="${pdfUrl}" style="display: inline-block; background-color: ${buttonColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>`
+      ? portalUrl
+        ? `<p><a href="${pdfUrl}" style="color: ${buttonColor}; text-decoration: underline; font-size: 14px;">Descargar PDF</a></p>`
+        : `<p><a href="${pdfUrl}" style="display: inline-block; background-color: ${buttonColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>`
       : "";
 
     const priceText = priceFormatted
