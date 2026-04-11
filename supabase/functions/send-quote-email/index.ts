@@ -169,6 +169,7 @@ Deno.serve(async (req) => {
         .replace(/\{\{numero\}\}/g, quote.quote_number || "")
         .replace(/\{\{cliente\}\}/g, clientName)
         .replace(/\{\{precio\}\}/g, priceText)
+        .replace(/\{\{boton_portal\}\}/g, portalButton)
         .replace(/\{\{boton_pdf\}\}/g, pdfButton)
         .replace(/\{\{empresa\}\}/g, fromName);
 
@@ -178,7 +179,7 @@ Deno.serve(async (req) => {
     if (subject) {
       // If caller provides explicit subject/body, use them (backwards compat)
       emailSubject = subject;
-      htmlBody = body || buildDefaultHtml(quote, clientName, priceFormatted, pdfUrl, fromName, buttonColor);
+      htmlBody = body || buildDefaultHtml(quote, clientName, priceFormatted, pdfUrl, portalUrl, fromName, buttonColor);
     } else if (emailTemplate?.subject && emailTemplate?.body) {
       // Use custom template from DB
       emailSubject = replaceVars(emailTemplate.subject);
@@ -186,7 +187,7 @@ Deno.serve(async (req) => {
     } else {
       // Fallback: default hardcoded template
       emailSubject = `Presupuesto ${quote.quote_number}`;
-      htmlBody = buildDefaultHtml(quote, clientName, priceFormatted, pdfUrl, fromName, buttonColor);
+      htmlBody = buildDefaultHtml(quote, clientName, priceFormatted, pdfUrl, portalUrl, fromName, buttonColor);
     }
 
     // Send via SMTP
