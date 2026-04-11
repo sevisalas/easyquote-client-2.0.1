@@ -61,6 +61,7 @@ import Novedades from "./pages/Novedades";
 import ApiHome from "./pages/ApiHome";
 import CustomerDiscountsPage from "./pages/CustomerDiscountsPage";
 import HelpPage from "./pages/HelpPage";
+import PortalQuote from "./pages/PortalQuote";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { useSessionMonitor } from "./hooks/useSessionMonitor";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -583,6 +584,8 @@ const AppContent = () => {
           </ProtectedRoute>
         }
       />
+      {/* Public portal route — no auth required */}
+      <Route path="/portal/:token" element={<PortalQuote />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
