@@ -22,6 +22,7 @@ interface Suscriptor {
   holded_external_customers?: boolean;
   generate_pdfs?: boolean;
   client_portal?: boolean;
+  hide_all_prompts_in_documents?: boolean;
 }
 
 const EditarSuscriptor = () => {
@@ -84,6 +85,7 @@ const EditarSuscriptor = () => {
         subscription_plan: suscriptor.subscription_plan,
         generate_pdfs: suscriptor.generate_pdfs || false,
         client_portal: suscriptor.client_portal || false,
+        hide_all_prompts_in_documents: suscriptor.hide_all_prompts_in_documents || false,
       };
       
       // Solo actualizar límites si es plan personalizado
@@ -250,7 +252,7 @@ const EditarSuscriptor = () => {
           {/* Feature toggles */}
           <div className="border-t pt-4 space-y-4">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Funcionalidades</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="flex items-center justify-between p-3 border rounded-lg">
                 <Label htmlFor="generate_pdfs" className="cursor-pointer">Generación de PDFs</Label>
                 <Checkbox
@@ -265,6 +267,14 @@ const EditarSuscriptor = () => {
                   id="client_portal"
                   checked={suscriptor.client_portal || false}
                   onCheckedChange={(checked) => setSuscriptor({ ...suscriptor, client_portal: !!checked })}
+                />
+              </div>
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <Label htmlFor="hide_prompts" className="cursor-pointer">Ocultar prompts en documentos</Label>
+                <Checkbox
+                  id="hide_prompts"
+                  checked={suscriptor.hide_all_prompts_in_documents || false}
+                  onCheckedChange={(checked) => setSuscriptor({ ...suscriptor, hide_all_prompts_in_documents: !!checked })}
                 />
               </div>
             </div>
