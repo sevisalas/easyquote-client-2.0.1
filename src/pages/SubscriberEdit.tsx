@@ -245,7 +245,29 @@ const EditarSuscriptor = () => {
             </>
           )}
 
-          <div className="flex gap-3">
+          {/* Feature toggles */}
+          <div className="border-t pt-4 space-y-4">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Funcionalidades</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <Label htmlFor="generate_pdfs" className="cursor-pointer">Generación de PDFs</Label>
+                <Checkbox
+                  id="generate_pdfs"
+                  checked={suscriptor.generate_pdfs || false}
+                  onCheckedChange={(checked) => setSuscriptor({ ...suscriptor, generate_pdfs: !!checked })}
+                />
+              </div>
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <Label htmlFor="client_portal" className="cursor-pointer">Portal del cliente</Label>
+                <Checkbox
+                  id="client_portal"
+                  checked={suscriptor.client_portal || false}
+                  onCheckedChange={(checked) => setSuscriptor({ ...suscriptor, client_portal: !!checked })}
+                />
+              </div>
+            </div>
+          </div>
+
             <Button onClick={guardarCambios} disabled={saving}>
               <Save className="h-4 w-4 mr-2" />
               {saving ? 'Guardando...' : 'Guardar cambios'}
