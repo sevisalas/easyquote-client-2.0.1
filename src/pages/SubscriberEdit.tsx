@@ -82,6 +82,8 @@ const EditarSuscriptor = () => {
       const updateData: any = {
         name: suscriptor.name,
         subscription_plan: suscriptor.subscription_plan,
+        generate_pdfs: suscriptor.generate_pdfs || false,
+        client_portal: suscriptor.client_portal || false,
       };
       
       // Solo actualizar límites si es plan personalizado
