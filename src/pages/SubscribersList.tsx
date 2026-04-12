@@ -210,6 +210,7 @@ const SubscribersList = () => {
     }
   };
 
+  const anySelectedGrouped = useMemo(() => {
     return Array.from(selected).some((id) => !!groupMap[id]);
   }, [selected, groupMap]);
 
