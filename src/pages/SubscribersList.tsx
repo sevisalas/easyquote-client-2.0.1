@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building, Users, Pencil, Link2 } from "lucide-react";
+import { Building, Users, Pencil, Link2, Unlink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -13,7 +14,7 @@ interface Suscriptor {
   id: string;
   name: string;
   subscription_plan: string;
-  api_user_id: string;
+  resource_group_id: string | null;
   created_at: string;
 }
 
@@ -31,6 +32,8 @@ const SubscribersList = () => {
   const { isSuperAdmin, organization } = useSubscription();
   const [loading, setLoading] = useState(true);
   const [suscriptores, setSuscriptores] = useState<Suscriptor[]>([]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [grouping, setGrouping] = useState(false);
 
   useEffect(() => {
     if (!isSuperAdmin && organization) {
@@ -48,11 +51,11 @@ const SubscribersList = () => {
     try {
       const { data, error } = await supabase
         .from('organizations')
-        .select('*')
+        .select('id, name, subscription_plan, resource_group_id, created_at')
         .order('name');
 
       if (error) throw error;
-      setSuscriptores(data || []);
+      setSuscriptores((data || []) as Suscriptor[]);
     } catch (error: any) {
       console.error('Error al obtener suscriptores:', error);
       toast({
@@ -65,42 +68,106 @@ const SubscribersList = () => {
     }
   };
 
-  // Identify api_user_ids shared by multiple orgs
+  // Build group map from resource_group_id
   const groupMap = useMemo(() => {
-    const countByApi: Record<string, string[]> = {};
+    const byGroup: Record<string, Suscriptor[]> = {};
     suscriptores.forEach((s) => {
-      if (!countByApi[s.api_user_id]) countByApi[s.api_user_id] = [];
-      countByApi[s.api_user_id].push(s.id);
+      if (s.resource_group_id) {
+        if (!byGroup[s.resource_group_id]) byGroup[s.resource_group_id] = [];
+        byGroup[s.resource_group_id].push(s);
+      }
     });
-    const sharedApis = Object.entries(countByApi)
-      .filter(([, ids]) => ids.length > 1)
-      .map(([apiId]) => apiId);
 
     const map: Record<string, { colorClass: string; index: number; members: string[] }> = {};
-    sharedApis.forEach((apiId, i) => {
-      const members = suscriptores
-        .filter((s) => s.api_user_id === apiId)
-        .map((s) => s.name);
-      map[apiId] = {
-        colorClass: GROUP_COLORS[i % GROUP_COLORS.length],
-        index: i + 1,
-        members,
-      };
-    });
+    let idx = 0;
+    Object.entries(byGroup)
+      .filter(([, members]) => members.length > 1)
+      .forEach(([groupId, members]) => {
+        const colorClass = GROUP_COLORS[idx % GROUP_COLORS.length];
+        const memberNames = members.map((m) => m.name);
+        members.forEach((m) => {
+          map[m.id] = { colorClass, index: idx + 1, members: memberNames };
+        });
+        idx++;
+      });
     return map;
   }, [suscriptores]);
 
-  // Sort: grouped orgs first (by group index), then ungrouped alphabetically
+  // Sort: grouped orgs first, then alphabetically
   const sortedSuscriptores = useMemo(() => {
     return [...suscriptores].sort((a, b) => {
-      const aGroup = groupMap[a.api_user_id];
-      const bGroup = groupMap[b.api_user_id];
+      const aGroup = groupMap[a.id];
+      const bGroup = groupMap[b.id];
       if (aGroup && !bGroup) return -1;
       if (!aGroup && bGroup) return 1;
       if (aGroup && bGroup && aGroup.index !== bGroup.index) return aGroup.index - bGroup.index;
       return a.name.localeCompare(b.name);
     });
   }, [suscriptores, groupMap]);
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleGroup = async () => {
+    if (selected.size < 2) {
+      toast({ title: "Selecciona al menos 2 suscriptores para agrupar", variant: "destructive" });
+      return;
+    }
+    setGrouping(true);
+    try {
+      // Check if any selected org already has a group — reuse it
+      const selectedOrgs = suscriptores.filter((s) => selected.has(s.id));
+      const existingGroupId = selectedOrgs.find((s) => s.resource_group_id)?.resource_group_id;
+      const groupId = existingGroupId || crypto.randomUUID();
+
+      const { error } = await supabase
+        .from('organizations')
+        .update({ resource_group_id: groupId } as any)
+        .in('id', Array.from(selected));
+
+      if (error) throw error;
+
+      toast({ title: "Grupo creado", description: `${selected.size} suscriptores agrupados` });
+      setSelected(new Set());
+      await obtenerSuscriptores();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setGrouping(false);
+    }
+  };
+
+  const handleUngroup = async () => {
+    if (selected.size === 0) return;
+    setGrouping(true);
+    try {
+      const { error } = await supabase
+        .from('organizations')
+        .update({ resource_group_id: null } as any)
+        .in('id', Array.from(selected));
+
+      if (error) throw error;
+
+      toast({ title: "Desagrupados", description: `${selected.size} suscriptores desagrupados` });
+      setSelected(new Set());
+      await obtenerSuscriptores();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setGrouping(false);
+    }
+  };
+
+  // Check if any selected org is currently grouped
+  const anySelectedGrouped = useMemo(() => {
+    return Array.from(selected).some((id) => !!groupMap[id]);
+  }, [selected, groupMap]);
 
   if (!isSuperAdmin) return null;
 
@@ -131,15 +198,36 @@ const SubscribersList = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Suscriptores</CardTitle>
-          <CardDescription>
-            {suscriptores.length} suscriptor{suscriptores.length !== 1 ? 'es' : ''} registrado{suscriptores.length !== 1 ? 's' : ''}
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Lista de Suscriptores</CardTitle>
+              <CardDescription>
+                {suscriptores.length} suscriptor{suscriptores.length !== 1 ? 'es' : ''} registrado{suscriptores.length !== 1 ? 's' : ''}
+              </CardDescription>
+            </div>
+            {selected.size > 0 && (
+              <div className="flex gap-2">
+                {selected.size >= 2 && (
+                  <Button size="sm" onClick={handleGroup} disabled={grouping}>
+                    <Link2 className="h-4 w-4 mr-2" />
+                    Agrupar ({selected.size})
+                  </Button>
+                )}
+                {anySelectedGrouped && (
+                  <Button size="sm" variant="outline" onClick={handleUngroup} disabled={grouping}>
+                    <Unlink className="h-4 w-4 mr-2" />
+                    Desagrupar
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead className="w-10"></TableHead>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Plan</TableHead>
                 <TableHead>Grupo</TableHead>
@@ -150,15 +238,21 @@ const SubscribersList = () => {
             <TableBody>
               {sortedSuscriptores.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
                     No hay suscriptores registrados
                   </TableCell>
                 </TableRow>
               ) : (
                 sortedSuscriptores.map((suscriptor) => {
-                  const group = groupMap[suscriptor.api_user_id];
+                  const group = groupMap[suscriptor.id];
                   return (
                     <TableRow key={suscriptor.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selected.has(suscriptor.id)}
+                          onCheckedChange={() => toggleSelect(suscriptor.id)}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">{suscriptor.name}</TableCell>
                       <TableCell>
                         <Badge variant="outline">
