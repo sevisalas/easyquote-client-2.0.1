@@ -17,6 +17,8 @@ interface Suscriptor {
   name: string;
   subscription_plan: string;
   resource_group_id: string | null;
+  resource_group_name: string | null;
+  api_user_id: string | null;
   created_at: string;
 }
 
