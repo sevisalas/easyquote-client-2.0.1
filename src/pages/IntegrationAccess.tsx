@@ -4,8 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { Settings, Plus, Trash2, FileText, EyeOff, Globe } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
+import { Settings, Plus, Trash2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
@@ -23,9 +22,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface Organization {
   id: string;
   name: string;
-  hide_all_prompts_in_documents: boolean;
-  generate_pdfs: boolean;
-  client_portal: boolean;
 }
 
 interface Integration {
@@ -69,7 +65,7 @@ const IntegrationAccess = () => {
     try {
       const { data: orgsData, error: orgsError } = await supabase
         .from("organizations")
-        .select("id, name, hide_all_prompts_in_documents, generate_pdfs, client_portal")
+        .select("id, name")
         .order("name");
 
       if (orgsError) throw orgsError;
@@ -173,39 +169,6 @@ const IntegrationAccess = () => {
     }
   };
 
-  const toggleOrgFlag = async (orgId: string, field: 'generate_pdfs' | 'client_portal' | 'hide_all_prompts_in_documents', currentValue: boolean) => {
-    try {
-      const { error } = await supabase
-        .from("organizations")
-        .update({ [field]: !currentValue } as any)
-        .eq("id", orgId);
-
-      if (error) throw error;
-
-      setOrganizations((prev) =>
-        prev.map((org) => (org.id === orgId ? { ...org, [field]: !currentValue } : org))
-      );
-
-      const labels: Record<string, [string, string]> = {
-        generate_pdfs: ["Generación de PDFs activada", "Generación de PDFs desactivada"],
-        client_portal: ["Portal del cliente activado", "Portal del cliente desactivado"],
-        hide_all_prompts_in_documents: ["Prompts ocultos en documentos", "Prompts visibles en documentos"],
-      };
-      const [onMsg, offMsg] = labels[field];
-
-      toast({
-        title: "Éxito",
-        description: !currentValue ? onMsg : offMsg,
-      });
-    } catch (error) {
-      console.error(`Error updating ${field}:`, error);
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar la configuración",
-        variant: "destructive",
-      });
-    }
-  };
 
   if (!isSuperAdmin) {
     return (
@@ -284,72 +247,6 @@ const IntegrationAccess = () => {
             <Button onClick={grantAccess} disabled={!selectedOrg || !selectedIntegration || granting}>
               {granting ? "Concediendo..." : "Conceder Acceso"}
             </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Organization Feature Toggles */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Configuración por organización
-          </CardTitle>
-          <CardDescription>Funcionalidades y opciones activables por tenant</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {organizations.map((org) => (
-              <div key={org.id} className="p-4 border rounded-lg space-y-3">
-                <div className="font-medium text-base">{org.name}</div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Generate PDFs */}
-                  <div className="flex items-center justify-between gap-2 p-2 rounded-md bg-muted/30">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <Label htmlFor={`pdf-${org.id}`} className="text-sm cursor-pointer">
-                        Generación de PDFs
-                      </Label>
-                    </div>
-                    <Switch
-                      id={`pdf-${org.id}`}
-                      checked={org.generate_pdfs}
-                      onCheckedChange={() => toggleOrgFlag(org.id, 'generate_pdfs', org.generate_pdfs)}
-                    />
-                  </div>
-
-                  {/* Client Portal */}
-                  <div className="flex items-center justify-between gap-2 p-2 rounded-md bg-muted/30">
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-4 w-4 text-muted-foreground" />
-                      <Label htmlFor={`portal-${org.id}`} className="text-sm cursor-pointer">
-                        Portal del cliente
-                      </Label>
-                    </div>
-                    <Switch
-                      id={`portal-${org.id}`}
-                      checked={org.client_portal}
-                      onCheckedChange={() => toggleOrgFlag(org.id, 'client_portal', org.client_portal)}
-                    />
-                  </div>
-
-                  {/* Hide Prompts */}
-                  <div className="flex items-center justify-between gap-2 p-2 rounded-md bg-muted/30">
-                    <div className="flex items-center gap-2">
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                      <Label htmlFor={`hide-prompts-${org.id}`} className="text-sm cursor-pointer">
-                        Ocultar prompts
-                      </Label>
-                    </div>
-                    <Switch
-                      id={`hide-prompts-${org.id}`}
-                      checked={org.hide_all_prompts_in_documents}
-                      onCheckedChange={() => toggleOrgFlag(org.id, 'hide_all_prompts_in_documents', org.hide_all_prompts_in_documents)}
-                    />
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
         </CardContent>
       </Card>
