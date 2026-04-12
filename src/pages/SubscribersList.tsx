@@ -17,6 +17,7 @@ interface Suscriptor {
   name: string;
   subscription_plan: string;
   resource_group_id: string | null;
+  resource_group_name: string | null;
   api_user_id: string | null;
   created_at: string;
 }
@@ -40,6 +41,9 @@ const SubscribersList = () => {
   const [selectMode, setSelectMode] = useState(false);
   const [showGroupDialog, setShowGroupDialog] = useState(false);
   const [groupName, setGroupName] = useState("");
+  const [renameGroupId, setRenameGroupId] = useState<string | null>(null);
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
 
   useEffect(() => {
     if (!isSuperAdmin && organization) {
@@ -57,7 +61,7 @@ const SubscribersList = () => {
     try {
       const { data, error } = await supabase
         .from('organizations')
-        .select('id, name, subscription_plan, resource_group_id, api_user_id, created_at')
+        .select('id, name, subscription_plan, resource_group_id, resource_group_name, api_user_id, created_at')
         .order('name');
 
       if (error) throw error;
@@ -84,15 +88,16 @@ const SubscribersList = () => {
       }
     });
 
-    const map: Record<string, { colorClass: string; index: number; members: string[]; groupId: string }> = {};
+    const map: Record<string, { colorClass: string; index: number; members: string[]; groupId: string; groupName: string | null }> = {};
     let idx = 0;
     Object.entries(byGroup)
       .filter(([, members]) => members.length > 1)
       .forEach(([groupId, members]) => {
         const colorClass = GROUP_COLORS[idx % GROUP_COLORS.length];
         const memberNames = members.map((m) => m.name);
+        const gName = members[0].resource_group_name;
         members.forEach((m) => {
-          map[m.id] = { colorClass, index: idx + 1, members: memberNames, groupId };
+          map[m.id] = { colorClass, index: idx + 1, members: memberNames, groupId, groupName: gName };
         });
         idx++;
       });
@@ -128,25 +133,6 @@ const SubscribersList = () => {
   const handleGroupClick = () => {
     if (selected.size < 2) {
       toast({ title: "Selecciona al menos 2 suscriptores para agrupar", variant: "destructive" });
-      return;
-    }
-    // Validate all selected orgs share the same api_user_id
-    const selectedOrgs = suscriptores.filter((s) => selected.has(s.id));
-    const apiUserIds = new Set(selectedOrgs.map((s) => s.api_user_id).filter(Boolean));
-    if (apiUserIds.size > 1) {
-      toast({
-        title: "No se pueden agrupar",
-        description: "Los suscriptores seleccionados deben tener la misma credencial API para poder agruparse.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (apiUserIds.size === 0) {
-      toast({
-        title: "No se pueden agrupar",
-        description: "Los suscriptores seleccionados no tienen credencial API asignada.",
-        variant: "destructive",
-      });
       return;
     }
     setGroupName("");
@@ -195,6 +181,27 @@ const SubscribersList = () => {
 
       toast({ title: "Desagrupados", description: `${selected.size} suscriptores desagrupados` });
       exitSelectMode();
+      await obtenerSuscriptores();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setGrouping(false);
+    }
+  };
+
+  const handleRenameGroup = async () => {
+    if (!renameGroupId || !renameValue.trim()) return;
+    setGrouping(true);
+    try {
+      const { error } = await supabase
+        .from('organizations')
+        .update({ resource_group_name: renameValue.trim() } as any)
+        .eq('resource_group_id', renameGroupId);
+
+      if (error) throw error;
+
+      toast({ title: "Grupo renombrado", description: `Nuevo nombre: "${renameValue.trim()}"` });
+      setShowRenameDialog(false);
       await obtenerSuscriptores();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -314,9 +321,17 @@ const SubscribersList = () => {
                       </TableCell>
                       <TableCell>
                         {group ? (
-                          <Badge className={`${group.colorClass} border-0 gap-1`} title={`Comparte recursos con: ${group.members.join(', ')}`}>
+                          <Badge
+                            className={`${group.colorClass} border-0 gap-1 cursor-pointer hover:opacity-80`}
+                            title={`Comparte recursos con: ${group.members.join(', ')}. Haz clic para renombrar.`}
+                            onClick={() => {
+                              setRenameGroupId(group.groupId);
+                              setRenameValue(group.groupName || `Grupo ${group.index}`);
+                              setShowRenameDialog(true);
+                            }}
+                          >
                             <Link2 className="h-3 w-3" />
-                            Grupo {group.index}
+                            {group.groupName || `Grupo ${group.index}`}
                           </Badge>
                         ) : (
                           <span className="text-xs text-muted-foreground">—</span>
@@ -370,6 +385,27 @@ const SubscribersList = () => {
             <Button variant="outline" onClick={() => setShowGroupDialog(false)}>Cancelar</Button>
             <Button onClick={handleGroupConfirm} disabled={grouping || !groupName.trim()}>
               Crear grupo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Renombrar grupo</DialogTitle>
+          </DialogHeader>
+          <Input
+            placeholder="Nuevo nombre del grupo"
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleRenameGroup()}
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRenameDialog(false)}>Cancelar</Button>
+            <Button onClick={handleRenameGroup} disabled={grouping || !renameValue.trim()}>
+              Guardar
             </Button>
           </DialogFooter>
         </DialogContent>

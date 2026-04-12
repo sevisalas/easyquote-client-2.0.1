@@ -1,1 +1,0 @@
-ALTER TABLE public.organizations ADD COLUMN resource_group_name TEXT DEFAULT NULL;
