@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
-import { Settings, Plus, Trash2, FileText, EyeOff, Globe } from "lucide-react";
+import { Settings, Plus, Trash2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
@@ -23,9 +23,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 interface Organization {
   id: string;
   name: string;
-  hide_all_prompts_in_documents: boolean;
-  generate_pdfs: boolean;
-  client_portal: boolean;
 }
 
 interface Integration {
@@ -69,7 +66,7 @@ const IntegrationAccess = () => {
     try {
       const { data: orgsData, error: orgsError } = await supabase
         .from("organizations")
-        .select("id, name, hide_all_prompts_in_documents, generate_pdfs, client_portal")
+        .select("id, name")
         .order("name");
 
       if (orgsError) throw orgsError;
