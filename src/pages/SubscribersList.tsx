@@ -189,7 +189,27 @@ const SubscribersList = () => {
     }
   };
 
-  const anySelectedGrouped = useMemo(() => {
+  const handleRenameGroup = async () => {
+    if (!renameGroupId || !renameValue.trim()) return;
+    setGrouping(true);
+    try {
+      const { error } = await supabase
+        .from('organizations')
+        .update({ resource_group_name: renameValue.trim() } as any)
+        .eq('resource_group_id', renameGroupId);
+
+      if (error) throw error;
+
+      toast({ title: "Grupo renombrado", description: `Nuevo nombre: "${renameValue.trim()}"` });
+      setShowRenameDialog(false);
+      await obtenerSuscriptores();
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } finally {
+      setGrouping(false);
+    }
+  };
+
     return Array.from(selected).some((id) => !!groupMap[id]);
   }, [selected, groupMap]);
 
