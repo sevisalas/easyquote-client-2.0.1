@@ -61,7 +61,7 @@ const SubscribersList = () => {
     try {
       const { data, error } = await supabase
         .from('organizations')
-        .select('id, name, subscription_plan, resource_group_id, created_at')
+        .select('id, name, subscription_plan, resource_group_id, resource_group_name, api_user_id, created_at')
         .order('name');
 
       if (error) throw error;
