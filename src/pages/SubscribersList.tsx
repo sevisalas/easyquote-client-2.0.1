@@ -17,6 +17,7 @@ interface Suscriptor {
   name: string;
   subscription_plan: string;
   resource_group_id: string | null;
+  api_user_id: string | null;
   created_at: string;
 }
 
@@ -56,7 +57,7 @@ const SubscribersList = () => {
     try {
       const { data, error } = await supabase
         .from('organizations')
-        .select('id, name, subscription_plan, resource_group_id, created_at')
+        .select('id, name, subscription_plan, resource_group_id, api_user_id, created_at')
         .order('name');
 
       if (error) throw error;
@@ -127,6 +128,25 @@ const SubscribersList = () => {
   const handleGroupClick = () => {
     if (selected.size < 2) {
       toast({ title: "Selecciona al menos 2 suscriptores para agrupar", variant: "destructive" });
+      return;
+    }
+    // Validate all selected orgs share the same api_user_id
+    const selectedOrgs = suscriptores.filter((s) => selected.has(s.id));
+    const apiUserIds = new Set(selectedOrgs.map((s) => s.api_user_id).filter(Boolean));
+    if (apiUserIds.size > 1) {
+      toast({
+        title: "No se pueden agrupar",
+        description: "Los suscriptores seleccionados deben tener la misma credencial API para poder agruparse.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (apiUserIds.size === 0) {
+      toast({
+        title: "No se pueden agrupar",
+        description: "Los suscriptores seleccionados no tienen credencial API asignada.",
+        variant: "destructive",
+      });
       return;
     }
     setGroupName("");
