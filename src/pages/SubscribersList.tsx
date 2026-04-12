@@ -1,11 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Building, Users, Pencil, Link2, Unlink } from "lucide-react";
+import { Building, Users, Pencil, Link2, Unlink, CheckSquare, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -34,6 +36,9 @@ const SubscribersList = () => {
   const [suscriptores, setSuscriptores] = useState<Suscriptor[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [grouping, setGrouping] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+  const [showGroupDialog, setShowGroupDialog] = useState(false);
+  const [groupName, setGroupName] = useState("");
 
   useEffect(() => {
     if (!isSuperAdmin && organization) {
@@ -78,7 +83,7 @@ const SubscribersList = () => {
       }
     });
 
-    const map: Record<string, { colorClass: string; index: number; members: string[] }> = {};
+    const map: Record<string, { colorClass: string; index: number; members: string[]; groupId: string }> = {};
     let idx = 0;
     Object.entries(byGroup)
       .filter(([, members]) => members.length > 1)
@@ -86,7 +91,7 @@ const SubscribersList = () => {
         const colorClass = GROUP_COLORS[idx % GROUP_COLORS.length];
         const memberNames = members.map((m) => m.name);
         members.forEach((m) => {
-          map[m.id] = { colorClass, index: idx + 1, members: memberNames };
+          map[m.id] = { colorClass, index: idx + 1, members: memberNames, groupId };
         });
         idx++;
       });
@@ -114,27 +119,41 @@ const SubscribersList = () => {
     });
   };
 
-  const handleGroup = async () => {
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    setSelected(new Set());
+  };
+
+  const handleGroupClick = () => {
     if (selected.size < 2) {
       toast({ title: "Selecciona al menos 2 suscriptores para agrupar", variant: "destructive" });
       return;
     }
+    setGroupName("");
+    setShowGroupDialog(true);
+  };
+
+  const handleGroupConfirm = async () => {
+    if (!groupName.trim()) {
+      toast({ title: "Introduce un nombre para el grupo", variant: "destructive" });
+      return;
+    }
     setGrouping(true);
     try {
-      // Check if any selected org already has a group — reuse it
       const selectedOrgs = suscriptores.filter((s) => selected.has(s.id));
       const existingGroupId = selectedOrgs.find((s) => s.resource_group_id)?.resource_group_id;
       const groupId = existingGroupId || crypto.randomUUID();
 
       const { error } = await supabase
         .from('organizations')
-        .update({ resource_group_id: groupId } as any)
+        .update({ resource_group_id: groupId, resource_group_name: groupName.trim() } as any)
         .in('id', Array.from(selected));
 
       if (error) throw error;
 
-      toast({ title: "Grupo creado", description: `${selected.size} suscriptores agrupados` });
-      setSelected(new Set());
+      toast({ title: "Grupo creado", description: `${selected.size} suscriptores agrupados como "${groupName.trim()}"` });
+      setShowGroupDialog(false);
+      exitSelectMode();
       await obtenerSuscriptores();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -149,13 +168,13 @@ const SubscribersList = () => {
     try {
       const { error } = await supabase
         .from('organizations')
-        .update({ resource_group_id: null } as any)
+        .update({ resource_group_id: null, resource_group_name: null } as any)
         .in('id', Array.from(selected));
 
       if (error) throw error;
 
       toast({ title: "Desagrupados", description: `${selected.size} suscriptores desagrupados` });
-      setSelected(new Set());
+      exitSelectMode();
       await obtenerSuscriptores();
     } catch (error: any) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -164,7 +183,6 @@ const SubscribersList = () => {
     }
   };
 
-  // Check if any selected org is currently grouped
   const anySelectedGrouped = useMemo(() => {
     return Array.from(selected).some((id) => !!groupMap[id]);
   }, [selected, groupMap]);
@@ -191,9 +209,22 @@ const SubscribersList = () => {
             Gestionar suscriptores y sus usuarios
           </p>
         </div>
-        <Button onClick={() => navigate('/usuarios/nuevo')}>
-          Nuevo Suscriptor
-        </Button>
+        <div className="flex gap-2">
+          {!selectMode ? (
+            <Button variant="outline" onClick={() => setSelectMode(true)}>
+              <CheckSquare className="h-4 w-4 mr-2" />
+              Seleccionar
+            </Button>
+          ) : (
+            <Button variant="outline" onClick={exitSelectMode}>
+              <X className="h-4 w-4 mr-2" />
+              Cancelar
+            </Button>
+          )}
+          <Button onClick={() => navigate('/usuarios/nuevo')}>
+            Nuevo Suscriptor
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -205,10 +236,10 @@ const SubscribersList = () => {
                 {suscriptores.length} suscriptor{suscriptores.length !== 1 ? 'es' : ''} registrado{suscriptores.length !== 1 ? 's' : ''}
               </CardDescription>
             </div>
-            {selected.size > 0 && (
+            {selectMode && selected.size > 0 && (
               <div className="flex gap-2">
                 {selected.size >= 2 && (
-                  <Button size="sm" onClick={handleGroup} disabled={grouping}>
+                  <Button size="sm" onClick={handleGroupClick} disabled={grouping}>
                     <Link2 className="h-4 w-4 mr-2" />
                     Agrupar ({selected.size})
                   </Button>
@@ -227,7 +258,7 @@ const SubscribersList = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-10"></TableHead>
+                {selectMode && <TableHead className="w-10"></TableHead>}
                 <TableHead>Nombre</TableHead>
                 <TableHead>Plan</TableHead>
                 <TableHead>Grupo</TableHead>
@@ -238,7 +269,7 @@ const SubscribersList = () => {
             <TableBody>
               {sortedSuscriptores.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                  <TableCell colSpan={selectMode ? 6 : 5} className="text-center text-muted-foreground">
                     No hay suscriptores registrados
                   </TableCell>
                 </TableRow>
@@ -247,12 +278,14 @@ const SubscribersList = () => {
                   const group = groupMap[suscriptor.id];
                   return (
                     <TableRow key={suscriptor.id}>
-                      <TableCell>
-                        <Checkbox
-                          checked={selected.has(suscriptor.id)}
-                          onCheckedChange={() => toggleSelect(suscriptor.id)}
-                        />
-                      </TableCell>
+                      {selectMode && (
+                        <TableCell>
+                          <Checkbox
+                            checked={selected.has(suscriptor.id)}
+                            onCheckedChange={() => toggleSelect(suscriptor.id)}
+                          />
+                        </TableCell>
+                      )}
                       <TableCell className="font-medium">{suscriptor.name}</TableCell>
                       <TableCell>
                         <Badge variant="outline">
@@ -300,6 +333,27 @@ const SubscribersList = () => {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={showGroupDialog} onOpenChange={setShowGroupDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nombre del grupo</DialogTitle>
+          </DialogHeader>
+          <Input
+            placeholder="Ej: Grupo Reprotel"
+            value={groupName}
+            onChange={(e) => setGroupName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleGroupConfirm()}
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowGroupDialog(false)}>Cancelar</Button>
+            <Button onClick={handleGroupConfirm} disabled={grouping || !groupName.trim()}>
+              Crear grupo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
