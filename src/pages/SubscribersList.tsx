@@ -39,6 +39,9 @@ const SubscribersList = () => {
   const [selectMode, setSelectMode] = useState(false);
   const [showGroupDialog, setShowGroupDialog] = useState(false);
   const [groupName, setGroupName] = useState("");
+  const [renameGroupId, setRenameGroupId] = useState<string | null>(null);
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
 
   useEffect(() => {
     if (!isSuperAdmin && organization) {
@@ -83,15 +86,16 @@ const SubscribersList = () => {
       }
     });
 
-    const map: Record<string, { colorClass: string; index: number; members: string[]; groupId: string }> = {};
+    const map: Record<string, { colorClass: string; index: number; members: string[]; groupId: string; groupName: string | null }> = {};
     let idx = 0;
     Object.entries(byGroup)
       .filter(([, members]) => members.length > 1)
       .forEach(([groupId, members]) => {
         const colorClass = GROUP_COLORS[idx % GROUP_COLORS.length];
         const memberNames = members.map((m) => m.name);
+        const gName = members[0].resource_group_name;
         members.forEach((m) => {
-          map[m.id] = { colorClass, index: idx + 1, members: memberNames, groupId };
+          map[m.id] = { colorClass, index: idx + 1, members: memberNames, groupId, groupName: gName };
         });
         idx++;
       });
@@ -294,9 +298,17 @@ const SubscribersList = () => {
                       </TableCell>
                       <TableCell>
                         {group ? (
-                          <Badge className={`${group.colorClass} border-0 gap-1`} title={`Comparte recursos con: ${group.members.join(', ')}`}>
+                          <Badge
+                            className={`${group.colorClass} border-0 gap-1 cursor-pointer hover:opacity-80`}
+                            title={`Comparte recursos con: ${group.members.join(', ')}. Haz clic para renombrar.`}
+                            onClick={() => {
+                              setRenameGroupId(group.groupId);
+                              setRenameValue(group.groupName || `Grupo ${group.index}`);
+                              setShowRenameDialog(true);
+                            }}
+                          >
                             <Link2 className="h-3 w-3" />
-                            Grupo {group.index}
+                            {group.groupName || `Grupo ${group.index}`}
                           </Badge>
                         ) : (
                           <span className="text-xs text-muted-foreground">—</span>
@@ -350,6 +362,27 @@ const SubscribersList = () => {
             <Button variant="outline" onClick={() => setShowGroupDialog(false)}>Cancelar</Button>
             <Button onClick={handleGroupConfirm} disabled={grouping || !groupName.trim()}>
               Crear grupo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Renombrar grupo</DialogTitle>
+          </DialogHeader>
+          <Input
+            placeholder="Nuevo nombre del grupo"
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleRenameGroup()}
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRenameDialog(false)}>Cancelar</Button>
+            <Button onClick={handleRenameGroup} disabled={grouping || !renameValue.trim()}>
+              Guardar
             </Button>
           </DialogFooter>
         </DialogContent>
