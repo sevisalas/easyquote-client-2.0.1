@@ -169,39 +169,6 @@ const IntegrationAccess = () => {
     }
   };
 
-  const toggleOrgFlag = async (orgId: string, field: 'generate_pdfs' | 'client_portal' | 'hide_all_prompts_in_documents', currentValue: boolean) => {
-    try {
-      const { error } = await supabase
-        .from("organizations")
-        .update({ [field]: !currentValue } as any)
-        .eq("id", orgId);
-
-      if (error) throw error;
-
-      setOrganizations((prev) =>
-        prev.map((org) => (org.id === orgId ? { ...org, [field]: !currentValue } : org))
-      );
-
-      const labels: Record<string, [string, string]> = {
-        generate_pdfs: ["Generación de PDFs activada", "Generación de PDFs desactivada"],
-        client_portal: ["Portal del cliente activado", "Portal del cliente desactivado"],
-        hide_all_prompts_in_documents: ["Prompts ocultos en documentos", "Prompts visibles en documentos"],
-      };
-      const [onMsg, offMsg] = labels[field];
-
-      toast({
-        title: "Éxito",
-        description: !currentValue ? onMsg : offMsg,
-      });
-    } catch (error) {
-      console.error(`Error updating ${field}:`, error);
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar la configuración",
-        variant: "destructive",
-      });
-    }
-  };
 
   if (!isSuperAdmin) {
     return (
