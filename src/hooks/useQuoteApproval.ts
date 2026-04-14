@@ -305,7 +305,7 @@ export const useQuoteApproval = () => {
         if (multi?.rows && Array.isArray(multi.rows) && itemQuantities?.[item.id]) {
           const selectedQuantity = itemQuantities[item.id];
           const selectedRow = multi.rows.find((row: any) =>
-            Number(row.qty) === selectedQuantity || Number(row.quantity) === selectedQuantity
+            parseQuantity(row.qty) === selectedQuantity || parseQuantity(row.quantity) === selectedQuantity
           );
           if (selectedRow) {
             const basePrice = parseFloat(
@@ -410,7 +410,7 @@ export const useQuoteApproval = () => {
         if (multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1 && itemQuantities?.[item.id]) {
           const selectedQuantity = itemQuantities[item.id];
           const selectedRow = multi.rows.find((row: any) =>
-            Number(row.qty) === selectedQuantity || Number(row.quantity) === selectedQuantity
+            parseQuantity(row.qty) === selectedQuantity || parseQuantity(row.quantity) === selectedQuantity
           );
 
           finalPrompts = syncPromptsWithSelectedQuantity(item, selectedQuantity);
@@ -442,7 +442,7 @@ export const useQuoteApproval = () => {
               item.price ||
               0
           );
-          const rowQty = Number(singleRow.qty) || Number(singleRow.quantity) || finalQuantity;
+          const rowQty = parseQuantity(singleRow.qty) || parseQuantity(singleRow.quantity) || finalQuantity;
           finalPrice = applyItemAdditionals(basePrice, item, rowQty);
           finalOutputs = Array.isArray(singleRow.outs) ? singleRow.outs : finalOutputs;
         }
