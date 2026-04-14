@@ -230,6 +230,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Cache de opciones de prompts: se cargan una vez por producto y no se recargan en cada PATCH
   const promptOptionsCache = useRef<Record<string, any[]>>({});
   
+  // Track prompt IDs that the pricing API has ever returned.
+  // IDs NOT in this set are user-injected (e.g., checkbox type 6) and must be
+  // preserved during API reconciliation to avoid losing their values.
+  const apiKnownPromptIds = useRef(new Set<string>());
+  
   // Obtener configuración de componentes del producto
   const { isComposite, enabledComponents } = useProductComponentSettings(
     productId || undefined,
