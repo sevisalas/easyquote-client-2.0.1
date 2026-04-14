@@ -725,8 +725,8 @@ export default function CompositeComponentTabs({
 
           if (error) throw error;
           
-          const prompts = finalData?.prompts || [];
-          const outputs = finalData?.outputValues || finalData?.outputs || [];
+          const prompts = data?.prompts || [];
+          const outputs = data?.outputValues || data?.outputs || [];
           const priceOutput = outputs.find((o: any) => String(o?.type || o?.outputType || "").toLowerCase() === "price");
           const price = priceOutput
             ? parseFloat(String(priceOutput.value ?? "0").replace(/\./g, "").replace(",", ".")) || 0
