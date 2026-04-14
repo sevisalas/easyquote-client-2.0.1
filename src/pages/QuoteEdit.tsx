@@ -149,7 +149,7 @@ export default function QuoteEdit() {
   const editCustomerId = formData.customer_id?.startsWith('holded:')
     ? formData.customer_id.replace('holded:', '')
     : formData.customer_id || null;
-  const { activeDiscounts, calculateDiscountAdjustment } = useActiveCustomerDiscounts(
+  const { activeDiscounts, calculateDiscountAdjustment, refetch: refetchCustomerDiscounts } = useActiveCustomerDiscounts(
     editCustomerId || null,
     organization?.id || null
   );
