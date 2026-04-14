@@ -124,6 +124,46 @@ const fmtEUR = (amount: number) => {
   return `${sign}${intPart},${parts[1]} €`;
 };
 
+const MAX_SAFE_QUOTE_PRICE = 1_000_000_000;
+
+const safePrice = (val: unknown): number => {
+  const n = typeof val === "number" ? val : Number(val);
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return n > MAX_SAFE_QUOTE_PRICE ? MAX_SAFE_QUOTE_PRICE : n;
+};
+
+const parseEsNumber = (val: unknown): number => {
+  if (typeof val === "number") return Number.isFinite(val) ? val : NaN;
+  const normalized = String(val ?? "").replace(/\./g, "").replace(",", ".");
+  const parsed = parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : NaN;
+};
+
+const getStoredOutputBasePrice = (outputs: any[]): number | null => {
+  const arr = Array.isArray(outputs) ? outputs : [];
+  const strictPriceOutputs = arr.filter((output: any) => String(output?.type || "").toLowerCase() === "price");
+  const fallbackPriceOutputs = arr.filter((output: any) => {
+    const name = String(output?.name || "").toLowerCase();
+    return name.includes("precio") || name.includes("price");
+  });
+
+  const priceOutputs = strictPriceOutputs.length > 0 ? strictPriceOutputs : fallbackPriceOutputs;
+  if (priceOutputs.length === 0) return null;
+
+  const totalLike = priceOutputs.find((output: any) => /total/i.test(String(output?.name ?? "")));
+  if (totalLike) {
+    const totalValue = parseEsNumber(totalLike?.value);
+    return Number.isFinite(totalValue) ? safePrice(totalValue) : null;
+  }
+
+  const numericValues = priceOutputs
+    .map((output: any) => parseEsNumber(output?.value))
+    .filter((value: number) => Number.isFinite(value) && value >= 0);
+
+  if (numericValues.length === 0) return null;
+  return safePrice(Math.max(...numericValues));
+};
+
 export default function QuoteEdit() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -158,6 +198,133 @@ export default function QuoteEdit() {
     if (!editCustomerId) return;
     void refetchCustomerDiscounts();
   }, [editCustomerId, refetchCustomerDiscounts]);
+
+  const applyTariffToValue = useCallback((value: number) => {
+    const baseValue = safePrice(value);
+    if (!activeDiscounts.length) return baseValue;
+
+    const adjustment = activeDiscounts.reduce((total, discount) => {
+      const percentage = Number(discount?.percentage) || 0;
+      const amount = (baseValue * percentage) / 100;
+      return total + (discount?.is_discount ? -amount : amount);
+    }, 0);
+
+    return safePrice(baseValue + adjustment);
+  }, [activeDiscounts]);
+
+  const getPromptNumericValue = useCallback((prompts: Record<string, any>, promptId: string) => {
+    const rawValue = prompts?.[promptId];
+    const value = rawValue && typeof rawValue === "object" && "value" in rawValue
+      ? rawValue.value
+      : rawValue;
+
+    const parsed = parseEsNumber(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }, []);
+
+  const calculateItemEffectivePrice = useCallback((item: QuoteItem) => {
+    const itemAdditionals = Array.isArray(item.itemAdditionals) ? item.itemAdditionals : [];
+    const prompts = item.prompts && typeof item.prompts === "object" ? item.prompts : {};
+    const multiRows = Array.isArray(item.multi?.rows) ? item.multi.rows : [];
+    const isCustomProduct = item.productId === "__CUSTOM_PRODUCT__";
+
+    if (isCustomProduct) {
+      const customQuantity = getPromptNumericValue(prompts, "custom_quantity") ?? 1;
+      const customUnitPrice = getPromptNumericValue(prompts, "custom_unit_price");
+      const fallbackUnitPrice = customQuantity > 0 ? safePrice((Number(item.price) || 0) / customQuantity) : safePrice(item.price || 0);
+      const unitPrice = customUnitPrice !== null ? safePrice(customUnitPrice) : fallbackUnitPrice;
+
+      let total = safePrice(unitPrice * customQuantity);
+      itemAdditionals.forEach((additional) => {
+        const value = parseEsNumber(additional?.value);
+        if (!Number.isFinite(value)) return;
+
+        if (additional.type === "net_amount") {
+          total += value;
+        } else if (additional.type === "percentage") {
+          total += (total * value) / 100;
+        } else if (additional.type === "quantity_multiplier") {
+          total += value * customQuantity;
+        } else if (additional.type === "capacity_divider") {
+          const capacity = parseEsNumber(additional?.capacity_value);
+          const safeCapacity = Number.isFinite(capacity) && capacity > 0 ? capacity : 1;
+          total += value * Math.ceil(customQuantity / safeCapacity);
+        }
+      });
+
+      return safePrice(total);
+    }
+
+    let basePrice: number | null = null;
+
+    if (multiRows.length > 0) {
+      const q1Price = parseEsNumber(multiRows[0]?.totalStr ?? 0);
+      if (Number.isFinite(q1Price)) {
+        basePrice = safePrice(q1Price);
+      }
+    }
+
+    if (basePrice === null && item.compositeData?.totalPrice) {
+      const compositeBase = Number(item.compositeData.totalPrice);
+      if (Number.isFinite(compositeBase) && compositeBase > 0) {
+        basePrice = safePrice(compositeBase);
+      }
+    }
+
+    if (basePrice === null) {
+      basePrice = getStoredOutputBasePrice(item.outputs || []);
+    }
+
+    if (basePrice === null) {
+      return safePrice(item.price || 0);
+    }
+
+    const adjustedBasePrice = applyTariffToValue(basePrice);
+    let additionalsTotal = 0;
+    let quantity = 1;
+
+    if (multiRows.length > 0) {
+      const multiQty = Number(multiRows[0]?.qty);
+      quantity = Number.isFinite(multiQty) && multiQty > 0 ? multiQty : 1;
+    } else if (item.multi?.qtyPrompt) {
+      const promptQty = getPromptNumericValue(prompts, item.multi.qtyPrompt);
+      if (promptQty && promptQty > 0) quantity = promptQty;
+    }
+
+    itemAdditionals.forEach((additional) => {
+      const value = parseEsNumber(additional?.value);
+      if (!Number.isFinite(value)) return;
+
+      if (additional.type === "net_amount") {
+        additionalsTotal += applyTariffToValue(value);
+      } else if (additional.type === "percentage") {
+        additionalsTotal += (adjustedBasePrice * value) / 100;
+      } else if (additional.type === "quantity_multiplier") {
+        additionalsTotal += applyTariffToValue(value) * quantity;
+      } else if (additional.type === "capacity_divider") {
+        const capacity = parseEsNumber(additional?.capacity_value);
+        const safeCapacity = Number.isFinite(capacity) && capacity > 0 ? capacity : 1;
+        additionalsTotal += applyTariffToValue(value) * Math.ceil(quantity / safeCapacity);
+      }
+    });
+
+    return safePrice(adjustedBasePrice + additionalsTotal);
+  }, [applyTariffToValue, getPromptNumericValue]);
+
+  const getQuoteAdditionalAmount = useCallback((additional: SelectedQuoteAdditional, subtotal: number) => {
+    const value = Number(additional.value) || 0;
+
+    switch (additional.type) {
+      case "net_amount":
+        return applyTariffToValue(value);
+      case "quantity_multiplier":
+        return applyTariffToValue(value);
+      case "percentage":
+        return (subtotal * value) / 100;
+      default:
+        return value;
+    }
+  }, [applyTariffToValue]);
 
   const { data: quote, isLoading } = useQuery({
     queryKey: ["quote", id],
