@@ -1259,7 +1259,7 @@ export default function QuoteEdit() {
                                   </p>
                                 </div>
                                 <div className="flex items-center gap-3 shrink-0">
-                                  <div className="text-sm font-medium text-secondary text-right">{fmtEUR(item.price || 0)}</div>
+                                  <div className="text-sm font-medium text-secondary text-right">{fmtEUR(calculateItemEffectivePrice(item))}</div>
                                   <div className="flex items-center gap-2">
                                     <Button onClick={() => handleItemEdit(itemId)} size="sm" variant="outline" className="gap-1">
                                       <Edit className="h-3 w-3" />
@@ -1413,33 +1413,31 @@ export default function QuoteEdit() {
 
                       switch (additional.type) {
                         case "percentage":
-                          amount = (subtotal * additional.value) / 100;
+                          amount = getQuoteAdditionalAmount(additional, subtotal);
                           displayText = `${cleanName} (${additional.value}%)`;
                           break;
                         case "net_amount":
-                          amount = additional.value;
+                          amount = getQuoteAdditionalAmount(additional, subtotal);
                           displayText = cleanName;
                           break;
                         case "quantity_multiplier":
+                          amount = getQuoteAdditionalAmount(additional, subtotal);
                           displayText = `${cleanName} (×${additional.value})`;
                           break;
                         default:
-                          amount = additional.value;
+                          amount = getQuoteAdditionalAmount(additional, subtotal);
                           displayText = cleanName;
                       }
 
-                      if (additional.type !== "quantity_multiplier") {
-                        return (
-                          <div key={index} className="flex justify-between items-center">
-                            <span className="text-xs text-muted-foreground">{displayText}:</span>
-                            <span className={`text-sm font-medium ${amount >= 0 ? "text-green-600" : "text-red-600"}`}>
-                              {amount >= 0 ? "+" : ""}
-                              {fmtEUR(amount)}
-                            </span>
-                          </div>
-                        );
-                      }
-                      return null;
+                      return (
+                        <div key={index} className="flex justify-between items-center">
+                          <span className="text-xs text-muted-foreground">{displayText}:</span>
+                          <span className={`text-sm font-medium ${amount >= 0 ? "text-green-600" : "text-red-600"}`}>
+                            {amount >= 0 ? "+" : ""}
+                            {fmtEUR(amount)}
+                          </span>
+                        </div>
+                      );
                     })}
                   </>
                 )}
