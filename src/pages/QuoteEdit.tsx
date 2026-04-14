@@ -229,12 +229,6 @@ export default function QuoteEdit() {
     const multiRows = Array.isArray(item.multi?.rows) ? item.multi.rows : [];
     const isCustomProduct = item.productId === "__CUSTOM_PRODUCT__";
 
-    // During QuoteEdit, QuoteItem already recalculates live price with current prompts + tariff.
-    // Prioritize that live snapshot price so prompt changes immediately affect totals while editing.
-    if (currentItemPrice > 0 && !isCustomProduct) {
-      return currentItemPrice;
-    }
-
     if (isCustomProduct) {
       const customQuantity = getPromptNumericValue(prompts, "custom_quantity") ?? 1;
       const customUnitPrice = getPromptNumericValue(prompts, "custom_unit_price");
@@ -711,7 +705,7 @@ export default function QuoteEdit() {
             name: item.name || item.displayName || item.product_name || "",  // Nombre a mostrar
             description,
             description_manual: isManual,
-            price: safePrice(item.price || calculateItemEffectivePrice(item)),
+            price: safePrice(calculateItemEffectivePrice(item)),
             position: index,
             product_id: item.productId || null,
             prompts: promptsArray,
