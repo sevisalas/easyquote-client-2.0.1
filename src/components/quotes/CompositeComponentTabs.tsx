@@ -467,35 +467,11 @@ export default function CompositeComponentTabs({
   // Verificar si hay valores de prompts padre disponibles
   const hasParentValues = parentInputs.length > 0;
 
-  // Query para obtener outputs del producto PADRE (ancho, alto, etc.)
-  const { data: parentPricingData } = useQuery({
-    queryKey: ["parent-pricing-outputs", parentProductId, JSON.stringify(parentPromptValues)],
-    queryFn: async () => {
-      const token = await getEasyQuoteToken();
-      if (!token) throw new Error("No hay token");
-
-
-      const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
-        token,
-        productId: parentProductId,
-        inputs: parentInputs,
-        productType: "composite",
-      });
-
-      if (error) throw error;
-      
-      return {
-        outputs: data?.outputValues || data?.outputs || [],
-        prompts: data?.prompts || [],
-      };
-    },
-    enabled: !!parentProductId && hasParentValues,
-    staleTime: 30 * 1000,
-    refetchOnWindowFocus: false,
-  });
-
-  // Outputs del padre (generales)
-  const parentOutputs = useMemo(() => parentPricingData?.outputs || [], [parentPricingData]);
+  // Outputs del padre: extraídos directamente del parentProduct prop (ya calculado en QuoteItem)
+  // Esto evita una llamada duplicada al API del padre
+  const parentOutputs = useMemo(() => {
+    return parentProduct?.outputValues || parentProduct?.outputs || [];
+  }, [parentProduct]);
 
   // =====================================================================
   // SISTEMA DE DOS FASES PARA AGREGACIÓN DE LOMO
@@ -687,24 +663,37 @@ export default function CompositeComponentTabs({
 
           // ============================================================
           // INYECTAR EL LOMO AGREGADO DE INTERIORES A CUBIERTA
+          // Usamos outputAggregations para encontrar el prompt de lomo del componente receptor
+          // sin hacer un GET adicional al API
           // ============================================================
           if (aggregatedLomoFromSources !== null) {
-            // Hacer GET para encontrar el prompt de lomo en este componente
-            const { data: componentInitData } = await invokeEasyQuoteFunction("easyquote-pricing", {
-              token,
-              productId: component.component_product_id,
-              method: "GET",
-            });
-            
-            const componentPrompts = componentInitData?.prompts || [];
+            // Buscar en outputAggregations la config que mapea "lomo" a este componente
+            // El target_prompt se identifica buscando en las connections un campo "lomo"
             let lomoPromptId: string | null = null;
             
-            for (const p of componentPrompts as any[]) {
-              const promptText = String(p?.promptText ?? p?.label ?? p?.name ?? "").toLowerCase();
-              const promptId = String(p?.id ?? "");
-              if (promptText.includes("lomo")) {
-                lomoPromptId = promptId;
+            // Estrategia 1: buscar en promptConnections un target que sea "lomo" para este componente
+            for (const conn of connections as any[]) {
+              const targetName = String(conn.target_prompt_name ?? "").toLowerCase();
+              if (targetName.includes("lomo") || isLomoLikeField(targetName)) {
+                lomoPromptId = conn.target_prompt_name;
                 break;
+              }
+            }
+            
+            // Estrategia 2: buscar en outputAggregations configuradas para este componente
+            if (!lomoPromptId) {
+              for (const agg of outputAggregations as any[]) {
+                if (isLomoLikeField(agg.source_output_name) || isLomoLikeField(agg.target_output_name)) {
+                  // El target del aggregation es un output, pero el prompt correspondiente
+                  // puede estar en las connections - buscar por label "lomo" en inputs ya armados
+                  for (const input of componentInputs) {
+                    if (isLomoLikeField(input.id)) {
+                      lomoPromptId = input.id;
+                      break;
+                    }
+                  }
+                  break;
+                }
               }
             }
 
@@ -719,9 +708,8 @@ export default function CompositeComponentTabs({
                 if (existingIdx >= 0) {
                   componentInputs[existingIdx].value = aggregatedLomoFromSources;
                 } else {
-                  componentInputs.push({ id: lomoPromptId, value: aggregatedLomoFromSources });
+                  componentInputs.push({ id: lomoPromptId!, value: aggregatedLomoFromSources });
                 }
-                
               }
             }
           }
@@ -736,51 +724,9 @@ export default function CompositeComponentTabs({
           });
 
           if (error) throw error;
-          console.log(`[RECEIVER-PRICING-RESPONSE] component=${component.component_alias} prompts=`, JSON.stringify(data?.prompts?.map((p:any) => ({id:p.id, text:p.promptText, val:p.currentValue}))));
           
-          // RE-PATCH: Cuando hay campos condicionales (ej: "Personalizado" activa Ancho/Alto),
-          // el API puede ignorar los valores enviados en la primera llamada.
-          // Detectamos si algún input heredado difiere del valor devuelto y re-enviamos.
-          let finalData = data;
-          const returnedPrompts = data?.prompts || [];
-          const mismatchedInputs: Array<{id: string; value: any}> = [];
-          
-          for (const input of componentInputs) {
-            const returned = returnedPrompts.find((p: any) => p.id === input.id);
-            if (returned) {
-              const sentVal = String(input.value).trim();
-              const gotVal = String(returned.currentValue ?? "").trim();
-              if (sentVal !== gotVal) {
-                mismatchedInputs.push(input);
-              }
-            }
-          }
-          
-          if (mismatchedInputs.length > 0) {
-            console.log(`[RECEIVER-RE-PATCH] component=${component.component_alias} mismatches=`, JSON.stringify(mismatchedInputs.map(m => ({id: m.id, sent: m.value}))));
-            
-            // Build inputs from the response prompts (current state) + override with our desired values
-            const rePatchInputs = returnedPrompts.map((p: any) => {
-              const override = componentInputs.find(i => i.id === p.id);
-              return { id: p.id, value: override ? override.value : p.currentValue };
-            });
-            
-            const { data: data2, error: error2 } = await invokeEasyQuoteFunction("easyquote-pricing", {
-              token,
-              productId: component.component_product_id,
-              inputs: rePatchInputs,
-              productType: "composite",
-              componentId: componentKey,
-            });
-            
-            if (!error2 && data2) {
-              console.log(`[RECEIVER-RE-PATCH-RESPONSE] component=${component.component_alias} prompts=`, JSON.stringify(data2?.prompts?.map((p:any) => ({id:p.id, text:p.promptText, val:p.currentValue}))));
-              finalData = data2;
-            }
-          }
-          
-          const prompts = finalData?.prompts || [];
-          const outputs = finalData?.outputValues || finalData?.outputs || [];
+          const prompts = data?.prompts || [];
+          const outputs = data?.outputValues || data?.outputs || [];
           const priceOutput = outputs.find((o: any) => String(o?.type || o?.outputType || "").toLowerCase() === "price");
           const price = priceOutput
             ? parseFloat(String(priceOutput.value ?? "0").replace(/\./g, "").replace(",", ".")) || 0
