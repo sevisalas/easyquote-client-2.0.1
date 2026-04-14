@@ -447,10 +447,16 @@ export const useQuoteApproval = () => {
           finalOutputs = Array.isArray(singleRow.outs) ? singleRow.outs : finalOutputs;
         }
 
-        // Si ya hay descripción guardada (manual o auto-generada), conservarla tal cual.
-        // Solo regenerar si está vacía.
+        // If description is manual, always preserve it as-is.
+        // If auto-generated AND a different quantity was selected, regenerate from updated prompts.
+        // If auto-generated and no quantity change, preserve the existing description.
+        // If empty, generate from prompts.
+        const quantityChanged = multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1 && itemQuantities?.[item.id];
         if (!finalDescription || finalDescription.trim() === '') {
           finalDescription = buildAutoDescriptionFromPrompts(finalPrompts) || '';
+        } else if (!isDescriptionManual && quantityChanged) {
+          // Quantity changed on auto-generated description: regenerate with updated prompts
+          finalDescription = buildAutoDescriptionFromPrompts(finalPrompts) || finalDescription;
         }
 
         return {
