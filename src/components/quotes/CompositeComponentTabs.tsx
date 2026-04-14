@@ -642,10 +642,12 @@ export default function CompositeComponentTabs({
               conn.target_component_id === component.id || 
               conn.target_component_id === component.component_product_id
           );
+          const inheritedTargetPromptIds = new Set(
+            connections.map((conn: any) => String(conn.target_prompt_name ?? "").trim()).filter(Boolean)
+          );
 
           for (const conn of connections as any[]) {
-            let sourceValue = getEffectiveParentPromptValue(conn.source_prompt_name);
-            console.log(`[INHERIT-DEBUG-RECEIVER] component=${component.component_alias} conn source=${conn.source_prompt_name} → target=${conn.target_prompt_name} | resolved=${JSON.stringify(sourceValue)} | parentKeys=${Object.keys(parentPromptValues).slice(0,5).join(',')}`);
+            const sourceValue = getEffectiveParentPromptValue(conn.source_prompt_name);
             if (sourceValue !== undefined && sourceValue !== null) {
               const actualValue = (typeof sourceValue === 'object' && sourceValue !== null && 'value' in sourceValue)
                 ? sourceValue.value : sourceValue;
@@ -656,6 +658,7 @@ export default function CompositeComponentTabs({
           }
           
           for (const [promptId, value] of Object.entries(userEditedValues)) {
+            if (inheritedTargetPromptIds.has(String(promptId))) continue;
             if (value !== undefined && value !== null) {
               const existingIdx = componentInputs.findIndex(i => i.id === promptId);
               if (existingIdx >= 0) componentInputs[existingIdx].value = value;
