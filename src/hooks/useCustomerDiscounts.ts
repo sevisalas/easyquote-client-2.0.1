@@ -110,9 +110,41 @@ export function useActiveCustomerDiscounts(customerId: string | null, organizati
   } = useQuery({
     queryKey: ["customer_discounts_active", normalizedCustomerId, resolvedOrganizationId],
     queryFn: async () => {
-      return [] as CustomerDiscount[];
+      if (!normalizedCustomerId || !resolvedOrganizationId) return [] as CustomerDiscount[];
+
+      // 1. Get the customer's tariff_id
+      const { data: customer, error: custErr } = await supabase
+        .from("customers")
+        .select("tariff_id")
+        .eq("id", normalizedCustomerId)
+        .maybeSingle();
+
+      if (custErr || !customer?.tariff_id) return [] as CustomerDiscount[];
+
+      // 2. Fetch the tariff if active
+      const { data: tariff, error: tarErr } = await supabase
+        .from("tariffs" as any)
+        .select("*")
+        .eq("id", customer.tariff_id)
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (tarErr || !tariff) return [] as CustomerDiscount[];
+
+      const t = tariff as any;
+      return [{
+        id: t.id,
+        customer_id: normalizedCustomerId,
+        organization_id: resolvedOrganizationId,
+        name: t.name,
+        percentage: t.percentage,
+        is_discount: t.is_discount,
+        is_active: true,
+        created_at: t.created_at,
+        updated_at: t.updated_at,
+      }] as CustomerDiscount[];
     },
-    enabled: false,
+    enabled: !!normalizedCustomerId && !!resolvedOrganizationId,
     refetchOnMount: "always",
   });
 
