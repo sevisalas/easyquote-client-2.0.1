@@ -2053,118 +2053,18 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       return;
     }
     
-    // NO sincronizar si se está calculando el precio (evita guardar datos incompletos)
-    if (isPricingLoading) {
-      debugLog('⏸️ syncToParent bloqueado: precio recalculándose');
+    // NO sincronizar mientras cualquier cálculo siga en curso
+    // (pricing simple, multi-cantidades o productos compuestos), porque eso
+    // provoca rebotes al padre con precios intermedios o antiguos.
+    if (isPricingLoading || multiLoading || compositeMultiLoading) {
+      debugLog('⏸️ syncToParent bloqueado: cálculo en curso');
       return;
     }
-    
-    // Para productos de API, si aún no tenemos promptValues (por ejemplo,
-    // justo tras seleccionar el producto), intentamos derivarlos del pricing
-    // para poder sincronizar precio/outputs al padre y que el subtotal se actualice.
-    const hasPromptValues = Object.keys(promptValues).length > 0;
-    const pricingPrompts = Array.isArray((pricing as any)?.prompts) ? ((pricing as any).prompts as any[]) : [];
-
-    debugLog('🔄 syncToParent ejecutándose:', { productId, promptValuesCount: Object.keys(promptValues).length });
-
-    // IMPORTANTE: En el estado de la app, `prompts` debe ser SIEMPRE un objeto
-    // { [promptId]: { label, value, order } }.
-    // El formato array [{id,label,value,order}] se usa SOLO al persistir en DB.
-    // Si aquí enviamos un array, las pantallas de guardado (QuoteNew/QuoteEdit)
-    // pueden terminar guardando índices "0", "1"... como IDs, mezclando prompts.
-    let promptsObj: Record<string, { label: string; value: any; order: number }> = {};
-
-    // For custom products, create synthetic prompts for quantity and price
-    if (isCustomProduct) {
-      promptsObj = {
-        custom_quantity: { label: "Cantidad", value: customQuantity, order: 1 },
-        custom_unit_price: { label: "Precio unitario", value: customPrice, order: 2 },
-      };
-    } else if (hasPromptValues) {
-      // Guardar TODOS los prompts basándonos en promptValues (fuente de verdad)
-      const next: typeof promptsObj = {};
-      Object.entries(promptValues).forEach(([promptId, promptData]) => {
-        if (typeof promptData === "object" && promptData !== null && "value" in promptData) {
-          next[promptId] = {
-            label: (promptData as any).label || promptId,
-            value: (promptData as any).value,
-            order: (promptData as any).order ?? 999,
-          };
-        } else {
-          next[promptId] = {
-            label: promptId,
-            value: promptData,
-            order: 999,
-          };
-        }
-      });
-      promptsObj = next;
-    } else if (pricingPrompts.length > 0) {
-      // Fallback: aún no se han inicializado promptValues pero sí tenemos
-      // definiciones/valores desde EasyQuote (GET inicial). Los usamos para
-      // sincronizar y actualizar el subtotal.
-      const next: typeof promptsObj = {};
-      pricingPrompts
-        .filter((p: any) => !!p?.id)
-        .forEach((p: any) => {
-          next[p.id] = {
-            label: p.promptText || p.label || p.id,
-            value: p.currentValue,
-            order: p.promptSequence ?? p.order ?? 999,
-          };
-        });
-      promptsObj = next;
-    }
-
-    // Si seguimos sin prompts, no bloqueamos: permitimos sincronizar outputs/precio.
-
-    // Obtener nombre original del producto API
-    const originalProductName = products?.find((p: any) => String(p.id) === String(productId)) 
-      ? getProductLabel(products.find((p: any) => String(p.id) === String(productId))) 
-      : "";
-    
-    // Construir compositeData si hay componentes configurados
-    const compositeData = hasConfiguredComponents && Object.keys(compositeComponentsData).length > 0
-      ? {
-          components: compositeComponentsData,
-          activeComponents: activeCompositeComponents,
-          totalPrice: compositeTotalPrice,
-          parentOutputs: compositeParentOutputs,
-        }
-      : undefined;
-
-    const snapshot = {
-      productId,
-      prompts: promptsObj,
-      outputs: isCustomProduct ? [] : outputs,
-      price: userEditedPrice !== null ? userEditedPrice : finalPrice, // Usar precio modificado si existe
-      modifiedPrice: userEditedPrice, // Guardar precio modificado por separado
-      multi: multiEnabled ? { qtyPrompt, qtyInputs, rows: multiRows } : null,
-      displayName: displayName || originalProductName, // Nombre a mostrar (editable)
-      productName: originalProductName, // Nombre original del producto API
-      itemDescription: isCustomProduct ? (itemDescription || "Artículo personalizado") : (itemDescription || ""), // Descripción para todos los productos
-      descriptionManual, // Flag: usuario editó la descripción manualmente
-      itemAdditionals,
-      // Preservar isFinalized del padre (initialData) - NO sobrescribirlo aquí
-      boundProductConfig, // Guardar configuración de producto encuadernado
-      compositeData, // Datos de componentes compuestos para persistencia
-    };
-    
-    const snapshotString = JSON.stringify(snapshot);
-    if (snapshotString !== lastSyncedSnapshot.current) {
-      lastSyncedSnapshot.current = snapshotString;
-      debugLog('✅ Sincronizando snapshot al padre');
-      onChange(id, snapshot);
-    }
-  }, [id, onChange, productId, promptValues, outputs, finalPrice, multiEnabled, qtyPrompt, qtyInputs, multiRows, displayName, itemDescription, itemAdditionals, products, initialData?.isFinalized, isInitializing, isCustomProduct, customPrice, customQuantity, pricing, isPricingLoading, userEditedPrice, boundProductConfig, hasConfiguredComponents, compositeComponentsData, activeCompositeComponents, compositeTotalPrice, compositeParentOutputs]);
-
-  // Verificar que el artículo está completo Y no se está recalculando el precio
-  const isCalculating = isPricingLoading || multiLoading || compositeMultiLoading;
-  const isComplete = productId && !isCalculating && ((isCustomProduct && customPrice > 0 && itemDescription) || (priceOutput && finalPrice > 0));
-
-  // Sincronizar automáticamente cuando cambien los prompts/cálculo (excepto durante inicialización o cálculo)
+...
+  // Sincronizar automáticamente cuando cambien los prompts/cálculo solo cuando
+  // todos los cálculos ya hayan terminado, para no pisar el precio nuevo con uno intermedio.
   useEffect(() => {
-    if (!isInitializing && !isPricingLoading && productId) {
+    if (!isInitializing && !isCalculating && productId) {
       if (isCustomProduct && itemDescription) {
         syncToParent();
       } else if (!isCustomProduct) {
@@ -2182,7 +2082,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     boundProductConfig,
     pricing,
     isInitializing,
-    isPricingLoading,
+    isCalculating,
     syncToParent,
     compositeComponentsData,
     compositeTotalPrice,
