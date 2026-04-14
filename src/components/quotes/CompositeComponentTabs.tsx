@@ -467,35 +467,11 @@ export default function CompositeComponentTabs({
   // Verificar si hay valores de prompts padre disponibles
   const hasParentValues = parentInputs.length > 0;
 
-  // Query para obtener outputs del producto PADRE (ancho, alto, etc.)
-  const { data: parentPricingData } = useQuery({
-    queryKey: ["parent-pricing-outputs", parentProductId, JSON.stringify(parentPromptValues)],
-    queryFn: async () => {
-      const token = await getEasyQuoteToken();
-      if (!token) throw new Error("No hay token");
-
-
-      const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
-        token,
-        productId: parentProductId,
-        inputs: parentInputs,
-        productType: "composite",
-      });
-
-      if (error) throw error;
-      
-      return {
-        outputs: data?.outputValues || data?.outputs || [],
-        prompts: data?.prompts || [],
-      };
-    },
-    enabled: !!parentProductId && hasParentValues,
-    staleTime: 30 * 1000,
-    refetchOnWindowFocus: false,
-  });
-
-  // Outputs del padre (generales)
-  const parentOutputs = useMemo(() => parentPricingData?.outputs || [], [parentPricingData]);
+  // Outputs del padre: extraídos directamente del parentProduct prop (ya calculado en QuoteItem)
+  // Esto evita una llamada duplicada al API del padre
+  const parentOutputs = useMemo(() => {
+    return parentProduct?.outputValues || parentProduct?.outputs || [];
+  }, [parentProduct]);
 
   // =====================================================================
   // SISTEMA DE DOS FASES PARA AGREGACIÓN DE LOMO
