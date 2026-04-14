@@ -704,7 +704,7 @@ export default function QuoteEdit() {
             name: item.name || item.displayName || item.product_name || "",  // Nombre a mostrar
             description,
             description_manual: isManual,
-            price: item.price || 0,
+            price: calculateItemEffectivePrice(item),
             position: index,
             product_id: item.productId || null,
             prompts: promptsArray,
@@ -757,17 +757,10 @@ export default function QuoteEdit() {
   });
 
   const calculateSubtotal = () => {
-    const MAX_PRICE = 1_000_000_000;
-    const safePrice = (val: unknown): number => {
-      const n = typeof val === "number" ? val : Number(val);
-      if (!Number.isFinite(n) || n < 0) return 0;
-      return n > MAX_PRICE ? MAX_PRICE : n;
-    };
-
     // Sum of item prices — tariff is already applied inside QuoteItem via applyCustomerTariffToBasePrice
     // Do NOT apply tariff again here to avoid double-discounting
     const apiPriceTotal = items.reduce((sum, item) => {
-      return sum + safePrice((item as any)?.price);
+      return sum + calculateItemEffectivePrice(item);
     }, 0);
 
     return apiPriceTotal;
@@ -784,21 +777,14 @@ export default function QuoteEdit() {
     quoteAdditionals.forEach((additional) => {
       switch (additional.type) {
         case "net_amount":
-          console.log(`🔢 Aplicando net_amount: ${additional.value}`);
-          total += additional.value;
-          break;
         case "percentage":
-          const percentageAmount = (subtotal * additional.value) / 100;
-          console.log(`🔢 Aplicando percentage: ${additional.value}% = ${percentageAmount}`);
-          total += percentageAmount;
-          break;
         case "quantity_multiplier":
-          console.log(`🔢 Aplicando multiplier: ×${additional.value}`);
-          total *= additional.value;
+        default: {
+          const amount = getQuoteAdditionalAmount(additional, subtotal);
+          console.log(`🔢 Aplicando ${additional.type}: ${amount}`);
+          total += amount;
           break;
-        default:
-          console.log(`🔢 Aplicando default: ${additional.value}`);
-          total += additional.value;
+        }
       }
     });
 
