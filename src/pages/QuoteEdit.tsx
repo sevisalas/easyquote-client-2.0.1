@@ -1054,6 +1054,7 @@ export default function QuoteEdit() {
                         onChange={handleItemChange}
                         onRemove={handleItemRemove}
                         onFinishEdit={handleItemSaveEdit}
+                        customerDiscounts={activeDiscounts}
                       />
                     </>
                   ) : (
