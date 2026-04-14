@@ -154,6 +154,10 @@ export default function QuoteEdit() {
     organization?.id || null
   );
 
+  useEffect(() => {
+    if (!editCustomerId) return;
+    void refetchCustomerDiscounts();
+  }, [editCustomerId, refetchCustomerDiscounts]);
 
   const { data: quote, isLoading } = useQuery({
     queryKey: ["quote", id],
