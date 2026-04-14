@@ -223,10 +223,17 @@ export default function QuoteEdit() {
   }, []);
 
   const calculateItemEffectivePrice = useCallback((item: QuoteItem) => {
+    const currentItemPrice = safePrice(item.price || 0);
     const itemAdditionals = Array.isArray(item.itemAdditionals) ? item.itemAdditionals : [];
     const prompts = item.prompts && typeof item.prompts === "object" ? item.prompts : {};
     const multiRows = Array.isArray(item.multi?.rows) ? item.multi.rows : [];
     const isCustomProduct = item.productId === "__CUSTOM_PRODUCT__";
+
+    // During QuoteEdit, QuoteItem already recalculates live price with current prompts + tariff.
+    // Prioritize that live snapshot price so prompt changes immediately affect totals while editing.
+    if (currentItemPrice > 0 && !isCustomProduct) {
+      return currentItemPrice;
+    }
 
     if (isCustomProduct) {
       const customQuantity = getPromptNumericValue(prompts, "custom_quantity") ?? 1;
@@ -276,7 +283,7 @@ export default function QuoteEdit() {
     }
 
     if (basePrice === null) {
-      return safePrice(item.price || 0);
+      return currentItemPrice;
     }
 
     const adjustedBasePrice = applyTariffToValue(basePrice);
@@ -704,7 +711,7 @@ export default function QuoteEdit() {
             name: item.name || item.displayName || item.product_name || "",  // Nombre a mostrar
             description,
             description_manual: isManual,
-            price: calculateItemEffectivePrice(item),
+            price: safePrice(item.price || calculateItemEffectivePrice(item)),
             position: index,
             product_id: item.productId || null,
             prompts: promptsArray,
