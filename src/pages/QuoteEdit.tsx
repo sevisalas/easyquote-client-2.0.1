@@ -711,7 +711,7 @@ export default function QuoteEdit() {
             name: item.name || item.displayName || item.product_name || "",  // Nombre a mostrar
             description,
             description_manual: isManual,
-            price: calculateItemEffectivePrice(item),
+            price: safePrice(item.price || calculateItemEffectivePrice(item)),
             position: index,
             product_id: item.productId || null,
             prompts: promptsArray,
