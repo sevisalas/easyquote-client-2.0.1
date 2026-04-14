@@ -110,85 +110,9 @@ export function useActiveCustomerDiscounts(customerId: string | null, organizati
   } = useQuery({
     queryKey: ["customer_discounts_active", normalizedCustomerId, resolvedOrganizationId],
     queryFn: async () => {
-      if (!normalizedCustomerId || !resolvedOrganizationId) return [];
-
-      const { data: customerData, error: customerError } = await supabase
-        .from("customers" as any)
-        .select("tariff_id")
-        .eq("id", normalizedCustomerId)
-        .eq("organization_id", resolvedOrganizationId)
-        .maybeSingle();
-
-      const customerRecord = customerData as unknown as { tariff_id?: string | null } | null;
-      const assignedTariffId = customerRecord?.tariff_id ?? null;
-
-      let assignedTariff: {
-        id: string;
-        name: string;
-        percentage: number;
-        is_discount: boolean;
-        is_active: boolean;
-        created_at: string;
-        updated_at: string;
-        organization_id: string;
-      } | null = null;
-
-      if (!customerError && assignedTariffId) {
-        const { data: tariffData, error: tariffError } = await supabase
-          .from("tariffs" as any)
-          .select("id, name, percentage, is_discount, is_active, created_at, updated_at, organization_id")
-          .eq("id", assignedTariffId)
-          .eq("organization_id", resolvedOrganizationId)
-          .maybeSingle();
-
-        if (!tariffError && tariffData) {
-          assignedTariff = tariffData as unknown as {
-            id: string;
-            name: string;
-            percentage: number;
-            is_discount: boolean;
-            is_active: boolean;
-            created_at: string;
-            updated_at: string;
-            organization_id: string;
-          };
-        }
-      }
-
-      if (!customerError && assignedTariff?.is_active) {
-        return [
-          {
-            id: assignedTariff.id,
-            customer_id: normalizedCustomerId,
-            organization_id: assignedTariff.organization_id ?? resolvedOrganizationId,
-            name: assignedTariff.name,
-            percentage: assignedTariff.percentage,
-            is_discount: assignedTariff.is_discount,
-            is_active: true,
-            created_at: assignedTariff.created_at ?? new Date().toISOString(),
-            updated_at: assignedTariff.updated_at ?? new Date().toISOString(),
-          },
-        ] as CustomerDiscount[];
-      }
-
-      if (customerError) {
-        console.log("[CustomerDiscounts] No access to assigned tariff, checking legacy discounts");
-      }
-
-      const { data, error } = await supabase
-        .from("customer_discounts" as any)
-        .select("*")
-        .eq("customer_id", normalizedCustomerId)
-        .eq("organization_id", resolvedOrganizationId)
-        .eq("is_active", true);
-
-      if (error) {
-        console.log("[CustomerDiscounts] No access or no discounts");
-        return [];
-      }
-      return (data || []) as unknown as CustomerDiscount[];
+      return [] as CustomerDiscount[];
     },
-    enabled: !!normalizedCustomerId && !!resolvedOrganizationId,
+    enabled: false,
     refetchOnMount: "always",
   });
 
