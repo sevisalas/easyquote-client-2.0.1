@@ -266,6 +266,16 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     // Force re-render by updating the timestamp
     setComponentPromptValues(prev => ({ ...prev }));
   }, []);
+
+  const isCompositeComponentsCalculating = useMemo(() => {
+    if (!hasConfiguredComponents || activeCompositeComponents.length === 0) return false;
+
+    if (Object.keys(compositeComponentsData).length < activeCompositeComponents.length) {
+      return true;
+    }
+
+    return Object.values(compositeComponentsData).some((component) => component?.isLoading || component?.isFetching);
+  }, [hasConfiguredComponents, activeCompositeComponents, compositeComponentsData]);
   
   // Determinar si el producto necesita selector de configuración (tiene múltiples componentes)
   const availableConfigs = useMemo(() => {
@@ -2065,7 +2075,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     return selectedProduct ? getProductLabel(selectedProduct) : displayName || initialData?.productName || "";
   }, [isCustomProduct, selectedProduct, displayName, initialData?.productName]);
 
-  const isCalculating = isInitializing || isPricingLoading || multiLoading || compositeMultiLoading;
+  const isCalculating = isInitializing || isPricingLoading || multiLoading || compositeMultiLoading || isCompositeComponentsCalculating;
 
   const isComplete = useMemo(() => {
     if (!productId) return false;
@@ -2096,7 +2106,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     // NO sincronizar mientras cualquier cálculo siga en curso
     // (pricing simple, multi-cantidades o productos compuestos), porque eso
     // provoca rebotes al padre con precios intermedios o antiguos.
-    if (isPricingLoading || multiLoading || compositeMultiLoading) {
+    if (isPricingLoading || multiLoading || compositeMultiLoading || isCompositeComponentsCalculating) {
       debugLog('⏸️ syncToParent bloqueado: cálculo en curso');
       return;
     }
@@ -2146,6 +2156,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     isPricingLoading,
     multiLoading,
     compositeMultiLoading,
+    isCompositeComponentsCalculating,
     userEditedPrice,
     finalPrice,
     productId,
@@ -2479,8 +2490,17 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                             onComponentChange={setActiveComponent}
                             onComponentsDataChange={(data, total, parentOutputs) => {
                               setCompositeComponentsData(data);
-                              setCompositeTotalPrice(total);
-                              if (parentOutputs) setCompositeParentOutputs(parentOutputs);
+
+                              const hasPendingComponents =
+                                activeCompositeComponents.length > 0 && (
+                                  Object.keys(data).length < activeCompositeComponents.length ||
+                                  Object.values(data).some((component: any) => component?.isLoading || component?.isFetching)
+                                );
+
+                              if (!hasPendingComponents) {
+                                setCompositeTotalPrice(total);
+                                if (parentOutputs) setCompositeParentOutputs(parentOutputs);
+                              }
                             }}
                             componentPromptValues={componentPromptValues}
                             onComponentPromptChange={handleComponentPromptChange}
