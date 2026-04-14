@@ -378,7 +378,13 @@ export default function PromptsForm({
         ) ?? [];
 
         // Remove exact duplicates (same value + same label) to avoid UI artifacts like "NoNo"
-        const norm = (v: any) => String(v ?? "").trim().toLowerCase();
+        const norm = (v: any) => {
+          if (typeof v === "boolean") return v ? "sí" : "no";
+          const normalized = String(v ?? "").trim().toLowerCase();
+          if (normalized === "true") return "sí";
+          if (normalized === "false") return "no";
+          return normalized;
+        };
         const dedupedOptions = (() => {
           const seen = new Set<string>();
           const out: typeof filteredOptions = [];

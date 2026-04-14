@@ -67,6 +67,11 @@ export const COMPONENT_LABELS = getComponentLabels(null);
 // Orden predefinido de componentes (el orden en que aparecen para ser activados)
 const COMPONENT_ORDER = ["cubierta", "interior_1", "interior_2"];
 
+const BOOLEAN_PROMPT_OPTIONS = [
+  { value: "Sí", label: "Sí" },
+  { value: "No", label: "No" },
+] as const;
+
 function getPromptCell(op: any): string | undefined {
   return op?.promptCell ?? op?.prompt_cell ?? op?.cell ?? op?.promptcell;
 }
@@ -340,7 +345,8 @@ export default function ComponentTabsPromptsForm({
         label,
         type: "select",
         required: !!def?.valueRequired,
-        default: false,
+        default: "No",
+        options: [...BOOLEAN_PROMPT_OPTIONS],
       });
     }
 

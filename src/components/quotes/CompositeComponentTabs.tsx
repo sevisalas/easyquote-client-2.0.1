@@ -7,11 +7,13 @@ import PromptsForm, { type PromptDef, extractPrompts } from "./PromptsForm";
 import { supabase } from "@/integrations/supabase/client";
 import { useProductPromptSettings } from "@/hooks/useProductPromptSettings";
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-
 // Debug: evitar spam en consola
 const __loggedOutputOrderingByProduct = new Set<string>();
+
+const BOOLEAN_PROMPT_OPTIONS = [
+  { value: "Sí", label: "Sí" },
+  { value: "No", label: "No" },
+] as const;
 
 interface CompositeComponentTabsProps {
   /** Producto padre compuesto */
@@ -103,17 +105,14 @@ export default function CompositeComponentTabs({
     return map;
   }, [parentPromptsForLookup]);
 
-  
-
-  // Igual que en PromptsForm: no “commit” mientras se escribe; Enter hace blur y el blur comitea.
-  const handleEnterToBlur = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.currentTarget.blur();
-    }
-  }, []);
-
   // Hook para obtener configuración de prompts (force_result, admin_only, is_hidden, etc.)
-  const { isPromptForceResult, isPromptHidden, organizationId: settingsOrganizationId } = useProductPromptSettings(parentProductId);
+  const {
+    isPromptForceResult,
+    isPromptHidden,
+    isPromptAdminOnly,
+    organizationId: settingsOrganizationId,
+    promptSettings,
+  } = useProductPromptSettings(parentProductId);
 
   // organization_id efectivo (necesario para RLS en tablas multi-tenant)
   const organizationId = organizationIdProp ?? settingsOrganizationId;
@@ -305,30 +304,14 @@ export default function CompositeComponentTabs({
     return m?.[0] ?? null;
   };
 
-  // Normaliza el tipo de prompt (viene como promptType en EasyQuote: DropDown, Number, TextBox, Checkbox, etc.)
-  const getPromptTypeKey = (p: any) => String(p?.type ?? p?.promptType ?? "").trim().toLowerCase();
-
-  const normalizeValueOptions = (p: any) => {
-    const rawOptions =
-      p?.valueOptions ??
-      p?.value_options ??
-      p?.options ??
-      p?.values ??
-      p?.items ??
-      [];
-    const arr = Array.isArray(rawOptions) ? rawOptions : [];
-    return arr
-      .map((o: any) => {
-        if (typeof o === "string" || typeof o === "number") {
-          return { label: String(o), value: String(o) };
-        }
-        const value = o?.value ?? o?.id ?? o?.key ?? o?.name;
-        const label = o?.label ?? o?.title ?? o?.name ?? value;
-        if (value === undefined || value === null) return null;
-        return { label: String(label ?? value), value: String(value) };
-      })
-      .filter(Boolean) as Array<{ label: string; value: string }>;
-  };
+  const parentPromptSettingMap = useMemo(() => {
+    const map = new Map<string, any>();
+    for (const setting of (promptSettings ?? []) as any[]) {
+      const promptName = normalizePromptName(setting?.prompt_name);
+      if (promptName) map.set(promptName, setting);
+    }
+    return map;
+  }, [promptSettings]);
 
   // Lookup: UUID -> celda (ej: "B10") para el producto padre.
   const parentPromptCellLookup = useMemo(() => {
@@ -377,7 +360,37 @@ export default function CompositeComponentTabs({
 
   // Separar prompts del padre en regulares y force_result (filtrando ocultos)
   const { parentRegularPrompts, parentForceResultPrompts } = useMemo(() => {
-    const allPrompts = extractPrompts(parentProduct);
+    const pricingPrompts = extractPrompts(parentProduct);
+    const pricingPromptIds = new Set(pricingPrompts.map((prompt) => String(prompt.id)));
+    const injectedCheckboxPrompts: PromptDef[] = [];
+
+    for (const def of parentPromptDefinitions as any[]) {
+      if (Number(def?.promptType) !== 6) continue;
+
+      const id = String(def?.id ?? "").trim();
+      if (!id || pricingPromptIds.has(id)) continue;
+
+      const rawCell = getPromptCell(def);
+      const cellRef = extractCellRef(rawCell) ?? normalizePromptName(rawCell);
+      if (!cellRef) continue;
+      if (isPromptHidden(cellRef)) continue;
+      if (!isAdmin && isPromptAdminOnly(cellRef)) continue;
+      if (!isPromptForceResult(cellRef)) continue;
+
+      const setting = parentPromptSettingMap.get(normalizePromptName(cellRef));
+      const customLabel = String(setting?.label ?? "").trim();
+
+      injectedCheckboxPrompts.push({
+        id,
+        label: customLabel || `Campo ${cellRef}`,
+        type: "select",
+        required: !!def?.valueRequired,
+        default: "No",
+        options: [...BOOLEAN_PROMPT_OPTIONS],
+      });
+    }
+
+    const allPrompts = [...pricingPrompts, ...injectedCheckboxPrompts];
     const regular: PromptDef[] = [];
     const forceResult: PromptDef[] = [];
 
@@ -391,7 +404,16 @@ export default function CompositeComponentTabs({
     }
 
     return { parentRegularPrompts: regular, parentForceResultPrompts: forceResult };
-  }, [parentProduct, isPromptForceResult, isPromptHidden, getParentPromptAdminKey]);
+  }, [
+    parentProduct,
+    parentPromptDefinitions,
+    isPromptForceResult,
+    isPromptHidden,
+    isPromptAdminOnly,
+    isAdmin,
+    getParentPromptAdminKey,
+    parentPromptSettingMap,
+  ]);
 
   // Producto virtual para prompts regulares del padre
   const parentRegularProduct = useMemo(() => {
@@ -1291,6 +1313,22 @@ export default function CompositeComponentTabs({
     return lookups;
   }, [activeComponents, componentPromptDefinitionsQueries]);
 
+  const componentPromptDefinitionsMap = useMemo(() => {
+    const map = new Map<string, any[]>();
+
+    activeComponents.forEach((component, idx) => {
+      const componentKey = getActiveComponentKey(component);
+      const defs = Array.isArray(componentPromptDefinitionsQueries[idx]?.data)
+        ? (componentPromptDefinitionsQueries[idx]?.data as any[])
+        : [];
+
+      map.set(componentKey, defs);
+      map.set(component.id, defs);
+    });
+
+    return map;
+  }, [activeComponents, componentPromptDefinitionsQueries]);
+
   // Hook para obtener configuración de force_result de cada componente
   // Estas settings dependen del component_product_id, así que usamos ese como queryKey.
   const componentPromptSettingsQueries = useQueries({
@@ -1355,6 +1393,25 @@ export default function CompositeComponentTabs({
     return map;
   }, [componentPromptSettingsQueries]);
 
+  const componentPromptSettingsMap = useMemo(() => {
+    const map = new Map<string, Map<string, any>>();
+
+    for (const query of componentPromptSettingsQueries) {
+      if (!query.data) continue;
+
+      const settingsMap = new Map<string, any>();
+      for (const setting of query.data.settings as any[]) {
+        const promptName = normalizePromptName(setting?.prompt_name);
+        if (promptName) settingsMap.set(promptName, setting);
+      }
+
+      map.set(query.data.componentKey, settingsMap);
+      map.set(query.data.componentId, settingsMap);
+    }
+
+    return map;
+  }, [componentPromptSettingsQueries]);
+
   // Obtener la celda de un prompt de componente (UUID -> celda)
   // Acepta componentKey (id:instance_index) o component.id como fallback
   const getComponentPromptCell = useCallback((componentKeyOrId: string, promptId: string): string => {
@@ -1407,26 +1464,45 @@ export default function CompositeComponentTabs({
     if (!componentData) return [];
 
     const mappedIds = getMappedPromptIds(componentKey);
-    const forceResultSet = componentForceResultMap.get(componentKey);
-    
-
-    // Debug desactivado: evitar spam en consola
-
-
-    // Filtrar: solo prompts force_result que:
-    // 1. NO estén mapeados (los mapeados ya se ven en el padre, ej: Tarifa/B10)
-    // 2. Si no es admin, excluir admin_only
-    return componentData.prompts.filter((p: any) => {
+    const existingPrompts = componentData.prompts.filter((p: any) => {
       const id = String(p.id);
-      // Excluir mapeados (heredados del padre)
       if (mappedIds.has(id)) return false;
-      // Solo incluir si es force_result
       const isForceResult = isComponentPromptForceResult(componentKey, id);
       if (!isForceResult) return false;
-      // Excluir admin_only si no es admin
       if (!isAdmin && isComponentPromptAdminOnly(componentKey, id)) return false;
       return true;
     });
+
+    const existingIds = new Set(existingPrompts.map((prompt: any) => String(prompt.id)));
+    const componentDefinitions = componentPromptDefinitionsMap.get(componentKey) || [];
+    const settingsMap = componentPromptSettingsMap.get(componentKey) || new Map<string, any>();
+
+    const injectedCheckboxPrompts = componentDefinitions.flatMap((def: any) => {
+      if (Number(def?.promptType) !== 6) return [];
+
+      const id = String(def?.id ?? "").trim();
+      if (!id || existingIds.has(id) || mappedIds.has(id)) return [];
+
+      const cellRef = getComponentPromptCell(componentKey, id);
+      if (!cellRef) return [];
+      if (!isComponentPromptForceResult(componentKey, id)) return [];
+      if (!isAdmin && isComponentPromptAdminOnly(componentKey, id)) return [];
+
+      const setting = settingsMap.get(normalizePromptName(cellRef));
+      if (setting?.is_hidden) return [];
+
+      const customLabel = String(setting?.label ?? "").trim();
+      return [{
+        id,
+        label: customLabel || `Campo ${cellRef}`,
+        type: "select",
+        required: !!def?.valueRequired,
+        default: "No",
+        options: [...BOOLEAN_PROMPT_OPTIONS],
+      }];
+    });
+
+    return [...existingPrompts, ...injectedCheckboxPrompts];
   };
 
   // Obtener valores de prompts para un componente específico
@@ -1501,59 +1577,14 @@ export default function CompositeComponentTabs({
           {parentForceResultPrompts.length > 0 && (
             <div className="border-t pt-4 mt-4">
               <h5 className="text-sm font-semibold text-muted-foreground mb-3">Opciones restrictivas</h5>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {parentForceResultPrompts.map((prompt) => {
-                  const effectiveValue = parentPromptValues[prompt.id];
-                  const value =
-                    effectiveValue && typeof effectiveValue === "object" && "value" in effectiveValue
-                      ? (effectiveValue as any).value
-                      : effectiveValue ?? prompt.default;
-
-                  if (false) {
-                    // checkbox type removed - now handled as select
-                  }
-
-                  if (prompt.type === "select" && prompt.options?.length) {
-                    return (
-                      <div key={prompt.id} className="space-y-1.5">
-                        <label className="text-sm font-medium">{prompt.label}</label>
-                        <Select
-                          value={String(value ?? "")}
-                          onValueChange={(v) => {
-                            onParentPromptChange(prompt.id, v);
-                            onParentPromptCommit?.(prompt.id, v);
-                          }}
-                        >
-                          <SelectTrigger className="h-9 w-full">
-                            <SelectValue placeholder="—" />
-                          </SelectTrigger>
-                          <SelectContent className="z-50 bg-popover">
-                            {prompt.options.map((o, idx) => (
-                              <SelectItem key={`${o.value}-${idx}`} value={o.value}>
-                                {o.label ?? o.value}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <div key={prompt.id} className="space-y-1.5">
-                      <label className="text-sm font-medium">{prompt.label}</label>
-                      <Input
-                        type={prompt.type === "number" || prompt.type === "integer" ? "number" : "text"}
-                        className="h-9 w-full"
-                        value={value ?? ""}
-                        onChange={(e) => onParentPromptChange(prompt.id, e.target.value)}
-                        onBlur={(e) => onParentPromptCommit?.(prompt.id, e.target.value)}
-                        onKeyDown={handleEnterToBlur}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
+              <PromptsForm
+                product={{ id: parentProductId, productId: parentProductId, prompts: parentForceResultPrompts }}
+                values={parentPromptValues}
+                onChange={(promptId, value, label) => onParentPromptChange(promptId, value, label)}
+                onCommit={(promptId, value, label) => onParentPromptCommit?.(promptId, value, label)}
+                showAllPrompts={isAdmin}
+                singleColumn
+              />
             </div>
           )}
         </div>
@@ -1619,113 +1650,32 @@ export default function CompositeComponentTabs({
                     {componentForceResultPrompts.length > 0 && (
                       <div className="border-t pt-4 mt-4">
                         <h5 className="text-sm font-semibold text-muted-foreground mb-3">Opciones restrictivas</h5>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {componentForceResultPrompts.map((prompt: any) => {
-                            const value = effectiveComponentValues[prompt.id] ?? prompt.currentValue ?? prompt.default;
-                            const typeKey = getPromptTypeKey(prompt);
-
-                            if (typeKey.includes("check") || typeKey.includes("boolean")) {
-                              const options = [
-                                { value: "Sí", label: "Sí" },
-                                { value: "No", label: "No" },
-                              ];
-                              const valueStr = value === undefined || value === null ? "" : String(value);
-                              return (
-                                <div key={prompt.id} className="space-y-1.5">
-                                  <label className="text-sm font-medium">{prompt.promptText || prompt.label || prompt.id}</label>
-                                  <Select
-                                    value={valueStr}
-                                    onValueChange={(v) => {
-                                      onComponentPromptChange?.(componentKey, prompt.id, v);
-                                      onComponentPromptCommit?.(componentKey, prompt.id, v);
-                                    }}
-                                  >
-                                    <SelectTrigger className="h-9 w-full">
-                                      <SelectValue placeholder="—" />
-                                    </SelectTrigger>
-                                    <SelectContent className="z-50 bg-popover">
-                                      {options.map((o, idx) => (
-                                        <SelectItem key={`${o.value}-${idx}`} value={o.value}>
-                                          {o.label}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              );
-                            }
-
-                            const options = normalizeValueOptions(prompt);
-                            const isSelectType =
-                              typeKey.includes("drop") || typeKey.includes("select") || typeKey.includes("list");
-
-                            if (isSelectType && options.length) {
-                              const valueStr = value === undefined || value === null ? "" : String(value);
-                              const isValid = valueStr === "" || options.some((o) => o.value === valueStr);
-                              return (
-                                <div key={prompt.id} className="space-y-1.5">
-                                  <label className="text-sm font-medium">
-                                    {prompt.promptText || prompt.label || prompt.id}
-                                  </label>
-                                  <Select
-                                    value={isValid ? valueStr : ""}
-                                    onValueChange={(val) => {
-                                      onComponentPromptChange?.(componentKey, prompt.id, val);
-                                      onComponentPromptCommit?.(componentKey, prompt.id, val);
-                                    }}
-                                  >
-                                    <SelectTrigger className="h-9 w-full">
-                                      <SelectValue placeholder="—" />
-                                    </SelectTrigger>
-                                    <SelectContent className="z-50 bg-popover">
-                                      {options.map((o, idx: number) => (
-                                        <SelectItem key={`${o.value}-${idx}`} value={o.value}>
-                                          {o.label}
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              );
-                            }
-
-                            return (
-                              <div key={prompt.id} className="space-y-1.5">
-                                <label className="text-sm font-medium">
-                                  {prompt.promptText || prompt.label || prompt.id}
-                                </label>
-                                <Input
-                                  type={
-                                    typeKey.includes("number") ||
-                                    typeKey.includes("decimal") ||
-                                    typeKey.includes("float") ||
-                                    typeKey.includes("int")
-                                      ? "number"
-                                      : "text"
-                                  }
-                                  className="h-9 w-full"
-                                  value={effectiveComponentValues[prompt.id] ?? value ?? ""}
-                                  onChange={(e) => {
-                                    // Guardar en draft local sin disparar recálculo
-                                    setComponentDraftValues((prev) => ({
-                                      ...prev,
-                                      [componentKey]: {
-                                        ...(prev[componentKey] || {}),
-                                        [prompt.id]: e.target.value,
-                                      },
-                                    }));
-                                  }}
-                                  onBlur={(e) => {
-                                    // Al hacer blur, propagar al padre y disparar recálculo
-                                    onComponentPromptChange?.(componentKey, prompt.id, e.target.value);
-                                    onComponentPromptCommit?.(componentKey, prompt.id, e.target.value);
-                                  }}
-                                  onKeyDown={handleEnterToBlur}
-                                />
-                              </div>
-                            );
-                          })}
-                        </div>
+                        <PromptsForm
+                          product={{ productId: component.component_product_id, prompts: componentForceResultPrompts }}
+                          values={effectiveComponentValues}
+                          onChange={(promptId, value) => {
+                            setComponentDraftValues((prev) => ({
+                              ...prev,
+                              [componentKey]: {
+                                ...(prev[componentKey] || {}),
+                                [promptId]: value,
+                              },
+                            }));
+                          }}
+                          onCommit={(promptId, value) => {
+                            setComponentDraftValues((prev) => ({
+                              ...prev,
+                              [componentKey]: {
+                                ...(prev[componentKey] || {}),
+                                [promptId]: value,
+                              },
+                            }));
+                            onComponentPromptChange?.(componentKey, promptId, value);
+                            onComponentPromptCommit?.(componentKey, promptId, value);
+                          }}
+                          showAllPrompts={isAdmin}
+                          singleColumn
+                        />
                       </div>
                     )}
                   </div>
