@@ -5,6 +5,13 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+## [2.7.13] - 2026-04-14
+
+### Corregido
+- **Propagación de prompts en compuestos**: Los valores heredados del producto padre ya no son sobreescritos por valores antiguos guardados del componente, garantizando que los cambios se propaguen correctamente
+
+---
+
 ## [2.7.7] - 2026-04-08
 
 ### Añadido
