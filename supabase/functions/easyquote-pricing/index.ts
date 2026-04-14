@@ -334,6 +334,7 @@ serve(async (req: Request): Promise<Response> => {
         console.log("easyquote-pricing: outputValues DETAILS:", JSON.stringify(data.outputValues.map((o: any, i: number) => ({
           idx: i,
           label: o.label || o.name || o.outputText,
+          value: o.value ?? o.result ?? o.calculatedValue ?? o.formattedValue,
           nameCell: o.nameCell,
           valueCell: o.valueCell,
           sheet: o.sheet,
