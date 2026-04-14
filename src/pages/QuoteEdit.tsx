@@ -49,6 +49,7 @@ interface QuoteItem {
   description_manual?: boolean;  // From DB
   itemAdditionals?: any[];
   compositeData?: any;
+  _liveUpdated?: boolean;  // Flag: item has been updated by live QuoteItem component (price is trustworthy)
 }
 
 interface SelectedQuoteAdditional {
@@ -228,6 +229,13 @@ export default function QuoteEdit() {
     const prompts = item.prompts && typeof item.prompts === "object" ? item.prompts : {};
     const multiRows = Array.isArray(item.multi?.rows) ? item.multi.rows : [];
     const isCustomProduct = item.productId === "__CUSTOM_PRODUCT__";
+
+    // If the item has been updated by the live QuoteItem component, trust its price directly.
+    // The QuoteItem already applies customer tariff to the API result, so using item.price
+    // avoids double-tariff and ensures the latest recalculated price is used.
+    if (item._liveUpdated && currentItemPrice > 0 && !isCustomProduct) {
+      return currentItemPrice;
+    }
 
     if (isCustomProduct) {
       const customQuantity = getPromptNumericValue(prompts, "custom_quantity") ?? 1;
@@ -861,6 +869,7 @@ export default function QuoteEdit() {
               itemDescription: snapshot.itemDescription,
               itemAdditionals: snapshot.itemAdditionals,
               compositeData: snapshot.compositeData,
+              _liveUpdated: true,
             }
           : item,
       );
