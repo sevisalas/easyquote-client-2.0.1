@@ -957,9 +957,11 @@ export default function QuoteDetail() {
                                 <Select
                                   value={itemQuantities[item.id]?.toString() || ''}
                                   onValueChange={(value) => {
+                                    // Parse Spanish-formatted numbers (e.g., "1.000" → 1000)
+                                    const parsed = Number(String(value).replace(/\./g, '').replace(',', '.'));
                                     setItemQuantities(prev => ({
                                       ...prev,
-                                      [item.id]: parseInt(value)
+                                      [item.id]: Number.isFinite(parsed) ? parsed : parseInt(value)
                                     }));
                                   }}
                                 >
