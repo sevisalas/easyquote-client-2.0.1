@@ -336,8 +336,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Inicialización desde datos previos (duplicar)
   const initializedRef = useRef(false);
   const lastSyncedSnapshot = useRef<string>("");
-  const pricingCycleStartedRef = useRef(false);
-  const [pendingCommittedPricing, setPendingCommittedPricing] = useState(false);
   
   // Reset initialization when item ID changes OR when initialData changes significantly
   useEffect(() => {
@@ -1995,17 +1993,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Handler para commit (onBlur o Enter) - dispara el recálculo de precios
   const handlePromptCommit = useCallback((id: string, value: any, label: string) => {
     debugLog("✅ Prompt committed (blur/enter):", { id, value, label });
-
-    const previousPrompt = promptValues[id];
-    const previousValue = previousPrompt && typeof previousPrompt === "object" && "value" in previousPrompt
-      ? previousPrompt.value
-      : previousPrompt;
-    const hasRealChange = String(previousValue ?? "") !== String(value ?? "");
-
-    if (!isCustomProduct && hasRealChange) {
-      pricingCycleStartedRef.current = false;
-      setPendingCommittedPricing(true);
-    }
     
     // Marcar que el usuario ha cambiado valores (solo en commit, no en cada keystroke)
     setUserHasChangedCurrentProduct(true);
@@ -2054,21 +2041,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       
       return newValues;
     });
-  }, [pricing, multiEnabled, qtyPrompt, promptValues, isCustomProduct]);
-
-  useEffect(() => {
-    if (!pendingCommittedPricing) return;
-
-    if (isPricingLoading || multiLoading || compositeMultiLoading) {
-      pricingCycleStartedRef.current = true;
-      return;
-    }
-
-    if (pricingCycleStartedRef.current) {
-      pricingCycleStartedRef.current = false;
-      setPendingCommittedPricing(false);
-    }
-  }, [pendingCommittedPricing, isPricingLoading, multiLoading, compositeMultiLoading]);
+  }, [pricing, multiEnabled, qtyPrompt]);
 
   const selectedProduct = useMemo(
     () => products?.find((p: any) => String(getProductId(p)) === String(productId)),
@@ -2081,6 +2054,45 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   }, [isCustomProduct, selectedProduct, displayName, initialData?.productName]);
 
   const isCalculating = isInitializing || isPricingLoading || multiLoading || compositeMultiLoading;
+
+  const normalizeComparablePromptValue = useCallback((raw: any) => {
+    const value = raw && typeof raw === "object" && "value" in raw ? raw.value : raw;
+    if (value === undefined || value === null) return "";
+    if (typeof value === "boolean") return value ? "si" : "no";
+
+    const str = String(value).trim();
+    if (!str) return "";
+
+    if (/^#[0-9a-f]{6}$/i.test(str)) return str.slice(1).toLowerCase();
+    if (/^-?\d+(?:[.,]\d+)?$/.test(str)) return String(Number(str.replace(",", ".")));
+
+    const lowered = str.toLowerCase();
+    if (lowered === "sí") return "si";
+    return lowered;
+  }, []);
+
+  const isPricingSyncedWithPrompts = useMemo(() => {
+    if (isCustomProduct || !userHasChangedCurrentProduct) return true;
+
+    const apiPrompts: any[] = Array.isArray((pricing as any)?.prompts) ? (pricing as any).prompts : [];
+    if (apiPrompts.length === 0) return !productId;
+
+    return apiPrompts.every((prompt: any) => {
+      if (!prompt?.id) return true;
+
+      const localValue = promptValues[String(prompt.id)];
+      const apiValue = prompt.currentValue ?? prompt.defaultValue ?? prompt.default ?? prompt.value;
+
+      return normalizeComparablePromptValue(localValue) === normalizeComparablePromptValue(apiValue);
+    });
+  }, [
+    isCustomProduct,
+    userHasChangedCurrentProduct,
+    pricing,
+    productId,
+    promptValues,
+    normalizeComparablePromptValue,
+  ]);
 
   const isComplete = useMemo(() => {
     if (!productId) return false;
@@ -2116,8 +2128,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       return;
     }
 
-    if (pendingCommittedPricing) {
-      debugLog('⏸️ syncToParent bloqueado: esperando resultado final del commit');
+    if (!isPricingSyncedWithPrompts) {
+      debugLog('⏸️ syncToParent bloqueado: pricing aún no refleja los prompts confirmados');
       return;
     }
 
@@ -2166,7 +2178,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     isPricingLoading,
     multiLoading,
     compositeMultiLoading,
-    pendingCommittedPricing,
+    isPricingSyncedWithPrompts,
     userEditedPrice,
     finalPrice,
     productId,
@@ -2194,7 +2206,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   // Sincronizar automáticamente cuando cambien los prompts/cálculo solo cuando
   // todos los cálculos ya hayan terminado, para no pisar el precio nuevo con uno intermedio.
   useEffect(() => {
-    if (!isInitializing && !isCalculating && !pendingCommittedPricing && productId) {
+    if (!isInitializing && !isCalculating && isPricingSyncedWithPrompts && productId) {
       if (isCustomProduct && itemDescription) {
         syncToParent();
       } else if (!isCustomProduct) {
@@ -2213,7 +2225,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     pricing,
     isInitializing,
     isCalculating,
-    pendingCommittedPricing,
+    isPricingSyncedWithPrompts,
     syncToParent,
     compositeComponentsData,
     compositeTotalPrice,
