@@ -10,7 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { invokeEasyQuoteFunction, getEasyQuoteToken } from "@/lib/easyquoteApi";
-import PromptsForm, { extractPrompts, isVisiblePrompt, type PromptDef } from "@/components/quotes/PromptsForm";
+import PromptsForm, { extractPrompts, isVisiblePrompt } from "@/components/quotes/PromptsForm";
 import ComponentTabsPromptsForm from "@/components/quotes/ComponentTabsPromptsForm";
 import ComponentTabsOutputs from "@/components/quotes/ComponentTabsOutputs";
 import BoundProductConfigSelector, {
@@ -170,8 +170,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [productId, setProductId] = useState<string>("");
   const [promptValues, setPromptValues] = useState<Record<string, any>>({});
   const [debouncedPromptValues, setDebouncedPromptValues] = useState<Record<string, any>>({});
-  // Draft values for force_result inputs - prevents API calls on every keystroke
-  const [forceResultDraftValues, setForceResultDraftValues] = useState<Record<string, string>>({});
   const [forceRecalculate, setForceRecalculate] = useState<boolean>(false);
   const [isExpanded, setIsExpanded] = useState<boolean>(shouldExpand === true); // Solo expandir si shouldExpand es explícitamente true
   const [userCollapsed, setUserCollapsed] = useState<boolean>(false); // Flag para colapso manual del usuario
@@ -220,7 +218,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   const [userEditedPrice, setUserEditedPrice] = useState<number | null>(null); // Precio editado por usuario
   const [isEditingCompositePrice, setIsEditingCompositePrice] = useState(false);
   const [localCompositePrice, setLocalCompositePrice] = useState("");
-  const [forceResultPrompts, setForceResultPrompts] = useState<PromptDef[]>([]); // Prompts marcados como "Opc. restrictiva"
   const initialStateRef = useRef<string>("");
   
   // Estados para productos compuestos con componentes configurados (nuevo sistema)
@@ -1042,7 +1039,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       // Reset EVERYTHING to initial state
       setPromptValues({});
       setDebouncedPromptValues({});
-      setForceResultDraftValues({}); // Clear draft values when product changes
       setMultiEnabled(false);
       setQtyPrompt("");
       setQtyInputs(["", "", "", "", ""]);
@@ -2494,95 +2490,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                               onComponentChange={setActiveComponent}
                               boundProductConfig={boundProductConfig}
                               isAdmin={isSuperAdmin || isOrgAdmin}
-                              onForceResultPrompts={setForceResultPrompts}
+                              renderForceResultSection
                             />
                           ) : (
                             <p className="text-sm text-muted-foreground">Cargando opciones…</p>
                           )
                         ) : null}
-                        
-                        {/* Sección: Opciones restrictivas (prompts marcados como force_result) - solo legacy */}
-                        {!hasConfiguredComponents && forceResultPrompts.length > 0 && (
-                          <div className="border-t pt-4 mt-4">
-                            <h3 className="text-sm font-semibold text-muted-foreground mb-3">
-                              Opciones restrictivas
-                            </h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-2">
-                              {forceResultPrompts.map((prompt) => {
-                                const effectiveValue = promptValues[prompt.id];
-                                const value = effectiveValue && typeof effectiveValue === 'object' && 'value' in effectiveValue 
-                                  ? effectiveValue.value 
-                                  : effectiveValue ?? prompt.default;
-                                
-                                // Checkbox type
-                                // Checkbox type removed - now handled as select
-                                
-                                // Select type
-                                if (prompt.type === 'select' && prompt.options?.length) {
-                                  return (
-                                    <div key={prompt.id} className="flex items-center gap-2 py-1">
-                                      <span className="text-sm">{prompt.label}</span>
-                                      <Select 
-                                        value={String(value ?? '')} 
-                                        onValueChange={(v) => {
-                                          handlePromptChange(prompt.id, v, prompt.label);
-                                          handlePromptCommit(prompt.id, v, prompt.label);
-                                        }}
-                                      >
-                                        <SelectTrigger className="h-8 w-auto min-w-[100px]">
-                                          <SelectValue placeholder="—" />
-                                        </SelectTrigger>
-                                        <SelectContent className="z-50 bg-popover">
-                                          {prompt.options.map((o, idx) => (
-                                            <SelectItem key={`${o.value}-${idx}`} value={o.value}>
-                                              {o.label ?? o.value}
-                                            </SelectItem>
-                                          ))}
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                  );
-                                }
-                                
-                                // Number/Integer/Text type - use draft values to prevent API calls on every keystroke
-                                const draftValue = forceResultDraftValues[prompt.id];
-                                const displayValue = draftValue !== undefined ? draftValue : (value ?? '');
-                                return (
-                                  <div key={prompt.id} className="flex items-center gap-2 py-1">
-                                    <span className="text-sm">{prompt.label}</span>
-                                    <Input
-                                      type={prompt.type === 'number' || prompt.type === 'integer' ? 'number' : 'text'}
-                                      className="h-8 w-24"
-                                      value={displayValue}
-                                      onChange={(e) => {
-                                        // Only update draft - no API call
-                                        setForceResultDraftValues(prev => ({
-                                          ...prev,
-                                          [prompt.id]: e.target.value
-                                        }));
-                                      }}
-                                      onBlur={(e) => {
-                                        // Clear draft and commit the value
-                                        setForceResultDraftValues(prev => {
-                                          const next = { ...prev };
-                                          delete next[prompt.id];
-                                          return next;
-                                        });
-                                        handlePromptChange(prompt.id, e.target.value, prompt.label);
-                                        handlePromptCommit(prompt.id, e.target.value, prompt.label);
-                                      }}
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                          e.currentTarget.blur();
-                                        }
-                                      }}
-                                    />
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
                       </>
                     )}
                   </div>
