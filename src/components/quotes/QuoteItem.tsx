@@ -39,7 +39,7 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import { normalizeApiUserId } from "@/utils/normalizeApiUserId";
 
 // Debug flag: set to false to disable all console logs in this file
-const DEBUG_QUOTE_ITEM = true;
+const DEBUG_QUOTE_ITEM = false;
 const debugLog = (...args: any[]) => { if (DEBUG_QUOTE_ITEM) console.log(...args); };
 
 // Special product ID for custom/manual items
