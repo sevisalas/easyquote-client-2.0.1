@@ -149,11 +149,15 @@ export default function QuoteEdit() {
   const editCustomerId = formData.customer_id?.startsWith('holded:')
     ? formData.customer_id.replace('holded:', '')
     : formData.customer_id || null;
-  const { activeDiscounts, calculateDiscountAdjustment } = useActiveCustomerDiscounts(
+  const { activeDiscounts, calculateDiscountAdjustment, refetch: refetchCustomerDiscounts } = useActiveCustomerDiscounts(
     editCustomerId || null,
     organization?.id || null
   );
 
+  useEffect(() => {
+    if (!editCustomerId) return;
+    void refetchCustomerDiscounts();
+  }, [editCustomerId, refetchCustomerDiscounts]);
 
   const { data: quote, isLoading } = useQuery({
     queryKey: ["quote", id],
