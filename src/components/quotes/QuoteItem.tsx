@@ -2043,6 +2043,34 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     });
   }, [pricing, multiEnabled, qtyPrompt]);
 
+  const selectedProduct = useMemo(
+    () => products?.find((p: any) => String(getProductId(p)) === String(productId)),
+    [products, productId]
+  );
+
+  const productName = useMemo(() => {
+    if (isCustomProduct) return "Artículo personalizado";
+    return selectedProduct ? getProductLabel(selectedProduct) : displayName || initialData?.productName || "";
+  }, [isCustomProduct, selectedProduct, displayName, initialData?.productName]);
+
+  const isCalculating = isInitializing || isPricingLoading || multiLoading || compositeMultiLoading;
+
+  const isComplete = useMemo(() => {
+    if (!productId) return false;
+    if (isCustomProduct) return itemDescription.trim().length > 0;
+    if (hasConfiguredComponents) return isCompositeReady;
+    if (needsConfigSelector && !boundProductConfig) return false;
+    return true;
+  }, [
+    productId,
+    isCustomProduct,
+    itemDescription,
+    hasConfiguredComponents,
+    isCompositeReady,
+    needsConfigSelector,
+    boundProductConfig,
+  ]);
+
   // Sync with parent only on specific user actions, not automatically
   const syncToParent = useCallback(() => {
     if (!onChange) return;
@@ -2060,7 +2088,76 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       debugLog('⏸️ syncToParent bloqueado: cálculo en curso');
       return;
     }
-...
+
+    const effectivePrice = safePrice(userEditedPrice !== null ? userEditedPrice : finalPrice);
+    const snapshot: ItemSnapshot = {
+      productId,
+      prompts: promptValues,
+      outputs: sortedOutputs,
+      price: effectivePrice,
+      modifiedPrice: userEditedPrice,
+      multi: multiEnabled
+        ? {
+            qtyPrompt,
+            qtyInputs,
+            rows: multiRows,
+            modifiedPrices: multiModifiedPrices,
+          }
+        : undefined,
+      displayName: displayName || productName || itemDescription || "",
+      productName,
+      itemDescription,
+      descriptionManual,
+      itemAdditionals,
+      boundProductConfig,
+      compositeData: hasConfiguredComponents
+        ? {
+            components: compositeComponentsData,
+            activeComponents: activeCompositeComponents,
+            totalPrice: compositeTotalPrice,
+            parentOutputs: compositeParentOutputs,
+          }
+        : undefined,
+    };
+
+    const snapshotKey = JSON.stringify(snapshot);
+    if (lastSyncedSnapshot.current === snapshotKey) {
+      debugLog('⏭️ syncToParent omitido: snapshot sin cambios');
+      return;
+    }
+
+    lastSyncedSnapshot.current = snapshotKey;
+    onChange(id, snapshot);
+  }, [
+    onChange,
+    isInitializing,
+    isPricingLoading,
+    multiLoading,
+    compositeMultiLoading,
+    userEditedPrice,
+    finalPrice,
+    productId,
+    promptValues,
+    sortedOutputs,
+    multiEnabled,
+    qtyPrompt,
+    qtyInputs,
+    multiRows,
+    multiModifiedPrices,
+    displayName,
+    productName,
+    itemDescription,
+    descriptionManual,
+    itemAdditionals,
+    boundProductConfig,
+    hasConfiguredComponents,
+    compositeComponentsData,
+    activeCompositeComponents,
+    compositeTotalPrice,
+    compositeParentOutputs,
+    id,
+  ]);
+
   // Sincronizar automáticamente cuando cambien los prompts/cálculo solo cuando
   // todos los cálculos ya hayan terminado, para no pisar el precio nuevo con uno intermedio.
   useEffect(() => {
