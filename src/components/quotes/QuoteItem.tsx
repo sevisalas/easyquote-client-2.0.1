@@ -50,6 +50,7 @@ type ItemSnapshot = {
   prompts: Record<string, any>;
   outputs: any[];
   price?: any;
+  tariffSignature?: string;
   modifiedPrice?: number | null;  // Precio modificado por el usuario (null = usar calculado)
   multi?: any;
   needsRecalculation?: boolean;
@@ -2077,6 +2078,14 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   const isCalculating = isInitializing || isPricingLoading || multiLoading || compositeMultiLoading || isCompositeComponentsCalculating;
 
+  const tariffSignature = useMemo(
+    () => customerDiscounts
+      .map((discount) => `${Number(discount?.percentage) || 0}:${discount?.is_discount ? "discount" : "surcharge"}`)
+      .sort()
+      .join("|"),
+    [customerDiscounts],
+  );
+
   const isComplete = useMemo(() => {
     if (!productId) return false;
     if (isCustomProduct) return itemDescription.trim().length > 0;
@@ -2117,6 +2126,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       prompts: promptValues,
       outputs: sortedOutputs,
       price: effectivePrice,
+      tariffSignature,
       modifiedPrice: userEditedPrice,
       multi: multiEnabled
         ? {
@@ -2178,6 +2188,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     activeCompositeComponents,
     compositeTotalPrice,
     compositeParentOutputs,
+    tariffSignature,
     id,
   ]);
 

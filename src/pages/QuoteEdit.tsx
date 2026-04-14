@@ -7,7 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, Edit, ChevronDown } from "lucide-react";
@@ -50,6 +50,7 @@ interface QuoteItem {
   itemAdditionals?: any[];
   compositeData?: any;
   _liveUpdated?: boolean;  // Flag: item has been updated by live QuoteItem component (price is trustworthy)
+  _tariffSignature?: string;
 }
 
 interface SelectedQuoteAdditional {
@@ -195,6 +196,14 @@ export default function QuoteEdit() {
     organization?.id || null
   );
 
+  const activeTariffSignature = useMemo(
+    () => activeDiscounts
+      .map((discount) => `${Number(discount?.percentage) || 0}:${discount?.is_discount ? "discount" : "surcharge"}`)
+      .sort()
+      .join("|"),
+    [activeDiscounts],
+  );
+
   useEffect(() => {
     if (!editCustomerId) return;
     void refetchCustomerDiscounts();
@@ -229,11 +238,13 @@ export default function QuoteEdit() {
     const prompts = item.prompts && typeof item.prompts === "object" ? item.prompts : {};
     const multiRows = Array.isArray(item.multi?.rows) ? item.multi.rows : [];
     const isCustomProduct = item.productId === "__CUSTOM_PRODUCT__";
+    const itemTariffSignature = typeof item._tariffSignature === "string" ? item._tariffSignature : "";
+    const livePriceMatchesCurrentTariff = itemTariffSignature === activeTariffSignature;
 
     // If the item has been updated by the live QuoteItem component, trust its price directly.
     // The QuoteItem already applies customer tariff to the API result, so using item.price
     // avoids double-tariff and ensures the latest recalculated price is used.
-    if (item._liveUpdated && currentItemPrice > 0 && !isCustomProduct) {
+    if (item._liveUpdated && currentItemPrice > 0 && !isCustomProduct && livePriceMatchesCurrentTariff) {
       return currentItemPrice;
     }
 
@@ -318,7 +329,7 @@ export default function QuoteEdit() {
     });
 
     return safePrice(adjustedBasePrice + additionalsTotal);
-  }, [applyTariffToValue, getPromptNumericValue]);
+  }, [activeTariffSignature, applyTariffToValue, getPromptNumericValue]);
 
   const getQuoteAdditionalAmount = useCallback((additional: SelectedQuoteAdditional, subtotal: number) => {
     const value = Number(additional.value) || 0;
@@ -870,11 +881,12 @@ export default function QuoteEdit() {
               itemAdditionals: snapshot.itemAdditionals,
               compositeData: snapshot.compositeData,
               _liveUpdated: true,
+              _tariffSignature: snapshot.tariffSignature ?? activeTariffSignature,
             }
           : item,
       );
     });
-  }, []);
+  }, [activeTariffSignature]);
 
   const handleItemRemove = (itemId: string | number) => {
     setItems((prev) =>
