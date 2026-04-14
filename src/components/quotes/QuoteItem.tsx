@@ -2055,45 +2055,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
   const isCalculating = isInitializing || isPricingLoading || multiLoading || compositeMultiLoading;
 
-  const normalizeComparablePromptValue = useCallback((raw: any) => {
-    const value = raw && typeof raw === "object" && "value" in raw ? raw.value : raw;
-    if (value === undefined || value === null) return "";
-    if (typeof value === "boolean") return value ? "si" : "no";
-
-    const str = String(value).trim();
-    if (!str) return "";
-
-    if (/^#[0-9a-f]{6}$/i.test(str)) return str.slice(1).toLowerCase();
-    if (/^-?\d+(?:[.,]\d+)?$/.test(str)) return String(Number(str.replace(",", ".")));
-
-    const lowered = str.toLowerCase();
-    if (lowered === "sí") return "si";
-    return lowered;
-  }, []);
-
-  const isPricingSyncedWithPrompts = useMemo(() => {
-    if (isCustomProduct || !userHasChangedCurrentProduct) return true;
-
-    const apiPrompts: any[] = Array.isArray((pricing as any)?.prompts) ? (pricing as any).prompts : [];
-    if (apiPrompts.length === 0) return !productId;
-
-    return apiPrompts.every((prompt: any) => {
-      if (!prompt?.id) return true;
-
-      const localValue = promptValues[String(prompt.id)];
-      const apiValue = prompt.currentValue ?? prompt.defaultValue ?? prompt.default ?? prompt.value;
-
-      return normalizeComparablePromptValue(localValue) === normalizeComparablePromptValue(apiValue);
-    });
-  }, [
-    isCustomProduct,
-    userHasChangedCurrentProduct,
-    pricing,
-    productId,
-    promptValues,
-    normalizeComparablePromptValue,
-  ]);
-
   const isComplete = useMemo(() => {
     if (!productId) return false;
     if (isCustomProduct) return itemDescription.trim().length > 0;
@@ -2125,11 +2086,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     // provoca rebotes al padre con precios intermedios o antiguos.
     if (isPricingLoading || multiLoading || compositeMultiLoading) {
       debugLog('⏸️ syncToParent bloqueado: cálculo en curso');
-      return;
-    }
-
-    if (!isPricingSyncedWithPrompts) {
-      debugLog('⏸️ syncToParent bloqueado: pricing aún no refleja los prompts confirmados');
       return;
     }
 
@@ -2178,7 +2134,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     isPricingLoading,
     multiLoading,
     compositeMultiLoading,
-    isPricingSyncedWithPrompts,
     userEditedPrice,
     finalPrice,
     productId,
@@ -2203,10 +2158,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     id,
   ]);
 
-  // Sincronizar automáticamente cuando cambien los prompts/cálculo solo cuando
-  // todos los cálculos ya hayan terminado, para no pisar el precio nuevo con uno intermedio.
+  // Sincronizar automáticamente solo cuando el cálculo asentado ya terminó.
+  // El resultado del API sigue siendo la fuente de verdad; aquí solo propagamos
+  // el precio final ya recalculado (incluyendo tarifa del cliente) al padre.
   useEffect(() => {
-    if (!isInitializing && !isCalculating && isPricingSyncedWithPrompts && productId) {
+    if (!isInitializing && !isCalculating && productId) {
       if (isCustomProduct && itemDescription) {
         syncToParent();
       } else if (!isCustomProduct) {
@@ -2225,7 +2181,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     pricing,
     isInitializing,
     isCalculating,
-    isPricingSyncedWithPrompts,
     syncToParent,
     compositeComponentsData,
     compositeTotalPrice,
