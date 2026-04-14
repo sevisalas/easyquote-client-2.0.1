@@ -879,7 +879,6 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       if (!isNewProduct && data?.prompts && !isCustomProduct) {
         const apiPrompts: any[] = Array.isArray(data.prompts) ? data.prompts : [];
 
-
          setPromptValues((prev) => {
           const norm = (v: any) => String(v ?? "").trim().toLowerCase();
           const next: Record<string, any> = {};
@@ -887,6 +886,9 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           for (const p of apiPrompts) {
             if (!p?.id) continue;
             const pid = String(p.id);
+            
+            // Track this ID as known to the API
+            apiKnownPromptIds.current.add(pid);
 
             const prevEntry = (prev as any)[pid];
             const prevValue =
@@ -917,6 +919,15 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
            // REGLA: el último resultado del pricing (GET/PATCH) es la fuente de verdad.
            // Si un prompt deja de venir en la respuesta, se elimina del estado y NO se
            // vuelve a enviar en el siguiente PATCH (evita acumulación).
+           // EXCEPCIÓN: Prompts inyectados por el frontend (checkbox tipo 6 / force_result)
+           // que NUNCA son devueltos por el API deben preservarse.
+           for (const [pid, prevEntry] of Object.entries(prev)) {
+             if (!next[pid] && prevEntry !== undefined && !apiKnownPromptIds.current.has(pid)) {
+               // This prompt was never returned by any API response → user-injected, preserve it
+               next[pid] = prevEntry;
+             }
+           }
+
            setDebouncedPromptValues(next);
            return next;
         });
