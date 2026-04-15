@@ -404,6 +404,12 @@ Deno.serve(async (req) => {
         }
       }
       
+      // Final fallback: use item.quantity from the database (set during quote approval)
+      if (units === 1 && item.quantity && parseInt(String(item.quantity)) > 1) {
+        units = parseInt(String(item.quantity));
+        console.log('📊 Quantity from item.quantity fallback:', { units });
+      }
+      
       if (isCustomProduct) {
         const hasRealUnitPrice = (typeof customUnitPrice === 'number' ? customUnitPrice : parseFloat(String(customUnitPrice) || '0')) > 0;
         if (hasRealUnitPrice) {
