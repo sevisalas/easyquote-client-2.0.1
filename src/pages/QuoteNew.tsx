@@ -439,6 +439,22 @@ export default function QuoteNew() {
       });
       return;
     }
+    if (hasItemBeingEdited) {
+      toast({
+        title: "Producto sin finalizar",
+        description: "Finaliza primero el producto para guardar correctamente prompts, cantidad y descripción.",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (!allItemsComplete) {
+      toast({
+        title: "Productos incompletos",
+        description: "Revisa los productos antes de guardar el presupuesto.",
+        variant: "destructive"
+      });
+      return;
+    }
     setSaving(true);
     try {
       const {
@@ -833,11 +849,11 @@ export default function QuoteNew() {
       <Card>
         <CardContent className="pt-6">
           <div className="flex gap-4 justify-end">
-            <Button onClick={() => handleSave("draft")} disabled={loading || !quoteFormat} variant="outline">
+            <Button onClick={() => handleSave("draft")} disabled={loading || !quoteFormat || hasItemBeingEdited || !allItemsComplete} variant="outline">
               <Save className="w-4 h-4 mr-2" />
               Guardar borrador
             </Button>
-            <Button onClick={() => handleSave("sent")} disabled={loading || !quoteFormat}>
+            <Button onClick={() => handleSave("sent")} disabled={loading || !quoteFormat || hasItemBeingEdited || !allItemsComplete}>
               <Save className="w-4 h-4 mr-2" />
               {canExportQuotesOnSend ? 'Guardar y enviar a Holded' : 'Guardar y enviar'}
             </Button>
