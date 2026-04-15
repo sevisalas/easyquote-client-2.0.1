@@ -85,6 +85,7 @@ const QuotesList = () => {
   const [customerFilter, setCustomerFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [quoteNumberFilter, setQuoteNumberFilter] = useState("");
+  const [descriptionFilter, setDescriptionFilter] = useState("");
   const [dateFromFilter, setDateFromFilter] = useState<Date | undefined>();
   const [dateToFilter, setDateToFilter] = useState<Date | undefined>();
   
@@ -116,7 +117,7 @@ const QuotesList = () => {
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [customerFilter, statusFilter, quoteNumberFilter, dateFromFilter, dateToFilter]);
+  }, [customerFilter, statusFilter, quoteNumberFilter, descriptionFilter, dateFromFilter, dateToFilter]);
 
   // Filtered quotes based on all filters
   const filteredQuotes = useMemo(() => {
@@ -136,6 +137,14 @@ const QuotesList = () => {
         return false;
       }
       
+      // Description filter (only when not searching by number)
+      if (descriptionFilter && !quoteNumberFilter) {
+        const desc = (quote.description || "").toLowerCase();
+        if (!desc.includes(descriptionFilter.toLowerCase())) {
+          return false;
+        }
+      }
+      
       // Date filters
       const quoteDate = new Date(quote.created_at);
       if (dateFromFilter && quoteDate < dateFromFilter) {
@@ -147,7 +156,7 @@ const QuotesList = () => {
       
       return true;
     });
-  }, [quotes, customerFilter, statusFilter, quoteNumberFilter, dateFromFilter, dateToFilter, customers, orgMembers]);
+  }, [quotes, customerFilter, statusFilter, quoteNumberFilter, descriptionFilter, dateFromFilter, dateToFilter, customers, orgMembers]);
 
   // Paginated quotes
   const paginatedQuotes = useMemo(() => {
@@ -159,11 +168,12 @@ const QuotesList = () => {
     setCustomerFilter("");
     setStatusFilter("");
     setQuoteNumberFilter("");
+    setDescriptionFilter("");
     setDateFromFilter(undefined);
     setDateToFilter(undefined);
   };
 
-  const hasActiveFilters = customerFilter || statusFilter || quoteNumberFilter || dateFromFilter || dateToFilter;
+  const hasActiveFilters = customerFilter || statusFilter || quoteNumberFilter || descriptionFilter || dateFromFilter || dateToFilter;
 
   const getStatusVariant = (s: string) => {
     if (s === "approved") return "success" as const;
@@ -240,7 +250,7 @@ const QuotesList = () => {
         <CardContent className="p-2 md:p-6">
           {/* Filters Section */}
           <div className="mb-3 p-2 md:p-3 bg-muted/30 rounded border">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
               {/* Customer Filter */}
               <div className="relative">
                 <Search className="absolute left-2 top-2 md:top-1.5 h-3 w-3 text-muted-foreground" />
@@ -276,6 +286,17 @@ const QuotesList = () => {
                   value={quoteNumberFilter}
                   onChange={(e) => setQuoteNumberFilter(e.target.value)}
                   className="h-9 md:h-6 text-sm md:text-xs px-2"
+                />
+              </div>
+
+              {/* Description Filter */}
+              <div className="relative">
+                <Search className="absolute left-2 top-2 md:top-1.5 h-3 w-3 text-muted-foreground" />
+                <Input
+                  placeholder="Descripción..."
+                  value={descriptionFilter}
+                  onChange={(e) => setDescriptionFilter(e.target.value)}
+                  className="h-9 md:h-6 text-sm md:text-xs pl-7"
                 />
               </div>
 
