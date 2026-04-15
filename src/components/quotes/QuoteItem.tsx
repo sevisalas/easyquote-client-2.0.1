@@ -853,9 +853,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         throw error;
       }
       
-      // Inicializar promptValues con los datos del API SOLO si es un producto nuevo Y NO hay initialData
-      // CRÍTICO: Si hay initialData, los prompts guardados son DEFINITIVOS y NO deben sobrescribirse
-      if (isNewProduct && data?.prompts && !initialData) {
+      // Inicializar promptValues con los datos del API SOLO si es un producto nuevo
+      // Y NO hay prompts guardados reales en initialData.
+      // NOTA: En QuoteNew, initialData siempre existe como template vacío { productId: "", prompts: {} },
+      // por lo que debemos verificar si tiene datos reales, no solo si existe.
+      const hasRealInitialData = initialData?.productId && Object.keys(initialData.prompts || {}).length > 0;
+      if (isNewProduct && data?.prompts && !hasRealInitialData) {
         // Bloquear sincronización durante inicialización
         setIsInitializing(true);
         
@@ -881,7 +884,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         }
         
         setIsNewProduct(false);
-      } else if (isNewProduct && initialData) {
+      } else if (isNewProduct && hasRealInitialData) {
         setIsNewProduct(false);
         setIsInitializing(false);
       }
@@ -1022,9 +1025,10 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
   useEffect(() => {
     if (!pricing?.prompts || !Array.isArray(pricing.prompts)) return;
     
-    // Si NO hay initialData, inicializar con valores por defecto (producto nuevo)
+    // Si NO hay datos reales en initialData, inicializar con valores por defecto (producto nuevo)
     // Usar ref para evitar dependencia directa de promptValues
-    if (!initialData && isNewProduct && promptValuesLengthRef.current === 0) {
+    const hasRealInitialData = initialData?.productId && Object.keys(initialData?.prompts || {}).length > 0;
+    if (!hasRealInitialData && isNewProduct && promptValuesLengthRef.current === 0) {
       debugLog("🎨 Producto NUEVO - Inicializando promptValues con valores por defecto de pricing");
       const defaultValues: Record<string, any> = {};
       pricing.prompts.forEach((prompt: any) => {
