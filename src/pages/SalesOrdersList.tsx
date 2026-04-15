@@ -60,6 +60,7 @@ const SalesOrdersList = () => {
   const [customerFilter, setCustomerFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [orderNumberFilter, setOrderNumberFilter] = useState("");
+  const [descriptionFilter, setDescriptionFilter] = useState("");
   const [dateFromFilter, setDateFromFilter] = useState<Date | undefined>();
   const [dateToFilter, setDateToFilter] = useState<Date | undefined>();
   
@@ -148,7 +149,7 @@ const SalesOrdersList = () => {
   // Reset to first page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [customerFilter, statusFilter, orderNumberFilter, dateFromFilter, dateToFilter]);
+  }, [customerFilter, statusFilter, orderNumberFilter, descriptionFilter, dateFromFilter, dateToFilter]);
 
   const getCustomerName = (customerId?: string | null) => {
     return customers.find((c: any) => c.id === customerId)?.name || "—";
@@ -172,6 +173,14 @@ const SalesOrdersList = () => {
         return false;
       }
       
+      // Description filter (only when not searching by number)
+      if (descriptionFilter && !orderNumberFilter) {
+        const desc = (order.description || "").toLowerCase();
+        if (!desc.includes(descriptionFilter.toLowerCase())) {
+          return false;
+        }
+      }
+      
       // Date filters
       const orderDate = new Date(order.order_date);
       if (dateFromFilter && orderDate < dateFromFilter) {
@@ -183,7 +192,7 @@ const SalesOrdersList = () => {
       
       return true;
     });
-  }, [orders, customerFilter, statusFilter, orderNumberFilter, dateFromFilter, dateToFilter, customers]);
+  }, [orders, customerFilter, statusFilter, orderNumberFilter, descriptionFilter, dateFromFilter, dateToFilter, customers]);
 
   // Paginated orders
   const paginatedOrders = useMemo(() => {
@@ -195,11 +204,12 @@ const SalesOrdersList = () => {
     setCustomerFilter("");
     setStatusFilter("");
     setOrderNumberFilter("");
+    setDescriptionFilter("");
     setDateFromFilter(undefined);
     setDateToFilter(undefined);
   };
 
-  const hasActiveFilters = customerFilter || statusFilter || orderNumberFilter || dateFromFilter || dateToFilter;
+  const hasActiveFilters = customerFilter || statusFilter || orderNumberFilter || descriptionFilter || dateFromFilter || dateToFilter;
 
   const handleDownloadHoldedPdf = async (holdedDocumentId: string, orderNumber: string) => {
     const toastId = toast.loading('Descargando PDF...');
@@ -376,7 +386,7 @@ const SalesOrdersList = () => {
         <CardContent className="px-3 md:px-6 py-2">
           {/* Filters Section */}
           <div className="mb-3 p-3 bg-muted/30 rounded border">
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-2">
               {/* Customer Filter */}
               <div className="relative">
                 <Search className={cn(
@@ -414,6 +424,20 @@ const SalesOrdersList = () => {
                   value={orderNumberFilter}
                   onChange={(e) => setOrderNumberFilter(e.target.value)}
                   className={isMobile ? "h-10" : "h-6 text-xs px-2"}
+                />
+              </div>
+
+              {/* Description Filter */}
+              <div className="relative">
+                <Search className={cn(
+                  "absolute text-muted-foreground",
+                  isMobile ? "left-3 top-3 h-4 w-4" : "left-2 top-1.5 h-3 w-3"
+                )} />
+                <Input
+                  placeholder="Descripción..."
+                  value={descriptionFilter}
+                  onChange={(e) => setDescriptionFilter(e.target.value)}
+                  className={isMobile ? "h-10 pl-9" : "h-6 text-xs pl-7"}
                 />
               </div>
 
