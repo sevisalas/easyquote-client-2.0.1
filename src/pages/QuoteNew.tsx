@@ -527,7 +527,7 @@ export default function QuoteNew() {
         // Auto-generar descripción desde prompts visibles si no fue editada manualmente
         let description = item.itemDescription || "";
         const isManual = item.descriptionManual || false;
-        if (!isManual && !description && promptsArray.length > 0) {
+        if (!isManual && promptsArray.length > 0) {
           const excludeLabels = ["tarifa", "forzar máquina", "forzar maquina", "tira y retira", "forzar poses", "forzar poses/pags.", "modelos"];
           const filterPrompt = (p: any) => {
             const val = String(p.value ?? "").trim();
