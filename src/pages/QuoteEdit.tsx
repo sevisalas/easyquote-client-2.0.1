@@ -718,10 +718,23 @@ export default function QuoteEdit() {
             }
           }
 
+          // Resolver cantidad real desde los prompts
+          let resolvedQuantity = 1;
+          if (promptsArray.length > 0) {
+            const qtyPrompt = promptsArray.find((p: any) => {
+              const label = String(p.label ?? "").toUpperCase();
+              return label.includes("UNIDADES") || label.includes("CANTIDAD") || label.includes("EJEMPLAR") || label.includes("QTY");
+            });
+            if (qtyPrompt?.value) {
+              const parsed = parseInt(String(qtyPrompt.value).replace(/\./g, "").replace(",", "."));
+              if (!isNaN(parsed) && parsed > 0) resolvedQuantity = parsed;
+            }
+          }
+
           return {
             quote_id: id,
-            product_name: item.product_name || item.productName || "",  // Nombre original del producto API
-            name: item.name || item.displayName || item.product_name || "",  // Nombre a mostrar
+            product_name: item.product_name || item.productName || "",
+            name: item.name || item.displayName || item.product_name || "",
             description,
             description_manual: isManual,
             price: safePrice(calculateItemEffectivePrice(item)),
@@ -730,6 +743,7 @@ export default function QuoteEdit() {
             prompts: promptsArray,
             outputs: item.outputs || [],
             multi: item.multi || null,
+            quantity: resolvedQuantity,
             item_additionals: item.itemAdditionals || [],
             composite_data: item.compositeData || null,
           };

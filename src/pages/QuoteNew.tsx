@@ -570,6 +570,19 @@ export default function QuoteNew() {
           }
         }
 
+        // Resolver cantidad real desde los prompts (buscar el prompt marcado como cantidad)
+        let resolvedQuantity = 1;
+        if (promptsArray.length > 0) {
+          const qtyPrompt = promptsArray.find((p: any) => {
+            const label = String(p.label ?? "").toUpperCase();
+            return label.includes("UNIDADES") || label.includes("CANTIDAD") || label.includes("EJEMPLAR") || label.includes("QTY");
+          });
+          if (qtyPrompt?.value) {
+            const parsed = parseInt(String(qtyPrompt.value).replace(/\./g, "").replace(",", "."));
+            if (!isNaN(parsed) && parsed > 0) resolvedQuantity = parsed;
+          }
+        }
+
         return {
           quote_id: quote.id,
           product_id: item.productId,
@@ -581,7 +594,7 @@ export default function QuoteNew() {
           outputs: item.outputs || [],
           multi: item.multi || null,
           price: item.price || 0,
-          quantity: 1,
+          quantity: resolvedQuantity,
           discount_percentage: 0,
           position: index,
           item_additionals: item.itemAdditionals || [],
