@@ -890,60 +890,45 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       }
       
       // Para productos de API: reconciliar prompts con la respuesta actual del API
-      if (!isNewProduct && data?.prompts && !isCustomProduct) {
-        const apiPrompts: any[] = Array.isArray(data.prompts) ? data.prompts : [];
+        if (!isNewProduct && data?.prompts && !isCustomProduct) {
+         const apiPrompts: any[] = Array.isArray(data.prompts) ? data.prompts : [];
 
-         setPromptValues((prev) => {
-          const norm = (v: any) => String(v ?? "").trim().toLowerCase();
-          const next: Record<string, any> = {};
+          setPromptValues((prev) => {
+           const next: Record<string, any> = {};
 
-          for (const p of apiPrompts) {
-            if (!p?.id) continue;
-            const pid = String(p.id);
-            
-            // Track this ID as known to the API
-            apiKnownPromptIds.current.add(pid);
+           for (const p of apiPrompts) {
+             if (!p?.id) continue;
+             const pid = String(p.id);
 
-            const prevEntry = (prev as any)[pid];
-            const prevValue =
-              prevEntry && typeof prevEntry === "object" && prevEntry !== null && "value" in prevEntry
-                ? prevEntry.value
-                : prevEntry;
+             // Track this ID as known to the API
+             apiKnownPromptIds.current.add(pid);
 
-            const apiValue = p.currentValue;
-            const rawOptions = Array.isArray(p.valueOptions) ? p.valueOptions : [];
-            // Normalizar opciones: pueden ser strings o objetos {value, label}
-            const optionValues = rawOptions.map((o: any) =>
-              typeof o === 'string' ? o : (o?.value ?? o?.label ?? String(o))
-            );
+             const prevEntry = (prev as any)[pid];
+             const apiValue = p.currentValue;
 
-            const hasPrevValue = prevValue !== undefined && prevValue !== null && String(prevValue).trim() !== "";
-            const prevValueIsValid = optionValues.length === 0 ? true : optionValues.some((ov: any) => norm(ov) === norm(prevValue));
-
-            // Mantener el valor previo si existe y sigue siendo válido; si no, usar el currentValue del API.
-            const value = hasPrevValue && prevValueIsValid ? prevValue : apiValue;
-
-            next[pid] = {
-              label: p.promptText || p.label || prevEntry?.label || pid,
-              value,
-              order: p.promptSequence ?? p.order ?? prevEntry?.order ?? 999,
-            };
-          }
-
-           // REGLA: el último resultado del pricing (GET/PATCH) es la fuente de verdad.
-           // Si un prompt deja de venir en la respuesta, se elimina del estado y NO se
-           // vuelve a enviar en el siguiente PATCH (evita acumulación).
-           // EXCEPCIÓN: Prompts inyectados por el frontend (checkbox tipo 6 / force_result)
-           // que NUNCA son devueltos por el API deben preservarse.
-           for (const [pid, prevEntry] of Object.entries(prev)) {
-             if (!next[pid] && prevEntry !== undefined && !apiKnownPromptIds.current.has(pid)) {
-               // This prompt was never returned by any API response → user-injected, preserve it
-               next[pid] = prevEntry;
-             }
+             next[pid] = {
+               label: p.promptText || p.label || prevEntry?.label || pid,
+               // El API manda: si el prompt viene en la respuesta activa, su currentValue
+               // reemplaza el estado local completo. Solo hacemos fallback al valor previo
+               // cuando EasyQuote no envía currentValue explícito.
+               value: apiValue !== undefined ? apiValue : prevEntry?.value,
+               order: p.promptSequence ?? p.order ?? prevEntry?.order ?? 999,
+             };
            }
 
-           setDebouncedPromptValues(next);
-           return next;
+            // REGLA: el último resultado del pricing (GET/PATCH) es la fuente de verdad.
+            // Si un prompt deja de venir en la respuesta, se elimina del estado y NO se
+            // vuelve a enviar en el siguiente PATCH (evita acumulación).
+            // EXCEPCIÓN: Prompts inyectados por el frontend (checkbox tipo 6 / force_result)
+            // que NUNCA son devueltos por el API deben preservarse.
+            for (const [pid, prevEntry] of Object.entries(prev)) {
+              if (!next[pid] && prevEntry !== undefined && !apiKnownPromptIds.current.has(pid)) {
+                next[pid] = prevEntry;
+              }
+            }
+
+            setDebouncedPromptValues(next);
+            return next;
         });
 
         setIsInitializing(false);
