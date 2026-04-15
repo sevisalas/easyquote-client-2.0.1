@@ -884,7 +884,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         }
         
         setIsNewProduct(false);
-      } else if (isNewProduct && initialData) {
+      } else if (isNewProduct && hasRealInitialData) {
         setIsNewProduct(false);
         setIsInitializing(false);
       }
