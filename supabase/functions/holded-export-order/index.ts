@@ -897,7 +897,6 @@ Deno.serve(async (req) => {
     // Build the payload for Holded API (POST only accepts basic fields)
     const payload: any = {
       contactId,
-      contactName: contactData?.name || '',
       desc: order.description || order.title || '',
       date: Math.floor(new Date(order.order_date).getTime() / 1000),
       items,
