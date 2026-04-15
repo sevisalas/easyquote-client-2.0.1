@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { cleanupObsoleteHoldedCustomers } from "../_shared/holdedCustomerSync.ts";
 
 const HOLDED_API_BASE = "https://api.holded.com/api";
 
@@ -129,7 +130,13 @@ async function importContactsBackground(
       }
     }
 
-    console.log(`Background: Import complete - ${imported} contacts imported/updated, ${errors} errors`);
+    const cleanupResult = await cleanupObsoleteHoldedCustomers(
+      supabase,
+      organizationId,
+      new Set(allContacts.map((contact: any) => String(contact.id))),
+    );
+
+    console.log(`Background: Import complete - ${imported} contacts imported/updated, ${errors} errors, ${cleanupResult.deleted} obsolete contacts deleted, ${cleanupResult.preservedHistorical} preserved with historical documents`);
   } catch (error) {
     console.error('Background: Error importing contacts:', error);
   }
@@ -381,7 +388,13 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Import complete - ${imported} contacts imported/updated, ${errors} errors`);
+    const cleanupResult = await cleanupObsoleteHoldedCustomers(
+      supabase,
+      organizationId,
+      new Set(allContacts.map((contact: any) => String(contact.id))),
+    );
+
+    console.log(`Import complete - ${imported} contacts imported/updated, ${errors} errors, ${cleanupResult.deleted} obsolete contacts deleted, ${cleanupResult.preservedHistorical} preserved with historical documents`);
 
     // Return success response with details
     return new Response(
@@ -390,6 +403,9 @@ serve(async (req) => {
         imported: imported,
         errors: errors,
         total: allContacts.length,
+        deleted: cleanupResult.deleted,
+        preserved_historical: cleanupResult.preservedHistorical,
+        stale_found: cleanupResult.staleFound,
         message: `${imported} contactos importados/actualizados`
       }),
       { 

@@ -1,5 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { corsHeaders } from '../_shared/cors.ts';
+import { cleanupObsoleteHoldedCustomers } from '../_shared/holdedCustomerSync.ts';
+
 const pickString = (...values: any[]): string => {
   for (const value of values) {
     if (typeof value === 'string' && value.trim().length > 0) {
@@ -238,18 +240,6 @@ Deno.serve(async (req) => {
 
     console.log(`Total contacts: ${holdedContacts.length}, Clients: ${clientContacts.length}, New clients: ${newContactsCount}`);
 
-    if (clientContacts.length === 0) {
-      return new Response(
-        JSON.stringify({
-          message: 'No se encontraron clientes en Holded',
-          total: 0,
-          new: 0,
-          imported: 0
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     // Upsert all client contacts to also refresh existing address/phone/email
     const batchSize = 100;
     let importedCount = 0;
@@ -287,12 +277,23 @@ Deno.serve(async (req) => {
       }
     }
 
+    const cleanupResult = await cleanupObsoleteHoldedCustomers(
+      supabaseClient,
+      organizationId,
+      new Set(clientContacts.map((contact: any) => String(contact.id))),
+    );
+
     return new Response(
       JSON.stringify({
-        message: 'Importación completada',
+        message: clientContacts.length === 0
+          ? 'No se encontraron clientes en Holded. Se limpiaron los clientes obsoletos sin histórico.'
+          : 'Importación completada',
         total: clientContacts.length,
         new: newContactsCount,
         imported: importedCount,
+        deleted: cleanupResult.deleted,
+        preserved_historical: cleanupResult.preservedHistorical,
+        stale_found: cleanupResult.staleFound,
         errors: errors.length > 0 ? errors : undefined
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
