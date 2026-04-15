@@ -928,12 +928,6 @@ Deno.serve(async (req) => {
             }
           }
         }
-      
-        // Final fallback: use item.quantity from the database
-        if (units === 1 && item.quantity && parseInt(String(item.quantity)) > 1) {
-          units = parseInt(String(item.quantity));
-          console.log('📊 Quantity from item.quantity fallback:', { units });
-        }
         
         // For custom products, use quantity from prompts
         // BUT: if unit_price is 0, the total comes entirely from item_additionals (fixed amounts)

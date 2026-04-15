@@ -772,12 +772,6 @@ Deno.serve(async (req) => {
         }
       }
       
-      // Final fallback: use item.quantity from the database (set during quote approval)
-      if (units === 1 && item.quantity && parseInt(String(item.quantity)) > 1) {
-        units = parseInt(String(item.quantity));
-        console.log('📊 Quantity from item.quantity fallback:', { units });
-      }
-      
       // For custom products, use quantity from prompts
       // BUT: if unit_price is 0, the total comes entirely from item_additionals (fixed amounts)
       // In that case, keep units=1 so Holded gets the correct total without dividing
