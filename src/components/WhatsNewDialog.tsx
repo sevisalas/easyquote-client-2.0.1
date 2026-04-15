@@ -9,9 +9,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Users, Mail, Globe } from "lucide-react";
+import { Sparkles, Search } from "lucide-react";
 
-const CURRENT_VERSION = "2.7.13";
+const CURRENT_VERSION = "2.7.14";
 const SILENT_UPDATE = true;
 const LS_KEY = "whats_new_seen_version";
 
@@ -24,23 +24,10 @@ interface ReleaseNote {
 
 const RELEASE_NOTES: ReleaseNote[] = [
   {
-    icon: <Users className="h-5 w-5 text-primary" />,
-    title: "Información ampliada de clientes en ERP",
+    icon: <Search className="h-5 w-5 text-primary" />,
+    title: "Filtro por texto en presupuestos y pedidos",
     description:
-      "Se amplía la información sincronizada de los clientes con la integración ERP, incluyendo más datos de contacto y comerciales.",
-  },
-  {
-    icon: <Mail className="h-5 w-5 text-primary" />,
-    title: "Envío de presupuestos por email",
-    description:
-      "Nueva opción para enviar presupuestos directamente por correo electrónico desde la aplicación, con configuración SMTP personalizable y plantillas editables por organización.",
-  },
-  {
-    icon: <Globe className="h-5 w-5 text-primary" />,
-    title: "Primera fase del portal de cliente",
-    description:
-      "Sentamos las bases para el futuro portal de cliente: el enlace al PDF en el email es el primer paso hacia la aprobación online de presupuestos.",
-    badge: "Próximamente",
+      "Ahora puedes buscar presupuestos y pedidos de venta por texto libre, filtrando por número, cliente o cualquier dato visible en el listado.",
   },
 ];
 
