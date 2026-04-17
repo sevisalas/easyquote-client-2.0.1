@@ -1880,6 +1880,49 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     return safePrice(adjustedBasePrice + additionalsTotal);
   }, [priceOutput, itemAdditionals, multiEnabled, multiRows, isCustomProduct, customPrice, customQuantity, qtyPrompt, promptValues, hasConfiguredComponents, compositeTotalPrice, pricing, customerDiscounts]);
 
+  const compositePriceBreakdown = useMemo(() => {
+    if (!hasConfiguredComponents || multiEnabled) return null;
+
+    let quantity = 1;
+    let baseCompositePrice = compositeTotalPrice;
+
+    if (qtyPrompt && promptValues[qtyPrompt]) {
+      const qtyValue = promptValues[qtyPrompt];
+      const rawQty = (qtyValue && typeof qtyValue === 'object' && 'value' in qtyValue)
+        ? qtyValue.value
+        : qtyValue;
+      const parsedQty = parseFloat(String(rawQty).replace(/\./g, "").replace(",", "."));
+      if (!isNaN(parsedQty) && parsedQty > 0) {
+        quantity = parsedQty;
+      }
+    }
+
+    const basePrice = applyCustomerTariffToBasePrice(baseCompositePrice);
+    let additionalsTotal = 0;
+
+    if (Array.isArray(itemAdditionals)) {
+      itemAdditionals.forEach((additional) => {
+        if (additional.type === 'net_amount') {
+          additionalsTotal += additional.value;
+        } else if (additional.type === 'percentage') {
+          additionalsTotal += (baseCompositePrice * additional.value) / 100;
+        } else if (additional.type === 'quantity_multiplier') {
+          additionalsTotal += additional.value * quantity;
+        } else if (additional.type === 'capacity_divider') {
+          const capacity = additional.capacity_value || 1;
+          const unitsNeeded = Math.ceil(quantity / capacity);
+          additionalsTotal += additional.value * unitsNeeded;
+        }
+      });
+    }
+
+    return {
+      basePrice,
+      additionalsTotal,
+      total: safePrice(basePrice + additionalsTotal),
+    };
+  }, [itemAdditionals, multiEnabled, qtyPrompt, promptValues, hasConfiguredComponents, compositeTotalPrice, customerDiscounts]);
+
   // Calculate additionals breakdown for a specific quantity
   const calculateAdditionalsForQty = useMemo(() => {
     return (qty: number, qtyIndex?: number) => {
@@ -1932,7 +1975,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       
       return { total, breakdown };
     };
-  }, [itemAdditionals]);
+  }, [itemAdditionals, multiRows, customerDiscounts]);
 
   // This useEffect is now redundant - removed to prevent duplicate onChange calls
 
@@ -2643,20 +2686,58 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
                           return (
                             <div className="p-3 rounded-md border bg-accent/10 mb-4 space-y-3">
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium text-muted-foreground">
-                                  {userEditedPrice !== null ? "Precio calculado" : "Precio Total"}
-                                </span>
-                                <span
-                                  className={
-                                    userEditedPrice !== null
-                                      ? "text-sm text-muted-foreground line-through"
-                                      : "text-lg font-semibold"
-                                  }
-                                >
-                                  {formatEUR(finalPrice)}
-                                </span>
-                              </div>
+                              {compositePriceBreakdown && (
+                                <>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm font-medium text-muted-foreground">Price</span>
+                                    <span className="text-sm font-semibold">
+                                      {formatEUR(compositePriceBreakdown.basePrice)}
+                                    </span>
+                                  </div>
+
+                                  {compositePriceBreakdown.additionalsTotal !== 0 && (
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-sm font-medium text-muted-foreground">Ajustes</span>
+                                      <span className="text-sm font-semibold">
+                                        {compositePriceBreakdown.additionalsTotal > 0 ? "+" : ""}
+                                        {formatEUR(compositePriceBreakdown.additionalsTotal)}
+                                      </span>
+                                    </div>
+                                  )}
+
+                                  <div className="flex items-center justify-between border-t pt-3">
+                                    <span className="text-sm font-medium text-muted-foreground">
+                                      {userEditedPrice !== null ? "Total calculado" : "Total final"}
+                                    </span>
+                                    <span
+                                      className={
+                                        userEditedPrice !== null
+                                          ? "text-sm text-muted-foreground line-through"
+                                          : "text-lg font-semibold"
+                                      }
+                                    >
+                                      {formatEUR(finalPrice)}
+                                    </span>
+                                  </div>
+                                </>
+                              )}
+
+                              {!compositePriceBreakdown && (
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm font-medium text-muted-foreground">
+                                    {userEditedPrice !== null ? "Total calculado" : "Total final"}
+                                  </span>
+                                  <span
+                                    className={
+                                      userEditedPrice !== null
+                                        ? "text-sm text-muted-foreground line-through"
+                                        : "text-lg font-semibold"
+                                    }
+                                  >
+                                    {formatEUR(finalPrice)}
+                                  </span>
+                                </div>
+                              )}
 
                               {userEditedPrice !== null && !isEditingCompositePrice && (
                                 <div className="flex items-center justify-between">
