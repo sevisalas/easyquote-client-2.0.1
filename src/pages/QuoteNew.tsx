@@ -246,17 +246,8 @@ export default function QuoteNew() {
       return n > MAX_PRICE ? MAX_PRICE : n;
     };
 
-    // Helper to apply customer tariff to a fixed value (not percentages)
-    const applyTariffToValue = (value: number): number => {
-      if (!activeDiscounts.length) return value;
-      const adjustment = activeDiscounts.reduce((total, discount) => {
-        const percentage = Number(discount?.percentage) || 0;
-        const amount = (value * percentage) / 100;
-        return total + (discount?.is_discount ? -amount : amount);
-      }, 0);
-      return value + adjustment;
-    };
-
+    // La tarifa de cliente NO se aplica a ningún ajuste.
+    // Solo se aplica al precio base de los artículos (que ya viene aplicada desde QuoteItem).
     let subtotal = 0;
     Object.values(items).forEach((item) => {
       subtotal += safePrice(item.price);
@@ -265,11 +256,10 @@ export default function QuoteNew() {
     let additionalsTotal = 0;
     quoteAdditionals.forEach((additional) => {
       if (additional.type === 'net_amount') {
-        additionalsTotal += applyTariffToValue(additional.value);
+        additionalsTotal += additional.value;
       } else if (additional.type === 'quantity_multiplier') {
-        additionalsTotal += applyTariffToValue(additional.value);
+        additionalsTotal += additional.value;
       } else if (additional.type === 'percentage') {
-        // Percentage NOT tariffed — already acts on subtotal that includes tariff
         additionalsTotal += subtotal * additional.value / 100;
       }
     });

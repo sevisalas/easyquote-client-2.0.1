@@ -1796,25 +1796,27 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         }
       }
 
+      // La tarifa de cliente SOLO se aplica al precio base que devuelve el API.
+      // NO se aplica a ningún ajuste (de ningún tipo).
       const adjustedCompositeBasePrice = applyCustomerTariffToBasePrice(baseCompositePrice);
-      
+
       if (Array.isArray(itemAdditionals)) {
         itemAdditionals.forEach((additional) => {
           if (additional.type === 'net_amount') {
-            additionalsTotal += applyCustomerTariffToBasePrice(additional.value);
+            additionalsTotal += additional.value;
           } else if (additional.type === 'percentage') {
-            // Percentage already acts on tariff-adjusted base price via adjustedCompositeBasePrice
-            additionalsTotal += (adjustedCompositeBasePrice * additional.value) / 100;
+            // El porcentaje se aplica sobre el precio base SIN tarifa
+            additionalsTotal += (baseCompositePrice * additional.value) / 100;
           } else if (additional.type === 'quantity_multiplier') {
-            additionalsTotal += applyCustomerTariffToBasePrice(additional.value) * quantity;
+            additionalsTotal += additional.value * quantity;
           } else if (additional.type === 'capacity_divider') {
             const capacity = additional.capacity_value || 1;
             const unitsNeeded = Math.ceil(quantity / capacity);
-            additionalsTotal += applyCustomerTariffToBasePrice(additional.value) * unitsNeeded;
+            additionalsTotal += additional.value * unitsNeeded;
           }
         });
       }
-      
+
       return safePrice(adjustedCompositeBasePrice + additionalsTotal);
     }
     
@@ -1856,19 +1858,21 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       }
     }
     
+    // La tarifa de cliente SOLO se aplica al precio base que devuelve el API.
+    // NO se aplica a ningún ajuste (de ningún tipo).
     if (Array.isArray(itemAdditionals)) {
       itemAdditionals.forEach((additional) => {
         if (additional.type === 'net_amount') {
-          additionalsTotal += applyCustomerTariffToBasePrice(additional.value);
+          additionalsTotal += additional.value;
         } else if (additional.type === 'percentage') {
-          // Percentage already acts on tariff-adjusted base price via adjustedBasePrice
-          additionalsTotal += (adjustedBasePrice * additional.value) / 100;
+          // El porcentaje se aplica sobre el precio base SIN tarifa
+          additionalsTotal += (basePrice * additional.value) / 100;
         } else if (additional.type === 'quantity_multiplier') {
-          additionalsTotal += applyCustomerTariffToBasePrice(additional.value) * quantity;
+          additionalsTotal += additional.value * quantity;
         } else if (additional.type === 'capacity_divider') {
           const capacity = additional.capacity_value || 1;
           const unitsNeeded = Math.ceil(quantity / capacity);
-          additionalsTotal += applyCustomerTariffToBasePrice(additional.value) * unitsNeeded;
+          additionalsTotal += additional.value * unitsNeeded;
         }
       });
     }
@@ -1888,24 +1892,32 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       
       itemAdditionals.forEach((additional) => {
         let additionalValue = 0;
+        // La tarifa de cliente NO se aplica a ningún tipo de ajuste.
         if (additional.type === 'net_amount') {
           // Use per-quantity value if multiValues is set and qtyIndex is provided
           const rawValue = (additional.multiValues && qtyIndex !== undefined && qtyIndex < additional.multiValues.length)
             ? additional.multiValues[qtyIndex]
             : additional.value;
-          additionalValue = applyCustomerTariffToBasePrice(rawValue);
+          additionalValue = rawValue;
         } else if (additional.type === 'percentage') {
-          // Percentage NOT tariffed — already acts on tariff-adjusted base price
+          // El porcentaje se aplica sobre el precio base SIN tarifa
           const rowIdx = qtyIndex !== undefined ? qtyIndex : 0;
           const row = multiRows.length > rowIdx ? multiRows[rowIdx] : multiRows[0];
-          const rowPrice = row ? (typeof row.totalStr === 'number' ? row.totalStr : (parseFloat(String(row.totalStr || 0).replace(/\./g, '').replace(',', '.')) || 0)) : 0;
-          additionalValue = (rowPrice * additional.value) / 100;
+          const rowPriceWithTariff = row ? (typeof row.totalStr === 'number' ? row.totalStr : (parseFloat(String(row.totalStr || 0).replace(/\./g, '').replace(',', '.')) || 0)) : 0;
+          // Revertir tarifa para que el % se calcule sobre el precio API original
+          const tariffFactor = customerDiscounts.reduce((acc, d) => {
+            const pct = Number(d?.percentage) || 0;
+            return acc + (d?.is_discount ? -pct : pct);
+          }, 0);
+          const divisor = 1 + (tariffFactor / 100);
+          const rowPriceNoTariff = divisor !== 0 ? rowPriceWithTariff / divisor : rowPriceWithTariff;
+          additionalValue = (rowPriceNoTariff * additional.value) / 100;
         } else if (additional.type === 'quantity_multiplier') {
-          additionalValue = applyCustomerTariffToBasePrice(additional.value) * qty;
+          additionalValue = additional.value * qty;
         } else if (additional.type === 'capacity_divider') {
           const capacity = additional.capacity_value || 1;
           const unitsNeeded = Math.ceil(qty / capacity);
-          additionalValue = applyCustomerTariffToBasePrice(additional.value) * unitsNeeded;
+          additionalValue = additional.value * unitsNeeded;
         }
         
         if (additionalValue !== 0) {

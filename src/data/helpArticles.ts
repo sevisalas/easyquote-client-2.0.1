@@ -270,17 +270,24 @@ Si tienes integración con Holded:
     content: `
 ## ¿Qué son las tarifas?
 
-Las tarifas permiten aplicar un descuento o recargo porcentual de forma automática a todos los presupuestos y pedidos de un cliente concreto. Son invisibles en el PDF y en las exportaciones a Holded.
+Las tarifas permiten aplicar un descuento o recargo porcentual de forma automática a los presupuestos y pedidos de un cliente concreto. Son invisibles en el PDF y en las exportaciones a Holded.
 
 ## Cómo se aplican
 
-La tarifa se aplica sobre:
+⚠️ **Importante**: la tarifa del cliente se aplica **únicamente al precio base del artículo** (el "Price" que devuelve el motor de cálculo, o la suma de "Price" de los componentes en productos compuestos).
 
-- **Precio base del artículo**: el precio que devuelve la API de EasyQuote se ajusta con el porcentaje de la tarifa.
-- **Ajustes de importe fijo** (€): tanto de artículo como de presupuesto/pedido, se les aplica el mismo porcentaje.
-- **Ajustes multiplicadores** (×): el valor unitario se ajusta con la tarifa antes de multiplicar.
+**La tarifa NO se aplica a ningún tipo de ajuste**, ni de artículo ni de presupuesto:
+- ❌ Ajustes de importe fijo (€)
+- ❌ Ajustes porcentuales (%)
+- ❌ Ajustes multiplicadores (×)
+- ❌ Ajustes por capacidad
 
-**No se aplica** a los ajustes porcentuales (%), porque estos ya actúan sobre el precio base que ya tiene la tarifa incorporada.
+### ¿Y si quiero aplicar un descuento sobre un ajuste?
+
+Si necesitas que un ajuste lleve descuento para un cliente concreto, tienes dos opciones:
+
+1. **Introducir el ajuste con el precio ya descontado** manualmente al añadirlo al presupuesto.
+2. **Crear un ajuste específico de descuento** para ese cliente y añadirlo a sus presupuestos.
 
 ## Asignar una tarifa a un cliente
 
@@ -296,8 +303,8 @@ Cuando un cliente tiene tarifa activa, se muestra un aviso debajo del selector d
 
 Si un cliente tiene una tarifa del **−10%** y el precio base de un artículo es **100 €**:
 - Precio ajustado del artículo: **90 €**
-- Un ajuste fijo de **20 €** pasa a ser **18 €**
-- Un ajuste porcentual del **5%** se calcula sobre **90 €** → **4,50 €**
+- Un ajuste fijo de **20 €** se mantiene en **20 €** (sin descuento)
+- Un ajuste porcentual del **5%** se calcula sobre **100 €** (precio base sin tarifa) → **5 €**
     `,
     category: 'customers',
     icon: 'Percent',
