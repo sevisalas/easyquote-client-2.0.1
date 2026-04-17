@@ -336,15 +336,15 @@ export default function QuoteEdit() {
 
     switch (additional.type) {
       case "net_amount":
-        return applyTariffToValue(value);
+        return value;
       case "quantity_multiplier":
-        return applyTariffToValue(value);
+        return value;
       case "percentage":
         return (subtotal * value) / 100;
       default:
         return value;
     }
-  }, [applyTariffToValue]);
+  }, []);
 
   const { data: quote, isLoading } = useQuery({
     queryKey: ["quote", id],
