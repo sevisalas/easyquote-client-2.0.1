@@ -415,42 +415,56 @@ export default function ProductConfigPage() {
 
   // Prompt settings mutation
   const upsertPromptSettingMutation = useMutation({
-    mutationFn: async ({ productId: pid, promptName, hideInDocuments, adminOnly, forceResult, isHidden, isQuantity, label, showInOt, otSection }: {
+    mutationFn: async ({ productId: pid, promptName, hideInDocuments, adminOnly, forceResult, isHidden, isQuantity, label, showInOt, otSection, forceIncludeInDocuments, forceIncludeCondition }: {
       productId: string; promptName: string; hideInDocuments?: boolean; adminOnly?: boolean;
       forceResult?: boolean; isHidden?: boolean; isQuantity?: boolean; label?: string;
       showInOt?: boolean; otSection?: string | null;
+      forceIncludeInDocuments?: boolean; forceIncludeCondition?: string | null;
     }) => {
-      const normalizeKey = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
-      const promptKey = normalizeKey(promptName);
-      if (!apiUserId) throw new Error("No api_user_id available");
-
-      const { data: existing } = await supabase
-        .from("product_prompt_settings").select("id")
-        .eq("api_user_id", apiUserId).eq("easyquote_product_id", pid)
-        .eq("prompt_name", promptKey).maybeSingle();
+      if (!apiUserId || !pid || !promptName) throw new Error("Missing required parameters");
+      const promptKey = String(promptName).replace(/\$/g, "").trim();
+      const existing = promptSettings?.find(
+        (s: any) => s.api_user_id === apiUserId && s.easyquote_product_id === pid && s.prompt_name === promptKey
+      );
 
       const updateData: any = { updated_at: new Date().toISOString() };
-      if (hideInDocuments !== undefined) updateData.hide_in_documents = hideInDocuments;
+      if (hideInDocuments !== undefined) {
+        updateData.hide_in_documents = hideInDocuments;
+        // Mutually exclusive with force_include
+        if (hideInDocuments) updateData.force_include_in_documents = false;
+      }
       if (adminOnly !== undefined) {
         updateData.admin_only = adminOnly;
-        if (adminOnly) { updateData.hide_in_documents = true; updateData.force_result = true; }
+        if (adminOnly) {
+          updateData.hide_in_documents = true;
+          updateData.force_result = true;
+          updateData.force_include_in_documents = false;
+        }
       }
       if (forceResult !== undefined) updateData.force_result = forceResult;
       if (isHidden !== undefined) updateData.is_hidden = isHidden;
-      if (isQuantity !== undefined) {
-        updateData.is_quantity = isQuantity;
-        if (isQuantity) {
-          await supabase.from("product_prompt_settings")
-            .update({ is_quantity: false, updated_at: new Date().toISOString() })
-            .eq("api_user_id", apiUserId).eq("easyquote_product_id", pid)
-            .eq("is_quantity", true).neq("prompt_name", promptKey);
-        }
-      }
+      if (isQuantity !== undefined) updateData.is_quantity = isQuantity;
       if (label !== undefined) updateData.label = label;
       if (showInOt !== undefined) updateData.show_in_ot = showInOt;
       if (otSection !== undefined) updateData.ot_section = otSection;
+      if (forceIncludeInDocuments !== undefined) {
+        updateData.force_include_in_documents = forceIncludeInDocuments;
+        // Mutually exclusive
+        if (forceIncludeInDocuments) {
+          updateData.hide_in_documents = false;
+          updateData.admin_only = false;
+        }
+        // Default condition when enabling
+        if (forceIncludeInDocuments && !existing?.force_include_condition) {
+          updateData.force_include_condition = 'always';
+        }
+        if (!forceIncludeInDocuments) {
+          updateData.force_include_condition = null;
+        }
+      }
+      if (forceIncludeCondition !== undefined) updateData.force_include_condition = forceIncludeCondition;
 
-      if (existing?.id) {
+      if (existing) {
         const { error } = await supabase.from("product_prompt_settings").update(updateData).eq("id", existing.id);
         if (error) throw error;
       } else {
@@ -461,11 +475,13 @@ export default function ProductConfigPage() {
           force_result: forceResult ?? false, is_hidden: isHidden ?? false,
           is_quantity: isQuantity ?? false, label: label ?? null,
           show_in_ot: showInOt ?? false, ot_section: otSection ?? null,
+          force_include_in_documents: forceIncludeInDocuments ?? false,
+          force_include_condition: forceIncludeCondition ?? (forceIncludeInDocuments ? 'always' : null),
         });
         if (error) throw error;
       }
 
-      return { apiUserId, productId: pid, promptKey, patch: { hide_in_documents: hideInDocuments, admin_only: adminOnly, force_result: forceResult, is_hidden: isHidden, label, show_in_ot: showInOt, ot_section: otSection } };
+      return { apiUserId, productId: pid, promptKey, patch: { hide_in_documents: hideInDocuments, admin_only: adminOnly, force_result: forceResult, is_hidden: isHidden, label, show_in_ot: showInOt, ot_section: otSection, force_include_in_documents: forceIncludeInDocuments, force_include_condition: forceIncludeCondition } };
     },
     onSuccess: async (result, variables) => {
       queryClient.setQueryData(
@@ -527,6 +543,8 @@ export default function ProductConfigPage() {
   const isPromptForceResult = (...k: Array<string | null | undefined>) => getPromptSettingByKeys(...k)?.force_result || false;
   const isPromptHidden = (...k: Array<string | null | undefined>) => getPromptSettingByKeys(...k)?.is_hidden || false;
   const isPromptQuantity = (...k: Array<string | null | undefined>) => getPromptSettingByKeys(...k)?.is_quantity || false;
+  const isPromptForceInclude = (...k: Array<string | null | undefined>) => (getPromptSettingByKeys(...k) as any)?.force_include_in_documents || false;
+  const getPromptForceCondition = (...k: Array<string | null | undefined>) => ((getPromptSettingByKeys(...k) as any)?.force_include_condition as string | null | undefined) || 'always';
   const isPromptInOt = (...k: Array<string | null | undefined>) => getPromptSettingByKeys(...k)?.show_in_ot || false;
   const getPromptOtSection = (...k: Array<string | null | undefined>) => getPromptSettingByKeys(...k)?.ot_section || null;
   const getPromptLabel = (...k: Array<string | null | undefined>) => getPromptSettingByKeys(...k)?.label ?? undefined;
@@ -1377,6 +1395,23 @@ export default function ProductConfigPage() {
                                       <SelectItem value="imposiciones">Imposiciones</SelectItem>
                                       <SelectItem value="ajustes">Ajustes</SelectItem>
                                       <SelectItem value="observaciones">Observaciones</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-2">
+                                <Checkbox id={`finc-${prompt.id}`} checked={isPromptForceInclude(...promptAliases)} onCheckedChange={(checked: boolean) => { upsertPromptSettingMutation.mutate({ productId: selectedProduct.id, promptName: promptSettingKey, forceIncludeInDocuments: checked }); }} />
+                                <Label htmlFor={`finc-${prompt.id}`} className="text-sm cursor-pointer" title="Forzar que aparezca en la descripción auto-generada y en Holded, según una condición.">Forzar en docs.</Label>
+                              </div>
+                              {isPromptForceInclude(...promptAliases) && (
+                                <div className="flex items-center gap-2">
+                                  <Label className="text-sm whitespace-nowrap">Cuando</Label>
+                                  <Select value={getPromptForceCondition(...promptAliases) || "always"} onValueChange={value => { upsertPromptSettingMutation.mutate({ productId: selectedProduct.id, promptName: promptSettingKey, forceIncludeCondition: value }); }}>
+                                    <SelectTrigger className="h-8 w-44"><SelectValue /></SelectTrigger>
+                                    <SelectContent className="bg-background border shadow-lg z-50">
+                                      <SelectItem value="always">Siempre</SelectItem>
+                                      <SelectItem value="value_gt_zero">Valor &gt; 0</SelectItem>
+                                      <SelectItem value="value_not_empty">Valor no vacío</SelectItem>
                                     </SelectContent>
                                   </Select>
                                 </div>

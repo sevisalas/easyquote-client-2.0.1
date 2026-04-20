@@ -2129,6 +2129,8 @@ export type Database = {
           api_user_id: string
           created_at: string | null
           easyquote_product_id: string
+          force_include_condition: string | null
+          force_include_in_documents: boolean
           id: string
           label: string | null
           organization_id: string
@@ -2141,6 +2143,8 @@ export type Database = {
           api_user_id: string
           created_at?: string | null
           easyquote_product_id: string
+          force_include_condition?: string | null
+          force_include_in_documents?: boolean
           id?: string
           label?: string | null
           organization_id: string
@@ -2153,6 +2157,8 @@ export type Database = {
           api_user_id?: string
           created_at?: string | null
           easyquote_product_id?: string
+          force_include_condition?: string | null
+          force_include_in_documents?: boolean
           id?: string
           label?: string | null
           organization_id?: string
@@ -2232,6 +2238,8 @@ export type Database = {
           api_user_id: string
           created_at: string
           easyquote_product_id: string
+          force_include_condition: string | null
+          force_include_in_documents: boolean
           force_result: boolean
           hide_in_documents: boolean
           id: string
@@ -2249,6 +2257,8 @@ export type Database = {
           api_user_id: string
           created_at?: string
           easyquote_product_id: string
+          force_include_condition?: string | null
+          force_include_in_documents?: boolean
           force_result?: boolean
           hide_in_documents?: boolean
           id?: string
@@ -2266,6 +2276,8 @@ export type Database = {
           api_user_id?: string
           created_at?: string
           easyquote_product_id?: string
+          force_include_condition?: string | null
+          force_include_in_documents?: boolean
           force_result?: boolean
           hide_in_documents?: boolean
           id?: string

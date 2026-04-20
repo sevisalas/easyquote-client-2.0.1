@@ -51,6 +51,44 @@ export function evalCondition(cond: unknown, values: Record<string, unknown>): b
   return true;
 }
 
+// Force-include evaluation: opposite of hide_in_documents.
+// Conditions: 'always', 'value_gt_zero', 'value_not_empty'
+export function matchesForceCondition(value: unknown, condition: string | null | undefined): boolean {
+  const cond = (condition || "always").toLowerCase();
+  let v: any = value;
+  if (v && typeof v === "object" && "value" in (v as any)) v = (v as any).value;
+
+  if (cond === "always") return true;
+
+  const str = String(v ?? "").trim();
+
+  if (cond === "value_not_empty") {
+    if (!str) return false;
+    if (str.toLowerCase() === "no") return false;
+    return true;
+  }
+
+  if (cond === "value_gt_zero") {
+    const normalized = str.replace(/\./g, "").replace(",", ".");
+    const n = parseFloat(normalized);
+    if (isNaN(n)) {
+      const n2 = parseFloat(str);
+      return !isNaN(n2) && n2 > 0;
+    }
+    return n > 0;
+  }
+
+  return true;
+}
+
+export function shouldForceInclude(
+  setting: { force_include_in_documents?: boolean | null; force_include_condition?: string | null } | null | undefined,
+  value: unknown,
+): boolean {
+  if (!setting?.force_include_in_documents) return false;
+  return matchesForceCondition(value, setting.force_include_condition);
+}
+
 export function isVisiblePromptDef(
   def: { visibility?: unknown; hiddenWhen?: unknown },
   values: Record<string, unknown>,

@@ -258,6 +258,13 @@ Deno.serve(async (req) => {
       .eq('api_user_id', apiUserId)
       .or('hide_in_documents.eq.true,admin_only.eq.true');
 
+    // Get force-include settings: prompts that must appear in description (opposite of hide)
+    const { data: forceIncludeSettings } = await supabase
+      .from('product_prompt_settings')
+      .select('easyquote_product_id, prompt_name, label, force_include_condition')
+      .eq('api_user_id', apiUserId)
+      .eq('force_include_in_documents', true);
+
     // Load quantity prompt settings (is_quantity = true)
     const { data: quantityPromptSettings } = await supabase
       .from('product_prompt_settings')
@@ -298,6 +305,48 @@ Deno.serve(async (req) => {
       }
     });
     console.log('🙈 Hidden prompts set:', Array.from(hiddenPromptsSet));
+
+    // Force-include map: productId:KEY -> condition
+    const forceIncludeMap = new Map<string, string>();
+    (forceIncludeSettings || []).forEach((s: any) => {
+      const cond = s.force_include_condition || 'always';
+      forceIncludeMap.set(makeHiddenKey(s.easyquote_product_id, s.prompt_name), cond);
+      if (s.label && s.label !== s.prompt_name) {
+        forceIncludeMap.set(makeHiddenKey(s.easyquote_product_id, s.label), cond);
+      }
+    });
+    console.log('📌 Force-include prompts:', Array.from(forceIncludeMap.entries()));
+
+    const evalForceCond = (cond: string, value: unknown): boolean => {
+      let v: any = value;
+      if (v && typeof v === 'object' && 'value' in v) v = v.value;
+      if (cond === 'always') return true;
+      const str = String(v ?? '').trim();
+      if (cond === 'value_not_empty') return !!str && str.toLowerCase() !== 'no';
+      if (cond === 'value_gt_zero') {
+        const n = parseFloat(str.replace(/\./g, '').replace(',', '.'));
+        if (isNaN(n)) {
+          const n2 = parseFloat(str);
+          return !isNaN(n2) && n2 > 0;
+        }
+        return n > 0;
+      }
+      return true;
+    };
+
+    const isForceIncluded = (productId: unknown, prompt: any, defsMap?: Record<string, PromptDef> | null): boolean => {
+      if (forceIncludeMap.size === 0) return false;
+      const candidates = [prompt?.name, prompt?.id, prompt?.label].filter(Boolean);
+      if (defsMap && prompt?.label) {
+        const def = getPromptDef(defsMap, prompt);
+        if (def?.id) candidates.push(def.id);
+      }
+      for (const c of candidates) {
+        const cond = forceIncludeMap.get(makeHiddenKey(productId, c));
+        if (cond && evalForceCond(cond, prompt?.value)) return true;
+      }
+      return false;
+    };
 
     // --- Dynamic prompt visibility (EasyQuote) ---
     type PromptDef = {
@@ -652,15 +701,19 @@ Deno.serve(async (req) => {
                   // Skip the quantity prompt - we'll show it separately
                   if (prompt.id === item.multi.qtyPrompt) return false;
 
-                  // Dynamic visibility (based on EasyQuote prompt definitions)
-                  const def = getPromptDef(defsMap, prompt);
-                  if (def && !isVisiblePromptDef(def, valuesMap)) return false;
-
-                  // Check if this prompt is hidden in documents
+                  // Force-include bypasses dynamic visibility AND hide-in-docs
                   const productId = item.product_id || '';
-                  if (isHiddenInDocuments(productId, prompt, defsMap)) {
-                    console.log(`🙈 Hiding prompt "${prompt.label}" (id=${prompt.id ?? 'n/a'}) for product ${productId}`);
-                    return false;
+                  const forced = isForceIncluded(productId, prompt, defsMap);
+                  if (!forced) {
+                    // Dynamic visibility (based on EasyQuote prompt definitions)
+                    const def = getPromptDef(defsMap, prompt);
+                    if (def && !isVisiblePromptDef(def, valuesMap)) return false;
+
+                    // Check if this prompt is hidden in documents
+                    if (isHiddenInDocuments(productId, prompt, defsMap)) {
+                      console.log(`🙈 Hiding prompt "${prompt.label}" (id=${prompt.id ?? 'n/a'}) for product ${productId}`);
+                      return false;
+                    }
                   }
                   return true;
                 })
@@ -780,18 +833,21 @@ Deno.serve(async (req) => {
                  .filter(prompt => {
                   if (!prompt || !prompt.label) return false;
 
-                    // Dynamic visibility (based on EasyQuote prompt definitions)
-                    const def = getPromptDef(defsMap, prompt);
-                    if (def && !isVisiblePromptDef(def, valuesMap)) return false;
+                    const productId = item.product_id || '';
+                    const forced = isForceIncluded(productId, prompt, defsMap);
+                    if (!forced) {
+                      // Dynamic visibility (based on EasyQuote prompt definitions)
+                      const def = getPromptDef(defsMap, prompt);
+                      if (def && !isVisiblePromptDef(def, valuesMap)) return false;
 
-                   // Check if this prompt is hidden in documents
-                   const productId = item.product_id || '';
-                   if (isHiddenInDocuments(productId, prompt, defsMap)) {
-                     console.log(`🙈 Hiding prompt "${prompt.label}" (id=${prompt.id ?? 'n/a'}) for product ${productId}`);
-                     return false;
-                   }
-                  return true;
-                })
+                      // Check if this prompt is hidden in documents
+                      if (isHiddenInDocuments(productId, prompt, defsMap)) {
+                        console.log(`🙈 Hiding prompt "${prompt.label}" (id=${prompt.id ?? 'n/a'}) for product ${productId}`);
+                        return false;
+                      }
+                    }
+                   return true;
+                 })
                 .sort((a, b) => (a.order || 999) - (b.order || 999))
                  .map((prompt) => `${prompt.label}: ${formatPromptValue(prompt.value)}`)
                 .filter(Boolean)
