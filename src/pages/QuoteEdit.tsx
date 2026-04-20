@@ -618,54 +618,57 @@ export default function QuoteEdit() {
           }
         });
         const norm = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
-        const forceIncludeMap = new Map<string, string>();
+        const hideWhenValueMap = new Map<string, string>();
         const hiddenInDocsSet = new Set<string>();
         const promptCellMap = new Map<string, string>();
         try {
           const orgId = sessionStorage.getItem('selected_organization_id');
-          if (orgId && productIdsForForce.size > 0) {
-            const { data: orgInfo } = await supabase.from('organizations').select('api_user_id').eq('id', orgId).single();
-            if (orgInfo?.api_user_id) {
-              const token = await getEasyQuoteToken();
-              if (token) {
-                await Promise.all(Array.from(productIdsForForce).map(async (productId) => {
-                  try {
-                    const { data } = await invokeEasyQuoteFunction<any[]>("easyquote-prompts", { token, productId });
-                    if (!Array.isArray(data)) return;
-                    data.forEach((def: any) => {
-                      const defId = String(def?.id ?? '').trim();
-                      const rawCell = def?.promptCell ?? def?.prompt_cell ?? def?.cell ?? def?.promptcell;
-                      const cell = norm(String(rawCell ?? ''));
-                      if (defId && cell) {
-                        promptCellMap.set(`${productId}:${norm(defId)}`, cell);
-                      }
-                    });
-                  } catch {
-                    // no-op: fallback to direct id/label matching
-                  }
-                }));
-              }
-              const { data: allSettings } = await supabase
-                .from('product_prompt_settings')
-                .select('easyquote_product_id, prompt_name, label, force_include_in_documents, force_include_condition, hide_in_documents, admin_only')
-                .eq('api_user_id', orgInfo.api_user_id)
-                .in('easyquote_product_id', Array.from(productIdsForForce));
-              (allSettings || []).forEach((s: any) => {
-                if (s.force_include_in_documents) {
-                  const cond = s.force_include_condition || 'always';
-                  forceIncludeMap.set(`${s.easyquote_product_id}:${norm(s.prompt_name)}`, cond);
-                  if (s.label && s.label !== s.prompt_name) {
-                    forceIncludeMap.set(`${s.easyquote_product_id}:${norm(s.label)}`, cond);
-                  }
+          const { data: orgInfo } = await supabase
+            .from('organizations')
+            .select('api_user_id')
+            .eq('id', orgId || organizationId)
+            .single();
+          if (orgInfo?.api_user_id && productIdsForForce.size > 0) {
+            if (productIdsForForce.size > 0) {
+              await Promise.all(Array.from(productIdsForForce).map(async (productId) => {
+                try {
+                  const { data } = await supabase.functions.invoke('easyquote-prompts', {
+                    body: { productId },
+                  });
+                  if (!data || !Array.isArray(data)) return;
+                  data.forEach((def: any) => {
+                    const defId = String(def?.id ?? '').trim();
+                    const rawCell = def?.promptCell ?? def?.prompt_cell ?? def?.cell ?? def?.promptcell;
+                    const cell = norm(String(rawCell ?? ''));
+                    if (defId && cell) {
+                      promptCellMap.set(`${productId}:${norm(defId)}`, cell);
+                    }
+                  });
+                } catch {
+                  // no-op: fallback to direct id/label matching
                 }
-                if (s.hide_in_documents || s.admin_only) {
-                  hiddenInDocsSet.add(`${s.easyquote_product_id}:${norm(s.prompt_name)}`);
-                  if (s.label && s.label !== s.prompt_name) {
-                    hiddenInDocsSet.add(`${s.easyquote_product_id}:${norm(s.label)}`);
-                  }
-                }
-              });
+              }));
             }
+            const { data: allSettings } = await supabase
+              .from('product_prompt_settings')
+              .select('easyquote_product_id, prompt_name, label, hide_when_value, hide_in_documents, admin_only')
+              .eq('api_user_id', orgInfo.api_user_id)
+              .in('easyquote_product_id', Array.from(productIdsForForce));
+            (allSettings || []).forEach((s: any) => {
+              if (s.hide_when_value && String(s.hide_when_value).trim() !== '') {
+                const hv = String(s.hide_when_value).trim().toLowerCase();
+                hideWhenValueMap.set(`${s.easyquote_product_id}:${norm(s.prompt_name)}`, hv);
+                if (s.label && s.label !== s.prompt_name) {
+                  hideWhenValueMap.set(`${s.easyquote_product_id}:${norm(s.label)}`, hv);
+                }
+              }
+              if (s.hide_in_documents || s.admin_only) {
+                hiddenInDocsSet.add(`${s.easyquote_product_id}:${norm(s.prompt_name)}`);
+                if (s.label && s.label !== s.prompt_name) {
+                  hiddenInDocsSet.add(`${s.easyquote_product_id}:${norm(s.label)}`);
+                }
+              }
+            });
           }
         } catch (e) {
           console.warn('[QuoteEdit] could not prefetch prompt settings:', e);
@@ -689,24 +692,14 @@ export default function QuoteEdit() {
           }
           return false;
         };
-        const evalForceCond = (cond: string, value: unknown): boolean => {
+        const isHiddenByValue = (productId: string, candidates: any[], value: unknown): boolean => {
+          if (hideWhenValueMap.size === 0) return false;
           let v: any = value;
           if (v && typeof v === 'object' && 'value' in v) v = (v as any).value;
-          if (cond === 'always') return true;
-          const str = String(v ?? '').trim();
-          if (cond === 'value_not_empty') return !!str && str.toLowerCase() !== 'no';
-          if (cond === 'value_gt_zero') {
-            const n = parseFloat(str.replace(/\./g, '').replace(',', '.'));
-            if (isNaN(n)) { const n2 = parseFloat(str); return !isNaN(n2) && n2 > 0; }
-            return n > 0;
-          }
-          return true;
-        };
-        const isForceIncluded = (productId: string, candidates: any[], value: unknown): boolean => {
-          if (forceIncludeMap.size === 0) return false;
+          const valStr = String(v ?? '').trim().toLowerCase();
           for (const key of expandCandidateKeys(productId, candidates)) {
-            const cond = forceIncludeMap.get(`${productId}:${key}`);
-            if (cond && evalForceCond(cond, value)) return true;
+            const target = hideWhenValueMap.get(`${productId}:${key}`);
+            if (target !== undefined && target === valStr) return true;
           }
           return false;
         };
