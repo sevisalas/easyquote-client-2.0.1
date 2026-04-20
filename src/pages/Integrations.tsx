@@ -9,7 +9,9 @@ import { useHoldedIntegration, HoldedExportMode } from "@/hooks/useHoldedIntegra
 import { useWooCommerceIntegration } from "@/hooks/useWooCommerceIntegration";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Download, Trash2 } from "lucide-react";
+import { Download, Trash2, Search } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { WooCommerceCsvUpload } from "@/components/integrations/WooCommerceCsvUpload";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
