@@ -701,15 +701,19 @@ Deno.serve(async (req) => {
                   // Skip the quantity prompt - we'll show it separately
                   if (prompt.id === item.multi.qtyPrompt) return false;
 
-                  // Dynamic visibility (based on EasyQuote prompt definitions)
-                  const def = getPromptDef(defsMap, prompt);
-                  if (def && !isVisiblePromptDef(def, valuesMap)) return false;
-
-                  // Check if this prompt is hidden in documents
+                  // Force-include bypasses dynamic visibility AND hide-in-docs
                   const productId = item.product_id || '';
-                  if (isHiddenInDocuments(productId, prompt, defsMap)) {
-                    console.log(`🙈 Hiding prompt "${prompt.label}" (id=${prompt.id ?? 'n/a'}) for product ${productId}`);
-                    return false;
+                  const forced = isForceIncluded(productId, prompt, defsMap);
+                  if (!forced) {
+                    // Dynamic visibility (based on EasyQuote prompt definitions)
+                    const def = getPromptDef(defsMap, prompt);
+                    if (def && !isVisiblePromptDef(def, valuesMap)) return false;
+
+                    // Check if this prompt is hidden in documents
+                    if (isHiddenInDocuments(productId, prompt, defsMap)) {
+                      console.log(`🙈 Hiding prompt "${prompt.label}" (id=${prompt.id ?? 'n/a'}) for product ${productId}`);
+                      return false;
+                    }
                   }
                   return true;
                 })
