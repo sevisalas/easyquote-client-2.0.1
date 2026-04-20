@@ -688,20 +688,14 @@ Deno.serve(async (req) => {
                   // Skip the quantity prompt - we'll show it separately
                   if (prompt.id === item.multi.qtyPrompt) return false;
 
-                  // Force-include bypasses dynamic visibility AND hide-in-docs
                   const productId = item.product_id || '';
-                  const forced = isForceIncluded(productId, prompt, defsMap);
-                  if (!forced) {
-                    // Dynamic visibility (based on EasyQuote prompt definitions)
-                    const def = getPromptDef(defsMap, prompt);
-                    if (def && !isVisiblePromptDef(def, valuesMap)) return false;
-
-                    // Check if this prompt is hidden in documents
-                    if (isHiddenInDocuments(productId, prompt, defsMap)) {
-                      console.log(`🙈 Hiding prompt "${prompt.label}" (id=${prompt.id ?? 'n/a'}) for product ${productId}`);
-                      return false;
-                    }
-                  }
+                  // Dynamic visibility (based on EasyQuote prompt definitions)
+                  const def = getPromptDef(defsMap, prompt);
+                  if (def && !isVisiblePromptDef(def, valuesMap)) return false;
+                  // Hidden in documents
+                  if (isHiddenInDocuments(productId, prompt, defsMap)) return false;
+                  // Conditional hide by value
+                  if (isHiddenByValue(productId, prompt, defsMap)) return false;
                   return true;
                 })
                 .sort((a, b) => (a.order || 999) - (b.order || 999))
@@ -821,18 +815,10 @@ Deno.serve(async (req) => {
                   if (!prompt || !prompt.label) return false;
 
                     const productId = item.product_id || '';
-                    const forced = isForceIncluded(productId, prompt, defsMap);
-                    if (!forced) {
-                      // Dynamic visibility (based on EasyQuote prompt definitions)
-                      const def = getPromptDef(defsMap, prompt);
-                      if (def && !isVisiblePromptDef(def, valuesMap)) return false;
-
-                      // Check if this prompt is hidden in documents
-                      if (isHiddenInDocuments(productId, prompt, defsMap)) {
-                        console.log(`🙈 Hiding prompt "${prompt.label}" (id=${prompt.id ?? 'n/a'}) for product ${productId}`);
-                        return false;
-                      }
-                    }
+                    const def = getPromptDef(defsMap, prompt);
+                    if (def && !isVisiblePromptDef(def, valuesMap)) return false;
+                    if (isHiddenInDocuments(productId, prompt, defsMap)) return false;
+                    if (isHiddenByValue(productId, prompt, defsMap)) return false;
                    return true;
                  })
                 .sort((a, b) => (a.order || 999) - (b.order || 999))
