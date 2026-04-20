@@ -15,6 +15,7 @@ import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelect
 import DocumentAttachments from "@/components/quotes/DocumentAttachments";
 import QuoteItem from "@/components/quotes/QuoteItem";
 import { CustomerSelector } from "@/components/quotes/CustomerSelector";
+import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 import { isVisiblePrompt, type PromptDef } from "@/utils/promptVisibility";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -616,14 +617,34 @@ export default function QuoteEdit() {
             });
           }
         });
+        const norm = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
         const forceIncludeMap = new Map<string, string>();
         const hiddenInDocsSet = new Set<string>();
+        const promptCellMap = new Map<string, string>();
         try {
           const orgId = sessionStorage.getItem('selected_organization_id');
           if (orgId && productIdsForForce.size > 0) {
             const { data: orgInfo } = await supabase.from('organizations').select('api_user_id').eq('id', orgId).single();
             if (orgInfo?.api_user_id) {
-              const norm = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
+              const token = await getEasyQuoteToken();
+              if (token) {
+                await Promise.all(Array.from(productIdsForForce).map(async (productId) => {
+                  try {
+                    const { data } = await invokeEasyQuoteFunction<any[]>("easyquote-prompts", { token, productId });
+                    if (!Array.isArray(data)) return;
+                    data.forEach((def: any) => {
+                      const defId = String(def?.id ?? '').trim();
+                      const rawCell = def?.promptCell ?? def?.prompt_cell ?? def?.cell ?? def?.promptcell;
+                      const cell = norm(String(rawCell ?? ''));
+                      if (defId && cell) {
+                        promptCellMap.set(`${productId}:${norm(defId)}`, cell);
+                      }
+                    });
+                  } catch {
+                    // no-op: fallback to direct id/label matching
+                  }
+                }));
+              }
               const { data: allSettings } = await supabase
                 .from('product_prompt_settings')
                 .select('easyquote_product_id, prompt_name, label, force_include_in_documents, force_include_condition, hide_in_documents, admin_only')
@@ -649,12 +670,22 @@ export default function QuoteEdit() {
         } catch (e) {
           console.warn('[QuoteEdit] could not prefetch prompt settings:', e);
         }
-        const isHiddenInDocs = (productId: string, candidates: any[]): boolean => {
-          if (hiddenInDocsSet.size === 0) return false;
-          const norm = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
+        const expandCandidateKeys = (productId: string, candidates: any[]): string[] => {
+          const keys = new Set<string>();
           for (const c of candidates) {
             if (!c) continue;
-            if (hiddenInDocsSet.has(`${productId}:${norm(String(c))}`)) return true;
+            const normalized = norm(String(c));
+            if (!normalized) continue;
+            keys.add(normalized);
+            const mappedCell = promptCellMap.get(`${productId}:${normalized}`);
+            if (mappedCell) keys.add(mappedCell);
+          }
+          return Array.from(keys);
+        };
+        const isHiddenInDocs = (productId: string, candidates: any[]): boolean => {
+          if (hiddenInDocsSet.size === 0) return false;
+          for (const key of expandCandidateKeys(productId, candidates)) {
+            if (hiddenInDocsSet.has(`${productId}:${key}`)) return true;
           }
           return false;
         };
@@ -673,10 +704,8 @@ export default function QuoteEdit() {
         };
         const isForceIncluded = (productId: string, candidates: any[], value: unknown): boolean => {
           if (forceIncludeMap.size === 0) return false;
-          const norm = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
-          for (const c of candidates) {
-            if (!c) continue;
-            const cond = forceIncludeMap.get(`${productId}:${norm(String(c))}`);
+          for (const key of expandCandidateKeys(productId, candidates)) {
+            const cond = forceIncludeMap.get(`${productId}:${key}`);
             if (cond && evalForceCond(cond, value)) return true;
           }
           return false;
