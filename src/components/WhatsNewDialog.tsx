@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Search } from "lucide-react";
 
-const CURRENT_VERSION = "2.7.15";
+const CURRENT_VERSION = "2.7.16";
 const SILENT_UPDATE = true;
 const LS_KEY = "whats_new_seen_version";
 
