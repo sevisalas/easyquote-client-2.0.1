@@ -108,10 +108,14 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground font-sans;
     overflow-x: hidden;
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
   }
   
   html {
     @apply scroll-smooth;
+    text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%;
   }
 }
 
