@@ -623,17 +623,20 @@ Deno.serve(async (req) => {
               .filter((prompt) => {
                 if (!prompt || !prompt.label) return false;
 
-                // Dynamic visibility (EasyQuote)
-                const def = getPromptDef(defsMap, prompt);
-                if (def && !isVisiblePromptDef(def, valuesMap)) return false;
-
-                // Hide-in-documents
                 const productId = item.product_id || '';
-                if (isHiddenInDocuments(productId, prompt, defsMap)) return false;
+                const forced = isForceIncluded(productId, prompt, defsMap);
+                if (!forced) {
+                  // Dynamic visibility (EasyQuote)
+                  const def = getPromptDef(defsMap, prompt);
+                  if (def && !isVisiblePromptDef(def, valuesMap)) return false;
 
-                // Exclude empty values
-                const unwrapped = unwrapPromptValue(prompt.value);
-                if (unwrapped === null || unwrapped === undefined || String(unwrapped).trim() === '') return false;
+                  // Hide-in-documents
+                  if (isHiddenInDocuments(productId, prompt, defsMap)) return false;
+
+                  // Exclude empty values
+                  const unwrapped = unwrapPromptValue(prompt.value);
+                  if (unwrapped === null || unwrapped === undefined || String(unwrapped).trim() === '') return false;
+                }
                 return true;
               })
               .sort((a, b) => (a.order || 999) - (b.order || 999))
@@ -691,8 +694,15 @@ Deno.serve(async (req) => {
             const promptLines = compPrompts
               .filter((p: any) => {
                 const val = p?.currentValue ?? p?.value;
-                if (val === null || val === undefined || String(val).trim() === '') return false;
                 const candidates = [p?.promptText, p?.label, p?.id].filter(Boolean);
+                // Force-include bypass
+                if (forceIncludeMap.size > 0) {
+                  for (const c of candidates) {
+                    const cond = forceIncludeMap.get(makeHiddenKey(compProductId, c));
+                    if (cond && evalForceCond(cond, val)) return true;
+                  }
+                }
+                if (val === null || val === undefined || String(val).trim() === '') return false;
                 const hidden = candidates.some((c) => hiddenPromptsSet.has(makeHiddenKey(compProductId, c)));
                 return !hidden;
               })
