@@ -23,6 +23,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Gudea:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+      /* Prevent FOUT-induced layout jumps: lock base font sizing before React mounts */
+      html, body { font-size: 16px; line-height: 1.5; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+      body { font-family: 'Gudea', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+    </style>
   </head>
 
   <body>
