@@ -585,7 +585,10 @@ export default function QuoteNew() {
         const isManual = item.descriptionManual || false;
         if (!isManual && promptsArray.length > 0) {
           const excludeLabels = ["tarifa", "forzar máquina", "forzar maquina", "tira y retira", "forzar poses", "forzar poses/pags.", "modelos"];
+          const productId = String(item.productId || '');
           const filterPrompt = (p: any) => {
+            // Force-include bypasses ALL filters
+            if (isForceIncluded(productId, [p.id, p.label, p.name], p.value)) return true;
             const val = String(p.value ?? "").trim();
             const label = String(p.label ?? "").toLowerCase();
             if (!val || val === "" || val.toLowerCase() === "no") return false;
