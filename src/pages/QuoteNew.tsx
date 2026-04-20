@@ -19,7 +19,7 @@ import { CustomerSelector } from "@/components/quotes/CustomerSelector";
 import QuoteItem from "@/components/quotes/QuoteItem";
 import AdditionalsSelector from "@/components/quotes/AdditionalsSelector";
 import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
-import { getEasyQuoteToken } from "@/lib/easyquoteApi";
+import { getEasyQuoteToken, invokeEasyQuoteFunction } from "@/lib/easyquoteApi";
 import { useNumberingFormat, generateDocumentNumber } from "@/hooks/useNumberingFormat";
 import DocumentAttachments, { type DocumentAttachmentsHandle } from "@/components/quotes/DocumentAttachments";
 import { useActiveCustomerDiscounts } from "@/hooks/useCustomerDiscounts";
@@ -498,8 +498,10 @@ export default function QuoteNew() {
           });
         }
       });
+      const norm = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
       let forceIncludeMap = new Map<string, string>(); // key: `${productId}:${KEY_UPPER}` -> condition
       const hiddenInDocsSet = new Set<string>(); // key: `${productId}:${KEY_UPPER}` for hide_in_documents OR admin_only
+      const promptCellMap = new Map<string, string>(); // key: `${productId}:${UUID_OR_KEY}` -> CELL
       try {
         const { data: orgInfo } = await supabase
           .from('organizations')
@@ -507,7 +509,25 @@ export default function QuoteNew() {
           .eq('id', organizationId)
           .single();
         if (orgInfo?.api_user_id && productIdsForForce.size > 0) {
-          const norm = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
+          const token = await getEasyQuoteToken();
+          if (token) {
+            await Promise.all(Array.from(productIdsForForce).map(async (productId) => {
+              try {
+                const { data } = await invokeEasyQuoteFunction<any[]>("easyquote-prompts", { token, productId });
+                if (!Array.isArray(data)) return;
+                data.forEach((def: any) => {
+                  const defId = String(def?.id ?? '').trim();
+                  const rawCell = def?.promptCell ?? def?.prompt_cell ?? def?.cell ?? def?.promptcell;
+                  const cell = norm(String(rawCell ?? ''));
+                  if (defId && cell) {
+                    promptCellMap.set(`${productId}:${norm(defId)}`, cell);
+                  }
+                });
+              } catch {
+                // no-op: fallback to direct id/label matching
+              }
+            }));
+          }
           const { data: allSettings } = await supabase
             .from('product_prompt_settings')
             .select('easyquote_product_id, prompt_name, label, force_include_in_documents, force_include_condition, hide_in_documents, admin_only')
@@ -532,12 +552,22 @@ export default function QuoteNew() {
       } catch (e) {
         console.warn('[QuoteNew] could not prefetch prompt settings:', e);
       }
-      const isHiddenInDocs = (productId: string, candidates: any[]): boolean => {
-        if (hiddenInDocsSet.size === 0) return false;
-        const norm = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
+      const expandCandidateKeys = (productId: string, candidates: any[]): string[] => {
+        const keys = new Set<string>();
         for (const c of candidates) {
           if (!c) continue;
-          if (hiddenInDocsSet.has(`${productId}:${norm(String(c))}`)) return true;
+          const normalized = norm(String(c));
+          if (!normalized) continue;
+          keys.add(normalized);
+          const mappedCell = promptCellMap.get(`${productId}:${normalized}`);
+          if (mappedCell) keys.add(mappedCell);
+        }
+        return Array.from(keys);
+      };
+      const isHiddenInDocs = (productId: string, candidates: any[]): boolean => {
+        if (hiddenInDocsSet.size === 0) return false;
+        for (const key of expandCandidateKeys(productId, candidates)) {
+          if (hiddenInDocsSet.has(`${productId}:${key}`)) return true;
         }
         return false;
       };
@@ -560,10 +590,8 @@ export default function QuoteNew() {
       };
       const isForceIncluded = (productId: string, candidates: string[], value: unknown): boolean => {
         if (forceIncludeMap.size === 0) return false;
-        const norm = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
-        for (const c of candidates) {
-          if (!c) continue;
-          const cond = forceIncludeMap.get(`${productId}:${norm(c)}`);
+        for (const key of expandCandidateKeys(productId, candidates)) {
+          const cond = forceIncludeMap.get(`${productId}:${key}`);
           if (cond && evalForceCond(cond, value)) return true;
         }
         return false;
