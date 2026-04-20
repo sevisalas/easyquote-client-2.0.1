@@ -220,6 +220,49 @@ Deno.serve(async (req) => {
       return candidates.some((c) => hiddenPromptsSet.has(makeHiddenKey(productId, c)));
     };
 
+    // Force-include settings
+    const { data: forceIncludeSettings } = await supabase
+      .from('product_prompt_settings')
+      .select('easyquote_product_id, prompt_name, label, force_include_condition')
+      .eq('api_user_id', apiUserId)
+      .eq('force_include_in_documents', true);
+
+    const forceIncludeMap = new Map<string, string>();
+    (forceIncludeSettings || []).forEach((s: any) => {
+      const cond = s.force_include_condition || 'always';
+      forceIncludeMap.set(makeHiddenKey(s.easyquote_product_id, s.prompt_name), cond);
+      if (s.label && s.label !== s.prompt_name) {
+        forceIncludeMap.set(makeHiddenKey(s.easyquote_product_id, s.label), cond);
+      }
+    });
+
+    const evalForceCond = (cond: string, value: unknown): boolean => {
+      let v: any = value;
+      if (v && typeof v === 'object' && 'value' in v) v = v.value;
+      if (cond === 'always') return true;
+      const str = String(v ?? '').trim();
+      if (cond === 'value_not_empty') return !!str && str.toLowerCase() !== 'no';
+      if (cond === 'value_gt_zero') {
+        const n = parseFloat(str.replace(/\./g, '').replace(',', '.'));
+        if (isNaN(n)) {
+          const n2 = parseFloat(str);
+          return !isNaN(n2) && n2 > 0;
+        }
+        return n > 0;
+      }
+      return true;
+    };
+
+    const isForceIncluded = (productId: unknown, prompt: any): boolean => {
+      if (forceIncludeMap.size === 0) return false;
+      const candidates = [prompt?.name, prompt?.id, prompt?.label, prompt?.promptText].filter(Boolean);
+      for (const c of candidates) {
+        const cond = forceIncludeMap.get(makeHiddenKey(productId, c));
+        if (cond && evalForceCond(cond, prompt?.value ?? prompt?.currentValue)) return true;
+      }
+      return false;
+    };
+
     // Quantity prompt settings
     const { data: quantityPromptSettings } = await supabase
       .from('product_prompt_settings')
