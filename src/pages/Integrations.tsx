@@ -438,7 +438,28 @@ export default function Integrations() {
     }
   };
 
-  if (loading || holdedLoading || wooLoading) {
+  const handleAuditDocuments = async () => {
+    if (!currentOrganization?.id) return;
+    setAuditing(true);
+    setAuditReport(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('holded-audit-document-contacts', {
+        body: { organizationId: currentOrganization.id },
+      });
+      if (error) throw error;
+      setAuditReport(data);
+      setAuditOpen(true);
+      toast({
+        title: "Auditoría completada",
+        description: `${data?.stats?.mismatches ?? 0} discrepancias, ${data?.stats?.notFound ?? 0} no encontrados, ${data?.stats?.orphan ?? 0} huérfanos`,
+      });
+    } catch (e: any) {
+      console.error(e);
+      toast({ title: "Error en auditoría", description: e.message, variant: "destructive" });
+    } finally {
+      setAuditing(false);
+    }
+  };
     return (
       <div className="container mx-auto py-8">
         <Card>
