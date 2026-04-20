@@ -499,6 +499,7 @@ export default function QuoteNew() {
         }
       });
       let forceIncludeMap = new Map<string, string>(); // key: `${productId}:${KEY_UPPER}` -> condition
+      const hiddenInDocsSet = new Set<string>(); // key: `${productId}:${KEY_UPPER}` for hide_in_documents OR admin_only
       try {
         const { data: orgInfo } = await supabase
           .from('organizations')
@@ -506,24 +507,40 @@ export default function QuoteNew() {
           .eq('id', organizationId)
           .single();
         if (orgInfo?.api_user_id && productIdsForForce.size > 0) {
-          const { data: forceSettings } = await supabase
+          const norm = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
+          const { data: allSettings } = await supabase
             .from('product_prompt_settings')
-            .select('easyquote_product_id, prompt_name, label, force_include_condition')
+            .select('easyquote_product_id, prompt_name, label, force_include_in_documents, force_include_condition, hide_in_documents, admin_only')
             .eq('api_user_id', orgInfo.api_user_id)
-            .eq('force_include_in_documents', true)
             .in('easyquote_product_id', Array.from(productIdsForForce));
-          (forceSettings || []).forEach((s: any) => {
-            const cond = s.force_include_condition || 'always';
-            const norm = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
-            forceIncludeMap.set(`${s.easyquote_product_id}:${norm(s.prompt_name)}`, cond);
-            if (s.label && s.label !== s.prompt_name) {
-              forceIncludeMap.set(`${s.easyquote_product_id}:${norm(s.label)}`, cond);
+          (allSettings || []).forEach((s: any) => {
+            if (s.force_include_in_documents) {
+              const cond = s.force_include_condition || 'always';
+              forceIncludeMap.set(`${s.easyquote_product_id}:${norm(s.prompt_name)}`, cond);
+              if (s.label && s.label !== s.prompt_name) {
+                forceIncludeMap.set(`${s.easyquote_product_id}:${norm(s.label)}`, cond);
+              }
+            }
+            if (s.hide_in_documents || s.admin_only) {
+              hiddenInDocsSet.add(`${s.easyquote_product_id}:${norm(s.prompt_name)}`);
+              if (s.label && s.label !== s.prompt_name) {
+                hiddenInDocsSet.add(`${s.easyquote_product_id}:${norm(s.label)}`);
+              }
             }
           });
         }
       } catch (e) {
-        console.warn('[QuoteNew] could not prefetch force-include settings:', e);
+        console.warn('[QuoteNew] could not prefetch prompt settings:', e);
       }
+      const isHiddenInDocs = (productId: string, candidates: any[]): boolean => {
+        if (hiddenInDocsSet.size === 0) return false;
+        const norm = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
+        for (const c of candidates) {
+          if (!c) continue;
+          if (hiddenInDocsSet.has(`${productId}:${norm(String(c))}`)) return true;
+        }
+        return false;
+      };
 
       const evalForceCond = (cond: string, value: unknown): boolean => {
         let v: any = value;
