@@ -1384,21 +1384,24 @@ export default function ProductConfigPage() {
                                   </Select>
                                 </div>
                               )}
-                              <div className="flex items-center gap-2">
-                                <Checkbox id={`finc-${prompt.id}`} checked={isPromptForceInclude(...promptAliases)} onCheckedChange={(checked: boolean) => { upsertPromptSettingMutation.mutate({ productId: selectedProduct.id, promptName: promptSettingKey, forceIncludeInDocuments: checked }); }} />
-                                <Label htmlFor={`finc-${prompt.id}`} className="text-sm cursor-pointer" title="Forzar que aparezca en la descripción auto-generada y en Holded, según una condición.">Forzar en docs.</Label>
-                              </div>
-                              {isPromptForceInclude(...promptAliases) && (
-                                <div className="flex items-center gap-2">
-                                  <Label className="text-sm whitespace-nowrap">Cuando</Label>
-                                  <Select value={getPromptForceCondition(...promptAliases) || "always"} onValueChange={value => { upsertPromptSettingMutation.mutate({ productId: selectedProduct.id, promptName: promptSettingKey, forceIncludeCondition: value }); }}>
-                                    <SelectTrigger className="h-8 w-44"><SelectValue /></SelectTrigger>
-                                    <SelectContent className="bg-background border shadow-lg z-50">
-                                      <SelectItem value="always">Siempre</SelectItem>
-                                      <SelectItem value="value_gt_zero">Valor &gt; 0</SelectItem>
-                                      <SelectItem value="value_not_empty">Valor no vacío y distinto de "No"</SelectItem>
-                                    </SelectContent>
-                                  </Select>
+                              {!isPromptHiddenInDocuments(...promptAliases) && !isPromptAdminOnly(...promptAliases) && (
+                                <div className="flex items-center gap-2 col-span-2 sm:col-span-3 lg:col-span-2">
+                                  <Label htmlFor={`hwv-${prompt.id}`} className="text-sm whitespace-nowrap" title='Si el valor del campo coincide con este texto, no se muestra en documentos. Ej: "0", "sin plastificar".'>
+                                    No mostrar si valor =
+                                  </Label>
+                                  <Input
+                                    id={`hwv-${prompt.id}`}
+                                    className="h-8 flex-1"
+                                    placeholder='ej: 0, sin plastificar'
+                                    defaultValue={getPromptHideWhenValue(...promptAliases)}
+                                    key={`hwv-${prompt.id}-${getPromptHideWhenValue(...promptAliases)}`}
+                                    onBlur={(e) => {
+                                      const newVal = e.target.value;
+                                      const current = getPromptHideWhenValue(...promptAliases);
+                                      if (newVal === current) return;
+                                      upsertPromptSettingMutation.mutate({ productId: selectedProduct.id, promptName: promptSettingKey, hideWhenValue: newVal });
+                                    }}
+                                  />
                                 </div>
                               )}
                             </div>
