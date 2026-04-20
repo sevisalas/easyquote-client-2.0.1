@@ -300,49 +300,36 @@ Deno.serve(async (req) => {
       return candidates.some((c) => hiddenPromptsSet.has(makeHiddenKey(productId, c)));
     };
 
-    // Force-include settings (opposite of hide_in_documents)
-    const { data: forceIncludeSettings } = await supabase
+    // Hide-when-value settings
+    const { data: hideWhenValueSettings } = await supabase
       .from('product_prompt_settings')
-      .select('easyquote_product_id, prompt_name, label, force_include_condition')
+      .select('easyquote_product_id, prompt_name, label, hide_when_value')
       .eq('api_user_id', apiUserId)
-      .eq('force_include_in_documents', true);
+      .not('hide_when_value', 'is', null);
 
-    const forceIncludeMap = new Map<string, string>();
-    (forceIncludeSettings || []).forEach((s: any) => {
-      const cond = s.force_include_condition || 'always';
-      forceIncludeMap.set(makeHiddenKey(s.easyquote_product_id, s.prompt_name), cond);
+    const hideWhenValueMap = new Map<string, string>();
+    (hideWhenValueSettings || []).forEach((s: any) => {
+      const target = String(s.hide_when_value ?? '').trim().toLowerCase();
+      if (!target) return;
+      hideWhenValueMap.set(makeHiddenKey(s.easyquote_product_id, s.prompt_name), target);
       if (s.label && s.label !== s.prompt_name) {
-        forceIncludeMap.set(makeHiddenKey(s.easyquote_product_id, s.label), cond);
+        hideWhenValueMap.set(makeHiddenKey(s.easyquote_product_id, s.label), target);
       }
     });
 
-    const evalForceCond = (cond: string, value: unknown): boolean => {
-      let v: any = value;
+    const isHiddenByValue = (productId: unknown, prompt: any, defsMap?: Record<string, PromptDef> | null): boolean => {
+      if (hideWhenValueMap.size === 0) return false;
+      let v: any = prompt?.value ?? prompt?.currentValue;
       if (v && typeof v === 'object' && 'value' in v) v = v.value;
-      if (cond === 'always') return true;
-      const str = String(v ?? '').trim();
-      if (cond === 'value_not_empty') return !!str && str.toLowerCase() !== 'no';
-      if (cond === 'value_gt_zero') {
-        const n = parseFloat(str.replace(/\./g, '').replace(',', '.'));
-        if (isNaN(n)) {
-          const n2 = parseFloat(str);
-          return !isNaN(n2) && n2 > 0;
-        }
-        return n > 0;
-      }
-      return true;
-    };
-
-    const isForceIncluded = (productId: unknown, prompt: any, defsMap?: Record<string, PromptDef> | null): boolean => {
-      if (forceIncludeMap.size === 0) return false;
+      const valStr = String(v ?? '').trim().toLowerCase();
       const candidates = [prompt?.name, prompt?.id, prompt?.label, prompt?.promptText].filter(Boolean);
       if (defsMap && prompt?.label) {
         const def = getPromptDef(defsMap, prompt);
         if (def?.id) candidates.push(def.id);
       }
       for (const c of candidates) {
-        const cond = forceIncludeMap.get(makeHiddenKey(productId, c));
-        if (cond && evalForceCond(cond, prompt?.value ?? prompt?.currentValue)) return true;
+        const target = hideWhenValueMap.get(makeHiddenKey(productId, c));
+        if (target !== undefined && target === valStr) return true;
       }
       return false;
     };
@@ -622,21 +609,13 @@ Deno.serve(async (req) => {
             description = promptsArray
               .filter((prompt) => {
                 if (!prompt || !prompt.label) return false;
-
                 const productId = item.product_id || '';
-                const forced = isForceIncluded(productId, prompt, defsMap);
-                if (!forced) {
-                  // Dynamic visibility (EasyQuote)
-                  const def = getPromptDef(defsMap, prompt);
-                  if (def && !isVisiblePromptDef(def, valuesMap)) return false;
-
-                  // Hide-in-documents
-                  if (isHiddenInDocuments(productId, prompt, defsMap)) return false;
-
-                  // Exclude empty values
-                  const unwrapped = unwrapPromptValue(prompt.value);
-                  if (unwrapped === null || unwrapped === undefined || String(unwrapped).trim() === '') return false;
-                }
+                const def = getPromptDef(defsMap, prompt);
+                if (def && !isVisiblePromptDef(def, valuesMap)) return false;
+                if (isHiddenInDocuments(productId, prompt, defsMap)) return false;
+                if (isHiddenByValue(productId, prompt, defsMap)) return false;
+                const unwrapped = unwrapPromptValue(prompt.value);
+                if (unwrapped === null || unwrapped === undefined || String(unwrapped).trim() === '') return false;
                 return true;
               })
               .sort((a, b) => (a.order || 999) - (b.order || 999))
@@ -695,16 +674,10 @@ Deno.serve(async (req) => {
               .filter((p: any) => {
                 const val = p?.currentValue ?? p?.value;
                 const candidates = [p?.promptText, p?.label, p?.id].filter(Boolean);
-                // Force-include bypass
-                if (forceIncludeMap.size > 0) {
-                  for (const c of candidates) {
-                    const cond = forceIncludeMap.get(makeHiddenKey(compProductId, c));
-                    if (cond && evalForceCond(cond, val)) return true;
-                  }
-                }
                 if (val === null || val === undefined || String(val).trim() === '') return false;
-                const hidden = candidates.some((c) => hiddenPromptsSet.has(makeHiddenKey(compProductId, c)));
-                return !hidden;
+                if (candidates.some((c) => hiddenPromptsSet.has(makeHiddenKey(compProductId, c)))) return false;
+                if (isHiddenByValue(compProductId, p)) return false;
+                return true;
               })
               .sort((a: any, b: any) => (a.promptSequence || 0) - (b.promptSequence || 0))
               .map((p: any) => {
