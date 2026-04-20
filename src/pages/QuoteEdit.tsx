@@ -724,7 +724,9 @@ export default function QuoteEdit() {
           const isManual = (item as any).descriptionManual || (item as any).description_manual || false;
           if (!isManual && promptsArray.length > 0) {
             const excludeLabels = ["tarifa", "forzar máquina", "forzar maquina", "tira y retira", "forzar poses", "forzar poses/pags.", "modelos"];
+            const productId = String((item as any).productId || '');
             const filterPrompt = (p: any) => {
+              if (isForceIncluded(productId, [p.id, p.label, p.name], p.value)) return true;
               const val = String(p.value ?? "").trim();
               const label = String(p.label ?? "").toLowerCase();
               if (!val || val === "" || val.toLowerCase() === "no") return false;
@@ -758,9 +760,14 @@ export default function QuoteEdit() {
                 if (!comp) continue;
                 const alias = comp.alias || "Componente";
                 const compPrompts = Array.isArray(comp.prompts) ? comp.prompts : [];
+                const compId = compKey.split(':')[0];
+                const activeComp = activeComponents.find((ac: any) => ac.id === compId);
+                const compProductId = String(activeComp?.component_product_id || compId);
                 const lines = compPrompts
                   .filter((p: any) => {
-                    const val = String(p.currentValue ?? p.value ?? "").trim();
+                    const rawVal = p.currentValue ?? p.value;
+                    if (isForceIncluded(compProductId, [p.id, p.promptText, p.label, p.name], rawVal)) return true;
+                    const val = String(rawVal ?? "").trim();
                     const label = String(p.promptText ?? p.label ?? "").toLowerCase().trim();
                     if (!val || val.toLowerCase() === "no") return false;
                     if (excludeLabels.some(ex => label.includes(ex))) return false;
