@@ -486,6 +486,72 @@ export default function QuoteNew() {
         title,
       );
 
+      // Prefetch force-include settings for all involved products (also covers composite component products)
+      const productIdsForForce = new Set<string>();
+      itemsArray.forEach((it: any) => {
+        if (it.productId) productIdsForForce.add(String(it.productId));
+        const cd = it.compositeData;
+        if (cd?.activeComponents) {
+          cd.activeComponents.forEach((ac: any) => {
+            if (ac?.component_product_id) productIdsForForce.add(String(ac.component_product_id));
+            if (ac?.id) productIdsForForce.add(String(ac.id));
+          });
+        }
+      });
+      let forceIncludeMap = new Map<string, string>(); // key: `${productId}:${KEY_UPPER}` -> condition
+      try {
+        const { data: orgInfo } = await supabase
+          .from('organizations')
+          .select('api_user_id')
+          .eq('id', organizationId)
+          .single();
+        if (orgInfo?.api_user_id && productIdsForForce.size > 0) {
+          const { data: forceSettings } = await supabase
+            .from('product_prompt_settings')
+            .select('easyquote_product_id, prompt_name, label, force_include_condition')
+            .eq('api_user_id', orgInfo.api_user_id)
+            .eq('force_include_in_documents', true)
+            .in('easyquote_product_id', Array.from(productIdsForForce));
+          (forceSettings || []).forEach((s: any) => {
+            const cond = s.force_include_condition || 'always';
+            const norm = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
+            forceIncludeMap.set(`${s.easyquote_product_id}:${norm(s.prompt_name)}`, cond);
+            if (s.label && s.label !== s.prompt_name) {
+              forceIncludeMap.set(`${s.easyquote_product_id}:${norm(s.label)}`, cond);
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('[QuoteNew] could not prefetch force-include settings:', e);
+      }
+
+      const evalForceCond = (cond: string, value: unknown): boolean => {
+        let v: any = value;
+        if (v && typeof v === 'object' && 'value' in v) v = v.value;
+        if (cond === 'always') return true;
+        const str = String(v ?? '').trim();
+        if (cond === 'value_not_empty') return !!str && str.toLowerCase() !== 'no';
+        if (cond === 'value_gt_zero') {
+          const n = parseFloat(str.replace(/\./g, '').replace(',', '.'));
+          if (isNaN(n)) {
+            const n2 = parseFloat(str);
+            return !isNaN(n2) && n2 > 0;
+          }
+          return n > 0;
+        }
+        return true;
+      };
+      const isForceIncluded = (productId: string, candidates: string[], value: unknown): boolean => {
+        if (forceIncludeMap.size === 0) return false;
+        const norm = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
+        for (const c of candidates) {
+          if (!c) continue;
+          const cond = forceIncludeMap.get(`${productId}:${norm(c)}`);
+          if (cond && evalForceCond(cond, value)) return true;
+        }
+        return false;
+      };
+
       // Create quote_items records with prompts and outputs
       const quoteItemsData = itemsArray.map((item, index) => {
         // Normalizar prompts a array [{id,label,value,order}] para persistencia.
