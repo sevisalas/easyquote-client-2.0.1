@@ -1411,7 +1411,7 @@ export default function ProductConfigPage() {
                                     <SelectContent className="bg-background border shadow-lg z-50">
                                       <SelectItem value="always">Siempre</SelectItem>
                                       <SelectItem value="value_gt_zero">Valor &gt; 0</SelectItem>
-                                      <SelectItem value="value_not_empty">Valor no vacío</SelectItem>
+                                      <SelectItem value="value_not_empty">Valor no vacío y distinto de "No"</SelectItem>
                                     </SelectContent>
                                   </Select>
                                 </div>
