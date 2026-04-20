@@ -626,7 +626,7 @@ export default function QuoteEdit() {
           const { data: orgInfo } = await supabase
             .from('organizations')
             .select('api_user_id')
-            .eq('id', orgId || organizationId)
+            .eq('id', orgId || organization?.id || '')
             .single();
           if (orgInfo?.api_user_id && productIdsForForce.size > 0) {
             if (productIdsForForce.size > 0) {
