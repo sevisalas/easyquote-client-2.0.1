@@ -34,6 +34,9 @@ export default function Integrations() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [selectedExportMode, setSelectedExportMode] = useState<HoldedExportMode>('all');
   const [savingExportMode, setSavingExportMode] = useState(false);
+  const [auditing, setAuditing] = useState(false);
+  const [auditReport, setAuditReport] = useState<any | null>(null);
+  const [auditOpen, setAuditOpen] = useState(false);
   const { toast } = useToast();
 
   const currentOrganization = organization || membership?.organization;
