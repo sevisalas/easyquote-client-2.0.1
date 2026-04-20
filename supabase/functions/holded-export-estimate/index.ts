@@ -833,18 +833,21 @@ Deno.serve(async (req) => {
                  .filter(prompt => {
                   if (!prompt || !prompt.label) return false;
 
-                    // Dynamic visibility (based on EasyQuote prompt definitions)
-                    const def = getPromptDef(defsMap, prompt);
-                    if (def && !isVisiblePromptDef(def, valuesMap)) return false;
+                    const productId = item.product_id || '';
+                    const forced = isForceIncluded(productId, prompt, defsMap);
+                    if (!forced) {
+                      // Dynamic visibility (based on EasyQuote prompt definitions)
+                      const def = getPromptDef(defsMap, prompt);
+                      if (def && !isVisiblePromptDef(def, valuesMap)) return false;
 
-                   // Check if this prompt is hidden in documents
-                   const productId = item.product_id || '';
-                   if (isHiddenInDocuments(productId, prompt, defsMap)) {
-                     console.log(`🙈 Hiding prompt "${prompt.label}" (id=${prompt.id ?? 'n/a'}) for product ${productId}`);
-                     return false;
-                   }
-                  return true;
-                })
+                      // Check if this prompt is hidden in documents
+                      if (isHiddenInDocuments(productId, prompt, defsMap)) {
+                        console.log(`🙈 Hiding prompt "${prompt.label}" (id=${prompt.id ?? 'n/a'}) for product ${productId}`);
+                        return false;
+                      }
+                    }
+                   return true;
+                 })
                 .sort((a, b) => (a.order || 999) - (b.order || 999))
                  .map((prompt) => `${prompt.label}: ${formatPromptValue(prompt.value)}`)
                 .filter(Boolean)
