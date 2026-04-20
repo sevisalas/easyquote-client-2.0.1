@@ -321,6 +321,7 @@ Deno.serve(async (req) => {
               .filter((prompt) => {
                 if (!prompt || !prompt.label) return false;
                 const productId = item.product_id || '';
+                if (isForceIncluded(productId, prompt)) return true;
                 if (isHiddenInDocuments(productId, prompt)) return false;
                 const unwrapped = unwrapPromptValue(prompt.value);
                 if (unwrapped === null || unwrapped === undefined || String(unwrapped).trim() === '') return false;
@@ -363,8 +364,14 @@ Deno.serve(async (req) => {
             const promptLines = compPrompts
               .filter((p: any) => {
                 const val = p?.currentValue ?? p?.value;
-                if (val === null || val === undefined || String(val).trim() === '') return false;
                 const candidates = [p?.promptText, p?.label, p?.id].filter(Boolean);
+                if (forceIncludeMap.size > 0) {
+                  for (const c of candidates) {
+                    const cond = forceIncludeMap.get(makeHiddenKey(compProductId, c));
+                    if (cond && evalForceCond(cond, val)) return true;
+                  }
+                }
+                if (val === null || val === undefined || String(val).trim() === '') return false;
                 return !candidates.some((c) => hiddenPromptsSet.has(makeHiddenKey(compProductId, c)));
               })
               .sort((a: any, b: any) => (a.promptSequence || 0) - (b.promptSequence || 0))
