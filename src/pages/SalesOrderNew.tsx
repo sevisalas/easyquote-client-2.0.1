@@ -1105,7 +1105,7 @@ export default function SalesOrderNew() {
 
             {Object.keys(items).length === 0 && (
               <div className="text-center py-8 border-2 border-dashed rounded-lg">
-                <p className="text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   No hay productos añadidos. Haz clic en "Añadir producto" para comenzar.
                 </p>
               </div>

@@ -108,14 +108,23 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground font-sans;
     overflow-x: hidden;
+    font-size: 1rem;
+    line-height: 1.5;
     text-size-adjust: 100%;
     -webkit-text-size-adjust: 100%;
   }
   
   html {
     @apply scroll-smooth;
+    font-size: 16px;
     text-size-adjust: 100%;
     -webkit-text-size-adjust: 100%;
+  }
+
+  /* Safety net: prevent unstyled text blocks from inheriting unexpectedly large sizes
+     (e.g. during font swap / route transitions before Tailwind utility classes apply). */
+  p, span, div, li, td, th, label, button, a {
+    font-size: inherit;
   }
 }
 
