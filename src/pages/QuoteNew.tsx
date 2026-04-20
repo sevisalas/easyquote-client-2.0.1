@@ -623,13 +623,18 @@ export default function QuoteNew() {
               if (!comp) continue;
               const alias = comp.alias || "Componente";
               const compPrompts = Array.isArray(comp.prompts) ? comp.prompts : [];
+              const compId = compKey.split(':')[0];
+              const activeComp = activeComponents.find((ac: any) => ac.id === compId);
+              const compProductId = String(activeComp?.component_product_id || compId);
               const lines = compPrompts
                 .filter((p: any) => {
-                  const val = String(p.currentValue ?? p.value ?? "").trim();
+                  const rawVal = p.currentValue ?? p.value;
+                  // Force-include bypass
+                  if (isForceIncluded(compProductId, [p.id, p.promptText, p.label, p.name], rawVal)) return true;
+                  const val = String(rawVal ?? "").trim();
                   const label = String(p.promptText ?? p.label ?? "").toLowerCase().trim();
                   if (!val || val.toLowerCase() === "no") return false;
                   if (excludeLabels.some(ex => label.includes(ex))) return false;
-                  // Skip prompts already shown in parent
                   if (parentSigs.has(`${label}:${val}`)) return false;
                   return true;
                 })
