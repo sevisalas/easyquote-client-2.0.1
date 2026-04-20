@@ -744,6 +744,7 @@ export default function QuoteEdit() {
             const productId = String((item as any).productId || '');
             const filterPrompt = (p: any) => {
               if (isForceIncluded(productId, [p.id, p.label, p.name], p.value)) return true;
+              if (isHiddenInDocs(productId, [p.id, p.label, p.name])) return false;
               const val = String(p.value ?? "").trim();
               const label = String(p.label ?? "").toLowerCase();
               if (!val || val === "" || val.toLowerCase() === "no") return false;
