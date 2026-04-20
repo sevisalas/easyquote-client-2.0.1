@@ -2242,6 +2242,7 @@ export type Database = {
           force_include_in_documents: boolean
           force_result: boolean
           hide_in_documents: boolean
+          hide_when_value: string | null
           id: string
           is_hidden: boolean
           is_quantity: boolean
@@ -2261,6 +2262,7 @@ export type Database = {
           force_include_in_documents?: boolean
           force_result?: boolean
           hide_in_documents?: boolean
+          hide_when_value?: string | null
           id?: string
           is_hidden?: boolean
           is_quantity?: boolean
@@ -2280,6 +2282,7 @@ export type Database = {
           force_include_in_documents?: boolean
           force_result?: boolean
           hide_in_documents?: boolean
+          hide_when_value?: string | null
           id?: string
           is_hidden?: boolean
           is_quantity?: boolean
