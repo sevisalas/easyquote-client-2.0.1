@@ -606,6 +606,8 @@ export default function QuoteNew() {
           const filterPrompt = (p: any) => {
             // Force-include bypasses ALL filters
             if (isForceIncluded(productId, [p.id, p.label, p.name], p.value)) return true;
+            // Respect hide_in_documents / admin_only
+            if (isHiddenInDocs(productId, [p.id, p.label, p.name])) return false;
             const val = String(p.value ?? "").trim();
             const label = String(p.label ?? "").toLowerCase();
             if (!val || val === "" || val.toLowerCase() === "no") return false;
