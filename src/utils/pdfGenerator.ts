@@ -312,9 +312,6 @@ export const isDescriptionLabelHidden = (label: string, hiddenKeys: Set<string>)
     // Hide variants with suffixes (e.g. "Lomo" -> "Lomo mm")
     if (normalizedLabel.startsWith(`${hidden} `)) return true;
 
-    // Keep explicit compatibility for lomo variants
-    if (hidden.startsWith('LOMO') && normalizedLabel.startsWith('LOMO')) return true;
-
     return false;
   });
 };
@@ -353,9 +350,6 @@ export const sanitizeDescriptionForDocs = (
     const value = line.slice(colonIndex + 1).trim();
     if (!value) continue;
     if (value.toLowerCase() === 'no') continue;
-
-    const normalizedLabel = normalizeDescriptionLabel(label);
-    if (normalizedLabel.startsWith('SOLAPAS')) continue;
 
     const activeHiddenKeys = currentSectionAlias === '__PARENT__'
       ? parentHiddenKeys
@@ -593,10 +587,7 @@ export const generateQuotePDF = async (
             .filter((p: any) => {
               const val = p?.currentValue ?? p?.value;
               if (val === null || val === undefined || String(val).trim() === '') return false;
-              if (String(val).trim() === '0') return false;
               if (String(val).trim().toLowerCase() === 'no') return false;
-              const pLabel = normalize(p?.promptText || p?.label || '');
-              if (pLabel.startsWith('SOLAPAS')) return false;
               if (isCompHidden(p)) return false;
               return true;
             })
