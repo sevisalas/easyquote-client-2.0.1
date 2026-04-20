@@ -765,8 +765,8 @@ export default function QuoteEdit() {
             const excludeLabels = ["tarifa", "forzar máquina", "forzar maquina", "tira y retira", "forzar poses", "forzar poses/pags.", "modelos"];
             const productId = String((item as any).productId || '');
             const filterPrompt = (p: any) => {
-              if (isForceIncluded(productId, [p.id, p.label, p.name], p.value)) return true;
               if (isHiddenInDocs(productId, [p.id, p.label, p.name])) return false;
+              if (isHiddenByValue(productId, [p.id, p.label, p.name], p.value)) return false;
               const val = String(p.value ?? "").trim();
               const label = String(p.label ?? "").toLowerCase();
               if (!val || val === "" || val.toLowerCase() === "no") return false;
@@ -806,8 +806,8 @@ export default function QuoteEdit() {
                 const lines = compPrompts
                   .filter((p: any) => {
                     const rawVal = p.currentValue ?? p.value;
-                    if (isForceIncluded(compProductId, [p.id, p.promptText, p.label, p.name], rawVal)) return true;
                     if (isHiddenInDocs(compProductId, [p.id, p.promptText, p.label, p.name])) return false;
+                    if (isHiddenByValue(compProductId, [p.id, p.promptText, p.label, p.name], rawVal)) return false;
                     const val = String(rawVal ?? "").trim();
                     const label = String(p.promptText ?? p.label ?? "").toLowerCase().trim();
                     if (!val || val.toLowerCase() === "no") return false;
