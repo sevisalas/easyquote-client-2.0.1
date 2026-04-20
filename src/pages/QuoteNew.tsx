@@ -650,6 +650,8 @@ export default function QuoteNew() {
                   const rawVal = p.currentValue ?? p.value;
                   // Force-include bypass
                   if (isForceIncluded(compProductId, [p.id, p.promptText, p.label, p.name], rawVal)) return true;
+                  // Respect hide_in_documents / admin_only
+                  if (isHiddenInDocs(compProductId, [p.id, p.promptText, p.label, p.name])) return false;
                   const val = String(rawVal ?? "").trim();
                   const label = String(p.promptText ?? p.label ?? "").toLowerCase().trim();
                   if (!val || val.toLowerCase() === "no") return false;
