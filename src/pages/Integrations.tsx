@@ -743,6 +743,57 @@ export default function Integrations() {
           </Card>
         )}
       </div>
+
+      <Dialog open={auditOpen} onOpenChange={setAuditOpen}>
+        <DialogContent className="max-w-5xl max-h-[85vh]">
+          <DialogHeader>
+            <DialogTitle>Informe de auditoría — Holded</DialogTitle>
+            <DialogDescription>
+              {auditReport?.stats && (
+                <>
+                  Presupuestos: {auditReport.stats.quotesChecked} · Pedidos: {auditReport.stats.ordersChecked} ·{" "}
+                  <span className="text-destructive font-medium">{auditReport.stats.mismatches} discrepancias</span> ·{" "}
+                  {auditReport.stats.notFound} no encontrados · {auditReport.stats.orphan} contactos huérfanos ·{" "}
+                  {auditReport.stats.errors} errores
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] pr-4">
+            <div className="space-y-2">
+              {(auditReport?.discrepancies ?? []).length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">✅ Todo coincide. No se encontraron discrepancias.</p>
+              ) : (
+                (auditReport?.discrepancies ?? []).map((d: any, idx: number) => (
+                  <div key={idx} className="border rounded-lg p-3 text-sm">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium">
+                        {d.kind === 'quote' ? '📄 Presupuesto' : '📦 Pedido'} {d.docNumber}
+                      </span>
+                      <span className={`text-xs px-2 py-0.5 rounded ${
+                        d.status === 'mismatch' ? 'bg-destructive/15 text-destructive' :
+                        d.status === 'not_found' ? 'bg-yellow-100 text-yellow-900 dark:bg-yellow-900/30 dark:text-yellow-200' :
+                        d.status === 'orphan_contact' ? 'bg-orange-100 text-orange-900 dark:bg-orange-900/30 dark:text-orange-200' :
+                        'bg-muted text-muted-foreground'
+                      }`}>{d.status}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-0.5">
+                      <div>Cliente local: <strong>{d.currentCustomerName}</strong> ({d.currentCustomerHoldedId ?? 'sin holded_id'})</div>
+                      {d.holdedContactId && (
+                        <div>Contacto en Holded: <strong>{d.holdedContactName ?? '?'}</strong> ({d.holdedContactId})</div>
+                      )}
+                      {d.suggestedCustomerName && (
+                        <div className="text-primary">→ Cliente sugerido en BBDD: <strong>{d.suggestedCustomerName}</strong></div>
+                      )}
+                      {d.detail && <div className="italic">{d.detail}</div>}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
