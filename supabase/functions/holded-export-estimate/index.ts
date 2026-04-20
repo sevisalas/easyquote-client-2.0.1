@@ -258,12 +258,12 @@ Deno.serve(async (req) => {
       .eq('api_user_id', apiUserId)
       .or('hide_in_documents.eq.true,admin_only.eq.true');
 
-    // Get force-include settings: prompts that must appear in description (opposite of hide)
-    const { data: forceIncludeSettings } = await supabase
+    // Get conditional-hide settings: prompts hidden when value matches a target
+    const { data: hideWhenValueSettings } = await supabase
       .from('product_prompt_settings')
-      .select('easyquote_product_id, prompt_name, label, force_include_condition')
+      .select('easyquote_product_id, prompt_name, label, hide_when_value')
       .eq('api_user_id', apiUserId)
-      .eq('force_include_in_documents', true);
+      .not('hide_when_value', 'is', null);
 
     // Load quantity prompt settings (is_quantity = true)
     const { data: quantityPromptSettings } = await supabase
@@ -306,44 +306,31 @@ Deno.serve(async (req) => {
     });
     console.log('🙈 Hidden prompts set:', Array.from(hiddenPromptsSet));
 
-    // Force-include map: productId:KEY -> condition
-    const forceIncludeMap = new Map<string, string>();
-    (forceIncludeSettings || []).forEach((s: any) => {
-      const cond = s.force_include_condition || 'always';
-      forceIncludeMap.set(makeHiddenKey(s.easyquote_product_id, s.prompt_name), cond);
+    // Hide-when-value map: productId:KEY -> normalized target value
+    const hideWhenValueMap = new Map<string, string>();
+    (hideWhenValueSettings || []).forEach((s: any) => {
+      const target = String(s.hide_when_value ?? '').trim().toLowerCase();
+      if (!target) return;
+      hideWhenValueMap.set(makeHiddenKey(s.easyquote_product_id, s.prompt_name), target);
       if (s.label && s.label !== s.prompt_name) {
-        forceIncludeMap.set(makeHiddenKey(s.easyquote_product_id, s.label), cond);
+        hideWhenValueMap.set(makeHiddenKey(s.easyquote_product_id, s.label), target);
       }
     });
-    console.log('📌 Force-include prompts:', Array.from(forceIncludeMap.entries()));
+    console.log('🙈 Hide-when-value prompts:', Array.from(hideWhenValueMap.entries()));
 
-    const evalForceCond = (cond: string, value: unknown): boolean => {
-      let v: any = value;
+    const isHiddenByValue = (productId: unknown, prompt: any, defsMap?: Record<string, PromptDef> | null): boolean => {
+      if (hideWhenValueMap.size === 0) return false;
+      let v: any = prompt?.value ?? prompt?.currentValue;
       if (v && typeof v === 'object' && 'value' in v) v = v.value;
-      if (cond === 'always') return true;
-      const str = String(v ?? '').trim();
-      if (cond === 'value_not_empty') return !!str && str.toLowerCase() !== 'no';
-      if (cond === 'value_gt_zero') {
-        const n = parseFloat(str.replace(/\./g, '').replace(',', '.'));
-        if (isNaN(n)) {
-          const n2 = parseFloat(str);
-          return !isNaN(n2) && n2 > 0;
-        }
-        return n > 0;
-      }
-      return true;
-    };
-
-    const isForceIncluded = (productId: unknown, prompt: any, defsMap?: Record<string, PromptDef> | null): boolean => {
-      if (forceIncludeMap.size === 0) return false;
+      const valStr = String(v ?? '').trim().toLowerCase();
       const candidates = [prompt?.name, prompt?.id, prompt?.label].filter(Boolean);
       if (defsMap && prompt?.label) {
         const def = getPromptDef(defsMap, prompt);
         if (def?.id) candidates.push(def.id);
       }
       for (const c of candidates) {
-        const cond = forceIncludeMap.get(makeHiddenKey(productId, c));
-        if (cond && evalForceCond(cond, prompt?.value)) return true;
+        const target = hideWhenValueMap.get(makeHiddenKey(productId, c));
+        if (target !== undefined && target === valStr) return true;
       }
       return false;
     };
