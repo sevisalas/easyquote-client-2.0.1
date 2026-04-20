@@ -9,7 +9,9 @@ import { useHoldedIntegration, HoldedExportMode } from "@/hooks/useHoldedIntegra
 import { useWooCommerceIntegration } from "@/hooks/useWooCommerceIntegration";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Download, Trash2 } from "lucide-react";
+import { Download, Trash2, Search } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { WooCommerceCsvUpload } from "@/components/integrations/WooCommerceCsvUpload";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -32,6 +34,9 @@ export default function Integrations() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [selectedExportMode, setSelectedExportMode] = useState<HoldedExportMode>('all');
   const [savingExportMode, setSavingExportMode] = useState(false);
+  const [auditing, setAuditing] = useState(false);
+  const [auditReport, setAuditReport] = useState<any | null>(null);
+  const [auditOpen, setAuditOpen] = useState(false);
   const { toast } = useToast();
 
   const currentOrganization = organization || membership?.organization;
@@ -433,6 +438,29 @@ export default function Integrations() {
     }
   };
 
+  const handleAuditDocuments = async () => {
+    if (!currentOrganization?.id) return;
+    setAuditing(true);
+    setAuditReport(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('holded-audit-document-contacts', {
+        body: { organizationId: currentOrganization.id },
+      });
+      if (error) throw error;
+      setAuditReport(data);
+      setAuditOpen(true);
+      toast({
+        title: "Auditoría completada",
+        description: `${data?.stats?.mismatches ?? 0} discrepancias, ${data?.stats?.notFound ?? 0} no encontrados, ${data?.stats?.orphan ?? 0} huérfanos`,
+      });
+    } catch (e: any) {
+      console.error(e);
+      toast({ title: "Error en auditoría", description: e.message, variant: "destructive" });
+    } finally {
+      setAuditing(false);
+    }
+  };
+
   if (loading || holdedLoading || wooLoading) {
     return (
       <div className="container mx-auto py-8">
@@ -684,6 +712,19 @@ export default function Integrations() {
                       https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/holded-zapier-webhook
                     </code>
                   </div>
+
+                  <Separator className="my-4" />
+
+                  <div>
+                    <h3 className="font-semibold mb-2">Auditoría de documentos exportados</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Comprueba uno a uno los presupuestos y pedidos exportados a Holded y verifica que el contacto en Holded coincide con el cliente local. No se modifica nada, solo se genera un informe.
+                    </p>
+                    <Button onClick={handleAuditDocuments} disabled={auditing} variant="outline" className="w-full">
+                      <Search className="h-4 w-4 mr-2" />
+                      {auditing ? "Auditando... (puede tardar varios minutos)" : "Auditar documentos exportados"}
+                    </Button>
+                  </div>
                 </div>
               </>
             )}
@@ -702,6 +743,57 @@ export default function Integrations() {
           </Card>
         )}
       </div>
+
+      <Dialog open={auditOpen} onOpenChange={setAuditOpen}>
+        <DialogContent className="max-w-5xl max-h-[85vh]">
+          <DialogHeader>
+            <DialogTitle>Informe de auditoría — Holded</DialogTitle>
+            <DialogDescription>
+              {auditReport?.stats && (
+                <>
+                  Presupuestos: {auditReport.stats.quotesChecked} · Pedidos: {auditReport.stats.ordersChecked} ·{" "}
+                  <span className="text-destructive font-medium">{auditReport.stats.mismatches} discrepancias</span> ·{" "}
+                  {auditReport.stats.notFound} no encontrados · {auditReport.stats.orphan} contactos huérfanos ·{" "}
+                  {auditReport.stats.errors} errores
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] pr-4">
+            <div className="space-y-2">
+              {(auditReport?.discrepancies ?? []).length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">✅ Todo coincide. No se encontraron discrepancias.</p>
+              ) : (
+                (auditReport?.discrepancies ?? []).map((d: any, idx: number) => (
+                  <div key={idx} className="border rounded-lg p-3 text-sm">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium">
+                        {d.kind === 'quote' ? '📄 Presupuesto' : '📦 Pedido'} {d.docNumber}
+                      </span>
+                      <span className={`text-xs px-2 py-0.5 rounded ${
+                        d.status === 'mismatch' ? 'bg-destructive/15 text-destructive' :
+                        d.status === 'not_found' ? 'bg-yellow-100 text-yellow-900 dark:bg-yellow-900/30 dark:text-yellow-200' :
+                        d.status === 'orphan_contact' ? 'bg-orange-100 text-orange-900 dark:bg-orange-900/30 dark:text-orange-200' :
+                        'bg-muted text-muted-foreground'
+                      }`}>{d.status}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-0.5">
+                      <div>Cliente local: <strong>{d.currentCustomerName}</strong> ({d.currentCustomerHoldedId ?? 'sin holded_id'})</div>
+                      {d.holdedContactId && (
+                        <div>Contacto en Holded: <strong>{d.holdedContactName ?? '?'}</strong> ({d.holdedContactId})</div>
+                      )}
+                      {d.suggestedCustomerName && (
+                        <div className="text-primary">→ Cliente sugerido en BBDD: <strong>{d.suggestedCustomerName}</strong></div>
+                      )}
+                      {d.detail && <div className="italic">{d.detail}</div>}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
