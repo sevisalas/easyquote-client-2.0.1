@@ -461,6 +461,33 @@ export default function Integrations() {
     }
   };
 
+  const handleReassignDocuments = async () => {
+    if (!currentOrganization?.id) return;
+    const confirmed = window.confirm(
+      "¿Reasignar los customer_id de TODOS los presupuestos y pedidos exportados al cliente real según Holded? Esta acción modifica la base de datos."
+    );
+    if (!confirmed) return;
+    setAuditing(true);
+    setAuditReport(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('holded-reassign-document-contacts', {
+        body: { organizationId: currentOrganization.id, dryRun: false },
+      });
+      if (error) throw error;
+      setAuditReport(data);
+      setAuditOpen(true);
+      toast({
+        title: "Reasignación completada",
+        description: `${data?.stats?.quotesReassigned ?? 0} presupuestos y ${data?.stats?.ordersReassigned ?? 0} pedidos reasignados`,
+      });
+    } catch (e: any) {
+      console.error(e);
+      toast({ title: "Error en reasignación", description: e.message, variant: "destructive" });
+    } finally {
+      setAuditing(false);
+    }
+  };
+
   if (loading || holdedLoading || wooLoading) {
     return (
       <div className="container mx-auto py-8">
@@ -722,7 +749,10 @@ export default function Integrations() {
                     </p>
                     <Button onClick={handleAuditDocuments} disabled={auditing} variant="outline" className="w-full">
                       <Search className="h-4 w-4 mr-2" />
-                      {auditing ? "Auditando... (puede tardar varios minutos)" : "Auditar documentos exportados"}
+                      {auditing ? "Procesando... (puede tardar varios minutos)" : "Auditar documentos exportados"}
+                    </Button>
+                    <Button onClick={handleReassignDocuments} disabled={auditing} variant="destructive" className="w-full">
+                      {auditing ? "Procesando..." : "Reasignar customer_id según Holded"}
                     </Button>
                   </div>
                 </div>
