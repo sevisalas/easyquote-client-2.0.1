@@ -712,6 +712,19 @@ export default function Integrations() {
                       https://xrjwvvemxfzmeogaptzz.supabase.co/functions/v1/holded-zapier-webhook
                     </code>
                   </div>
+
+                  <Separator className="my-4" />
+
+                  <div>
+                    <h3 className="font-semibold mb-2">Auditoría de documentos exportados</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Comprueba uno a uno los presupuestos y pedidos exportados a Holded y verifica que el contacto en Holded coincide con el cliente local. No se modifica nada, solo se genera un informe.
+                    </p>
+                    <Button onClick={handleAuditDocuments} disabled={auditing} variant="outline" className="w-full">
+                      <Search className="h-4 w-4 mr-2" />
+                      {auditing ? "Auditando... (puede tardar varios minutos)" : "Auditar documentos exportados"}
+                    </Button>
+                  </div>
                 </div>
               </>
             )}
