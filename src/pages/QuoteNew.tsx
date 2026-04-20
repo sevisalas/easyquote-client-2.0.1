@@ -499,7 +499,7 @@ export default function QuoteNew() {
         }
       });
       const norm = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
-      let forceIncludeMap = new Map<string, string>(); // key: `${productId}:${KEY_UPPER}` -> condition
+      const hideWhenValueMap = new Map<string, string>(); // key: `${productId}:${KEY_UPPER}` -> hide_when_value (normalized lowercase)
       const hiddenInDocsSet = new Set<string>(); // key: `${productId}:${KEY_UPPER}` for hide_in_documents OR admin_only
       const promptCellMap = new Map<string, string>(); // key: `${productId}:${UUID_OR_KEY}` -> CELL
       try {
@@ -509,12 +509,13 @@ export default function QuoteNew() {
           .eq('id', organizationId)
           .single();
         if (orgInfo?.api_user_id && productIdsForForce.size > 0) {
-          const token = await getEasyQuoteToken();
-          if (token) {
+          if (productIdsForForce.size > 0) {
             await Promise.all(Array.from(productIdsForForce).map(async (productId) => {
               try {
-                const { data } = await invokeEasyQuoteFunction<any[]>("easyquote-prompts", { token, productId });
-                if (!Array.isArray(data)) return;
+                const { data } = await supabase.functions.invoke('easyquote-prompts', {
+                  body: { productId },
+                });
+                if (!data || !Array.isArray(data)) return;
                 data.forEach((def: any) => {
                   const defId = String(def?.id ?? '').trim();
                   const rawCell = def?.promptCell ?? def?.prompt_cell ?? def?.cell ?? def?.promptcell;
@@ -530,15 +531,15 @@ export default function QuoteNew() {
           }
           const { data: allSettings } = await supabase
             .from('product_prompt_settings')
-            .select('easyquote_product_id, prompt_name, label, force_include_in_documents, force_include_condition, hide_in_documents, admin_only')
+            .select('easyquote_product_id, prompt_name, label, hide_when_value, hide_in_documents, admin_only')
             .eq('api_user_id', orgInfo.api_user_id)
             .in('easyquote_product_id', Array.from(productIdsForForce));
           (allSettings || []).forEach((s: any) => {
-            if (s.force_include_in_documents) {
-              const cond = s.force_include_condition || 'always';
-              forceIncludeMap.set(`${s.easyquote_product_id}:${norm(s.prompt_name)}`, cond);
+            if (s.hide_when_value && String(s.hide_when_value).trim() !== '') {
+              const hv = String(s.hide_when_value).trim().toLowerCase();
+              hideWhenValueMap.set(`${s.easyquote_product_id}:${norm(s.prompt_name)}`, hv);
               if (s.label && s.label !== s.prompt_name) {
-                forceIncludeMap.set(`${s.easyquote_product_id}:${norm(s.label)}`, cond);
+                hideWhenValueMap.set(`${s.easyquote_product_id}:${norm(s.label)}`, hv);
               }
             }
             if (s.hide_in_documents || s.admin_only) {
@@ -572,27 +573,14 @@ export default function QuoteNew() {
         return false;
       };
 
-      const evalForceCond = (cond: string, value: unknown): boolean => {
+      const isHiddenByValue = (productId: string, candidates: any[], value: unknown): boolean => {
+        if (hideWhenValueMap.size === 0) return false;
         let v: any = value;
-        if (v && typeof v === 'object' && 'value' in v) v = v.value;
-        if (cond === 'always') return true;
-        const str = String(v ?? '').trim();
-        if (cond === 'value_not_empty') return !!str && str.toLowerCase() !== 'no';
-        if (cond === 'value_gt_zero') {
-          const n = parseFloat(str.replace(/\./g, '').replace(',', '.'));
-          if (isNaN(n)) {
-            const n2 = parseFloat(str);
-            return !isNaN(n2) && n2 > 0;
-          }
-          return n > 0;
-        }
-        return true;
-      };
-      const isForceIncluded = (productId: string, candidates: string[], value: unknown): boolean => {
-        if (forceIncludeMap.size === 0) return false;
+        if (v && typeof v === 'object' && 'value' in v) v = (v as any).value;
+        const valStr = String(v ?? '').trim().toLowerCase();
         for (const key of expandCandidateKeys(productId, candidates)) {
-          const cond = forceIncludeMap.get(`${productId}:${key}`);
-          if (cond && evalForceCond(cond, value)) return true;
+          const target = hideWhenValueMap.get(`${productId}:${key}`);
+          if (target !== undefined && target === valStr) return true;
         }
         return false;
       };
