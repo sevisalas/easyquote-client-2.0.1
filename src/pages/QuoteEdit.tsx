@@ -604,6 +604,67 @@ export default function QuoteEdit() {
 
       // Insert all current items
       if (items.length > 0) {
+        // Prefetch force-include settings
+        const productIdsForForce = new Set<string>();
+        items.forEach((it: any) => {
+          if (it.productId) productIdsForForce.add(String(it.productId));
+          const cd = it.compositeData || it.composite_data;
+          if (cd?.activeComponents) {
+            cd.activeComponents.forEach((ac: any) => {
+              if (ac?.component_product_id) productIdsForForce.add(String(ac.component_product_id));
+              if (ac?.id) productIdsForForce.add(String(ac.id));
+            });
+          }
+        });
+        const forceIncludeMap = new Map<string, string>();
+        try {
+          const orgId = sessionStorage.getItem('selected_organization_id');
+          if (orgId && productIdsForForce.size > 0) {
+            const { data: orgInfo } = await supabase.from('organizations').select('api_user_id').eq('id', orgId).single();
+            if (orgInfo?.api_user_id) {
+              const { data: forceSettings } = await supabase
+                .from('product_prompt_settings')
+                .select('easyquote_product_id, prompt_name, label, force_include_condition')
+                .eq('api_user_id', orgInfo.api_user_id)
+                .eq('force_include_in_documents', true)
+                .in('easyquote_product_id', Array.from(productIdsForForce));
+              const norm = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
+              (forceSettings || []).forEach((s: any) => {
+                const cond = s.force_include_condition || 'always';
+                forceIncludeMap.set(`${s.easyquote_product_id}:${norm(s.prompt_name)}`, cond);
+                if (s.label && s.label !== s.prompt_name) {
+                  forceIncludeMap.set(`${s.easyquote_product_id}:${norm(s.label)}`, cond);
+                }
+              });
+            }
+          }
+        } catch (e) {
+          console.warn('[QuoteEdit] could not prefetch force-include settings:', e);
+        }
+        const evalForceCond = (cond: string, value: unknown): boolean => {
+          let v: any = value;
+          if (v && typeof v === 'object' && 'value' in v) v = (v as any).value;
+          if (cond === 'always') return true;
+          const str = String(v ?? '').trim();
+          if (cond === 'value_not_empty') return !!str && str.toLowerCase() !== 'no';
+          if (cond === 'value_gt_zero') {
+            const n = parseFloat(str.replace(/\./g, '').replace(',', '.'));
+            if (isNaN(n)) { const n2 = parseFloat(str); return !isNaN(n2) && n2 > 0; }
+            return n > 0;
+          }
+          return true;
+        };
+        const isForceIncluded = (productId: string, candidates: any[], value: unknown): boolean => {
+          if (forceIncludeMap.size === 0) return false;
+          const norm = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
+          for (const c of candidates) {
+            if (!c) continue;
+            const cond = forceIncludeMap.get(`${productId}:${norm(String(c))}`);
+            if (cond && evalForceCond(cond, value)) return true;
+          }
+          return false;
+        };
+
           const itemsToInsert = items.map((item, index) => {
           console.log(`📦 Preparando item ${index} para guardar:`, {
             id: item.id,
