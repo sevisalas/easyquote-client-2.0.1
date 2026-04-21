@@ -1719,9 +1719,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     
     // For composite products, use compositeMultiResults
     if (hasConfiguredComponents && compositeMultiResults) {
+      // Precio del producto padre/general (si > 0, se suma al total de componentes)
+      const parentPrice = safePrice(parseEsNumber((pricing as any)?.price ?? 0));
       return (compositeMultiResults as any[]).map((r: any) => {
         const outs: any[] = Array.isArray(r?.data?.outputValues) ? r.data.outputValues : [];
-        const totalNum = r.totalPrice ?? getCalculatedPriceFromOutputs(outs);
+        const componentsTotal = r.totalPrice ?? getCalculatedPriceFromOutputs(outs);
+        const totalNum = (Number.isFinite(componentsTotal) ? componentsTotal : 0) + parentPrice;
         const unit = r.qty > 0 && Number.isFinite(totalNum) ? totalNum / r.qty : NaN;
         return { qty: r.qty, outs, totalStr: totalNum, unit };
       });
