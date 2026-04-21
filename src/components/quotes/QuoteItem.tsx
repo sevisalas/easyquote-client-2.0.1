@@ -1773,7 +1773,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     
     // Para productos COMPUESTOS: usar compositeTotalPrice (suma de componentes)
     // Cuando multi-cantidades está activo, priorizar el precio de Q1 desde multiRows
-    if (hasConfiguredComponents && (compositeTotalPrice > 0 || (multiEnabled && multiRows.length > 0))) {
+    const parentBasePrice = safePrice(parseEsNumber((pricing as any)?.price ?? 0));
+    if (hasConfiguredComponents && (compositeTotalPrice > 0 || parentBasePrice > 0 || (multiEnabled && multiRows.length > 0))) {
       let additionalsTotal = 0;
       let quantity = 1;
       
@@ -1786,7 +1787,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
           : safePrice(parseEsNumber(q1Price ?? 0));
         quantity = multiRows[0]?.qty || 1;
       } else {
-        baseCompositePrice = compositeTotalPrice;
+        // Sumar el precio del producto general/padre al total de componentes
+        baseCompositePrice = safePrice(compositeTotalPrice + parentBasePrice);
         if (qtyPrompt && promptValues[qtyPrompt]) {
           const qtyValue = promptValues[qtyPrompt];
           const rawQty = (qtyValue && typeof qtyValue === 'object' && 'value' in qtyValue) 
