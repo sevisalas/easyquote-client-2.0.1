@@ -868,7 +868,7 @@ export default function ProductTestPage({
       };
     }
     return productDetail;
-  }, [productDetail, pricing?.prompts]);
+  }, [productDetail, pricing]);
 
   // Derive outputs from pricing data - based on real API response structure
   const outputs = useMemo(() => {
