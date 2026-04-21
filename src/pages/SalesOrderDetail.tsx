@@ -1325,6 +1325,21 @@ const SalesOrderDetail = () => {
                   } else {
                     setOrder({ ...order, notes: val });
                     toast.success('Observaciones actualizadas');
+                    // Sincronizar con Holded si el pedido ya está exportado
+                    if (isHoldedActive && order.holded_document_id) {
+                      try {
+                        const { error: hErr } = await supabase.functions.invoke('holded-update-order', {
+                          body: { orderId: order.id }
+                        });
+                        if (hErr) {
+                          toast.error('Observaciones guardadas, pero no se sincronizaron con Holded');
+                        } else {
+                          toast.success('Sincronizado con Holded');
+                        }
+                      } catch (e) {
+                        toast.error('Error sincronizando con Holded');
+                      }
+                    }
                   }
                 }}
               />
