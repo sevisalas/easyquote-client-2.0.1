@@ -859,10 +859,16 @@ export default function ProductTestPage({
   const productForPrompts = useMemo(() => {
     if (!productDetail) return null;
     if (pricing?.prompts && Array.isArray(pricing.prompts)) {
-      return { ...productDetail, prompts: pricing.prompts };
+      return {
+        ...productDetail,
+        ...pricing,
+        prompts: pricing.prompts,
+        outputValues: pricing.outputValues ?? pricing.outputs ?? productDetail.outputValues,
+        outputs: pricing.outputs ?? pricing.outputValues ?? productDetail.outputs,
+      };
     }
     return productDetail;
-  }, [productDetail, pricing?.prompts]);
+  }, [productDetail, pricing]);
 
   // Derive outputs from pricing data - based on real API response structure
   const outputs = useMemo(() => {
