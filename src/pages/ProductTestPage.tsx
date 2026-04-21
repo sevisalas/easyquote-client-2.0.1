@@ -1180,6 +1180,15 @@ export default function ProductTestPage({
     return total;
   }, [outputsByComponent, activeComponentsForPrice]);
 
+  // Regla de compuestos: precio general/padre + componentes, siempre.
+  const configuredCompositeTotalPrice = useMemo(() => {
+    return apiPrice + compositeTotalPrice;
+  }, [apiPrice, compositeTotalPrice]);
+
+  const legacyCompositeTotalPrice = useMemo(() => {
+    return apiPrice + calculatedTotalPrice;
+  }, [apiPrice, calculatedTotalPrice]);
+
   const imageOutputs = useMemo(() => {
     return generalOutputs.filter((o: any) => {
       const value = String(o?.value ?? "");
@@ -1542,7 +1551,7 @@ export default function ProductTestPage({
                                     : "text-lg font-semibold"
                                 }
                               >
-                                {formatCurrency(compositeTotalPrice)}
+                                {formatCurrency(configuredCompositeTotalPrice)}
                               </span>
                             </div>
 
@@ -1592,7 +1601,7 @@ export default function ProductTestPage({
                                 variant="ghost"
                                 className="w-full text-xs"
                                 onClick={() => {
-                                  const prefill = (modifiedPrice ?? compositeTotalPrice).toFixed(2).replace(".", ",");
+                                  const prefill = (modifiedPrice ?? configuredCompositeTotalPrice).toFixed(2).replace(".", ",");
                                   setLocalPriceInput(prefill);
                                   setIsEditingPrice(true);
                                 }}
@@ -1732,7 +1741,7 @@ export default function ProductTestPage({
 
                           {/* Precio (simple = API / compuesto = suma de componentes) + opción de modificar */}
                           {(() => {
-                            const basePrice = isComposite ? calculatedTotalPrice : apiPrice;
+                            const basePrice = isComposite ? legacyCompositeTotalPrice : apiPrice;
                             const hasPriceOutput = generalOutputs.some(
                               (o: any) => String(o?.type || o?.outputType || "").toLowerCase() === "price"
                             );
