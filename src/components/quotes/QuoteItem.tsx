@@ -1719,8 +1719,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     
     // For composite products, use compositeMultiResults
     if (hasConfiguredComponents && compositeMultiResults) {
-      // Precio del producto padre/general (si > 0, se suma al total de componentes)
-      const parentPrice = safePrice(parseEsNumber((pricing as any)?.price ?? 0));
+      // Precio del producto padre/general: se suma siempre al total de componentes.
+      const parentPrice = safePrice(parseEsNumber((priceOutput as any)?.value ?? (pricing as any)?.price ?? 0));
       return (compositeMultiResults as any[]).map((r: any) => {
         const outs: any[] = Array.isArray(r?.data?.outputValues) ? r.data.outputValues : [];
         const componentsTotal = r.totalPrice ?? getCalculatedPriceFromOutputs(outs);
@@ -1742,7 +1742,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       const unit = r.qty > 0 && Number.isFinite(totalNum) ? totalNum / r.qty : NaN;
       return { qty: r.qty, outs, totalStr: totalNum, unit };
     });
-  }, [multiResults, compositeMultiResults, hasConfiguredComponents, initialData?.multi?.rows]);
+  }, [multiResults, compositeMultiResults, hasConfiguredComponents, initialData?.multi?.rows, priceOutput, pricing]);
 
   // Calculate final price with additionals
   const finalPrice = useMemo(() => {
@@ -1773,7 +1773,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     
     // Para productos COMPUESTOS: usar compositeTotalPrice (suma de componentes)
     // Cuando multi-cantidades está activo, priorizar el precio de Q1 desde multiRows
-    const parentBasePrice = safePrice(parseEsNumber((pricing as any)?.price ?? 0));
+    const parentBasePrice = safePrice(parseEsNumber((priceOutput as any)?.value ?? (pricing as any)?.price ?? 0));
     if (hasConfiguredComponents && (compositeTotalPrice > 0 || parentBasePrice > 0 || (multiEnabled && multiRows.length > 0))) {
       let additionalsTotal = 0;
       let quantity = 1;
@@ -1889,7 +1889,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     if (!hasConfiguredComponents || multiEnabled) return null;
 
     let quantity = 1;
-    let baseCompositePrice = compositeTotalPrice;
+    const parentBasePrice = safePrice(parseEsNumber((priceOutput as any)?.value ?? (pricing as any)?.price ?? 0));
+    let baseCompositePrice = safePrice(compositeTotalPrice + parentBasePrice);
 
     if (qtyPrompt && promptValues[qtyPrompt]) {
       const qtyValue = promptValues[qtyPrompt];
@@ -1926,7 +1927,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       additionalsTotal,
       total: safePrice(basePrice + additionalsTotal),
     };
-  }, [itemAdditionals, multiEnabled, qtyPrompt, promptValues, hasConfiguredComponents, compositeTotalPrice, customerDiscounts]);
+  }, [itemAdditionals, multiEnabled, qtyPrompt, promptValues, hasConfiguredComponents, compositeTotalPrice, priceOutput, pricing, customerDiscounts]);
 
   // Calculate additionals breakdown for a specific quantity
   const calculateAdditionalsForQty = useMemo(() => {
