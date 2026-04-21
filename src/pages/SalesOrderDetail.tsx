@@ -1304,23 +1304,32 @@ const SalesOrderDetail = () => {
             </>
           )}
           
-          {/* Descripción y notas */}
-          {(order.description || order.notes) && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-2">
-              {order.description && (
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">descripción</label>
-                  <p className="text-sm mt-0.5 whitespace-pre-wrap">{order.description}</p>
-                </div>
-              )}
-              {order.notes && (
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">notas</label>
-                  <p className="text-sm mt-0.5 whitespace-pre-wrap">{order.notes}</p>
-                </div>
-              )}
+          {/* Descripción y notas/observaciones del pedido (editable) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+            {order.description && (
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">descripción</label>
+                <p className="text-sm mt-0.5 whitespace-pre-wrap">{order.description}</p>
+              </div>
+            )}
+            <div className={order.description ? '' : 'md:col-span-2'}>
+              <InstructionsField
+                value={order.notes || ''}
+                onSave={async (val) => {
+                  const { error } = await supabase
+                    .from('sales_orders')
+                    .update({ notes: val || null })
+                    .eq('id', order.id);
+                  if (error) {
+                    toast.error('No se pudieron guardar las observaciones');
+                  } else {
+                    setOrder({ ...order, notes: val });
+                    toast.success('Observaciones actualizadas');
+                  }
+                }}
+              />
             </div>
-          )}
+          </div>
           
           {/* Barra de estados del pedido */}
           {order.status !== 'cancelled' ? (
