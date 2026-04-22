@@ -12,8 +12,9 @@ export interface Template7PaginationPage<T = Template7PaginationItem> {
   showSummary: boolean;
 }
 
-const STANDARD_PAGE_CAPACITY = 48;
-const LAST_PAGE_CAPACITY = 40;
+const STANDARD_PAGE_CAPACITY = 34;
+const LAST_PAGE_CAPACITY = 28;
+const FIXED_FOOTER_LINES = 7;
 
 const stripHtml = (value: string) =>
   String(value || '')
@@ -78,7 +79,7 @@ const estimateSummaryLines = ({
   quote: any;
   quoteAdditionals: any[];
 }) => {
-  let lines = 0;
+  let lines = FIXED_FOOTER_LINES;
 
   if (quoteAdditionals.length > 0) {
     lines += quoteAdditionals.length;
