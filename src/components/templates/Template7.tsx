@@ -18,6 +18,9 @@ const PAGE_STYLE: React.CSSProperties = {
   padding: '0',
 };
 
+const PRICE_COLUMN_WIDTH = '112px';
+const TOTALS_BLOCK_WIDTH = '280px';
+
 export default function Template7({ data }: Template7Props) {
   const quote = data.quote || {};
   const customer = data.customer || {};
@@ -163,7 +166,7 @@ export default function Template7({ data }: Template7Props) {
             <tr style={{ backgroundColor: '#6a9e3a', color: 'white' }}>
               <th style={{ textAlign: 'left', padding: '6px 8px', fontSize: '12px', fontWeight: 'bold' }}>CONCEPTO</th>
               <th style={{ textAlign: 'center', padding: '6px 8px', fontSize: '12px', fontWeight: 'bold', width: '55px' }}>UNID.</th>
-              <th style={{ textAlign: 'right', padding: '6px 8px', fontSize: '12px', fontWeight: 'bold', width: '85px' }}>PRECIO</th>
+               <th style={{ textAlign: 'right', padding: '6px 8px', fontSize: '12px', fontWeight: 'bold', width: PRICE_COLUMN_WIDTH }}>PRECIO</th>
             </tr>
           </thead>
           <tbody>
@@ -268,7 +271,7 @@ export default function Template7({ data }: Template7Props) {
                   <td style={{ padding: '4px 8px', textAlign: 'center', fontSize: '12px' }}>
                     {new Intl.NumberFormat('es-ES').format(typeof getItemQuantity(item) === 'string' ? parseFloat(String(getItemQuantity(item)).replace(/\./g, '').replace(',', '.')) : (getItemQuantity(item) || 1))}
                   </td>
-                  <td style={{ padding: '4px 8px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                   <td style={{ padding: '4px 8px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap', width: PRICE_COLUMN_WIDTH, minWidth: PRICE_COLUMN_WIDTH }}>
                     {fmtEUR(item.price || 0)}
                   </td>
                 </tr>
@@ -292,7 +295,7 @@ export default function Template7({ data }: Template7Props) {
                       <td style={{ padding: '4px 8px', textAlign: 'center', fontSize: '12px' }}>
                         {new Intl.NumberFormat('es-ES').format(me.qty)}
                       </td>
-                      <td style={{ padding: '4px 8px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                       <td style={{ padding: '4px 8px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap', width: PRICE_COLUMN_WIDTH, minWidth: PRICE_COLUMN_WIDTH }}>
                         {fmtEUR(me.price + adjTotal)}
                       </td>
                     </tr>
@@ -315,7 +318,7 @@ export default function Template7({ data }: Template7Props) {
                       {label}
                     </span>
                   </td>
-                  <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                   <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap', width: PRICE_COLUMN_WIDTH, minWidth: PRICE_COLUMN_WIDTH }}>
                     {fmtEUR(amount)}
                   </td>
                 </tr>
@@ -326,28 +329,28 @@ export default function Template7({ data }: Template7Props) {
 
         {/* Totales */}
         {page.showSummary && (items.length > 1 || quoteAdditionals.length > 0 || quote.tax_amount > 0 || quote.discount_amount > 0) && (
-          <div style={{ marginLeft: 'auto', width: '200px', marginBottom: '14px' }}>
+          <div style={{ marginLeft: 'auto', width: TOTALS_BLOCK_WIDTH, minWidth: TOTALS_BLOCK_WIDTH, marginBottom: '14px' }}>
             {hasSubtotalDifference && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '3px' }}>
                 <span style={{ color: '#666' }}>Subtotal:</span>
-                <span style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>{fmtEUR(quote.subtotal || 0)}</span>
+                <span style={{ fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0, minWidth: PRICE_COLUMN_WIDTH, textAlign: 'right' }}>{fmtEUR(quote.subtotal || 0)}</span>
               </div>
             )}
             {quote.tax_amount > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '3px' }}>
                 <span style={{ color: '#666' }}>IVA (21%):</span>
-                <span style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>{fmtEUR(quote.tax_amount || 0)}</span>
+                <span style={{ fontWeight: 500, whiteSpace: 'nowrap', flexShrink: 0, minWidth: PRICE_COLUMN_WIDTH, textAlign: 'right' }}>{fmtEUR(quote.tax_amount || 0)}</span>
               </div>
             )}
             {quote.discount_amount > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#dc2626', marginBottom: '3px' }}>
                 <span>Descuento:</span>
-                <span style={{ whiteSpace: 'nowrap' }}>-{fmtEUR(quote.discount_amount || 0)}</span>
+                <span style={{ whiteSpace: 'nowrap', flexShrink: 0, minWidth: PRICE_COLUMN_WIDTH, textAlign: 'right' }}>-{fmtEUR(quote.discount_amount || 0)}</span>
               </div>
             )}
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', fontWeight: 'bold', color: '#4a7c2e', borderTop: '2px solid #4a7c2e', paddingTop: '6px', gap: '12px' }}>
-              <span>TOTAL (sin I.V.A.):</span>
-              <span style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>{fmtEUR(quote.final_price || 0)}</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: '15px', fontWeight: 'bold', color: '#4a7c2e', borderTop: '2px solid #4a7c2e', paddingTop: '6px', gap: '16px' }}>
+              <span style={{ flex: '1 1 auto', minWidth: 0 }}>TOTAL (sin I.V.A.):</span>
+              <span style={{ whiteSpace: 'nowrap', flex: '0 0 auto', minWidth: '132px', textAlign: 'right' }}>{fmtEUR(quote.final_price || 0)}</span>
             </div>
           </div>
         )}
