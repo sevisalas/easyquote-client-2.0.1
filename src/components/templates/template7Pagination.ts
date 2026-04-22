@@ -13,8 +13,8 @@ export interface Template7PaginationPage<T = Template7PaginationItem> {
 }
 
 const STANDARD_PAGE_CAPACITY = 34;
-const LAST_PAGE_CAPACITY = 31;
-const FIXED_FOOTER_LINES = 7;
+const LAST_PAGE_CAPACITY = 34;
+const FIXED_FOOTER_LINES = 6;
 
 const stripHtml = (value: string) =>
   String(value || '')
@@ -174,6 +174,11 @@ export const paginateTemplate7Items = <T extends Template7PaginationItem>({
 
   const lastContentPage = pages[pages.length - 1];
   if (lastContentPage && getItemsLines(lastContentPage.items) + summaryLines <= LAST_PAGE_CAPACITY) {
+    lastContentPage.showSummary = true;
+    return pages;
+  }
+
+  if (summaryPageItems.length === 0 && lastContentPage && getItemsLines(lastContentPage.items) + summaryLines <= STANDARD_PAGE_CAPACITY + 1) {
     lastContentPage.showSummary = true;
     return pages;
   }
