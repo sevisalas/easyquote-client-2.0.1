@@ -15,6 +15,7 @@ const Index = () => {
   const [userName, setUserName] = useState<string>("");
   const [userId, setUserId] = useState<string>("");
   const {
+    organization,
     isSuperAdmin,
     isERPSubscription,
     canAccessProduccion,
@@ -23,6 +24,7 @@ const Index = () => {
     membership
   } = useSubscription();
   const isMobile = useIsMobile();
+  const activeOrganizationId = organization?.id || membership?.organization?.id || null;
 
   // Redirigir a usuarios API puros a su página específica
   useEffect(() => {
@@ -44,7 +46,7 @@ const Index = () => {
           user
         }
       } = await supabase.auth.getUser();
-      if (!user) return {
+      if (!user || !activeOrganizationId) return {
         total: 0,
         draft: 0,
         sent: 0,
@@ -57,7 +59,7 @@ const Index = () => {
       const {
         data,
         error
-      } = await supabase.from("quotes").select("status");
+      } = await supabase.from("quotes").select("status").eq("organization_id", activeOrganizationId);
       if (error) throw error;
       return {
         total: data?.length ?? 0,
@@ -66,7 +68,8 @@ const Index = () => {
         approved: data?.filter((q) => q.status === "approved").length ?? 0,
         rejected: data?.filter((q) => q.status === "rejected").length ?? 0
       };
-    }
+    },
+    enabled: !!activeOrganizationId
   });
 
   // Obtener estadísticas de pedidos (solo para usuarios con acceso a producción)
@@ -80,7 +83,7 @@ const Index = () => {
           user
         }
       } = await supabase.auth.getUser();
-      if (!user) return {
+      if (!user || !activeOrganizationId) return {
         total: 0,
         draft: 0,
         pending: 0,
@@ -93,7 +96,7 @@ const Index = () => {
       const {
         data,
         error
-      } = await supabase.from("sales_orders").select("status");
+      } = await supabase.from("sales_orders").select("status").eq("organization_id", activeOrganizationId);
       if (error) throw error;
       return {
         total: data?.length ?? 0,
@@ -103,7 +106,7 @@ const Index = () => {
         completed: data?.filter((o) => o.status === "completed").length ?? 0
       };
     },
-    enabled: canAccessProduccion()
+    enabled: canAccessProduccion() && !!activeOrganizationId
   });
   useEffect(() => {
     document.title = "Inicio | EasyQuote";
