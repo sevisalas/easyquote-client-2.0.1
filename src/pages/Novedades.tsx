@@ -26,6 +26,18 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.7.18",
+    date: "2026-04-22",
+    changes: {
+      added: [
+        "Filtro por texto en listados: presupuestos y pedidos permiten buscar por texto libre sobre número, cliente y datos visibles",
+      ],
+      fixed: [
+        "Textos largos en configuración de producto: los encabezados mantienen un tamaño estable en pantalla y ya no desbordan la vista",
+      ],
+    },
+  },
+  {
     version: "2.6.3",
     date: "2026-03-14",
     changes: {

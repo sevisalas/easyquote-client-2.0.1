@@ -7,6 +7,18 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [2.7.13] - 2026-04-14
 
+## [2.7.18] - 2026-04-22
+
+### Añadido
+- **Filtro por texto en listados**: Los listados de presupuestos y pedidos permiten buscar por texto libre sobre número, cliente y datos visibles
+
+### Corregido
+- **Textos desproporcionados en configuración de producto**: Los encabezados de prompts y salidas con nombres largos mantienen un tamaño estable en pantalla y ya no rompen el layout
+
+---
+
+## [2.7.13] - 2026-04-14
+
 ### Corregido
 - **Propagación de prompts en compuestos**: Los valores heredados del producto padre ya no son sobreescritos por valores antiguos guardados del componente, garantizando que los cambios se propaguen correctamente
 
