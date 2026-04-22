@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React from 'react';
 import { paginateTemplate7Items } from './template7Pagination';
+import { PDF_VARIABLE_TEXT_RESET_CSS, sanitizePdfVariableHtml } from './pdfVariableText';
 
 interface Template8Props {
   data: any;
@@ -81,6 +82,7 @@ export default function Template8({ data }: Template8Props) {
           margin: 0 !important;
           padding: 0 !important;
         }
+        ${PDF_VARIABLE_TEXT_RESET_CSS}
       `}</style>
 
       {/* Watermark for Draft */}
@@ -206,7 +208,7 @@ export default function Template8({ data }: Template8Props) {
                 {(!item.prompts || item.prompts.length === 0) && item.description && (
                   <tr style={{ borderBottom: 'none' }}>
                     <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
-                      <div style={{ fontSize: '11px', color: '#555', lineHeight: '1.4', whiteSpace: 'pre-line' }} dangerouslySetInnerHTML={{ __html: item.description.replace(/\n/g, '<br/>') }} />
+                      <div data-pdf-variable-text style={{ fontSize: '11px', color: '#555', lineHeight: '1.4', whiteSpace: 'pre-line' }} dangerouslySetInnerHTML={{ __html: sanitizePdfVariableHtml(item.description.replace(/\n/g, '<br/>')) }} />
                     </td>
                   </tr>
                 )}
@@ -384,7 +386,8 @@ export default function Template8({ data }: Template8Props) {
             textAlign: 'left',
             zIndex: 1,
           }}
-          dangerouslySetInnerHTML={{ __html: data.config.footerText }}
+          data-pdf-variable-text
+          dangerouslySetInnerHTML={{ __html: sanitizePdfVariableHtml(data.config.footerText) }}
         />
       )}
 
