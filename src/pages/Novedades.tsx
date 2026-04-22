@@ -26,6 +26,15 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.7.19",
+    date: "2026-04-22",
+    changes: {
+      fixed: [
+        "Dashboard separado por organización activa: las estadísticas rápidas de presupuestos y pedidos ya no mezclan datos entre Anebri y Campillo",
+      ],
+    },
+  },
+  {
     version: "2.7.18",
     date: "2026-04-22",
     changes: {

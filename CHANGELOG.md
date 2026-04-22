@@ -5,7 +5,14 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
-## [2.7.13] - 2026-04-14
+## [2.7.18] - 2026-04-22
+
+## [2.7.19] - 2026-04-22
+
+### Corregido
+- **Dashboard separado por organización activa**: Las estadísticas rápidas de presupuestos y pedidos filtran por `organization_id` y ya no mezclan datos entre Anebri y Campillo
+
+---
 
 ## [2.7.18] - 2026-04-22
 

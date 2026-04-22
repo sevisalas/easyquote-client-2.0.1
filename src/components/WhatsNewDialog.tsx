@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Search } from "lucide-react";
 
-const CURRENT_VERSION = "2.7.18";
+const CURRENT_VERSION = "2.7.19";
 const SILENT_UPDATE = true;
 const LS_KEY = "whats_new_seen_version";
 
@@ -23,6 +23,12 @@ interface ReleaseNote {
 }
 
 const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    icon: <Sparkles className="h-5 w-5 text-primary" />,
+    title: "Dashboard separado por organización activa",
+    description:
+      "Las estadísticas rápidas de presupuestos y pedidos ya no mezclan datos entre Anebri y Campillo: ahora muestran solo la organización seleccionada.",
+  },
   {
     icon: <Search className="h-5 w-5 text-primary" />,
     title: "Filtro por texto en presupuestos y pedidos",
