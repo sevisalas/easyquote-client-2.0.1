@@ -59,7 +59,7 @@ export default function Template8({ data }: Template8Props) {
   return (
     <>
       {paginatedPages.map((page, pageIndex) => (
-    <div data-template8-page key={`template8-page-${pageIndex}`} style={PAGE_STYLE}>
+    <div data-template8-page data-terms-page key={`template8-page-${pageIndex}`} style={PAGE_STYLE}>
       {/* Background image */}
       <img
         src="/assets/anebri-page1-bg.png"
