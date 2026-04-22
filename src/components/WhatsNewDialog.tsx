@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Search } from "lucide-react";
 
-const CURRENT_VERSION = "2.7.17";
+const CURRENT_VERSION = "2.7.18";
 const SILENT_UPDATE = true;
 const LS_KEY = "whats_new_seen_version";
 
@@ -28,6 +28,12 @@ const RELEASE_NOTES: ReleaseNote[] = [
     title: "Filtro por texto en presupuestos y pedidos",
     description:
       "Ahora puedes buscar presupuestos y pedidos de venta por texto libre, filtrando por número, cliente o cualquier dato visible en el listado.",
+  },
+  {
+    icon: <Sparkles className="h-5 w-5 text-primary" />,
+    title: "Textos largos controlados en configuración de producto",
+    description:
+      "Los encabezados con nombres largos dentro de la configuración de producto ya no se agrandan de forma desproporcionada y mantienen un tamaño estable en pantalla.",
   },
 ];
 
