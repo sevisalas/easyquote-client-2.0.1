@@ -28,7 +28,7 @@ export default function Template7({ data }: Template7Props) {
   const fmtEUR = (amount: number) => {
     const parts = amount.toFixed(2).split('.');
     const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    return `${intPart},${parts[1]} €`;
+    return `${intPart},${parts[1]}\u00A0€`;
   };
 
   const getItemQuantity = (item: any) => {
@@ -268,7 +268,7 @@ export default function Template7({ data }: Template7Props) {
                   <td style={{ padding: '4px 8px', textAlign: 'center', fontSize: '12px' }}>
                     {new Intl.NumberFormat('es-ES').format(typeof getItemQuantity(item) === 'string' ? parseFloat(String(getItemQuantity(item)).replace(/\./g, '').replace(',', '.')) : (getItemQuantity(item) || 1))}
                   </td>
-                  <td style={{ padding: '4px 8px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold' }}>
+                  <td style={{ padding: '4px 8px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
                     {fmtEUR(item.price || 0)}
                   </td>
                 </tr>
@@ -292,7 +292,7 @@ export default function Template7({ data }: Template7Props) {
                       <td style={{ padding: '4px 8px', textAlign: 'center', fontSize: '12px' }}>
                         {new Intl.NumberFormat('es-ES').format(me.qty)}
                       </td>
-                      <td style={{ padding: '4px 8px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold' }}>
+                      <td style={{ padding: '4px 8px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
                         {fmtEUR(me.price + adjTotal)}
                       </td>
                     </tr>
@@ -315,7 +315,7 @@ export default function Template7({ data }: Template7Props) {
                       {label}
                     </span>
                   </td>
-                  <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold' }}>
+                  <td style={{ padding: '6px 8px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
                     {fmtEUR(amount)}
                   </td>
                 </tr>
@@ -330,24 +330,24 @@ export default function Template7({ data }: Template7Props) {
             {hasSubtotalDifference && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '3px' }}>
                 <span style={{ color: '#666' }}>Subtotal:</span>
-                <span style={{ fontWeight: 500 }}>{fmtEUR(quote.subtotal || 0)}</span>
+                <span style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>{fmtEUR(quote.subtotal || 0)}</span>
               </div>
             )}
             {quote.tax_amount > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '3px' }}>
                 <span style={{ color: '#666' }}>IVA (21%):</span>
-                <span style={{ fontWeight: 500 }}>{fmtEUR(quote.tax_amount || 0)}</span>
+                <span style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>{fmtEUR(quote.tax_amount || 0)}</span>
               </div>
             )}
             {quote.discount_amount > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#dc2626', marginBottom: '3px' }}>
                 <span>Descuento:</span>
-                <span>-{fmtEUR(quote.discount_amount || 0)}</span>
+                <span style={{ whiteSpace: 'nowrap' }}>-{fmtEUR(quote.discount_amount || 0)}</span>
               </div>
             )}
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', fontWeight: 'bold', color: '#4a7c2e', borderTop: '2px solid #4a7c2e', paddingTop: '6px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', fontWeight: 'bold', color: '#4a7c2e', borderTop: '2px solid #4a7c2e', paddingTop: '6px', gap: '12px' }}>
               <span>TOTAL (sin I.V.A.):</span>
-              <span>{fmtEUR(quote.final_price || 0)}</span>
+              <span style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>{fmtEUR(quote.final_price || 0)}</span>
             </div>
           </div>
         )}
