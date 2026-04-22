@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React from 'react';
+import { paginateTemplate7Items } from './template7Pagination';
 
 interface Template7Props {
   data: any;
@@ -22,6 +23,7 @@ export default function Template7({ data }: Template7Props) {
   const customer = data.customer || {};
   const items = data.items || [];
   const quoteAdditionals = data.quote_additionals || [];
+  const paginatedPages = paginateTemplate7Items({ items, quote, quoteAdditionals });
 
   const fmtEUR = (amount: number) => {
     const parts = amount.toFixed(2).split('.');
@@ -43,7 +45,9 @@ export default function Template7({ data }: Template7Props) {
   const hasSubtotalDifference = (quote.tax_amount > 0) || (quote.discount_amount > 0);
 
   return (
-    <div data-template7-page style={PAGE_STYLE}>
+    <>
+      {paginatedPages.map((page, pageIndex) => (
+    <div data-template7-page data-terms-page key={`template7-page-${pageIndex}`} style={PAGE_STYLE}>
       {/* Background image */}
       <img
         src="/assets/campillo-page1-bg.png?v=20260224b"
@@ -163,7 +167,7 @@ export default function Template7({ data }: Template7Props) {
             </tr>
           </thead>
           <tbody>
-            {items.map((item: any, index: number) => {
+            {page.items.map((item: any, index: number) => {
               const hasMulti = item.multi_extra && item.multi_extra.length > 0;
 
               return (
@@ -297,7 +301,7 @@ export default function Template7({ data }: Template7Props) {
               </React.Fragment>
               );
             })}
-            {quoteAdditionals.length > 0 && quoteAdditionals.map((adj: any, aIdx: number) => {
+            {page.showSummary && quoteAdditionals.length > 0 && quoteAdditionals.map((adj: any, aIdx: number) => {
               let amount = adj.value;
               let label = adj.name;
               if (adj.type === 'percentage') {
@@ -321,7 +325,7 @@ export default function Template7({ data }: Template7Props) {
         </table>
 
         {/* Totales */}
-        {(items.length > 1 || quoteAdditionals.length > 0 || quote.tax_amount > 0 || quote.discount_amount > 0) && (
+        {page.showSummary && (items.length > 1 || quoteAdditionals.length > 0 || quote.tax_amount > 0 || quote.discount_amount > 0) && (
           <div style={{ marginLeft: 'auto', width: '200px', marginBottom: '14px' }}>
             {hasSubtotalDifference && (
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '3px' }}>
@@ -349,7 +353,7 @@ export default function Template7({ data }: Template7Props) {
         )}
 
         {/* Notas */}
-        {quote.notes && (
+        {page.showSummary && quote.notes && (
           <div style={{ marginBottom: '10px' }}>
             <h3 style={{ fontSize: '11px', fontWeight: 'bold', color: '#1a3a5c', textTransform: 'uppercase', marginBottom: '2px' }}>Notas</h3>
             <p style={{ fontSize: '11px', color: '#444', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{quote.notes}</p>
@@ -358,7 +362,7 @@ export default function Template7({ data }: Template7Props) {
       </div>
 
       {/* Texto legal configurable - izquierda, mitad de ancho */}
-      {data.config?.footerText && (
+      {page.showSummary && data.config?.footerText && (
         <div
           style={{
             position: 'absolute',
@@ -396,5 +400,7 @@ export default function Template7({ data }: Template7Props) {
         <p style={{ margin: 0 }}>www.campillonevado.es</p>
       </div>
     </div>
+      ))}
+    </>
   );
 }
