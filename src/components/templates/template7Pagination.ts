@@ -13,7 +13,7 @@ export interface Template7PaginationPage<T = Template7PaginationItem> {
 }
 
 const STANDARD_PAGE_CAPACITY = 34;
-const LAST_PAGE_CAPACITY = 28;
+const LAST_PAGE_CAPACITY = 31;
 const FIXED_FOOTER_LINES = 7;
 
 const stripHtml = (value: string) =>
@@ -71,6 +71,9 @@ const estimateItemLines = (item: Template7PaginationItem) => {
 
   return lines + 0.8;
 };
+
+const getItemsLines = (items: Template7PaginationItem[]) =>
+  items.reduce((total, item) => total + estimateItemLines(item), 0);
 
 const estimateSummaryLines = ({
   quote,
@@ -138,11 +141,44 @@ export const paginateTemplate7Items = <T extends Template7PaginationItem>({
     quoteAdditionals,
   });
 
-  if (currentLines + summaryLines > LAST_PAGE_CAPACITY) {
-    pages.push({ items: [], showSummary: true });
-  } else {
+  if (currentLines + summaryLines <= LAST_PAGE_CAPACITY) {
     pages[pages.length - 1].showSummary = true;
+    return pages;
   }
+
+  const summaryPageItems: T[] = [];
+  let summaryPageLines = summaryLines;
+
+  for (let pageIndex = pages.length - 1; pageIndex >= 0; pageIndex -= 1) {
+    while (pages[pageIndex].items.length > 0) {
+      const candidate = pages[pageIndex].items[pages[pageIndex].items.length - 1] as T;
+      const candidateLines = estimateItemLines(candidate);
+
+      if (summaryPageLines + candidateLines > LAST_PAGE_CAPACITY) {
+        break;
+      }
+
+      pages[pageIndex].items.pop();
+      summaryPageItems.unshift(candidate);
+      summaryPageLines += candidateLines;
+    }
+
+    if (summaryPageItems.length > 0) {
+      break;
+    }
+  }
+
+  while (pages.length > 0 && pages[pages.length - 1].items.length === 0) {
+    pages.pop();
+  }
+
+  const lastContentPage = pages[pages.length - 1];
+  if (lastContentPage && getItemsLines(lastContentPage.items) + summaryLines <= LAST_PAGE_CAPACITY) {
+    lastContentPage.showSummary = true;
+    return pages;
+  }
+
+  pages.push({ items: summaryPageItems, showSummary: true });
 
   return pages;
 };
