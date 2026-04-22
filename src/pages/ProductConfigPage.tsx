@@ -161,10 +161,10 @@ function SortableOutputItem({
             <GripVertical className="h-4 w-4 text-muted-foreground" />
           </button>
           <CollapsibleTrigger asChild>
-            <button className="flex items-center gap-3 flex-1 text-left hover:bg-muted/50 -mx-2 px-2 py-1 rounded transition-colors" type="button">
+            <button className="flex items-center gap-3 flex-1 min-w-0 text-left text-base leading-6 hover:bg-muted/50 -mx-2 px-2 py-1 rounded transition-colors" type="button">
               <ChevronRight className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-              <span className="font-medium truncate">{displayLabel}</span>
-              <span className="text-sm font-mono text-muted-foreground">({cellsText})</span>
+              <span className="font-medium text-base leading-6 min-w-0 break-words">{displayLabel}</span>
+              <span className="text-sm leading-5 font-mono text-muted-foreground shrink-0">({cellsText})</span>
               <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-secondary text-secondary-foreground">{typeName}</span>
               {output.sheet && <span className="text-sm text-muted-foreground">· {output.sheet}</span>}
               {isOutputInOt && (
@@ -1222,12 +1222,12 @@ export default function ProductConfigPage() {
                       {/* Collapsed summary header */}
                       <div className="flex items-center gap-3 px-4 py-3">
                         <CollapsibleTrigger asChild>
-                          <button className="flex items-center gap-3 flex-1 text-left hover:bg-muted/50 -mx-2 px-2 py-1 rounded transition-colors" type="button">
+                          <button className="flex items-center gap-3 flex-1 min-w-0 text-left text-base leading-6 hover:bg-muted/50 -mx-2 px-2 py-1 rounded transition-colors" type="button">
                             <ChevronRight className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                             <span className="text-xs font-mono text-muted-foreground w-6">#{prompt.promptSeq}</span>
-                            <span className="font-medium truncate">{displayLabel}</span>
-                            <span className="text-sm font-mono text-muted-foreground">({cellsText})</span>
-                            <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-secondary text-secondary-foreground">{currentPromptType?.promptType || '?'}</span>
+                            <span className="font-medium text-base leading-6 min-w-0 break-words">{displayLabel}</span>
+                            <span className="text-sm leading-5 font-mono text-muted-foreground shrink-0">({cellsText})</span>
+                            <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold shrink-0 bg-secondary text-secondary-foreground">{currentPromptType?.promptType || '?'}</span>
                             {prompt.promptSheet && <span className="text-sm text-muted-foreground hidden sm:inline">· {prompt.promptSheet}</span>}
                             {activeFlags.length > 0 && (
                               <div className="flex items-center gap-1 ml-auto">
