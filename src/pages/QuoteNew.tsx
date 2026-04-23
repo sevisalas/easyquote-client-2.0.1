@@ -29,7 +29,12 @@ const parsePositiveQuantity = (value: unknown): number | null => {
     return Number.isFinite(value) && value > 0 ? value : null;
   }
 
-  const parsed = parseFloat(String(value ?? "").replace(/\./g, "").replace(",", "."));
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  const normalized = raw.includes(",")
+    ? raw.replace(/\./g, "").replace(",", ".")
+    : raw;
+  const parsed = parseFloat(normalized);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 };
 
@@ -305,6 +310,11 @@ export default function QuoteNew() {
         displayName: snapshot.displayName || prev[id]?.displayName,
         productName: snapshot.productName || prev[id]?.productName,
         itemDescription: snapshot.itemDescription ?? prev[id]?.itemDescription,
+        itemAdditionals: snapshot.itemAdditionals ?? prev[id]?.itemAdditionals,
+        outputs: snapshot.outputs ?? prev[id]?.outputs,
+        prompts: snapshot.prompts ?? prev[id]?.prompts,
+        multi: snapshot.multi ?? prev[id]?.multi,
+        compositeData: snapshot.compositeData ?? prev[id]?.compositeData,
       }
     }));
   };
@@ -733,7 +743,26 @@ export default function QuoteNew() {
           prompts: promptsArray,
           outputs: item.outputs || [],
           multi: item.multi || null,
-          price: item.price || 0,
+          price: item.productId === "__CUSTOM_PRODUCT__"
+            ? (() => {
+                const customQtyPrompt = promptsArray.find((p: any) => String(p.id ?? '').trim() === 'custom_quantity');
+                const customPricePrompt = promptsArray.find((p: any) => String(p.id ?? '').trim() === 'custom_unit_price');
+                const resolvedCustomQty = parsePositiveQuantity(customQtyPrompt?.value) ?? resolvedQuantity ?? 1;
+                const rawCustomUnitPrice = customPricePrompt?.value;
+                const resolvedCustomUnitPrice = typeof rawCustomUnitPrice === 'number'
+                  ? rawCustomUnitPrice
+                  : (() => {
+                      const raw = String(rawCustomUnitPrice ?? '').trim();
+                      if (!raw) return 0;
+                      const normalized = raw.includes(',')
+                        ? raw.replace(/\./g, '').replace(',', '.')
+                        : raw;
+                      const parsed = parseFloat(normalized);
+                      return Number.isFinite(parsed) ? parsed : 0;
+                    })();
+                return resolvedCustomUnitPrice * resolvedCustomQty;
+              })()
+            : item.price || 0,
           quantity: resolvedQuantity ?? 1,
           discount_percentage: 0,
           position: index,
