@@ -572,7 +572,7 @@ Deno.serve(async (req) => {
         const qtyPrompt = promptsArray.find((p: any) => p.id === 'custom_quantity');
         const pricePrompt = promptsArray.find((p: any) => p.id === 'custom_unit_price');
         
-        customQuantity = qtyPrompt?.value || 1;
+        customQuantity = qtyPrompt?.value ?? item.quantity ?? 1;
         customUnitPrice = pricePrompt?.value || 0;
         
         // Use item description directly for custom products
@@ -805,10 +805,12 @@ Deno.serve(async (req) => {
       // For custom products, use quantity from prompts
       // BUT: if unit_price is 0, the total comes entirely from item_additionals (fixed amounts)
       // In that case, keep units=1 so Holded gets the correct total without dividing
-      if (isCustomProduct) {
-        const hasRealUnitPrice = (typeof customUnitPrice === 'number' ? customUnitPrice : parseFloat(String(customUnitPrice) || '0')) > 0;
-        if (hasRealUnitPrice) {
-          units = typeof customQuantity === 'number' ? customQuantity : parseInt(String(customQuantity) || '1');
+        if (isCustomProduct) {
+          const hasRealUnitPrice = (typeof customUnitPrice === 'number' ? customUnitPrice : parseFloat(String(customUnitPrice) || '0')) > 0;
+          if (hasRealUnitPrice) {
+            units = typeof customQuantity === 'number'
+              ? customQuantity
+              : parseFloat(String(customQuantity ?? item.quantity ?? 1).replace(/\./g, '').replace(',', '.')) || 1;
         } else {
           // unit_price is 0: price comes from additionals, send as 1 unit with total price
           units = 1;
