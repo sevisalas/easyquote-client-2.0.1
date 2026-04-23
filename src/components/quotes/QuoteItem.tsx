@@ -2473,7 +2473,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               <Label>Descripción del artículo</Label>
               <Textarea
                 value={itemDescription}
-                onChange={(e) => { setItemDescription(e.target.value); setDescriptionManual(true); }}
+                onChange={(e) => {
+                  const nextValue = e.target.value;
+                  setItemDescription(nextValue);
+                  setDescriptionManual(nextValue.trim().length > 0);
+                }}
                 placeholder="Descripción detallada del artículo..."
                 rows={3}
               />
