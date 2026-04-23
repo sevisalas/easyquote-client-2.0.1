@@ -10,7 +10,7 @@ interface Template7Props {
 const PAGE_STYLE: React.CSSProperties = {
   fontFamily: 'Arial, Helvetica, sans-serif',
   width: '210mm',
-  height: '296mm',
+  height: '297mm',
   position: 'relative',
   overflow: 'hidden',
   backgroundColor: '#ffffff',
@@ -94,21 +94,21 @@ export default function Template7({ data }: Template7Props) {
       )}
 
       {/* Cabecera: Solo Logo */}
-      <div data-logo-container style={{ margin: 0, padding: '12px 20px 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start', position: 'relative', zIndex: 1 }}>
+      <div data-logo-container style={{ margin: 0, padding: '4px 20px 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start', position: 'relative', zIndex: 1 }}>
         <img
           src="/assets/campillo-logo.png?v=20260224c"
           alt="Campillo Nevado"
-          style={{ height: '100px', width: 'auto', display: 'block' }}
+          style={{ height: '74px', width: 'auto', display: 'block' }}
           onError={(e) => { e.currentTarget.style.display = 'none'; }}
         />
       </div>
 
       {/* Contenido */}
-      <div style={{ padding: '5px 20px 0 35px', position: 'relative', zIndex: 1 }}>
+      <div style={{ padding: '0 20px 0 35px', position: 'relative', zIndex: 1 }}>
         {/* Info presupuesto + cliente */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '14px', alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', alignItems: 'flex-start' }}>
           <div>
-            <h2 style={{ fontSize: '17px', fontWeight: 'bold', color: '#1a3a5c', marginBottom: '4px' }}>
+            <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: '#1a3a5c', marginBottom: '2px' }}>
               PRESUPUESTO
             </h2>
             <p style={{ fontSize: '12px', color: '#555' }}>Nº {quote.quote_number || '-'}</p>
@@ -126,8 +126,8 @@ export default function Template7({ data }: Template7Props) {
               background: '#f7faf5',
               border: '1px solid #d0dfc8',
               borderRadius: '3px',
-              padding: '10px 14px',
-              minWidth: '280px',
+              padding: '8px 12px',
+              minWidth: '264px',
             }}
           >
             <p style={{ fontSize: '11px', color: '#4a7c2e', fontWeight: 'bold', marginBottom: '2px', textTransform: 'uppercase' }}>
@@ -155,14 +155,14 @@ export default function Template7({ data }: Template7Props) {
 
         {/* Título y descripción del presupuesto */}
         {(quote.title || quote.description) && (
-          <div style={{ marginBottom: '6px' }}>
-            {quote.title && <h3 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '2px', color: '#1a1a1a' }}>{quote.title}</h3>}
-            {quote.description && <p style={{ fontSize: '12px', color: '#444', margin: 0 }}>{quote.description}</p>}
+          <div style={{ marginBottom: '4px' }}>
+            {quote.title && <h3 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '1px', color: '#1a1a1a' }}>{quote.title}</h3>}
+            {quote.description && <p style={{ fontSize: '11px', color: '#444', margin: 0 }}>{quote.description}</p>}
           </div>
         )}
 
         {/* Tabla de items */}
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '14px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10px' }}>
           <thead>
             <tr style={{ backgroundColor: '#6a9e3a', color: 'white' }}>
               <th style={{ textAlign: 'left', padding: '6px 8px', fontSize: '12px', fontWeight: 'bold' }}>CONCEPTO</th>
@@ -367,7 +367,7 @@ export default function Template7({ data }: Template7Props) {
 
         {/* Notas */}
         {page.showSummary && quote.notes && (
-          <div style={{ marginBottom: '10px' }}>
+          <div style={{ marginBottom: '6px' }}>
             <h3 style={{ fontSize: '11px', fontWeight: 'bold', color: '#1a3a5c', textTransform: 'uppercase', marginBottom: '2px' }}>Notas</h3>
             <p style={{ fontSize: '11px', color: '#444', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{quote.notes}</p>
           </div>
@@ -379,12 +379,12 @@ export default function Template7({ data }: Template7Props) {
         <div
           style={{
             position: 'absolute',
-            bottom: '15px',
+            bottom: '8px',
             left: '20px',
             width: '50%',
-            fontSize: '9px',
+            fontSize: '8.5px',
             color: '#666',
-            lineHeight: '1.4',
+            lineHeight: '1.25',
             textAlign: 'left',
             zIndex: 1,
           }}
@@ -397,15 +397,15 @@ export default function Template7({ data }: Template7Props) {
         style={{
           position: 'absolute',
           right: '20px',
-          bottom: '15px',
-          fontSize: '10px',
+          bottom: '8px',
+          fontSize: '9px',
           color: '#555',
-          lineHeight: '1.5',
+          lineHeight: '1.3',
           textAlign: 'right',
           zIndex: 1,
         }}
       >
-        <p style={{ margin: 0, fontWeight: 'bold', fontSize: '12px', color: '#1a3a5c' }}>CAMPILLO NEVADO S.A.</p>
+        <p style={{ margin: 0, fontWeight: 'bold', fontSize: '11px', color: '#1a3a5c' }}>CAMPILLO NEVADO S.A.</p>
         <p style={{ margin: 0 }}>Desierto de Tabernas, 8</p>
         <p style={{ margin: 0 }}>28320 PINTO (Madrid)</p>
         <p style={{ margin: 0 }}>Teléf. 91 560 93 34</p>
