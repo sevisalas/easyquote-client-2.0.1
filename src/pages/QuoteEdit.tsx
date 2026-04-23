@@ -36,7 +36,12 @@ const parsePositiveQuantity = (value: unknown): number | null => {
     return Number.isFinite(value) && value > 0 ? value : null;
   }
 
-  const parsed = parseFloat(String(value ?? "").replace(/\./g, "").replace(",", "."));
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  const normalized = raw.includes(",")
+    ? raw.replace(/\./g, "").replace(",", ".")
+    : raw;
+  const parsed = parseFloat(normalized);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 };
 
@@ -147,7 +152,11 @@ const safePrice = (val: unknown): number => {
 
 const parseEsNumber = (val: unknown): number => {
   if (typeof val === "number") return Number.isFinite(val) ? val : NaN;
-  const normalized = String(val ?? "").replace(/\./g, "").replace(",", ".");
+  const raw = String(val ?? "").trim();
+  if (!raw) return NaN;
+  const normalized = raw.includes(",")
+    ? raw.replace(/\./g, "").replace(",", ".")
+    : raw;
   const parsed = parseFloat(normalized);
   return Number.isFinite(parsed) ? parsed : NaN;
 };
@@ -1006,19 +1015,19 @@ export default function QuoteEdit() {
               ...item,
               product_name: snapshot.productName || item.product_name,  // Nombre original del producto API
               name: snapshot.displayName || item.name,  // Nombre a mostrar
-              description: snapshot.itemDescription || item.description,  // Descripción del artículo
+              description: snapshot.itemDescription ?? item.description,  // Descripción del artículo
               price: typeof snapshot.price === 'number' ? snapshot.price : item.price,
               // Update QuoteItem fields
-              productId: snapshot.productId,
-              prompts: promptsObj,  // ✅ Ahora siempre es objeto
-              outputs: snapshot.outputs,
-              multi: snapshot.multi,
+              productId: snapshot.productId || item.productId,
+              prompts: Object.keys(promptsObj).length > 0 ? promptsObj : item.prompts,
+              outputs: snapshot.outputs ?? item.outputs,
+              multi: snapshot.multi ?? item.multi,
               quantity: typeof snapshot.quantity === 'number' ? snapshot.quantity : item.quantity,
               displayName: snapshot.displayName || item.displayName,
               productName: snapshot.productName || item.productName,
               itemDescription: snapshot.itemDescription ?? item.itemDescription,
-              itemAdditionals: snapshot.itemAdditionals,
-              compositeData: snapshot.compositeData,
+              itemAdditionals: snapshot.itemAdditionals ?? item.itemAdditionals,
+              compositeData: snapshot.compositeData ?? item.compositeData,
               _liveUpdated: true,
               _tariffSignature: snapshot.tariffSignature ?? activeTariffSignature,
             }
