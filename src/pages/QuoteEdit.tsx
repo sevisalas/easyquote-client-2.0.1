@@ -46,6 +46,7 @@ interface QuoteItem {
   product_name: string;  // Nombre original del producto API
   description?: string;  // Descripción (solo para productos custom)
   price: number;
+  quantity?: number;
   isFromSelections?: boolean;
   // QuoteItem component compatibility
   productId?: string;
@@ -495,6 +496,7 @@ export default function QuoteEdit() {
             productId: item.product_id || "",
             prompts: promptsObj,
             outputs: Array.isArray(item.outputs) ? item.outputs : [],
+            quantity: item.quantity ?? undefined,
             multi:
               item.multi && typeof item.multi === "object" && (item.multi.qtyInputs || item.multi.qtyPrompt)
                 ? item.multi
@@ -837,7 +839,7 @@ export default function QuoteEdit() {
           }
 
           // Resolver cantidad real desde los prompts, priorizando custom_quantity en productos personalizados
-          let resolvedQuantity = 1;
+          let resolvedQuantity = parsePositiveQuantity((item as any).quantity) ?? null;
           if (promptsArray.length > 0) {
             const isCustomProduct = (item as any).productId === "__CUSTOM_PRODUCT__" || (item as any).product_id === "__CUSTOM_PRODUCT__";
             const qtyPrompt = isCustomProduct
@@ -865,7 +867,7 @@ export default function QuoteEdit() {
             prompts: promptsArray,
             outputs: item.outputs || [],
             multi: item.multi || null,
-            quantity: resolvedQuantity,
+            quantity: resolvedQuantity ?? 1,
             item_additionals: item.itemAdditionals || [],
             composite_data: item.compositeData || null,
           };

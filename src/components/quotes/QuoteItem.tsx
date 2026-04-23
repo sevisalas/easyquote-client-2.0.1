@@ -49,6 +49,7 @@ type ItemSnapshot = {
   productId: string;
   prompts: Record<string, any>;
   outputs: any[];
+  quantity?: number;
   price?: any;
   tariffSignature?: string;
   modifiedPrice?: number | null;  // Precio modificado por el usuario (null = usar calculado)
@@ -411,7 +412,11 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       if (initialData.productId === CUSTOM_PRODUCT_ID) {
         const qtyPrompt = promptValuesOnly['custom_quantity'];
         const pricePrompt = promptValuesOnly['custom_unit_price'];
-        if (qtyPrompt) setCustomQuantity(Number(qtyPrompt.value) || 1);
+        if (qtyPrompt) {
+          setCustomQuantity(Number(qtyPrompt.value) || 1);
+        } else if (typeof initialData.quantity === 'number' && Number.isFinite(initialData.quantity) && initialData.quantity > 0) {
+          setCustomQuantity(initialData.quantity);
+        }
         if (pricePrompt) setCustomPrice(Number(pricePrompt.value) || 0);
         setIsNewProduct(false);
       } else {
@@ -2171,10 +2176,28 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     }
 
     const effectivePrice = safePrice(userEditedPrice !== null ? userEditedPrice : finalPrice);
+    const normalizedCustomQuantity = Math.max(1, Number(customQuantity) || 1);
+    const normalizedCustomPrice = safePrice(Number(customPrice) || 0);
+    const syncedPrompts = isCustomProduct
+      ? {
+          ...promptValues,
+          custom_quantity: {
+            label: promptValues.custom_quantity?.label || 'Cantidad',
+            value: String(normalizedCustomQuantity),
+            order: promptValues.custom_quantity?.order ?? 0,
+          },
+          custom_unit_price: {
+            label: promptValues.custom_unit_price?.label || 'Precio unitario',
+            value: String(normalizedCustomPrice),
+            order: promptValues.custom_unit_price?.order ?? 1,
+          },
+        }
+      : promptValues;
     const snapshot: ItemSnapshot = {
       productId,
-      prompts: promptValues,
+      prompts: syncedPrompts,
       outputs: sortedOutputs,
+      quantity: isCustomProduct ? normalizedCustomQuantity : undefined,
       price: effectivePrice,
       tariffSignature,
       modifiedPrice: userEditedPrice,
