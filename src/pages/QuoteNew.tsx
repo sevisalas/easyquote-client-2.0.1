@@ -297,7 +297,15 @@ export default function QuoteNew() {
   const handleItemChange = (id: string | number, snapshot: ItemSnapshot) => {
     setItems(prev => ({
       ...prev,
-      [id]: snapshot
+      [id]: {
+        ...prev[id],
+        ...snapshot,
+        price: typeof snapshot.price === 'number' ? snapshot.price : prev[id]?.price || 0,
+        quantity: typeof snapshot.quantity === 'number' ? snapshot.quantity : prev[id]?.quantity,
+        displayName: snapshot.displayName || prev[id]?.displayName,
+        productName: snapshot.productName || prev[id]?.productName,
+        itemDescription: snapshot.itemDescription ?? prev[id]?.itemDescription,
+      }
     }));
   };
   const handleItemRemove = (id: string | number) => {
