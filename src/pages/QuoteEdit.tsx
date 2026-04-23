@@ -839,7 +839,7 @@ export default function QuoteEdit() {
           // Resolver cantidad real desde los prompts, priorizando custom_quantity en productos personalizados
           let resolvedQuantity = 1;
           if (promptsArray.length > 0) {
-            const isCustomProduct = (item as any).productId === "__CUSTOM_PRODUCT__" || item.product_id === "__CUSTOM_PRODUCT__";
+            const isCustomProduct = (item as any).productId === "__CUSTOM_PRODUCT__" || (item as any).product_id === "__CUSTOM_PRODUCT__";
             const qtyPrompt = isCustomProduct
               ? promptsArray.find((p: any) => String(p.id ?? '').trim() === 'custom_quantity')
               : promptsArray.find((p: any) => {
