@@ -733,13 +733,15 @@ export default function QuoteNew() {
           }
         }
 
+        const isCustomProduct = item.productId === "__CUSTOM_PRODUCT__";
+
         return {
           quote_id: quote.id,
           product_id: item.productId,
           product_name: item.productName || item.displayName || "",
           name: item.displayName || item.productName || "",
           description,
-          description_manual: isManual,
+          description_manual: isCustomProduct ? true : isManual,
           prompts: promptsArray,
           outputs: item.outputs || [],
           multi: item.multi || null,
