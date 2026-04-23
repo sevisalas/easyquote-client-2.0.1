@@ -26,6 +26,16 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.7.20",
+    date: "2026-04-23",
+    changes: {
+      fixed: [
+        "Descripción manual con fallback automático: si el campo se deja vacío, se vuelve a usar la descripción autogenerada",
+        "Precios de artículos personalizados en aprobación y Holded: el cálculo usa custom_quantity y custom_unit_price sin inflar importes por decimales mal parseados",
+      ],
+    },
+  },
+  {
     version: "2.7.19",
     date: "2026-04-22",
     changes: {
