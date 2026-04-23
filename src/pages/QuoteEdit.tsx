@@ -778,10 +778,12 @@ export default function QuoteEdit() {
             all: promptsArray
           });
 
-           // Auto-generar descripción desde prompts visibles si no fue editada manualmente
+          const isCustomProduct = (item as any).productId === "__CUSTOM_PRODUCT__" || (item as any).product_id === "__CUSTOM_PRODUCT__";
+          // Los productos personalizados siempre conservan su descripción persistida.
           let description = item.description || item.itemDescription || "";
           const isManual = (item as any).descriptionManual || (item as any).description_manual || false;
-          if (!isManual && promptsArray.length > 0) {
+          const effectiveDescriptionManual = isCustomProduct ? true : isManual;
+          if (!isCustomProduct && !isManual && promptsArray.length > 0) {
             const excludeLabels = ["tarifa", "forzar máquina", "forzar maquina", "tira y retira", "forzar poses", "forzar poses/pags.", "modelos"];
             const productId = String((item as any).productId || '');
             const filterPrompt = (p: any) => {
@@ -869,7 +871,7 @@ export default function QuoteEdit() {
             product_name: item.product_name || item.productName || "",
             name: item.name || item.displayName || item.product_name || "",
             description,
-            description_manual: isManual,
+            description_manual: effectiveDescriptionManual,
             price: safePrice(calculateItemEffectivePrice(item)),
             position: index,
             product_id: item.productId || null,

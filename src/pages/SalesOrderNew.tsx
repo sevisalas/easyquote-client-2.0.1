@@ -550,12 +550,14 @@ export default function SalesOrderNew() {
           }
         }
 
+        const isCustomProduct = item.productId === '__CUSTOM_PRODUCT__';
+
         return {
           sales_order_id: order.id,
           product_id: item.productId,
           product_name: item.displayName || item.productName || item.productId || "",
           description: item.itemDescription || "",
-          description_manual: item.descriptionManual || false,
+          description_manual: isCustomProduct ? true : (item.descriptionManual || false),
           prompts: promptsArray,
           outputs: item.outputs || [],
           price: item.price || 0,
