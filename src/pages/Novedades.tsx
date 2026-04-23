@@ -26,6 +26,15 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "7.2.21",
+    date: "2026-04-23",
+    changes: {
+      fixed: [
+        "Protección de descripciones manuales en productos personalizados: ya no se sobrescriben al editar, guardar, aprobar ni regenerar documentos",
+      ],
+    },
+  },
+  {
     version: "2.7.20",
     date: "2026-04-23",
     changes: {
