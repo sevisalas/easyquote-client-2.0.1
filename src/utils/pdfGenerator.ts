@@ -676,6 +676,7 @@ export const generateQuotePDF = async (
         return {
           name: item.name || item.product_name || 'Producto',
           description: safeDescription,
+          description_manual: item.description_manual === true,
           prompts: [],
           price: resolvedItemPrice,
           quantity: quantityValue,
@@ -706,6 +707,7 @@ export const generateQuotePDF = async (
       return {
         name: item.name || item.product_name || 'Producto',
         description: '',
+        description_manual: item.description_manual === true,
         prompts: promptsFormatted,
         price: resolvedItemPrice,
         quantity: quantityValue,

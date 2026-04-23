@@ -1,6 +1,7 @@
 export interface Template7PaginationItem {
   name?: string;
   description?: string;
+  description_manual?: boolean;
   prompts?: Array<{ label?: string; value?: string }>;
   components?: Array<{ alias?: string; prompts?: Array<{ label?: string; value?: string }> }>;
   item_additionals?: Array<{ name?: string }>;
@@ -41,7 +42,9 @@ const estimateItemLines = (item: Template7PaginationItem) => {
   let lines = 2.5;
 
   if ((!item.prompts || item.prompts.length === 0) && item.description) {
-    lines += estimateWrappedLines(item.description, 72);
+    const charsPerLine = item.description_manual ? 60 : 72;
+    const safetyMultiplier = item.description_manual ? 1.35 : 1;
+    lines += estimateWrappedLines(item.description, charsPerLine) * safetyMultiplier;
   }
 
   if (item.prompts?.length) {
