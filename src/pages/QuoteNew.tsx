@@ -38,6 +38,7 @@ type ItemSnapshot = {
   productId: string;
   prompts: Record<string, any>;
   outputs: any[];
+  quantity?: number;
   price?: number;
   multi?: any;
   displayName?: string; // Nombre a mostrar (editable)
@@ -207,6 +208,7 @@ export default function QuoteNew() {
           productId: item.product_id || "",
           prompts: promptsObj,
           outputs: item.outputs || [],
+          quantity: item.quantity ?? undefined,
           price: item.price,
           multi: item.multi,
           displayName: item.name || item.product_name || "",
@@ -697,7 +699,7 @@ export default function QuoteNew() {
         }
 
         // Resolver cantidad real desde los prompts, priorizando custom_quantity en productos personalizados
-        let resolvedQuantity = 1;
+        let resolvedQuantity = parsePositiveQuantity(item.quantity) ?? null;
         if (promptsArray.length > 0) {
           const isCustomProduct = item.productId === "__CUSTOM_PRODUCT__";
           const qtyPrompt = isCustomProduct
@@ -724,7 +726,7 @@ export default function QuoteNew() {
           outputs: item.outputs || [],
           multi: item.multi || null,
           price: item.price || 0,
-          quantity: resolvedQuantity,
+          quantity: resolvedQuantity ?? 1,
           discount_percentage: 0,
           position: index,
           item_additionals: item.itemAdditionals || [],
