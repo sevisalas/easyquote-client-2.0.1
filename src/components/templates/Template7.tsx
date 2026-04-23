@@ -35,14 +35,15 @@ export default function Template7({ data }: Template7Props) {
   };
 
   const getItemQuantity = (item: any) => {
-    if (item.displayQuantity != null) return item.displayQuantity;
+    if (item.displayQuantity != null && item.displayQuantity !== '') return item.displayQuantity;
     if (item.prompts && item.prompts.length > 0) {
       const qtyPrompt = item.prompts.find((p: any) => 
         p.label?.toLowerCase().includes('cantidad') || p.label?.toLowerCase().includes('ejemplares')
       );
-      if (qtyPrompt?.value) return qtyPrompt.value;
+      if (qtyPrompt?.value != null && qtyPrompt.value !== '') return qtyPrompt.value;
     }
-    return item.quantity || 1;
+    if (item.quantity != null && item.quantity !== '') return item.quantity;
+    return null;
   };
 
   const hasSubtotalDifference = (quote.tax_amount > 0) || (quote.discount_amount > 0);
@@ -269,7 +270,16 @@ export default function Template7({ data }: Template7Props) {
                 <tr style={{ borderBottom: hasMulti ? 'none' : '1px solid #ddd' }}>
                   <td style={{ padding: '4px 8px' }}></td>
                   <td style={{ padding: '4px 8px', textAlign: 'center', fontSize: '12px' }}>
-                    {new Intl.NumberFormat('es-ES').format(typeof getItemQuantity(item) === 'string' ? parseFloat(String(getItemQuantity(item)).replace(/\./g, '').replace(',', '.')) : (getItemQuantity(item) || 1))}
+                    {(() => {
+                      const quantity = getItemQuantity(item);
+                      if (quantity == null || quantity === '') return '';
+                      const numericQuantity = typeof quantity === 'string'
+                        ? parseFloat(String(quantity).replace(/\./g, '').replace(',', '.'))
+                        : quantity;
+                      return Number.isFinite(numericQuantity)
+                        ? new Intl.NumberFormat('es-ES').format(numericQuantity)
+                        : String(quantity);
+                    })()}
                   </td>
                    <td style={{ padding: '4px 8px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap', width: PRICE_COLUMN_WIDTH, minWidth: PRICE_COLUMN_WIDTH }}>
                     {fmtEUR(item.price || 0)}
