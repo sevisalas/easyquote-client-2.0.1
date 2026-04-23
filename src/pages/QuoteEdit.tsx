@@ -1007,15 +1007,16 @@ export default function QuoteEdit() {
               product_name: snapshot.productName || item.product_name,  // Nombre original del producto API
               name: snapshot.displayName || item.name,  // Nombre a mostrar
               description: snapshot.itemDescription || item.description,  // Descripción del artículo
-              price: snapshot.price || 0,
+              price: typeof snapshot.price === 'number' ? snapshot.price : item.price,
               // Update QuoteItem fields
               productId: snapshot.productId,
               prompts: promptsObj,  // ✅ Ahora siempre es objeto
               outputs: snapshot.outputs,
               multi: snapshot.multi,
-              displayName: snapshot.displayName,
-              productName: snapshot.productName,
-              itemDescription: snapshot.itemDescription,
+              quantity: typeof snapshot.quantity === 'number' ? snapshot.quantity : item.quantity,
+              displayName: snapshot.displayName || item.displayName,
+              productName: snapshot.productName || item.productName,
+              itemDescription: snapshot.itemDescription ?? item.itemDescription,
               itemAdditionals: snapshot.itemAdditionals,
               compositeData: snapshot.compositeData,
               _liveUpdated: true,
@@ -1361,6 +1362,7 @@ export default function QuoteEdit() {
                           prompts: item.prompts || {},
                           outputs: item.outputs || [],
                           price: item.price || 0,
+                          quantity: item.quantity,
                           multi: item.multi,
                           displayName: item.displayName || item.name || item.product_name || "",
                           productName: item.productName || item.product_name || "",
