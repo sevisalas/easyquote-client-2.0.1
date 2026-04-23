@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Search } from "lucide-react";
 
-const CURRENT_VERSION = "7.2.21";
+const CURRENT_VERSION = "7.2.22";
 const SILENT_UPDATE = true;
 const LS_KEY = "whats_new_seen_version";
 
@@ -25,9 +25,9 @@ interface ReleaseNote {
 const RELEASE_NOTES: ReleaseNote[] = [
   {
     icon: <Sparkles className="h-5 w-5 text-primary" />,
-    title: "Descripción manual protegida",
+    title: "PDF con descripción completa",
     description:
-      "Las descripciones escritas manualmente en productos personalizados ya no se sobrescriben al editar, guardar, aprobar ni regenerar documentos.",
+      "Los PDFs de Campillo y Anebri ya respetan la descripción manual completa del artículo sin recortarla al procesar líneas que terminan en dos puntos.",
   },
   {
     icon: <Search className="h-5 w-5 text-primary" />,

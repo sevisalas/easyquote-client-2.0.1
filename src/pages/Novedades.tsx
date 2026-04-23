@@ -26,6 +26,15 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "7.2.22",
+    date: "2026-04-23",
+    changes: {
+      fixed: [
+        "Descripción manual completa en PDFs: las plantillas Campillo y Anebri ya no eliminan líneas válidas cuando terminan en ':' y muestran el texto completo del artículo",
+      ],
+    },
+  },
+  {
     version: "7.2.21",
     date: "2026-04-23",
     changes: {
