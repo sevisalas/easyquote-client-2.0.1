@@ -962,16 +962,9 @@ Deno.serve(async (req) => {
         // BUT: if unit_price is 0, the total comes entirely from item_additionals (fixed amounts)
         // In that case, keep units=1 so Holded gets the correct total without dividing
         if (isCustomProduct) {
-          const hasRealUnitPrice = (typeof customUnitPrice === 'number' ? customUnitPrice : parseFloat(String(customUnitPrice) || '0')) > 0;
-          if (hasRealUnitPrice) {
-            units = typeof customQuantity === 'number'
-              ? customQuantity
-              : parseFloat(String(customQuantity ?? item.quantity ?? 1).replace(/\./g, '').replace(',', '.')) || 1;
-          } else {
-            // unit_price is 0: price comes from additionals, send as 1 unit with total price
-            units = 1;
-            console.log('📦 Custom product with unit_price=0: using units=1 (price from additionals)');
-          }
+          units = typeof customQuantity === 'number'
+            ? customQuantity
+            : parseFloat(String(customQuantity ?? item.quantity ?? 1).replace(/\./g, '').replace(',', '.')) || 1;
         }
         
         // Apply item additionals to the price and calculate discounts

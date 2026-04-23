@@ -455,15 +455,9 @@ Deno.serve(async (req) => {
       }
       
       if (isCustomProduct) {
-        const hasRealUnitPrice = (typeof customUnitPrice === 'number' ? customUnitPrice : parseFloat(String(customUnitPrice) || '0')) > 0;
-        if (hasRealUnitPrice) {
-          units = typeof customQuantity === 'number'
-            ? customQuantity
-            : parseFloat(String(customQuantity ?? item.quantity ?? 1).replace(/\./g, '').replace(',', '.')) || 1;
-        } else {
-          units = 1;
-          console.log('📦 Custom product with unit_price=0: using units=1 (price from additionals)');
-        }
+        units = typeof customQuantity === 'number'
+          ? customQuantity
+          : parseFloat(String(customQuantity ?? item.quantity ?? 1).replace(/\./g, '').replace(',', '.')) || 1;
       }
       
       // Apply item additionals
