@@ -24,6 +24,15 @@ import { useNumberingFormat, generateDocumentNumber } from "@/hooks/useNumbering
 import DocumentAttachments, { type DocumentAttachmentsHandle } from "@/components/quotes/DocumentAttachments";
 import { useActiveCustomerDiscounts } from "@/hooks/useCustomerDiscounts";
 
+const parsePositiveQuantity = (value: unknown): number | null => {
+  if (typeof value === "number") {
+    return Number.isFinite(value) && value > 0 ? value : null;
+  }
+
+  const parsed = parseFloat(String(value ?? "").replace(/\./g, "").replace(",", "."));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+
 type QuotesInsert = Database["public"]["Tables"]["quotes"]["Insert"];
 type ItemSnapshot = {
   productId: string;
@@ -687,16 +696,20 @@ export default function QuoteNew() {
           }
         }
 
-        // Resolver cantidad real desde los prompts (buscar el prompt marcado como cantidad)
+        // Resolver cantidad real desde los prompts, priorizando custom_quantity en productos personalizados
         let resolvedQuantity = 1;
         if (promptsArray.length > 0) {
-          const qtyPrompt = promptsArray.find((p: any) => {
-            const label = String(p.label ?? "").toUpperCase();
-            return label.includes("UNIDADES") || label.includes("CANTIDAD") || label.includes("EJEMPLAR") || label.includes("QTY");
-          });
-          if (qtyPrompt?.value) {
-            const parsed = parseInt(String(qtyPrompt.value).replace(/\./g, "").replace(",", "."));
-            if (!isNaN(parsed) && parsed > 0) resolvedQuantity = parsed;
+          const isCustomProduct = item.productId === "__CUSTOM_PRODUCT__";
+          const qtyPrompt = isCustomProduct
+            ? promptsArray.find((p: any) => String(p.id ?? '').trim() === 'custom_quantity')
+            : promptsArray.find((p: any) => {
+                const label = String(p.label ?? "").toUpperCase();
+                return label.includes("UNIDADES") || label.includes("CANTIDAD") || label.includes("EJEMPLAR") || label.includes("QTY");
+              });
+
+          const parsedQuantity = parsePositiveQuantity(qtyPrompt?.value);
+          if (parsedQuantity !== null) {
+            resolvedQuantity = parsedQuantity;
           }
         }
 
