@@ -417,7 +417,12 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
         } else if (typeof initialData.quantity === 'number' && Number.isFinite(initialData.quantity) && initialData.quantity > 0) {
           setCustomQuantity(initialData.quantity);
         }
-        if (pricePrompt) setCustomPrice(Number(pricePrompt.value) || 0);
+        if (pricePrompt) {
+          setCustomPrice(Number(pricePrompt.value) || 0);
+        } else if (typeof initialData.price === 'number' && Number.isFinite(initialData.price) && initialData.price >= 0) {
+          const fallbackQuantity = typeof initialData.quantity === 'number' && initialData.quantity > 0 ? initialData.quantity : 1;
+          setCustomPrice(initialData.price / fallbackQuantity);
+        }
         setIsNewProduct(false);
       } else {
         const hasPromptsData = Object.keys(promptValuesOnly).length > 0;
