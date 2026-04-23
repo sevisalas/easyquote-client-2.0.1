@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Search } from "lucide-react";
 
-const CURRENT_VERSION = "2.7.19";
+const CURRENT_VERSION = "7.2.21";
 const SILENT_UPDATE = true;
 const LS_KEY = "whats_new_seen_version";
 
@@ -25,9 +25,9 @@ interface ReleaseNote {
 const RELEASE_NOTES: ReleaseNote[] = [
   {
     icon: <Sparkles className="h-5 w-5 text-primary" />,
-    title: "Dashboard separado por organización activa",
+    title: "Descripción manual protegida",
     description:
-      "Las estadísticas rápidas de presupuestos y pedidos ya no mezclan datos entre Anebri y Campillo: ahora muestran solo la organización seleccionada.",
+      "Las descripciones escritas manualmente en productos personalizados ya no se sobrescriben al editar, guardar, aprobar ni regenerar documentos.",
   },
   {
     icon: <Search className="h-5 w-5 text-primary" />,

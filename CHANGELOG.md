@@ -7,6 +7,13 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [2.7.18] - 2026-04-22
 
+## [7.2.21] - 2026-04-23
+
+### Corregido
+- **Protección de descripciones manuales en productos personalizados**: las descripciones escritas manualmente ya no se sobrescriben al editar, guardar, aprobar ni regenerar documentos
+
+---
+
 ## [2.7.20] - 2026-04-23
 
 ### Corregido
