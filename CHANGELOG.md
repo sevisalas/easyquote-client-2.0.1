@@ -7,6 +7,14 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [2.7.18] - 2026-04-22
 
+## [2.7.20] - 2026-04-23
+
+### Corregido
+- **Descripción manual con fallback automático**: Si la descripción del artículo se deja vacía, el sistema vuelve a usar la descripción autogenerada; si el usuario escribe texto, se respeta tal cual
+- **Precios de artículos personalizados en aprobación y Holded**: Los pedidos generados desde presupuestos y las exportaciones a Holded recalculan correctamente usando `custom_quantity` y `custom_unit_price`, evitando importes inflados por el parseo de decimales
+
+---
+
 ## [2.7.19] - 2026-04-22
 
 ### Corregido
