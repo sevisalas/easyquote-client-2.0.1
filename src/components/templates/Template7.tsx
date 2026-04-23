@@ -61,7 +61,7 @@ export default function Template7({ data }: Template7Props) {
           top: 0,
           left: 0,
           width: '210mm',
-          height: '296mm',
+          height: '297mm',
           objectFit: 'cover',
           zIndex: 0,
           pointerEvents: 'none',
@@ -106,17 +106,17 @@ export default function Template7({ data }: Template7Props) {
       {/* Contenido */}
       <div style={{ padding: '0 20px 0 35px', position: 'relative', zIndex: 1 }}>
         {/* Info presupuesto + cliente */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', alignItems: 'flex-start' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px', alignItems: 'flex-start' }}>
           <div>
-            <h2 style={{ fontSize: '16px', fontWeight: 'bold', color: '#1a3a5c', marginBottom: '2px' }}>
+            <h2 style={{ fontSize: '15px', fontWeight: 'bold', color: '#1a3a5c', marginBottom: '1px' }}>
               PRESUPUESTO
             </h2>
-            <p style={{ fontSize: '12px', color: '#555' }}>Nº {quote.quote_number || '-'}</p>
-            <p style={{ fontSize: '12px', color: '#555' }}>
+            <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>Nº {quote.quote_number || '-'}</p>
+            <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>
               Fecha: {quote.created_at ? format(new Date(quote.created_at), 'dd/MM/yyyy', { locale: es }) : '-'}
             </p>
             {quote.valid_until && (
-              <p style={{ fontSize: '12px', color: '#555' }}>
+              <p style={{ fontSize: '11px', color: '#555', margin: 0 }}>
                 Válido hasta: {format(new Date(quote.valid_until), 'dd/MM/yyyy', { locale: es })}
               </p>
             )}
@@ -126,14 +126,14 @@ export default function Template7({ data }: Template7Props) {
               background: '#f7faf5',
               border: '1px solid #d0dfc8',
               borderRadius: '3px',
-              padding: '8px 12px',
-              minWidth: '264px',
+              padding: '6px 10px',
+              minWidth: '248px',
             }}
           >
             <p style={{ fontSize: '11px', color: '#4a7c2e', fontWeight: 'bold', marginBottom: '2px', textTransform: 'uppercase' }}>
               Cliente
             </p>
-            <p style={{ fontSize: '13px', fontWeight: 'bold', color: '#1a1a1a' }}>{customer.name || 'Cliente'}</p>
+            <p style={{ fontSize: '12px', fontWeight: 'bold', color: '#1a1a1a', margin: 0 }}>{customer.name || 'Cliente'}</p>
             {customer.address && (() => {
               const parts = customer.address.split(',').map((s: string) => s.trim());
               if (parts.length >= 4) {
@@ -155,19 +155,19 @@ export default function Template7({ data }: Template7Props) {
 
         {/* Título y descripción del presupuesto */}
         {(quote.title || quote.description) && (
-          <div style={{ marginBottom: '4px' }}>
-            {quote.title && <h3 style={{ fontSize: '13px', fontWeight: 'bold', marginBottom: '1px', color: '#1a1a1a' }}>{quote.title}</h3>}
-            {quote.description && <p style={{ fontSize: '11px', color: '#444', margin: 0 }}>{quote.description}</p>}
+          <div style={{ marginBottom: '2px' }}>
+            {quote.title && <h3 style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '1px', color: '#1a1a1a' }}>{quote.title}</h3>}
+            {quote.description && <p style={{ fontSize: '10px', color: '#444', margin: 0, lineHeight: '1.15' }}>{quote.description}</p>}
           </div>
         )}
 
         {/* Tabla de items */}
-        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '10px' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '6px' }}>
           <thead>
             <tr style={{ backgroundColor: '#6a9e3a', color: 'white' }}>
-              <th style={{ textAlign: 'left', padding: '6px 8px', fontSize: '12px', fontWeight: 'bold' }}>CONCEPTO</th>
-              <th style={{ textAlign: 'center', padding: '6px 8px', fontSize: '12px', fontWeight: 'bold', width: '55px' }}>UNID.</th>
-               <th style={{ textAlign: 'right', padding: '6px 8px', fontSize: '12px', fontWeight: 'bold', width: PRICE_COLUMN_WIDTH }}>PRECIO</th>
+              <th style={{ textAlign: 'left', padding: '4px 6px', fontSize: '11px', fontWeight: 'bold' }}>CONCEPTO</th>
+              <th style={{ textAlign: 'center', padding: '4px 6px', fontSize: '11px', fontWeight: 'bold', width: '55px' }}>UNID.</th>
+               <th style={{ textAlign: 'right', padding: '4px 6px', fontSize: '11px', fontWeight: 'bold', width: PRICE_COLUMN_WIDTH }}>PRECIO</th>
             </tr>
           </thead>
           <tbody>
@@ -178,7 +178,7 @@ export default function Template7({ data }: Template7Props) {
               <React.Fragment key={index}>
                 {/* Item name row */}
                 <tr style={{ borderBottom: 'none' }}>
-                  <td style={{ padding: '6px 8px' }}>
+                  <td style={{ padding: '3px 6px 2px' }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
                       {item.images && item.images.length > 0 && (
                         <div style={{ display: 'flex', gap: '3px', flexShrink: 0 }}>
@@ -187,25 +187,25 @@ export default function Template7({ data }: Template7Props) {
                           ))}
                         </div>
                       )}
-                      <span style={{ fontWeight: 'bold', fontSize: '12px' }}>{item.name}</span>
+                      <span style={{ fontWeight: 'bold', fontSize: '11px', lineHeight: '1.15' }}>{item.name}</span>
                     </div>
                   </td>
-                  <td style={{ padding: '6px 8px' }}></td>
-                  <td style={{ padding: '6px 8px' }}></td>
+                  <td style={{ padding: '3px 6px 2px' }}></td>
+                  <td style={{ padding: '3px 6px 2px' }}></td>
                 </tr>
                 {/* Description */}
                 {(!item.prompts || item.prompts.length === 0) && item.description && (
                   <tr style={{ borderBottom: 'none' }}>
-                    <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
-                      <div style={{ fontSize: '11px', color: '#555', lineHeight: '1.4', whiteSpace: 'pre-line' }} dangerouslySetInnerHTML={{ __html: item.description.replace(/\n/g, '<br/>') }} />
+                    <td colSpan={3} style={{ padding: '1px 6px 2px 14px' }}>
+                      <div style={{ fontSize: '10px', color: '#555', lineHeight: '1.18', whiteSpace: 'pre-line' }} dangerouslySetInnerHTML={{ __html: item.description.replace(/\n/g, '<br/>') }} />
                     </td>
                   </tr>
                 )}
                 {/* Prompts */}
                 {item.prompts && item.prompts.length > 0 && (
                   <tr style={{ borderBottom: 'none' }}>
-                    <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
-                      <div style={{ fontSize: '11px', color: '#555', lineHeight: '1.4' }}>
+                    <td colSpan={3} style={{ padding: '1px 6px 2px 14px' }}>
+                      <div style={{ fontSize: '10px', color: '#555', lineHeight: '1.18' }}>
                         {item.prompts.map((prompt: any, pIdx: number) => (
                           <div key={pIdx}><span style={{ fontWeight: 600, textTransform: 'uppercase' }}>{prompt.label}:</span> {prompt.value}</div>
                         ))}
@@ -216,11 +216,11 @@ export default function Template7({ data }: Template7Props) {
                 {/* Components */}
                 {item.components && item.components.length > 0 && (
                   <tr style={{ borderBottom: 'none' }}>
-                    <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
+                    <td colSpan={3} style={{ padding: '1px 6px 2px 14px' }}>
                       {item.components.map((comp: any, cIdx: number) => (
-                        <div key={cIdx} style={{ marginBottom: '4px' }}>
-                          <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#333', textTransform: 'uppercase', marginBottom: '1px' }}>── {comp.alias} ──</div>
-                          <div style={{ fontSize: '11px', color: '#555', lineHeight: '1.4', paddingLeft: '8px' }}>
+                        <div key={cIdx} style={{ marginBottom: '2px' }}>
+                          <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#333', textTransform: 'uppercase', marginBottom: '1px' }}>── {comp.alias} ──</div>
+                          <div style={{ fontSize: '10px', color: '#555', lineHeight: '1.18', paddingLeft: '6px' }}>
                             {comp.prompts.map((p: any, pIdx: number) => (
                               <div key={pIdx}><span style={{ fontWeight: 600 }}>{p.label}:</span> {p.value}</div>
                             ))}
@@ -233,8 +233,8 @@ export default function Template7({ data }: Template7Props) {
                 {/* Item additionals */}
                 {item.item_additionals && item.item_additionals.length > 0 && (
                   <tr style={{ borderBottom: 'none' }}>
-                    <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
-                      <div style={{ fontSize: '11px', color: '#555', lineHeight: '1.4' }}>
+                    <td colSpan={3} style={{ padding: '1px 6px 2px 14px' }}>
+                      <div style={{ fontSize: '10px', color: '#555', lineHeight: '1.18' }}>
                         {item.item_additionals.map((adj: any, aIdx: number) => {
                           const qty = getItemQuantity(item);
                           const numQty = typeof qty === 'string' ? parseFloat(qty.replace(/\./g, '').replace(',', '.')) : (qty || 1);
@@ -268,8 +268,8 @@ export default function Template7({ data }: Template7Props) {
                 )}
                 {/* Q1 price row */}
                 <tr style={{ borderBottom: hasMulti ? 'none' : '1px solid #ddd' }}>
-                  <td style={{ padding: '4px 8px' }}></td>
-                  <td style={{ padding: '4px 8px', textAlign: 'center', fontSize: '12px' }}>
+                  <td style={{ padding: '2px 6px 3px' }}></td>
+                  <td style={{ padding: '2px 6px 3px', textAlign: 'center', fontSize: '11px' }}>
                     {(() => {
                       const quantity = getItemQuantity(item);
                       if (quantity == null || quantity === '') return '';
@@ -281,7 +281,7 @@ export default function Template7({ data }: Template7Props) {
                         : String(quantity);
                     })()}
                   </td>
-                   <td style={{ padding: '4px 8px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap', width: PRICE_COLUMN_WIDTH, minWidth: PRICE_COLUMN_WIDTH }}>
+                   <td style={{ padding: '2px 6px 3px', textAlign: 'right', fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap', width: PRICE_COLUMN_WIDTH, minWidth: PRICE_COLUMN_WIDTH }}>
                     {fmtEUR(item.price || 0)}
                   </td>
                 </tr>
