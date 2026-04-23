@@ -31,6 +31,15 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+const parsePositiveQuantity = (value: unknown): number | null => {
+  if (typeof value === "number") {
+    return Number.isFinite(value) && value > 0 ? value : null;
+  }
+
+  const parsed = parseFloat(String(value ?? "").replace(/\./g, "").replace(",", "."));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+
 interface QuoteItem {
   id: string;
   name?: string;  // Nombre a mostrar (editable)
@@ -827,16 +836,20 @@ export default function QuoteEdit() {
             }
           }
 
-          // Resolver cantidad real desde los prompts
+          // Resolver cantidad real desde los prompts, priorizando custom_quantity en productos personalizados
           let resolvedQuantity = 1;
           if (promptsArray.length > 0) {
-            const qtyPrompt = promptsArray.find((p: any) => {
-              const label = String(p.label ?? "").toUpperCase();
-              return label.includes("UNIDADES") || label.includes("CANTIDAD") || label.includes("EJEMPLAR") || label.includes("QTY");
-            });
-            if (qtyPrompt?.value) {
-              const parsed = parseInt(String(qtyPrompt.value).replace(/\./g, "").replace(",", "."));
-              if (!isNaN(parsed) && parsed > 0) resolvedQuantity = parsed;
+            const isCustomProduct = (item as any).productId === "__CUSTOM_PRODUCT__" || item.product_id === "__CUSTOM_PRODUCT__";
+            const qtyPrompt = isCustomProduct
+              ? promptsArray.find((p: any) => String(p.id ?? '').trim() === 'custom_quantity')
+              : promptsArray.find((p: any) => {
+                  const label = String(p.label ?? "").toUpperCase();
+                  return label.includes("UNIDADES") || label.includes("CANTIDAD") || label.includes("EJEMPLAR") || label.includes("QTY");
+                });
+
+            const parsedQuantity = parsePositiveQuantity(qtyPrompt?.value);
+            if (parsedQuantity !== null) {
+              resolvedQuantity = parsedQuantity;
             }
           }
 
