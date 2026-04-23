@@ -134,8 +134,24 @@ export const useQuoteApproval = () => {
           return Number.isFinite(value) && value > 0 ? value : 1;
         }
 
-        const parsed = parseFloat(String(value ?? '').replace(/\./g, '').replace(',', '.'));
+        const raw = String(value ?? '').trim();
+        if (!raw) return 1;
+        const normalized = raw.includes(',')
+          ? raw.replace(/\./g, '').replace(',', '.')
+          : raw;
+        const parsed = parseFloat(normalized);
         return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+      };
+
+      const parseLocaleNumber = (value: unknown): number => {
+        if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+        const raw = String(value ?? '').trim();
+        if (!raw) return 0;
+        const normalized = raw.includes(',')
+          ? raw.replace(/\./g, '').replace(',', '.')
+          : raw;
+        const parsed = parseFloat(normalized);
+        return Number.isFinite(parsed) ? parsed : 0;
       };
 
       const quantityPromptByProduct = new Map<string, { promptName: string; label: string | null }>();
@@ -272,6 +288,16 @@ export const useQuoteApproval = () => {
           .join('\n');
       };
 
+      const getCustomItemBasePrice = (item: any, quantity: number): number => {
+        const promptsArray = Array.isArray(item.prompts)
+          ? item.prompts
+          : Object.values(item.prompts || {});
+        const customUnitPricePrompt = promptsArray.find((p: any) => String(p?.id || p?.name || '').trim() === 'custom_unit_price');
+        const unitPrice = parseLocaleNumber(customUnitPricePrompt?.value);
+        if (unitPrice > 0) return unitPrice * quantity;
+        return parseLocaleNumber(item.price || 0);
+      };
+
       // Helper: apply item_additionals to a base price
       const applyItemAdditionals = (basePrice: number, item: any, quantity: number): number => {
         const additionals = item.item_additionals;
@@ -316,7 +342,9 @@ export const useQuoteApproval = () => {
       let subtotal = 0;
       for (const item of itemsToApprove) {
         const multi = item.multi as any;
-        let itemPrice = item.price || 0;
+        let itemPrice = item.product_id === '__CUSTOM_PRODUCT__'
+          ? getCustomItemBasePrice(item, resolveItemQuantityFromPrompts(item))
+          : item.price || 0;
 
         // If multi with selected quantity, use that specific price
         // and apply item_additionals (since row price is base-only from outputs)
@@ -423,6 +451,10 @@ export const useQuoteApproval = () => {
         let finalPrompts = syncPromptsWithSelectedQuantity(item, finalQuantity);
         const isDescriptionManual = item.description_manual === true;
         let finalDescription = item.description;
+
+        if (item.product_id === '__CUSTOM_PRODUCT__') {
+          finalPrice = applyItemAdditionals(getCustomItemBasePrice(item, finalQuantity), item, finalQuantity);
+        }
 
         // ONLY modify price if user explicitly selected a quantity from multi options
         if (multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1 && itemQuantities?.[item.id]) {
