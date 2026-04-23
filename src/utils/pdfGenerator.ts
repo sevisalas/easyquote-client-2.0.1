@@ -549,6 +549,15 @@ export const generateQuotePDF = async (
       const quantityValue = item.product_id === '__CUSTOM_PRODUCT__'
         ? parsePositiveQuantity(displayQuantity ?? item.quantity)
         : (item.quantity ?? null);
+      const customPromptUnitPrice = item.product_id === '__CUSTOM_PRODUCT__' && Array.isArray(item.prompts)
+        ? parseLocaleNumber(item.prompts.find((prompt: any) => String(prompt?.id || prompt?.name || '').trim() === 'custom_unit_price')?.value)
+        : 0;
+      const normalizedCustomQuantity = item.product_id === '__CUSTOM_PRODUCT__'
+        ? (quantityValue ?? 1)
+        : null;
+      const resolvedItemPrice = item.product_id === '__CUSTOM_PRODUCT__' && normalizedCustomQuantity
+        ? customPromptUnitPrice * normalizedCustomQuantity
+        : (item.price || 0);
 
       // Extraer imágenes y prompts EN ORDEN
       if (item.prompts && Array.isArray(item.prompts)) {
@@ -668,7 +677,7 @@ export const generateQuotePDF = async (
           name: item.name || item.product_name || 'Producto',
           description: safeDescription,
           prompts: [],
-          price: item.price || 0,
+          price: resolvedItemPrice,
           quantity: quantityValue,
           displayQuantity,
           images: images,
@@ -684,7 +693,7 @@ export const generateQuotePDF = async (
           name: item.name || item.product_name || 'Producto',
           description: '',
           prompts: [],
-          price: item.price || 0,
+          price: resolvedItemPrice,
           quantity: quantityValue,
           displayQuantity,
           images: images,
@@ -698,7 +707,7 @@ export const generateQuotePDF = async (
         name: item.name || item.product_name || 'Producto',
         description: '',
         prompts: promptsFormatted,
-        price: item.price || 0,
+        price: resolvedItemPrice,
         quantity: quantityValue,
         displayQuantity,
         images: images,
