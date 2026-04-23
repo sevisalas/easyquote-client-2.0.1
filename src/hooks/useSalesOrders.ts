@@ -61,6 +61,7 @@ export interface SalesOrderItem {
   imposition_data?: Record<string, any>;
   composite_data?: Record<string, any>;
   notes?: any;
+  description_manual?: boolean;
 }
 
 export const useSalesOrders = () => {
