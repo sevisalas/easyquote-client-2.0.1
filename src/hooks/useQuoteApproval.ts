@@ -445,6 +445,7 @@ export const useQuoteApproval = () => {
           finalQuantity = itemQuantities[item.id];
         }
 
+        const isCustomProduct = item.product_id === '__CUSTOM_PRODUCT__';
         let finalPrice = item.price || 0;
         let finalMulti = item.multi;
         let finalOutputs = Array.isArray(item.outputs) ? item.outputs : [];
@@ -452,7 +453,7 @@ export const useQuoteApproval = () => {
         const isDescriptionManual = item.description_manual === true;
         let finalDescription = item.description;
 
-        if (item.product_id === '__CUSTOM_PRODUCT__') {
+        if (isCustomProduct) {
           finalPrice = applyItemAdditionals(getCustomItemBasePrice(item, finalQuantity), item, finalQuantity);
         }
 
@@ -500,7 +501,9 @@ export const useQuoteApproval = () => {
         // If description is manual, always preserve it as-is.
         // If auto-generated (description_manual = false), always regenerate from final prompts
         // (which already contain the approved quantity).
-        if (isDescriptionManual && finalDescription && finalDescription.trim() !== '') {
+        if (isCustomProduct) {
+          finalDescription = item.description || finalDescription || '';
+        } else if (isDescriptionManual && finalDescription && finalDescription.trim() !== '') {
           // Manual description: preserve as-is
         } else {
           // Auto-generated or empty: regenerate from updated prompts
@@ -512,7 +515,7 @@ export const useQuoteApproval = () => {
           product_id: item.product_id,
           product_name: item.name || item.product_name,
           description: finalDescription,
-          description_manual: isDescriptionManual,
+          description_manual: isCustomProduct ? true : isDescriptionManual,
           quantity: finalQuantity,
           price: finalPrice,
           outputs: finalOutputs,

@@ -255,6 +255,8 @@ export default function SalesOrderEdit() {
     if (itemIndex === -1) return;
 
     const updatedItems = [...items];
+    const currentItem = updatedItems[itemIndex] as any;
+    const isCustomProduct = (snapshot.productId || currentItem.product_id) === '__CUSTOM_PRODUCT__';
     updatedItems[itemIndex] = {
       ...updatedItems[itemIndex],
       product_id: snapshot.productId || updatedItems[itemIndex].product_id,
@@ -262,7 +264,10 @@ export default function SalesOrderEdit() {
       prompts: snapshot.prompts,
       outputs: snapshot.outputs,
       multi: snapshot.multi,
-      description: snapshot.itemDescription,
+      description: isCustomProduct
+        ? (snapshot.itemDescription ?? currentItem.description ?? '')
+        : (snapshot.itemDescription ?? currentItem.description),
+      description_manual: isCustomProduct ? true : (snapshot.descriptionManual ?? currentItem.description_manual ?? false),
       price: snapshot.price?.total || snapshot.price || 0,
       composite_data: snapshot.compositeData || null,
     };
@@ -288,6 +293,7 @@ export default function SalesOrderEdit() {
           outputs: item.outputs,
           multi: item.multi,
           description: item.description,
+          description_manual: item.product_id === '__CUSTOM_PRODUCT__' ? true : ((item as any).description_manual ?? false),
           price: item.price,
           composite_data: (item as any).composite_data || null,
         })
@@ -514,6 +520,7 @@ export default function SalesOrderEdit() {
                 outputs: (item.outputs as any[]) || [],
                 multi: item.multi,
                 itemDescription: item.description || "",
+                descriptionManual: (item as any).description_manual || item.product_id === '__CUSTOM_PRODUCT__',
                 price: item.price,
                 isFinalized: true,
                 compositeData: (item as any).composite_data || undefined,
