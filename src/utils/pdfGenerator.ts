@@ -10,8 +10,24 @@ const parsePositiveQuantity = (value: unknown): number | null => {
     return Number.isFinite(value) && value > 0 ? value : null;
   }
 
-  const parsed = parseFloat(String(value ?? '').replace(/\./g, '').replace(',', '.'));
+  const raw = String(value ?? '').trim();
+  if (!raw) return null;
+  const normalized = raw.includes(',')
+    ? raw.replace(/\./g, '').replace(',', '.')
+    : raw;
+  const parsed = parseFloat(normalized);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+
+const parseLocaleNumber = (value: unknown): number => {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  const raw = String(value ?? '').trim();
+  if (!raw) return 0;
+  const normalized = raw.includes(',')
+    ? raw.replace(/\./g, '').replace(',', '.')
+    : raw;
+  const parsed = parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
 };
 
 export interface PDFGeneratorOptions {
@@ -533,6 +549,15 @@ export const generateQuotePDF = async (
       const quantityValue = item.product_id === '__CUSTOM_PRODUCT__'
         ? parsePositiveQuantity(displayQuantity ?? item.quantity)
         : (item.quantity ?? null);
+      const customPromptUnitPrice = item.product_id === '__CUSTOM_PRODUCT__' && Array.isArray(item.prompts)
+        ? parseLocaleNumber(item.prompts.find((prompt: any) => String(prompt?.id || prompt?.name || '').trim() === 'custom_unit_price')?.value)
+        : 0;
+      const normalizedCustomQuantity = item.product_id === '__CUSTOM_PRODUCT__'
+        ? (quantityValue ?? 1)
+        : null;
+      const resolvedItemPrice = item.product_id === '__CUSTOM_PRODUCT__' && normalizedCustomQuantity
+        ? customPromptUnitPrice * normalizedCustomQuantity
+        : (item.price || 0);
 
       // Extraer imágenes y prompts EN ORDEN
       if (item.prompts && Array.isArray(item.prompts)) {
@@ -639,7 +664,7 @@ export const generateQuotePDF = async (
         for (let i = 1; i < item.multi.rows.length; i++) {
           const row = item.multi.rows[i];
           if (row?.qty && row?.totalStr != null) {
-            const price = typeof row.totalStr === 'number' ? row.totalStr : parseFloat(String(row.totalStr).replace(/\./g, '').replace(',', '.')) || 0;
+            const price = typeof row.totalStr === 'number' ? row.totalStr : parseLocaleNumber(row.totalStr);
             multiExtraRows.push({ qty: row.qty, price });
           }
         }
@@ -652,7 +677,7 @@ export const generateQuotePDF = async (
           name: item.name || item.product_name || 'Producto',
           description: safeDescription,
           prompts: [],
-          price: item.price || 0,
+          price: resolvedItemPrice,
           quantity: quantityValue,
           displayQuantity,
           images: images,
@@ -668,7 +693,7 @@ export const generateQuotePDF = async (
           name: item.name || item.product_name || 'Producto',
           description: '',
           prompts: [],
-          price: item.price || 0,
+          price: resolvedItemPrice,
           quantity: quantityValue,
           displayQuantity,
           images: images,
@@ -682,7 +707,7 @@ export const generateQuotePDF = async (
         name: item.name || item.product_name || 'Producto',
         description: '',
         prompts: promptsFormatted,
-        price: item.price || 0,
+        price: resolvedItemPrice,
         quantity: quantityValue,
         displayQuantity,
         images: images,

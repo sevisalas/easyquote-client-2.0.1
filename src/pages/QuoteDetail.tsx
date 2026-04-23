@@ -72,6 +72,28 @@ const fmtEUR = (amount: number) => {
   return `${sign}${intPart},${parts[1]} €`;
 };
 
+const parseLocaleNumber = (value: unknown): number => {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  const raw = String(value ?? '').trim();
+  if (!raw) return 0;
+  const normalized = raw.includes(',')
+    ? raw.replace(/\./g, '').replace(',', '.')
+    : raw;
+  const parsed = parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const getDisplayedItemPrice = (item: any): number => {
+  if (item?.product_id !== '__CUSTOM_PRODUCT__' || !Array.isArray(item?.prompts)) {
+    return Number(item?.price || 0);
+  }
+  const qtyPrompt = item.prompts.find((prompt: any) => String(prompt?.id || prompt?.name || '').trim() === 'custom_quantity');
+  const unitPricePrompt = item.prompts.find((prompt: any) => String(prompt?.id || prompt?.name || '').trim() === 'custom_unit_price');
+  const qty = parseLocaleNumber(qtyPrompt?.value ?? item.quantity ?? 1) || 1;
+  const unitPrice = parseLocaleNumber(unitPricePrompt?.value);
+  return unitPrice > 0 ? unitPrice * qty : Number(item?.price || 0);
+};
+
 export default function QuoteDetail() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -1212,9 +1234,9 @@ export default function QuoteDetail() {
                               )}
                             </CollapsibleContent>
                           </div>
-                          <div className="text-right">
-                            <p className="text-base font-semibold text-primary">{fmtEUR(item.price || 0)}</p>
-                          </div>
+                            <div className="text-right">
+                              <p className="text-base font-semibold text-primary">{fmtEUR(getDisplayedItemPrice(item))}</p>
+                            </div>
                         </div>
                       </div>
                     </Collapsible>

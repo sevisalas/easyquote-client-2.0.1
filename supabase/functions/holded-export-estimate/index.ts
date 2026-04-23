@@ -4,6 +4,17 @@ import { isVisiblePromptDef, unwrapPromptValue } from '../_shared/prompt_visibil
 
 const HOLDED_API_URL = 'https://api.holded.com/api/invoicing/v1/documents/estimate';
 
+const parseLocaleNumber = (value: unknown): number => {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+  const raw = String(value ?? '').trim();
+  if (!raw) return 0;
+  const normalized = raw.includes(',')
+    ? raw.replace(/\./g, '').replace(',', '.')
+    : raw;
+  const parsed = parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -772,8 +783,8 @@ Deno.serve(async (req) => {
             p.label?.toLowerCase().includes('precio') || p.id === 'custom_unit_price'
           );
           
-          customQuantity = qtyPrompt?.value ?? item.quantity ?? 1;
-          customUnitPrice = pricePrompt?.value || 0;
+          customQuantity = parseLocaleNumber(qtyPrompt?.value ?? item.quantity ?? 1) || 1;
+          customUnitPrice = parseLocaleNumber(pricePrompt?.value);
           
           // Use item description directly for custom products
           description = item.description || '';
@@ -868,31 +879,30 @@ Deno.serve(async (req) => {
             const priceValue = priceOutput.value;
             totalPrice = typeof priceValue === "number" 
               ? priceValue 
-              : parseFloat(String(priceValue || 0).replace(/\./g, "").replace(",", ".")) || 0;
+              : parseLocaleNumber(priceValue);
             console.log('💰 Price from output type=Price (sin IVA):', { totalPrice, outputName: priceOutput.name, outputType: priceOutput.type });
             
             // Fallback: if output Price is 0 but item.price has a real value, use item.price
             // This happens with composite products where the price is stored directly on the item
-            if (totalPrice === 0 && parseFloat(item.price) > 0) {
-              totalPrice = parseFloat(item.price);
+            if (totalPrice === 0 && parseLocaleNumber(item.price) > 0) {
+              totalPrice = parseLocaleNumber(item.price);
               console.log('💰 Output Price was 0, using item.price fallback:', totalPrice);
             }
           } else {
             console.log('⚠️ No output with type=Price found! Available types:', item.outputs.map((o: any) => ({ type: o.type, name: o.name })));
             // Fallback: use item.price but it might include IVA
-            totalPrice = parseFloat(item.price) || 0;
+            totalPrice = parseLocaleNumber(item.price);
             console.log('⚠️ Using item.price as fallback (may include IVA):', totalPrice);
           }
         } else {
           console.log('⚠️ No outputs available, using item.price fallback');
-          totalPrice = parseFloat(item.price) || 0;
+          totalPrice = parseLocaleNumber(item.price);
         }
 
         // For custom products: use base price (qty × unit_price) instead of item.price
         // because item.price already includes item_additionals and would be double-applied
         if (isCustomProduct) {
-          const basePrice = (typeof customUnitPrice === 'number' ? customUnitPrice : parseFloat(String(customUnitPrice) || '0')) *
-                            (typeof customQuantity === 'number' ? customQuantity : parseInt(String(customQuantity) || '1'));
+          const basePrice = parseLocaleNumber(customUnitPrice) * (parseLocaleNumber(customQuantity) || 1);
           if (basePrice > 0) {
             totalPrice = basePrice;
             console.log('💰 Custom product: using base price (qty × unit_price):', { totalPrice, customQuantity, customUnitPrice });
