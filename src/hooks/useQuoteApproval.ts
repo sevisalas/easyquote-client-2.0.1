@@ -212,6 +212,13 @@ export const useQuoteApproval = () => {
           ? item.prompts
           : Object.values(item.prompts || {});
 
+        if (item.product_id === '__CUSTOM_PRODUCT__') {
+          const customQuantityPrompt = promptsArray.find((p: any) => String(p?.id || p?.name || '').trim() === 'custom_quantity');
+          if (customQuantityPrompt?.value !== undefined && customQuantityPrompt?.value !== null) {
+            return parseQuantity(customQuantityPrompt.value);
+          }
+        }
+
         const qtyPromptIndex = findQuantityPromptIndex(item, promptsArray);
         if (qtyPromptIndex >= 0) {
           const qtyPrompt = promptsArray[qtyPromptIndex];
@@ -227,6 +234,17 @@ export const useQuoteApproval = () => {
         const promptsArray = Array.isArray(item.prompts)
           ? [...item.prompts]
           : Object.values(item.prompts || {});
+
+        if (item.product_id === '__CUSTOM_PRODUCT__') {
+          const customQuantityPromptIndex = promptsArray.findIndex((p: any) => String(p?.id || p?.name || '').trim() === 'custom_quantity');
+          if (customQuantityPromptIndex >= 0) {
+            promptsArray[customQuantityPromptIndex] = {
+              ...promptsArray[customQuantityPromptIndex],
+              value: String(quantity),
+            };
+          }
+          return promptsArray;
+        }
 
         const qtyPromptIndex = findQuantityPromptIndex(item, promptsArray);
         if (qtyPromptIndex >= 0) {
