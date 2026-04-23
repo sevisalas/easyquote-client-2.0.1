@@ -5,6 +5,15 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { getEasyQuoteToken, invokeEasyQuoteFunction } from '@/lib/easyquoteApi';
 
+const parsePositiveQuantity = (value: unknown): number | null => {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) && value > 0 ? value : null;
+  }
+
+  const parsed = parseFloat(String(value ?? '').replace(/\./g, '').replace(',', '.'));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+
 export interface PDFGeneratorOptions {
   filename?: string;
   quality?: number;
@@ -481,7 +490,7 @@ export const generateQuotePDF = async (
         componentHiddenByAlias
       );
       
-      // Extract displayQuantity: prefer Q1 from multi, then is_quantity prompt, then heuristic
+      // Extract displayQuantity: prefer Q1 from multi, then custom_quantity, then is_quantity prompt, then heuristic
       let displayQuantity: string | number | null = null;
       const qtySettingName = item.product_id ? quantityPromptMap.get(item.product_id) : undefined;
       if (item.multi?.rows?.length > 0) {
@@ -489,8 +498,15 @@ export const generateQuotePDF = async (
       } else if (item.multi?.qtyInputs?.length > 0) {
         displayQuantity = item.multi.qtyInputs[0];
       } else if (item.prompts && Array.isArray(item.prompts)) {
+        if (item.product_id === '__CUSTOM_PRODUCT__') {
+          const customQuantityPrompt = item.prompts.find((prompt: any) => String(prompt?.id || prompt?.name || '').trim() === 'custom_quantity');
+          if (customQuantityPrompt?.value !== undefined && customQuantityPrompt?.value !== null && customQuantityPrompt.value !== '') {
+            displayQuantity = customQuantityPrompt.value;
+          }
+        }
+
         // First try: look for the prompt marked as is_quantity in product_prompt_settings
-        if (qtySettingName) {
+        if (!displayQuantity && qtySettingName) {
           const normalizeKey = (v: string) => String(v ?? '').replace(/\$/g, '').trim().toUpperCase();
           const qtyKey = normalizeKey(qtySettingName);
           const markedPrompt = item.prompts.find((prompt: any) => {
@@ -513,6 +529,10 @@ export const generateQuotePDF = async (
           }
         }
       }
+
+      const quantityValue = item.product_id === '__CUSTOM_PRODUCT__'
+        ? parsePositiveQuantity(displayQuantity ?? item.quantity)
+        : (item.quantity ?? null);
 
       // Extraer imágenes y prompts EN ORDEN
       if (item.prompts && Array.isArray(item.prompts)) {
@@ -633,7 +653,7 @@ export const generateQuotePDF = async (
           description: safeDescription,
           prompts: [],
           price: item.price || 0,
-          quantity: item.quantity ?? null,
+          quantity: quantityValue,
           displayQuantity,
           images: images,
           components: [],
@@ -649,7 +669,7 @@ export const generateQuotePDF = async (
           description: '',
           prompts: [],
           price: item.price || 0,
-          quantity: item.quantity ?? null,
+          quantity: quantityValue,
           displayQuantity,
           images: images,
           components: componentSections,
@@ -663,7 +683,7 @@ export const generateQuotePDF = async (
         description: '',
         prompts: promptsFormatted,
         price: item.price || 0,
-        quantity: item.quantity ?? null,
+        quantity: quantityValue,
         displayQuantity,
         images: images,
         components: componentSections,

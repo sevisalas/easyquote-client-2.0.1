@@ -301,7 +301,7 @@ Deno.serve(async (req) => {
         const promptsArray = Array.isArray(item.prompts) ? item.prompts : [];
         const qtyPrompt = promptsArray.find((p: any) => p.id === 'custom_quantity');
         const pricePrompt = promptsArray.find((p: any) => p.id === 'custom_unit_price');
-        customQuantity = qtyPrompt?.value || 1;
+        customQuantity = qtyPrompt?.value ?? item.quantity ?? 1;
         customUnitPrice = pricePrompt?.value || 0;
         description = item.description || '';
       } else {
@@ -455,13 +455,9 @@ Deno.serve(async (req) => {
       }
       
       if (isCustomProduct) {
-        const hasRealUnitPrice = (typeof customUnitPrice === 'number' ? customUnitPrice : parseFloat(String(customUnitPrice) || '0')) > 0;
-        if (hasRealUnitPrice) {
-          units = typeof customQuantity === 'number' ? customQuantity : parseInt(String(customQuantity) || '1');
-        } else {
-          units = 1;
-          console.log('📦 Custom product with unit_price=0: using units=1 (price from additionals)');
-        }
+        units = typeof customQuantity === 'number'
+          ? customQuantity
+          : parseFloat(String(customQuantity ?? item.quantity ?? 1).replace(/\./g, '').replace(',', '.')) || 1;
       }
       
       // Apply item additionals
