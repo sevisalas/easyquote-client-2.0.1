@@ -373,7 +373,10 @@ export const sanitizeDescriptionForDocs = (
 
     const label = line.slice(0, colonIndex).trim();
     const value = line.slice(colonIndex + 1).trim();
-    if (!value) continue;
+    if (!value) {
+      cleaned.push(rawLine);
+      continue;
+    }
     if (value.toLowerCase() === 'no') continue;
 
     const activeHiddenKeys = currentSectionAlias === '__PARENT__'
