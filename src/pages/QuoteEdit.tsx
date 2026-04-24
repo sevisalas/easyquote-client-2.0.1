@@ -261,9 +261,14 @@ export default function QuoteEdit() {
     const itemTariffSignature = typeof item._tariffSignature === "string" ? item._tariffSignature : "";
     const livePriceMatchesCurrentTariff = itemTariffSignature === activeTariffSignature;
 
-    // If the item has been updated by the live QuoteItem component, trust its price directly.
-    // The QuoteItem already applies customer tariff to the API result, so using item.price
-    // avoids double-tariff and ensures the latest recalculated price is used.
+    // En QuoteEdit, los datos guardados son la fuente de verdad hasta que el usuario
+    // modifica realmente el artículo. Guardar sin editar no debe reconstruir ni alterar
+    // el precio persistido en base a outputs/prompts históricos.
+    if (!item._liveUpdated) {
+      return currentItemPrice;
+    }
+
+    // Si el artículo sí ha sido recalculado por el QuoteItem en vivo, confiar en ese precio.
     if (item._liveUpdated && currentItemPrice > 0 && !isCustomProduct && livePriceMatchesCurrentTariff) {
       return currentItemPrice;
     }
