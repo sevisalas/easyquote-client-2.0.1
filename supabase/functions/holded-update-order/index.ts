@@ -475,7 +475,7 @@ Deno.serve(async (req) => {
             switch (additional.type) {
               case 'net_amount': totalPrice += value; break;
               case 'percentage': totalPrice += (totalPrice * value) / 100; break;
-              case 'quantity_multiplier': totalPrice *= value; break;
+              case 'quantity_multiplier': totalPrice += value * units; break;
               case 'capacity_divider': {
                 const cap = additional.capacity_value || 1;
                 const itemQty = units > 1 ? units : (item.quantity || 1);
