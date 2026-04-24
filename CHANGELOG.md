@@ -7,6 +7,14 @@ y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
 ## [2.7.18] - 2026-04-22
 
+## [7.2.23] - 2026-04-24
+
+### Corregido
+- **Precios estables al guardar sin editar**: los presupuestos guardados sin modificar artículos conservan el total exacto original (corrige caídas tipo 1.845,75 € → 1.680 €)
+- **Tarifa de cliente solo sobre precio base**: los ajustes (importe fijo, porcentaje, multiplicador, divisor) nunca se ven afectados por la tarifa
+
+---
+
 ## [7.2.22] - 2026-04-23
 
 ### Corregido
