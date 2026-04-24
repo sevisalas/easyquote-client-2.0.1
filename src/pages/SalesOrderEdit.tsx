@@ -299,6 +299,7 @@ export default function SalesOrderEdit() {
           description_manual: item.product_id === '__CUSTOM_PRODUCT__' ? true : ((item as any).description_manual ?? false),
           price: item.price,
           composite_data: (item as any).composite_data || null,
+          item_additionals: (item as any).item_additionals || [],
         })
         .eq("id", item.id);
 
