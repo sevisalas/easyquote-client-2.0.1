@@ -84,6 +84,64 @@ const parseLocaleNumber = (value: unknown): number => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const buildItemAdditionalsBreakdown = (item: any, finalPrice: number, resolvedQuantity: number) => {
+  const additionals = Array.isArray(item?.item_additionals) ? item.item_additionals : [];
+  if (additionals.length === 0) {
+    return { lines: [], basePrice: finalPrice, additionalsTotal: 0 };
+  }
+
+  let runningBasePrice = finalPrice;
+
+  const lines = [...additionals]
+    .reverse()
+    .map((additional: any) => {
+      const cleanName = (additional.name || 'Ajuste')
+        .replace(/\s*Ajuste sobre el artículo\s*/gi, '')
+        .trim();
+      const rawValue = Number(additional?.value || 0);
+      const absoluteValue = Math.abs(rawValue);
+      const isDiscount = additional?.is_discount === true || rawValue < 0;
+      let subtotal = absoluteValue;
+      let detail = '';
+
+      if (additional.type === 'percentage') {
+        const factor = 1 + (isDiscount ? -absoluteValue : absoluteValue) / 100;
+        const baseBeforePercentage = factor !== 0 ? runningBasePrice / factor : runningBasePrice;
+        subtotal = Math.abs(runningBasePrice - baseBeforePercentage);
+        runningBasePrice = baseBeforePercentage;
+        detail = ` (${absoluteValue}%)`;
+      } else if (additional.type === 'quantity_multiplier') {
+        subtotal = absoluteValue * resolvedQuantity;
+        runningBasePrice = isDiscount ? runningBasePrice + subtotal : runningBasePrice - subtotal;
+        detail = ` (${fmtEUR(absoluteValue)} × ${resolvedQuantity})`;
+      } else if (additional.type === 'capacity_divider') {
+        const capacity = Number(additional?.capacity_value || 1) || 1;
+        const units = Math.ceil(resolvedQuantity / capacity);
+        subtotal = absoluteValue * units;
+        runningBasePrice = isDiscount ? runningBasePrice + subtotal : runningBasePrice - subtotal;
+        detail = ` (${fmtEUR(absoluteValue)} × ${units})`;
+      } else {
+        runningBasePrice = isDiscount ? runningBasePrice + subtotal : runningBasePrice - subtotal;
+      }
+
+      return {
+        cleanName,
+        detail,
+        isDiscount,
+        signedSubtotal: isDiscount ? -subtotal : subtotal,
+      };
+    })
+    .reverse();
+
+  const additionalsTotal = lines.reduce((sum, line) => sum + line.signedSubtotal, 0);
+
+  return {
+    lines,
+    basePrice: runningBasePrice,
+    additionalsTotal,
+  };
+};
+
 const getDisplayedItemPrice = (item: any): number => {
   if (item?.product_id !== '__CUSTOM_PRODUCT__' || !Array.isArray(item?.prompts)) {
     return Number(item?.price || 0);
@@ -868,6 +926,9 @@ export default function QuoteDetail() {
                   const approvedState = item.accepted && quote.status === 'approved'
                     ? resolveApprovedQuoteItemState(item)
                     : null;
+                  const displayedItemPrice = approvedState?.resolvedPrice ?? getDisplayedItemPrice(item);
+                  const resolvedQuantity = approvedState?.resolvedQuantity ?? parseLocaleNumber(item.quantity ?? 1) || 1;
+                  const additionalsBreakdown = buildItemAdditionalsBreakdown(item, displayedItemPrice, resolvedQuantity);
                   const multi = item.multi as any;
                   const hasMultipleQuantities = multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1;
                   const itemPrompts = approvedState?.resolvedPromptsObject || (item.prompts && typeof item.prompts === 'object' ? item.prompts : {});
@@ -1228,51 +1289,35 @@ export default function QuoteDetail() {
                                 );
                               })()}
 
-                              {item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0 && (
+                              {additionalsBreakdown.lines.length > 0 && (
                                 <div className="pt-1 mt-1 border-t border-border/50">
-                                  <p className="text-xs font-medium text-muted-foreground mb-0.5">Ajustes:</p>
-                                  {item.item_additionals.map((additional: any, idx: number) => {
-                                    const cleanName = (additional.name || 'Ajuste')
-                                      .replace(/\s*Ajuste sobre el artículo\s*/gi, '')
-                                      .trim();
-                                    const isDiscount = additional.is_discount === true || (additional.value || 0) < 0;
-                                    const qtyPromptVal = Array.isArray(item.prompts)
-                                      ? item.prompts.find((p: any) =>
-                                          p.label?.toLowerCase().includes('cantidad') ||
-                                          p.label?.toLowerCase().includes('ejemplares')
-                                        )?.value
-                                      : undefined;
-                                    const numQty = parseLocaleNumber(qtyPromptVal ?? item.quantity ?? 1) || 1;
-                                    const itemBasePrice = parseLocaleNumber(item.price);
-                                    let subtotal = additional.value || 0;
-                                    let detail = '';
-                                    if (additional.type === 'percentage') {
-                                      subtotal = (itemBasePrice * (additional.value || 0)) / 100;
-                                      detail = ` (${additional.value}%)`;
-                                    } else if (additional.type === 'quantity_multiplier') {
-                                      subtotal = (additional.value || 0) * numQty;
-                                      detail = ` (${fmtEUR(additional.value || 0)} × ${numQty})`;
-                                    } else if (additional.type === 'capacity_divider') {
-                                      const cap = additional.capacity_value || 1;
-                                      const units = Math.ceil(numQty / cap);
-                                      subtotal = (additional.value || 0) * units;
-                                      detail = ` (${fmtEUR(additional.value || 0)} × ${units})`;
-                                    }
+                                  <p className="text-xs font-medium text-muted-foreground mb-0.5">Ajustes incluidos en el total:</p>
+                                  {additionalsBreakdown.lines.map((additional, idx: number) => {
                                     return (
                                       <div key={idx} className="text-xs flex justify-between">
-                                        <span className={isDiscount ? 'text-green-600' : 'text-muted-foreground'}>{cleanName}{detail}</span>
-                                        <span className={isDiscount ? 'text-green-600 font-medium' : 'font-medium'}>
-                                          {fmtEUR(isDiscount ? -Math.abs(subtotal) : subtotal)}
+                                        <span className={additional.isDiscount ? 'text-green-600' : 'text-muted-foreground'}>{additional.cleanName}{additional.detail}</span>
+                                        <span className={additional.isDiscount ? 'text-green-600 font-medium' : 'font-medium'}>
+                                          {fmtEUR(additional.signedSubtotal)}
                                         </span>
                                       </div>
                                     );
                                   })}
+                                  <div className="mt-1 pt-1 border-t border-border/50 space-y-0.5">
+                                    <div className="text-xs flex justify-between text-muted-foreground">
+                                      <span>Base del artículo</span>
+                                      <span>{fmtEUR(additionalsBreakdown.basePrice)}</span>
+                                    </div>
+                                    <div className="text-xs flex justify-between text-muted-foreground">
+                                      <span>Total ajustes</span>
+                                      <span>{fmtEUR(additionalsBreakdown.additionalsTotal)}</span>
+                                    </div>
+                                  </div>
                                 </div>
                               )}
                             </CollapsibleContent>
                           </div>
                             <div className="text-right">
-                              <p className="text-base font-semibold text-primary">{fmtEUR(getDisplayedItemPrice(item))}</p>
+                              <p className="text-base font-semibold text-primary">{fmtEUR(displayedItemPrice)}</p>
                             </div>
                         </div>
                       </div>
