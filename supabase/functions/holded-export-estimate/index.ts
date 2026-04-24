@@ -1008,7 +1008,7 @@ Deno.serve(async (req) => {
                   totalPrice += (totalPrice * value) / 100;
                   break;
                 case 'quantity_multiplier':
-                  totalPrice *= value;
+                  totalPrice += value * units;
                   break;
                 case 'capacity_divider': {
                   const cap = additional.capacity_value || 1;
