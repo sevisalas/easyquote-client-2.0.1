@@ -62,6 +62,7 @@ export interface SalesOrderItem {
   composite_data?: Record<string, any>;
   notes?: any;
   description_manual?: boolean;
+  item_additionals?: any[];
 }
 
 export const useSalesOrders = () => {

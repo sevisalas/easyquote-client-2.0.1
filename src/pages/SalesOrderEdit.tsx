@@ -270,6 +270,9 @@ export default function SalesOrderEdit() {
       description_manual: isCustomProduct ? true : (snapshot.descriptionManual ?? currentItem.description_manual ?? false),
       price: snapshot.price?.total || snapshot.price || 0,
       composite_data: snapshot.compositeData || null,
+      item_additionals: Array.isArray(snapshot.itemAdditionals)
+        ? snapshot.itemAdditionals
+        : ((updatedItems[itemIndex] as any).item_additionals ?? []),
     };
     setItems(updatedItems);
   };
@@ -296,6 +299,7 @@ export default function SalesOrderEdit() {
           description_manual: item.product_id === '__CUSTOM_PRODUCT__' ? true : ((item as any).description_manual ?? false),
           price: item.price,
           composite_data: (item as any).composite_data || null,
+          item_additionals: (item as any).item_additionals || [],
         })
         .eq("id", item.id);
 
@@ -524,6 +528,7 @@ export default function SalesOrderEdit() {
                 price: item.price,
                 isFinalized: true,
                 compositeData: (item as any).composite_data || undefined,
+                itemAdditionals: Array.isArray((item as any).item_additionals) ? (item as any).item_additionals : [],
               }}
               onChange={handleItemChange}
               onRemove={handleRemoveItem}
