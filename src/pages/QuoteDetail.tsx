@@ -23,6 +23,7 @@ import { useQuoteApproval } from "@/hooks/useQuoteApproval";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { isVisiblePrompt, type PromptDef } from "@/utils/promptVisibility";
 import DocumentAttachments from "@/components/quotes/DocumentAttachments";
+import { resolveApprovedQuoteItemState } from "@/utils/approvedMultiQuantity";
 
 const fetchQuote = async (id: string) => {
   const { data, error } = await supabase
@@ -853,10 +854,13 @@ export default function QuoteDetail() {
                   </div>
                 )}
                 {allItems.map((item: any, index: number) => {
+                  const approvedState = item.accepted && quote.status === 'approved'
+                    ? resolveApprovedQuoteItemState(item)
+                    : null;
                   const multi = item.multi as any;
                   const hasMultipleQuantities = multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1;
-                  const itemPrompts = item.prompts && typeof item.prompts === 'object' ? item.prompts : {};
-                   const itemOutputs = Array.isArray(item.outputs) ? item.outputs : [];
+                  const itemPrompts = approvedState?.resolvedPromptsObject || (item.prompts && typeof item.prompts === 'object' ? item.prompts : {});
+                   const itemOutputs = approvedState?.resolvedOutputs || (Array.isArray(item.outputs) ? item.outputs : []);
                    const compositeData = (item as any).composite_data;
                    const isComposite = compositeData?.components && Object.keys(compositeData.components).length > 0;
                    const isCustomProduct = !item.product_id || item.product_id === '__CUSTOM_PRODUCT__';
@@ -945,10 +949,10 @@ export default function QuoteDetail() {
                               )}
                             </div>
                             
-                            {itemDescriptionVisibility.has(String(item.id ?? index)) && item.description && (
+                            {itemDescriptionVisibility.has(String(item.id ?? index)) && (approvedState?.resolvedDescription || item.description) && (
                               <div className="mt-2 rounded-md bg-muted/50 px-3 py-2">
                                 <p className="text-xs font-medium text-muted-foreground mb-1">descripción del artículo</p>
-                                <p className="text-sm whitespace-pre-line">{item.description}</p>
+                                 <p className="text-sm whitespace-pre-line">{approvedState?.resolvedDescription || item.description}</p>
                               </div>
                             )}
 
