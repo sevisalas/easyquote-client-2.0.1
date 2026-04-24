@@ -524,6 +524,7 @@ export default function SalesOrderEdit() {
                 price: item.price,
                 isFinalized: true,
                 compositeData: (item as any).composite_data || undefined,
+                itemAdditionals: Array.isArray((item as any).item_additionals) ? (item as any).item_additionals : [],
               }}
               onChange={handleItemChange}
               onRemove={handleRemoveItem}
