@@ -270,6 +270,9 @@ export default function SalesOrderEdit() {
       description_manual: isCustomProduct ? true : (snapshot.descriptionManual ?? currentItem.description_manual ?? false),
       price: snapshot.price?.total || snapshot.price || 0,
       composite_data: snapshot.compositeData || null,
+      item_additionals: Array.isArray(snapshot.itemAdditionals)
+        ? snapshot.itemAdditionals
+        : ((updatedItems[itemIndex] as any).item_additionals ?? []),
     };
     setItems(updatedItems);
   };
