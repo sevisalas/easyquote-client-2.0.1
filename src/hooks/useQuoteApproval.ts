@@ -3,6 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
+import {
+  applyItemAdditionals,
+  buildAutoDescriptionFromPrompts,
+  parseLocaleNumber,
+  parseQuantity,
+  promptsToArray,
+  syncPromptsWithQuantity,
+} from "@/utils/approvedMultiQuantity";
 
 interface ApproveQuoteParams {
   quoteId: string;
@@ -129,31 +137,6 @@ export const useQuoteApproval = () => {
       const normalizePromptKey = (value: string) =>
         String(value ?? '').replace(/\$/g, '').trim().toUpperCase();
 
-      const parseQuantity = (value: unknown): number => {
-        if (typeof value === 'number') {
-          return Number.isFinite(value) && value > 0 ? value : 1;
-        }
-
-        const raw = String(value ?? '').trim();
-        if (!raw) return 1;
-        const normalized = raw.includes(',')
-          ? raw.replace(/\./g, '').replace(',', '.')
-          : raw;
-        const parsed = parseFloat(normalized);
-        return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
-      };
-
-      const parseLocaleNumber = (value: unknown): number => {
-        if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
-        const raw = String(value ?? '').trim();
-        if (!raw) return 0;
-        const normalized = raw.includes(',')
-          ? raw.replace(/\./g, '').replace(',', '.')
-          : raw;
-        const parsed = parseFloat(normalized);
-        return Number.isFinite(parsed) ? parsed : 0;
-      };
-
       const quantityPromptByProduct = new Map<string, { promptName: string; label: string | null }>();
       const productIds = Array.from(
         new Set(
@@ -224,9 +207,7 @@ export const useQuoteApproval = () => {
       };
 
       const resolveItemQuantityFromPrompts = (item: any): number => {
-        const promptsArray = Array.isArray(item.prompts)
-          ? item.prompts
-          : Object.values(item.prompts || {});
+        const promptsArray = promptsToArray(item.prompts);
 
         if (item.product_id === '__CUSTOM_PRODUCT__') {
           const customQuantityPrompt = promptsArray.find((p: any) => String(p?.id || p?.name || '').trim() === 'custom_quantity');
@@ -247,45 +228,7 @@ export const useQuoteApproval = () => {
       };
 
       const syncPromptsWithSelectedQuantity = (item: any, quantity: number) => {
-        const promptsArray = Array.isArray(item.prompts)
-          ? [...item.prompts]
-          : Object.values(item.prompts || {});
-
-        if (item.product_id === '__CUSTOM_PRODUCT__') {
-          const customQuantityPromptIndex = promptsArray.findIndex((p: any) => String(p?.id || p?.name || '').trim() === 'custom_quantity');
-          if (customQuantityPromptIndex >= 0) {
-            promptsArray[customQuantityPromptIndex] = {
-              ...promptsArray[customQuantityPromptIndex],
-              value: String(quantity),
-            };
-          }
-          return promptsArray;
-        }
-
-        const qtyPromptIndex = findQuantityPromptIndex(item, promptsArray);
-        if (qtyPromptIndex >= 0) {
-          promptsArray[qtyPromptIndex] = {
-            ...promptsArray[qtyPromptIndex],
-            value: String(quantity),
-          };
-        }
-
-        return promptsArray;
-      };
-
-      const buildAutoDescriptionFromPrompts = (promptsArray: any[]) => {
-        const excludeLabels = ['tarifa', 'forzar máquina', 'forzar maquina', 'tira y retira', 'forzar poses', 'forzar poses/pags.', 'modelos'];
-
-        return promptsArray
-          .filter((p: any) => {
-            const value = String(p?.value ?? '').trim();
-            const label = String(p?.label ?? '').toLowerCase().trim();
-            if (!value || value.toLowerCase() === 'no') return false;
-            if (excludeLabels.some((excluded) => label.includes(excluded))) return false;
-            return true;
-          })
-          .map((p: any) => `${p.label}: ${String(p.value).trim()}`)
-          .join('\n');
+        return syncPromptsWithQuantity(item.prompts, quantity);
       };
 
       const getCustomItemBasePrice = (item: any, quantity: number): number => {
@@ -298,45 +241,6 @@ export const useQuoteApproval = () => {
         return parseLocaleNumber(item.price || 0);
       };
 
-      // Helper: apply item_additionals to a base price
-      const applyItemAdditionals = (basePrice: number, item: any, quantity: number): number => {
-        const additionals = item.item_additionals;
-        if (!Array.isArray(additionals) || additionals.length === 0) return basePrice;
-
-        // Resolve the quantity tier index for multiValues lookup
-        const multi = item.multi as any;
-        const qtyInputs: number[] = multi?.qtyInputs || [];
-        const qtyIndex = qtyInputs.findIndex((q: number) => Number(q) === Number(quantity));
-
-        let total = basePrice;
-        for (const additional of additionals) {
-          // For net_amount with multiValues, pick the value for the selected quantity tier
-          let value = additional.value || 0;
-          if (additional.type === 'net_amount' && Array.isArray(additional.multiValues) && qtyIndex >= 0 && qtyIndex < additional.multiValues.length) {
-            value = Number(additional.multiValues[qtyIndex]) || value;
-          }
-
-          const isDiscount = additional.is_discount === true || value < 0;
-          if (isDiscount) {
-            switch (additional.type) {
-              case 'net_amount': total -= Math.abs(value); break;
-              case 'percentage': total -= Math.abs((total * value) / 100); break;
-            }
-          } else {
-            switch (additional.type) {
-              case 'net_amount': total += value; break;
-              case 'percentage': total += (total * value) / 100; break;
-              case 'quantity_multiplier': total += value * quantity; break;
-              case 'capacity_divider': {
-                const cap = additional.capacity_value || 1;
-                total += value * Math.ceil(quantity / cap);
-                break;
-              }
-            }
-          }
-        }
-        return total;
-      };
 
       // Calculate subtotal from selected items
       let subtotal = 0;
@@ -570,15 +474,32 @@ export const useQuoteApproval = () => {
       const approvedIds = itemsToApprove.map((item: any) => item.id);
       const nonApprovedIds = allItemIds.filter((id: string) => !approvedIds.includes(id));
 
+      const approvedQuoteItemUpdates = orderItems.map((orderItem: any, index: number) => {
+        const sourceItem = itemsToApprove[index];
+        return {
+          id: sourceItem.id,
+          accepted: true,
+          accepted_quantity: orderItem.quantity,
+          quantity: orderItem.quantity,
+          price: orderItem.price,
+          prompts: orderItem.prompts,
+          outputs: orderItem.outputs,
+          multi: orderItem.multi,
+          description: orderItem.description,
+        };
+      });
+
       // Mark approved items
       if (approvedIds.length > 0) {
-        const { error: acceptError } = await supabase
-          .from('quote_items')
-          .update({ accepted: true })
-          .in('id', approvedIds);
-        
-        if (acceptError) {
-          console.error('Error marking items as accepted:', acceptError);
+        for (const update of approvedQuoteItemUpdates) {
+          const { error: acceptError } = await supabase
+            .from('quote_items')
+            .update(update)
+            .eq('id', update.id);
+
+          if (acceptError) {
+            console.error('Error syncing approved item state:', acceptError);
+          }
         }
       }
 
@@ -594,24 +515,38 @@ export const useQuoteApproval = () => {
         }
       }
 
-      // Update multi-quantity items with the selected quantity
-      for (const item of itemsToApprove) {
-        const multi = item.multi as any;
-        if (multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1 && itemQuantities?.[item.id]) {
-          await supabase
-            .from('quote_items')
-            .update({ accepted_quantity: itemQuantities[item.id] })
-            .eq('id', item.id);
-        }
-      }
-
       // Update quote status AND recalculate totals based on approved items only
+      const updatedSelections = Array.isArray(quote.selections)
+        ? quote.selections.map((selection: any) => {
+            const matchingOrderItem = orderItems.find((orderItem: any) => {
+              const selectionProductId = String(selection?.productId ?? '').trim();
+              const selectionName = String(selection?.displayName || selection?.productName || selection?.itemDescription || '').trim();
+              return (
+                selectionProductId && selectionProductId === String(orderItem.product_id ?? '').trim()
+              ) || selectionName === String(orderItem.product_name || '').trim();
+            });
+
+            if (!matchingOrderItem) return selection;
+
+            return {
+              ...selection,
+              price: matchingOrderItem.price,
+              outputs: matchingOrderItem.outputs,
+              prompts: matchingOrderItem.prompts,
+              multi: matchingOrderItem.multi,
+              itemDescription: matchingOrderItem.description,
+              descriptionManual: matchingOrderItem.description_manual,
+            };
+          })
+        : quote.selections;
+
       const { error: updateQuoteError } = await supabase
         .from('quotes')
         .update({ 
           status: 'approved',
           subtotal,
           final_price: finalPrice,
+          selections: updatedSelections,
         })
         .eq('id', quoteId);
 

@@ -1,6 +1,7 @@
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { supabase } from '@/integrations/supabase/client';
+import { resolveApprovedQuoteItemState } from '@/utils/approvedMultiQuantity';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { getEasyQuoteToken, invokeEasyQuoteFunction } from '@/lib/easyquoteApi';
@@ -474,7 +475,20 @@ export const generateQuotePDF = async (
       ? (quote.items || []).filter((item: any) => item.accepted === true)
       : (quote.items || []);
     
-    const formattedItems = itemsToRender.map((item: any) => {
+    const formattedItems = itemsToRender.map((rawItem: any) => {
+      const approvedState = quote.status === 'approved' && rawItem.accepted
+        ? resolveApprovedQuoteItemState(rawItem)
+        : null;
+      const item = approvedState
+        ? {
+            ...rawItem,
+            quantity: approvedState.resolvedQuantity,
+            price: approvedState.resolvedPrice,
+            outputs: approvedState.resolvedOutputs,
+            prompts: approvedState.resolvedPromptsArray,
+            description: approvedState.resolvedDescription,
+          }
+        : rawItem;
       const images: string[] = [];
       const promptsFormatted: Array<{label: string, value: string}> = [];
       
