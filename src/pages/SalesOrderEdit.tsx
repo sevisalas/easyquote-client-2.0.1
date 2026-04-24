@@ -517,7 +517,7 @@ export default function SalesOrderEdit() {
               key={item.id}
               id={item.id}
               hasToken={hasToken}
-              shouldExpand={false}
+              shouldExpand={true}
               initialData={{
                 productId: item.product_id || "",
                 prompts: (item.prompts as Record<string, any>) || {},
