@@ -1236,11 +1236,33 @@ export default function QuoteDetail() {
                                       .replace(/\s*Ajuste sobre el artículo\s*/gi, '')
                                       .trim();
                                     const isDiscount = additional.is_discount === true || (additional.value || 0) < 0;
+                                    const qtyPromptVal = Array.isArray(item.prompts)
+                                      ? item.prompts.find((p: any) =>
+                                          p.label?.toLowerCase().includes('cantidad') ||
+                                          p.label?.toLowerCase().includes('ejemplares')
+                                        )?.value
+                                      : undefined;
+                                    const numQty = parseLocaleNumber(qtyPromptVal ?? item.quantity ?? 1) || 1;
+                                    const itemBasePrice = parseLocaleNumber(item.price);
+                                    let subtotal = additional.value || 0;
+                                    let detail = '';
+                                    if (additional.type === 'percentage') {
+                                      subtotal = (itemBasePrice * (additional.value || 0)) / 100;
+                                      detail = ` (${additional.value}%)`;
+                                    } else if (additional.type === 'quantity_multiplier') {
+                                      subtotal = (additional.value || 0) * numQty;
+                                      detail = ` (${fmtEUR(additional.value || 0)} × ${numQty})`;
+                                    } else if (additional.type === 'capacity_divider') {
+                                      const cap = additional.capacity_value || 1;
+                                      const units = Math.ceil(numQty / cap);
+                                      subtotal = (additional.value || 0) * units;
+                                      detail = ` (${fmtEUR(additional.value || 0)} × ${units})`;
+                                    }
                                     return (
                                       <div key={idx} className="text-xs flex justify-between">
-                                        <span className={isDiscount ? 'text-green-600' : 'text-muted-foreground'}>{cleanName}</span>
+                                        <span className={isDiscount ? 'text-green-600' : 'text-muted-foreground'}>{cleanName}{detail}</span>
                                         <span className={isDiscount ? 'text-green-600 font-medium' : 'font-medium'}>
-                                          {additional.type === 'percentage' ? `${additional.value}%` : fmtEUR(additional.value || 0)}
+                                          {fmtEUR(isDiscount ? -Math.abs(subtotal) : subtotal)}
                                         </span>
                                       </div>
                                     );
