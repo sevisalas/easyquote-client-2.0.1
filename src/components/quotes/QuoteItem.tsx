@@ -1606,6 +1606,23 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     // Automatically populate Q1 with the current value of the selected field
     if (current !== undefined && current !== null && String(current).trim() !== "") {
       const asStr = String(current);
+      // GUARD anti-regresión (ver checklist puntos #1 y #4):
+      // No sobrescribir Q1 si el item ya tiene cantidades multi guardadas y
+      // el valor actual del prompt coincide con cualquiera de ellas.
+      // Caso típico: presupuesto duplicado con qtyInputs=[1500, 2000] y
+      // prompt CANTIDAD guardado en "2000" (último valor enviado al API).
+      // Sin este guard, Q1 se sobrescribe a 2000 y queda [2000, 2000].
+      const currentNum = Number(asStr.replace(/\./g, "").replace(",", "."));
+      const matchesAnyExisting = qtyInputs.some((q) => {
+        const s = String(q ?? "").trim();
+        if (!s) return false;
+        const n = Number(s.replace(/\./g, "").replace(",", "."));
+        return Number.isFinite(n) && Number.isFinite(currentNum) && n === currentNum;
+      });
+      const q1Str = String(qtyInputs[0] ?? "").trim();
+      if (q1Str !== "" && matchesAnyExisting) {
+        return;
+      }
       setQtyInputs((prev) => {
         const next = [...prev];
         next[0] = asStr;
