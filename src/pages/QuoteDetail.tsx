@@ -298,56 +298,67 @@ export default function QuoteDetail() {
       // Obtener organization_id del sessionStorage
       const organizationId = sessionStorage.getItem('selected_organization_id');
 
-      // Generar nuevo número usando la función RPC estándar
-      let newNumber: string;
-      if (organizationId) {
-        const { data: rpcNumber, error: rpcError } = await supabase
-          .rpc('next_document_number', {
-            p_organization_id: organizationId,
-            p_document_type: 'quote',
-          });
-
-        if (rpcError) {
-          console.error('Error generando número de documento:', rpcError);
-          throw rpcError;
+      // Generar nuevo número usando la función RPC estándar, con reintentos ante colisión
+      const generateNumber = async (): Promise<string> => {
+        if (organizationId) {
+          const { data: rpcNumber, error: rpcError } = await supabase
+            .rpc('next_document_number', {
+              p_organization_id: organizationId,
+              p_document_type: 'quote',
+            });
+          if (rpcError) throw rpcError;
+          return typeof rpcNumber === 'string'
+            ? rpcNumber
+            : (rpcNumber as any)?.document_number ?? '';
         }
-        newNumber = typeof rpcNumber === 'string' ? rpcNumber : (rpcNumber as any)?.document_number ?? '';
-      } else {
-        // Fallback legacy: sin organización
+        // Fallback legacy
         const year = new Date().getFullYear();
         const { count } = await supabase
           .from('quotes')
           .select('*', { count: 'exact', head: true })
           .like('quote_number', `${year}-%`);
-        const nextNumber = (count || 0) + 1;
-        newNumber = `${year}-${String(nextNumber).padStart(4, '0')}`;
+        return `${year}-${String((count || 0) + 1).padStart(4, '0')}`;
+      };
+
+      let newQuote: any = null;
+      let lastError: any = null;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const newNumber = await generateNumber();
+        console.log(`Intento ${attempt + 1} - Nuevo número:`, newNumber);
+
+        const { data, error: insertError } = await supabase
+          .from('quotes')
+          .insert({
+            user_id: session.session.user.id,
+            quote_number: newNumber,
+            customer_id: originalQuote.customer_id,
+            title: null,
+            description: originalQuote.description,
+            notes: originalQuote.notes,
+            status: 'draft',
+            valid_until: null,
+            subtotal: originalQuote.subtotal,
+            final_price: originalQuote.final_price,
+            selections: originalQuote.selections,
+            organization_id: organizationId,
+          })
+          .select()
+          .single();
+
+        if (!insertError) {
+          newQuote = data;
+          break;
+        }
+        lastError = insertError;
+        // 23505 = unique_violation
+        if ((insertError as any).code !== '23505') {
+          console.error('Error creando nuevo presupuesto:', insertError);
+          throw insertError;
+        }
+        console.warn('Número duplicado, reintentando...', newNumber);
       }
-      console.log('Nuevo número de presupuesto:', newNumber);
-
-
-      // Crear nuevo presupuesto
-      const { data: newQuote, error: insertError } = await supabase
-        .from('quotes')
-        .insert({
-          user_id: session.session.user.id,
-          quote_number: newNumber,
-          customer_id: originalQuote.customer_id,
-          title: null, // No copiar el título para que muestre el número correcto
-          description: originalQuote.description,
-          notes: originalQuote.notes,
-          status: 'draft',
-          valid_until: null,
-          subtotal: originalQuote.subtotal,
-          final_price: originalQuote.final_price,
-          selections: originalQuote.selections,
-          organization_id: organizationId,
-        })
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error('Error creando nuevo presupuesto:', insertError);
-        throw insertError;
+      if (!newQuote) {
+        throw lastError ?? new Error('No se pudo generar un número de presupuesto único');
       }
 
       console.log('Nuevo presupuesto creado:', newQuote);
