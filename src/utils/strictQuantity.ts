@@ -63,3 +63,12 @@ export const buildQuantityErrorMessage = (item: any): string => {
   const name = item?.product_name || item?.description?.split('\n')?.[0] || 'Artículo sin nombre';
   return `No se pudo determinar la cantidad del artículo "${name}". Revisa el motor de precios del producto.`;
 };
+
+/**
+ * Indica si el item es un producto personalizado (sin motor de precios EasyQuote).
+ * Para estos items, la cantidad y el precio los introduce el usuario manualmente:
+ * si los deja vacíos, NO se debe inventar 1 ni 0, ni hablar de "motor de precios".
+ */
+export const isCustomProductItem = (item: any): boolean => {
+  return !item?.product_id || item.product_id === '__CUSTOM_PRODUCT__';
+};
