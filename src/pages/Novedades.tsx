@@ -36,13 +36,6 @@ const versions: Version[] = [
       ],
     },
   },
-    changes: {
-      fixed: [
-        "Precios estables al guardar sin editar: los presupuestos guardados sin tocar ningún artículo conservan exactamente el total original (corrige caídas como 1.845,75 € → 1.680 €)",
-        "La tarifa de cliente nunca se aplica sobre los ajustes (importe fijo, porcentaje, multiplicador o divisor); solo afecta al precio base del API",
-      ],
-    },
-  },
   {
     version: "7.2.22",
     date: "2026-04-23",
