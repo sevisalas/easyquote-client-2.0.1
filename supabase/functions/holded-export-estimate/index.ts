@@ -783,7 +783,12 @@ Deno.serve(async (req) => {
             p.label?.toLowerCase().includes('precio') || p.id === 'custom_unit_price'
           );
           
-          customQuantity = parseLocaleNumber(qtyPrompt?.value ?? item.quantity ?? 1) || 1;
+          // Sin fallback artificial a 1: si no hay valor numérico válido, queda 0 y se aborta abajo.
+          {
+            const cqRaw = qtyPrompt?.value ?? item.quantity;
+            const cq = parseLocaleNumber(cqRaw);
+            customQuantity = Number.isFinite(cq) && cq > 0 ? cq : 0;
+          }
           customUnitPrice = parseLocaleNumber(pricePrompt?.value);
           
           // Use item description directly for custom products
@@ -972,9 +977,25 @@ Deno.serve(async (req) => {
         // BUT: if unit_price is 0, the total comes entirely from item_additionals (fixed amounts)
         // In that case, keep units=1 so Holded gets the correct total without dividing
         if (isCustomProduct) {
-          units = typeof customQuantity === 'number'
+          const cq = typeof customQuantity === 'number'
             ? customQuantity
-            : parseFloat(String(customQuantity ?? item.quantity ?? 1).replace(/\./g, '').replace(',', '.')) || 1;
+            : parseFloat(String(customQuantity ?? '').replace(/\./g, '').replace(',', '.'));
+          units = Number.isFinite(cq) && cq > 0 ? cq : 0;
+        }
+
+        // Validación estricta: si units sigue en su valor inicial 1 sin que ningún prompt lo haya
+        // confirmado, o quedó en 0 para custom, abortamos con error claro.
+        // Detectamos "no resuelto" cuando isCustomProduct y units<=0, o cuando para no-custom no
+        // hubo prompt detectado y units sigue en el valor inicial 1 pero el item NO declara quantity.
+        const itemDeclaredQty = parseLocaleNumber(item.quantity);
+        const quantityResolved = isCustomProduct
+          ? units > 0
+          : units > 1 || (Number.isFinite(itemDeclaredQty) && itemDeclaredQty > 0);
+        if (!quantityResolved) {
+          const productName = item.product_name || 'artículo sin nombre';
+          const errMsg = `No se pudo determinar la cantidad del artículo "${productName}". Revisa el motor de precios del producto y asegúrate de que tiene un campo de cantidad válido.`;
+          console.error('❌ Quantity resolution failed (estimate):', { productName, isCustomProduct, units, itemDeclaredQty });
+          throw new Error(errMsg);
         }
         
         // Apply item additionals to the price and calculate discounts

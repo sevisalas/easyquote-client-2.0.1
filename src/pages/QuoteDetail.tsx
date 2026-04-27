@@ -24,6 +24,7 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import { isVisiblePrompt, type PromptDef } from "@/utils/promptVisibility";
 import DocumentAttachments from "@/components/quotes/DocumentAttachments";
 import { resolveApprovedQuoteItemState } from "@/utils/approvedMultiQuantity";
+import { resolveItemQuantityStrict } from "@/utils/strictQuantity";
 
 const fetchQuote = async (id: string) => {
   const { data, error } = await supabase
@@ -148,7 +149,12 @@ const getDisplayedItemPrice = (item: any): number => {
   }
   const qtyPrompt = item.prompts.find((prompt: any) => String(prompt?.id || prompt?.name || '').trim() === 'custom_quantity');
   const unitPricePrompt = item.prompts.find((prompt: any) => String(prompt?.id || prompt?.name || '').trim() === 'custom_unit_price');
-  const qty = parseLocaleNumber(qtyPrompt?.value ?? item.quantity ?? 1) || 1;
+  // Sin fallback a 1: si no hay cantidad válida, usamos el precio total ya persistido del item.
+  const rawQty = qtyPrompt?.value ?? item.quantity;
+  const qty = parseLocaleNumber(rawQty);
+  if (!Number.isFinite(qty) || qty <= 0) {
+    return Number(item?.price || 0);
+  }
   const unitPrice = parseLocaleNumber(unitPricePrompt?.value);
   return unitPrice > 0 ? unitPrice * qty : Number(item?.price || 0);
 };
@@ -927,7 +933,10 @@ export default function QuoteDetail() {
                     ? resolveApprovedQuoteItemState(item)
                     : null;
                   const displayedItemPrice = approvedState?.resolvedPrice ?? getDisplayedItemPrice(item);
-                  const resolvedQuantity = approvedState?.resolvedQuantity ?? (parseLocaleNumber(item.quantity ?? 1) || 1);
+                  // Sin fallback artificial a 1: solo usamos cantidad si se puede determinar.
+                  // Si no, se muestra el precio total persistido tal cual (sin desglose por cantidad).
+                  const strictQty = approvedState?.resolvedQuantity ?? resolveItemQuantityStrict(item);
+                  const resolvedQuantity = strictQty ?? 0;
                   const additionalsBreakdown = buildItemAdditionalsBreakdown(item, displayedItemPrice, resolvedQuantity);
                   const multi = item.multi as any;
                   const hasMultipleQuantities = multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1;

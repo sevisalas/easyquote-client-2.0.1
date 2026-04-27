@@ -11,6 +11,7 @@ import {
   promptsToArray,
   syncPromptsWithQuantity,
 } from "@/utils/approvedMultiQuantity";
+import { resolveItemQuantityStrict, buildQuantityErrorMessage } from "@/utils/strictQuantity";
 
 interface ApproveQuoteParams {
   quoteId: string;
@@ -207,24 +208,11 @@ export const useQuoteApproval = () => {
       };
 
       const resolveItemQuantityFromPrompts = (item: any): number => {
-        const promptsArray = promptsToArray(item.prompts);
-
-        if (item.product_id === '__CUSTOM_PRODUCT__') {
-          const customQuantityPrompt = promptsArray.find((p: any) => String(p?.id || p?.name || '').trim() === 'custom_quantity');
-          if (customQuantityPrompt?.value !== undefined && customQuantityPrompt?.value !== null) {
-            return parseQuantity(customQuantityPrompt.value);
-          }
+        const strict = resolveItemQuantityStrict(item);
+        if (strict === null) {
+          throw new Error(buildQuantityErrorMessage(item));
         }
-
-        const qtyPromptIndex = findQuantityPromptIndex(item, promptsArray);
-        if (qtyPromptIndex >= 0) {
-          const qtyPrompt = promptsArray[qtyPromptIndex];
-          if (qtyPrompt?.value !== undefined && qtyPrompt?.value !== null) {
-            return parseQuantity(qtyPrompt.value);
-          }
-        }
-
-        return parseQuantity(item.quantity ?? 1);
+        return strict;
       };
 
       const syncPromptsWithSelectedQuantity = (item: any, quantity: number) => {

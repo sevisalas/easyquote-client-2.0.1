@@ -709,7 +709,7 @@ Deno.serve(async (req) => {
       
       // Get price ONLY from outputs type "Price" (sin IVA)
       let totalPrice = 0;
-      let units = 1;
+      let units: number | null = null;
       
       console.log('🔍 Item outputs:', JSON.stringify(item.outputs, null, 2));
       
@@ -816,9 +816,18 @@ Deno.serve(async (req) => {
       // BUT: if unit_price is 0, the total comes entirely from item_additionals (fixed amounts)
       // In that case, keep units=1 so Holded gets the correct total without dividing
         if (isCustomProduct) {
-          units = typeof customQuantity === 'number'
-            ? customQuantity
-            : parseLocaleNumber(customQuantity ?? item.quantity ?? 1) || 1;
+          // En productos personalizados, customQuantity ya viene resuelto del prompt 'custom_quantity'.
+          // Si no es un número válido > 0, lo dejamos en null para abortar abajo.
+          const cq = typeof customQuantity === 'number' ? customQuantity : parseLocaleNumber(customQuantity);
+          units = Number.isFinite(cq) && cq > 0 ? cq : null;
+      }
+
+      // Validación estricta: si no se pudo determinar la cantidad, abortar con error claro.
+      if (units === null || !Number.isFinite(units) || units <= 0) {
+        const productName = item.product_name || 'artículo sin nombre';
+        const errMsg = `No se pudo determinar la cantidad del artículo "${productName}". Revisa el motor de precios del producto y asegúrate de que tiene un campo de cantidad válido.`;
+        console.error('❌ Quantity resolution failed:', { productName, productId: itemProductId, isCustomProduct });
+        throw new Error(errMsg);
       }
       
       // Apply item additionals to the price (bake into unit price)
