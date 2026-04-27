@@ -26,11 +26,19 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.7.25",
+    date: "2026-04-27",
+    changes: {
+      fixed: [
+        "Artículos personalizados sin precio base: el PDF ya no muestra la línea '1 × 0,00 €' cuando el artículo solo tiene ajustes (additionals), calculando el total correctamente a partir de estos.",
+      ],
+    },
+  },
+  {
     version: "2.7.24",
     date: "2026-04-24",
     changes: {
       fixed: [
-        "Artículos personalizados sin precio base: el PDF ya no muestra la línea '1 × 0,00 €' cuando el artículo solo tiene ajustes (additionals), calculando el total correctamente a partir de estos.",
         "Precios estables al guardar sin editar: los presupuestos guardados sin tocar ningún artículo conservan exactamente el total original (corrige caídas como 1.845,75 € → 1.680 €)",
         "La tarifa de cliente nunca se aplica sobre los ajustes (importe fijo, porcentaje, multiplicador o divisor); solo afecta al precio base del API",
       ],
