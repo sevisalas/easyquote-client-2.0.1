@@ -246,8 +246,9 @@ export const useQuoteApproval = () => {
       let subtotal = 0;
       for (const item of itemsToApprove) {
         const multi = item.multi as any;
+        const resolvedQty = resolveItemQuantityFromPrompts(item);
         let itemPrice = item.product_id === '__CUSTOM_PRODUCT__'
-          ? getCustomItemBasePrice(item, resolveItemQuantityFromPrompts(item))
+          ? applyItemAdditionals(getCustomItemBasePrice(item, resolvedQty), item, resolvedQty)
           : item.price || 0;
 
         // If multi with selected quantity, use that specific price
