@@ -645,7 +645,11 @@ export default function QuoteNew() {
         // Auto-generar descripción desde prompts visibles si no fue editada manualmente
         let description = item.itemDescription || "";
         const isManual = item.descriptionManual || false;
-        if (!isManual && promptsArray.length > 0) {
+        const isCustomProductForDescription = item.productId === "__CUSTOM_PRODUCT__";
+        // For custom products, the description comes exclusively from the user-typed textarea.
+        // Never auto-generate it from prompts (custom_quantity / custom_unit_price would
+        // otherwise leak into the description as "Cantidad: 1, Precio unitario: 0").
+        if (!isManual && !isCustomProductForDescription && promptsArray.length > 0) {
           const excludeLabels = ["tarifa", "forzar máquina", "forzar maquina", "tira y retira", "forzar poses", "forzar poses/pags.", "modelos"];
           const productId = String(item.productId || '');
           const filterPrompt = (p: any) => {
