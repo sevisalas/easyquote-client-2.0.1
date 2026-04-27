@@ -173,7 +173,14 @@ export default function Template7({ data }: Template7Props) {
           <tbody>
             {page.items.map((item: any, index: number) => {
               const hasMulti = item.multi_extra && item.multi_extra.length > 0;
-              const hideItemAmounts = item.isCustomProduct === true;
+              // For custom products: only hide qty/price when BOTH are empty (user didn't fill them).
+              // If the user provided a price (or quantity), we must show it.
+              const customPriceNum = parseFloat(String(item.price ?? 0).toString().replace(/\./g, '').replace(',', '.')) || 0;
+              const customQtyRaw = item.quantity ?? item.displayQuantity;
+              const customQtyNum = customQtyRaw == null || customQtyRaw === ''
+                ? 0
+                : (parseFloat(String(customQtyRaw).replace(/\./g, '').replace(',', '.')) || 0);
+              const hideItemAmounts = item.isCustomProduct === true && customPriceNum <= 0 && customQtyNum <= 0;
 
               return (
               <React.Fragment key={index}>
