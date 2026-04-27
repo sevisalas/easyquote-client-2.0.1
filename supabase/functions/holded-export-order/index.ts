@@ -838,6 +838,9 @@ Deno.serve(async (req) => {
         console.error('❌ Quantity resolution failed:', { productName, productId: itemProductId, isCustomProduct });
         throw new Error(errMsg);
       }
+      // A partir de aquí, units es siempre un número válido (>=1) para custom o >0 para no-custom)
+      const unitsResolved: number = (units !== null && Number.isFinite(units) && units > 0) ? units : 1;
+      units = unitsResolved;
       
       // Apply item additionals to the price (bake into unit price)
       if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {
