@@ -208,9 +208,12 @@ export const resolveApprovedQuoteItemState = (item: any) => {
     resolvedPrice = applyItemAdditionals(basePrice, item, acceptedQuantity);
   }
 
-  const resolvedDescription = item?.description_manual === true
-    ? item?.description || ''
-    : buildAutoDescriptionFromPrompts(promptArray) || item?.description || '';
+  const storedDescription = typeof item?.description === 'string' ? item.description : '';
+  const resolvedDescription = storedDescription.trim() !== ''
+    ? storedDescription
+    : item?.description_manual === true
+      ? ''
+      : buildAutoDescriptionFromPrompts(promptArray) || '';
 
   return {
     resolvedQuantity: acceptedQuantity ?? parseQuantity(item?.quantity ?? 1),
