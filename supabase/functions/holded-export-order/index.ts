@@ -865,6 +865,12 @@ Deno.serve(async (req) => {
                 break;
             }
           } else {
+            // CRITICAL: if totalPrice came from item.price (fallback), it ALREADY
+            // includes item_additionals. Re-applying them here would DOUBLE the amount
+            // exported to Holded (real bug observed in production).
+            if (priceIncludesAdditionals) {
+              return;
+            }
             switch (additional.type) {
               case 'net_amount':
                 totalPrice += value;
