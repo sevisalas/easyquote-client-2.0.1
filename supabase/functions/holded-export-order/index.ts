@@ -816,19 +816,31 @@ Deno.serve(async (req) => {
       // BUT: if unit_price is 0, the total comes entirely from item_additionals (fixed amounts)
       // In that case, keep units=1 so Holded gets the correct total without dividing
         if (isCustomProduct) {
-          // En productos personalizados, customQuantity ya viene resuelto del prompt 'custom_quantity'.
-          // Si no es un número válido > 0, lo dejamos en null para abortar abajo.
+          // Productos personalizados (sin motor de precios): el usuario decide.
+          // Si NO introdujo cantidad/precio, NO inventamos ni lanzamos error.
+          // Enviamos units=1 como contenedor neutro y mantenemos totalPrice = item.price tal cual.
           const cq = typeof customQuantity === 'number' ? customQuantity : parseLocaleNumber(customQuantity);
-          units = Number.isFinite(cq) && cq > 0 ? cq : null;
+          const cup = parseLocaleNumber(customUnitPrice);
+          if (Number.isFinite(cq) && cq > 0 && cup > 0) {
+            units = cq;
+            totalPrice = cq * cup;
+          } else {
+            units = 1;
+            totalPrice = parseLocaleNumber(item.price);
+            console.log('📦 Custom product sin cantidad/precio del usuario: enviando item.price tal cual con units=1');
+          }
       }
 
-      // Validación estricta: si no se pudo determinar la cantidad, abortar con error claro.
-      if (units === null || !Number.isFinite(units) || units <= 0) {
+      // Validación estricta SOLO para productos del API EasyQuote (los custom no la necesitan).
+      if (!isCustomProduct && (units === null || !Number.isFinite(units) || units <= 0)) {
         const productName = item.product_name || 'artículo sin nombre';
         const errMsg = `No se pudo determinar la cantidad del artículo "${productName}". Revisa el motor de precios del producto y asegúrate de que tiene un campo de cantidad válido.`;
         console.error('❌ Quantity resolution failed:', { productName, productId: itemProductId, isCustomProduct });
         throw new Error(errMsg);
       }
+      // A partir de aquí, units es siempre un número válido (>=1) para custom o >0 para no-custom)
+      const unitsResolved: number = (units !== null && Number.isFinite(units) && units > 0) ? units : 1;
+      units = unitsResolved;
       
       // Apply item additionals to the price (bake into unit price)
       if (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0) {

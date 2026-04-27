@@ -455,16 +455,29 @@ Deno.serve(async (req) => {
       }
       
       if (isCustomProduct) {
+        // Productos personalizados (sin motor de precios): el usuario decide.
+        // Si NO introdujo cantidad/precio, NO inventamos ni lanzamos error.
+        // Enviamos units=1 como contenedor neutro y mantenemos totalPrice = item.price tal cual.
         const cq = typeof customQuantity === 'number'
           ? customQuantity
           : parseFloat(String(customQuantity ?? '').replace(/\./g, '').replace(',', '.'));
-        units = Number.isFinite(cq) && cq > 0 ? cq : 0;
+        const cup = typeof customUnitPrice === 'number'
+          ? customUnitPrice
+          : parseFloat(String(customUnitPrice ?? '').replace(/\./g, '').replace(',', '.'));
+        if (Number.isFinite(cq) && cq > 0 && Number.isFinite(cup) && cup > 0) {
+          units = cq;
+          totalPrice = cq * cup;
+        } else {
+          units = 1;
+          totalPrice = parseFloat(item.price) || 0;
+          console.log('📦 Custom product sin cantidad/precio del usuario: enviando item.price tal cual con units=1');
+        }
       }
 
-      // Validación estricta: si units no se pudo determinar, abortamos con error claro.
+      // Validación estricta SOLO para productos del API EasyQuote (los custom no la necesitan).
       const itemDeclaredQty = parseFloat(String(item.quantity ?? '').replace(/\./g, '').replace(',', '.'));
       const quantityResolved = isCustomProduct
-        ? units > 0
+        ? true
         : units > 1 || (Number.isFinite(itemDeclaredQty) && itemDeclaredQty > 0);
       if (!quantityResolved) {
         const productName = item.product_name || 'artículo sin nombre';
