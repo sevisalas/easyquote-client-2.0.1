@@ -783,7 +783,12 @@ Deno.serve(async (req) => {
             p.label?.toLowerCase().includes('precio') || p.id === 'custom_unit_price'
           );
           
-          customQuantity = parseLocaleNumber(qtyPrompt?.value ?? item.quantity ?? 1) || 1;
+          // Sin fallback artificial a 1: si no hay valor numérico válido, queda 0 y se aborta abajo.
+          {
+            const cqRaw = qtyPrompt?.value ?? item.quantity;
+            const cq = parseLocaleNumber(cqRaw);
+            customQuantity = Number.isFinite(cq) && cq > 0 ? cq : 0;
+          }
           customUnitPrice = parseLocaleNumber(pricePrompt?.value);
           
           // Use item description directly for custom products
