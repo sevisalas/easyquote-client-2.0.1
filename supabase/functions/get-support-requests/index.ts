@@ -90,7 +90,7 @@ serve(async (req: Request) => {
     });
   } catch (error: unknown) {
     console.error("Error fetching support requests:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage = error instanceof Error ? (error as Error).message : "Unknown error";
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

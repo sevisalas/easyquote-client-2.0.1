@@ -27,7 +27,7 @@ const collectReferencedCustomerIds = async (
       .range(from, from + pageSize - 1);
 
     if (error) {
-      throw new Error(`Failed to inspect ${table}: ${error.message}`);
+      throw new Error(`Failed to inspect ${table}: ${(error as Error).message}`);
     }
 
     for (const row of data || []) {

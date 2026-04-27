@@ -80,7 +80,7 @@ serve(async (req: Request): Promise<Response> => {
 
   } catch (err) {
     console.error("easyquote-excel-files: unexpected error", err);
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    const errorMessage = err instanceof Error ? (err as Error).message : 'Unknown error'
     return new Response(JSON.stringify({ 
       error: "Unexpected error",
       details: errorMessage 

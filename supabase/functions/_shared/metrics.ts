@@ -39,7 +39,7 @@ export async function logMetric(data: MetricData): Promise<void> {
       });
 
     if (error) {
-      console.warn("metrics: Failed to log metric:", error.message);
+      console.warn("metrics: Failed to log metric:", (error as Error).message);
     }
   } catch (err) {
     // Never let metric logging fail the main request
@@ -80,7 +80,7 @@ export async function withMetrics<T>(
     return { result, durationMs };
   } catch (err) {
     statusCode = 500;
-    errorMessage = err instanceof Error ? err.message : String(err);
+    errorMessage = err instanceof Error ? (err as Error).message : String(err);
     const durationMs = Date.now() - startTime;
     
     // Log error metric
