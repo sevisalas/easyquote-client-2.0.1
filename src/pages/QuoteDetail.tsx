@@ -24,6 +24,7 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 import { isVisiblePrompt, type PromptDef } from "@/utils/promptVisibility";
 import DocumentAttachments from "@/components/quotes/DocumentAttachments";
 import { resolveApprovedQuoteItemState } from "@/utils/approvedMultiQuantity";
+import { resolveItemQuantityStrict } from "@/utils/strictQuantity";
 
 const fetchQuote = async (id: string) => {
   const { data, error } = await supabase
