@@ -301,7 +301,7 @@ Deno.serve(async (req) => {
         const promptsArray = Array.isArray(item.prompts) ? item.prompts : [];
         const qtyPrompt = promptsArray.find((p: any) => p.id === 'custom_quantity');
         const pricePrompt = promptsArray.find((p: any) => p.id === 'custom_unit_price');
-        customQuantity = qtyPrompt?.value ?? item.quantity ?? 1;
+        customQuantity = qtyPrompt?.value ?? item.quantity ?? null;
         customUnitPrice = pricePrompt?.value || 0;
         description = item.description || '';
       } else {
