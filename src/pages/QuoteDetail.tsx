@@ -933,7 +933,10 @@ export default function QuoteDetail() {
                     ? resolveApprovedQuoteItemState(item)
                     : null;
                   const displayedItemPrice = approvedState?.resolvedPrice ?? getDisplayedItemPrice(item);
-                  const resolvedQuantity = approvedState?.resolvedQuantity ?? (parseLocaleNumber(item.quantity ?? 1) || 1);
+                  // Sin fallback artificial a 1: solo usamos cantidad si se puede determinar.
+                  // Si no, se muestra el precio total persistido tal cual (sin desglose por cantidad).
+                  const strictQty = approvedState?.resolvedQuantity ?? resolveItemQuantityStrict(item);
+                  const resolvedQuantity = strictQty ?? 0;
                   const additionalsBreakdown = buildItemAdditionalsBreakdown(item, displayedItemPrice, resolvedQuantity);
                   const multi = item.multi as any;
                   const hasMultipleQuantities = multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1;
