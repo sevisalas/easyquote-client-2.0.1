@@ -429,7 +429,7 @@ serve(async (req: Request): Promise<Response> => {
       functionName: 'easyquote-pricing',
       responseTimeMs: 0,
       statusCode: 500,
-      errorMessage: err instanceof Error ? err.message : String(err)
+      errorMessage: err instanceof Error ? (err as Error).message : String(err)
     }).catch(() => {});
     
     return new Response(JSON.stringify({ error: "Unexpected error" }), {

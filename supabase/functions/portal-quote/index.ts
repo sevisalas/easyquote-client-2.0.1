@@ -215,7 +215,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error("Portal quote error:", error);
     return new Response(
-      JSON.stringify({ error: error.message || "Error interno" }),
+      JSON.stringify({ error: (error as Error).message || "Error interno" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

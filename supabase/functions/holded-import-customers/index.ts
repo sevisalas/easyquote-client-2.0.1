@@ -271,7 +271,7 @@ Deno.serve(async (req) => {
 
       if (error) {
         console.error('Error upserting batch:', error);
-        errors.push({ batch: i / batchSize, error: error.message });
+        errors.push({ batch: i / batchSize, error: (error as Error).message });
       } else {
         importedCount += data?.length || 0;
       }
@@ -302,7 +302,7 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('Error in holded-import-customers:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as Error).message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

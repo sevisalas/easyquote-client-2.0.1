@@ -125,7 +125,7 @@ serve(async (req: Request): Promise<Response> => {
     });
   } catch (err) {
     console.error("sync-woocommerce-products: unexpected error", err);
-    return new Response(JSON.stringify({ error: "Unexpected error", details: err.message }), {
+    return new Response(JSON.stringify({ error: "Unexpected error", details: (err as Error).message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

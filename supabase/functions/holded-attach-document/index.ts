@@ -163,7 +163,7 @@ Deno.serve(async (req) => {
         }
       } catch (err: any) {
         console.error(`Error attaching ${attachment.file_name}:`, err);
-        results.push({ fileName: attachment.file_name, success: false, error: err.message });
+        results.push({ fileName: attachment.file_name, success: false, error: (err as Error).message });
       }
     }
 
@@ -178,7 +178,7 @@ Deno.serve(async (req) => {
   } catch (error: any) {
     console.error('Error in holded-attach-document:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Failed to attach documents' }),
+      JSON.stringify({ error: (error as Error).message || 'Failed to attach documents' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
     );
   }

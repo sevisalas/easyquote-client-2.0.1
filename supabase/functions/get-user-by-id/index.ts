@@ -90,9 +90,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in get-user-by-id function:', error);
-    console.error('Error stack:', error.stack);
+    console.error('Error stack:', (error as Error).stack);
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: (error as Error).message || 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

@@ -112,10 +112,10 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Verify organization exists
+    // Verify organization exists and get owner user_id in a single query
     const { data: org, error: orgError } = await supabase
       .from('organizations')
-      .select('id')
+      .select('id, api_user_id')
       .eq('id', organizationId)
       .single();
 
@@ -127,30 +127,16 @@ serve(async (req) => {
       );
     }
 
-    // Get organization owner user_id
-    const { data: org } = await supabase
-      .from('organizations')
-      .select('api_user_id')
-      .eq('id', body.organizationId)
-      .single();
-
-    if (!org) {
-      return new Response(
-        JSON.stringify({ error: 'Organization not found' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     // Insert or update contact in customers table with source='holded'
     const { data, error } = await supabase
       .from('customers')
       .upsert({
         holded_id: holdedId,
-        organization_id: body.organizationId,
-        user_id: org.api_user_id,
-        name: body.name.trim(),
-        email: body.email?.trim() || null,
-        phone: body.phone?.trim() || body.mobile?.trim() || null,
+        organization_id: organizationId,
+        user_id: (org as any).api_user_id,
+        name: name.trim(),
+        email: email?.trim() || null,
+        phone: phone?.trim() || mobile?.trim() || null,
         source: 'holded'
       }, {
         onConflict: 'holded_id,organization_id',
@@ -162,7 +148,7 @@ serve(async (req) => {
     if (error) {
       console.error('Error upserting contact:', error);
       return new Response(
-        JSON.stringify({ error: error.message }),
+        JSON.stringify({ error: (error as Error).message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -183,7 +169,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error processing Zapier webhook:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as Error).message }),
       { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
