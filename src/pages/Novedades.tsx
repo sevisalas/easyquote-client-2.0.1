@@ -26,8 +26,8 @@ interface Version {
 
 const versions: Version[] = [
   {
-    version: "2.7.24",
-    date: "2026-04-24",
+    version: "2.7.25",
+    date: "2026-04-27",
     changes: {
       fixed: [
         "Artículos personalizados sin precio base: el PDF ya no muestra la línea '1 × 0,00 €' cuando el artículo solo tiene ajustes (additionals), calculando el total correctamente a partir de estos.",
