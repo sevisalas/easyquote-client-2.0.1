@@ -709,7 +709,7 @@ Deno.serve(async (req) => {
       
       // Get price ONLY from outputs type "Price" (sin IVA)
       let totalPrice = 0;
-      let units = 1;
+      let units: number | null = null;
       
       console.log('🔍 Item outputs:', JSON.stringify(item.outputs, null, 2));
       
