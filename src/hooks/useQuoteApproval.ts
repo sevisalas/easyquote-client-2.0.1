@@ -11,7 +11,7 @@ import {
   promptsToArray,
   syncPromptsWithQuantity,
 } from "@/utils/approvedMultiQuantity";
-import { resolveItemQuantityStrict, buildQuantityErrorMessage } from "@/utils/strictQuantity";
+import { resolveItemQuantityStrict, buildQuantityErrorMessage, isCustomProductItem } from "@/utils/strictQuantity";
 
 interface ApproveQuoteParams {
   quoteId: string;
@@ -209,10 +209,13 @@ export const useQuoteApproval = () => {
 
       const resolveItemQuantityFromPrompts = (item: any): number => {
         const strict = resolveItemQuantityStrict(item);
-        if (strict === null) {
-          throw new Error(buildQuantityErrorMessage(item));
-        }
-        return strict;
+        if (strict !== null) return strict;
+        // Productos personalizados: el usuario decide; si no puso cantidad, no inventamos
+        // un número derivado del motor (no hay motor). Devolvemos 1 como contenedor neutro:
+        // el precio del item se usará tal cual está persistido (item.price), sin multiplicar.
+        if (isCustomProductItem(item)) return 1;
+        // Productos del API: aquí sí debe existir una cantidad resoluble.
+        throw new Error(buildQuantityErrorMessage(item));
       };
 
       const syncPromptsWithSelectedQuantity = (item: any, quantity: number) => {
@@ -225,7 +228,11 @@ export const useQuoteApproval = () => {
           : Object.values(item.prompts || {});
         const customUnitPricePrompt = promptsArray.find((p: any) => String(p?.id || p?.name || '').trim() === 'custom_unit_price');
         const unitPrice = parseLocaleNumber(customUnitPricePrompt?.value);
-        if (unitPrice > 0) return unitPrice * quantity;
+        // Solo multiplicamos por cantidad si el usuario realmente proporcionó precio unitario
+        // y la cantidad fue resuelta de forma fiable (resolveItemQuantityStrict !== null).
+        const strictQty = resolveItemQuantityStrict(item);
+        if (unitPrice > 0 && strictQty !== null && strictQty > 0) return unitPrice * strictQty;
+        // Sin datos del usuario: respetamos el precio total ya persistido (puede ser 0).
         return parseLocaleNumber(item.price || 0);
       };
 
