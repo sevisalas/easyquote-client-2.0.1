@@ -1,0 +1,2 @@
+UPDATE quotes SET subtotal = 1310.95, final_price = 1310.95 WHERE id = '09fbd5ef-d46f-47e7-9d92-3aad77f8a87b' AND final_price = 0;
+UPDATE sales_orders SET subtotal = 1310.95, final_price = 1310.95 WHERE quote_id = '09fbd5ef-d46f-47e7-9d92-3aad77f8a87b' AND final_price = 0;
