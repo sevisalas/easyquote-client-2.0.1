@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Search } from "lucide-react";
 
-const CURRENT_VERSION = "7.2.23";
+const CURRENT_VERSION = "7.2.24";
 const SILENT_UPDATE = true;
 const LS_KEY = "whats_new_seen_version";
 
@@ -23,6 +23,12 @@ interface ReleaseNote {
 }
 
 const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    icon: <Sparkles className="h-5 w-5 text-primary" />,
+    title: "Artículos personalizados sin precio base",
+    description:
+      "Cuando un artículo personalizado solo tiene ajustes (sin precio unitario), el PDF ya no muestra la línea engañosa de \"1 × 0,00 €\" y el total se calcula a partir de los ajustes.",
+  },
   {
     icon: <Sparkles className="h-5 w-5 text-primary" />,
     title: "PDF con descripción completa",
