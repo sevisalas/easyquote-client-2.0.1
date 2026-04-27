@@ -563,17 +563,18 @@ export const generateQuotePDF = async (
         }
       }
 
-      const quantityValue = item.product_id === '__CUSTOM_PRODUCT__'
+      const isCustomProduct = item.product_id === '__CUSTOM_PRODUCT__';
+      const quantityValue = isCustomProduct
         ? parsePositiveQuantity(displayQuantity ?? item.quantity)
         : (item.quantity ?? null);
       const customPromptUnitPrice = item.product_id === '__CUSTOM_PRODUCT__' && Array.isArray(item.prompts)
         ? parseLocaleNumber(item.prompts.find((prompt: any) => String(prompt?.id || prompt?.name || '').trim() === 'custom_unit_price')?.value)
         : 0;
-      const normalizedCustomQuantity = item.product_id === '__CUSTOM_PRODUCT__'
+      const normalizedCustomQuantity = isCustomProduct
         ? (quantityValue ?? 1)
         : null;
-      const resolvedItemPrice = item.product_id === '__CUSTOM_PRODUCT__' && normalizedCustomQuantity
-        ? customPromptUnitPrice * normalizedCustomQuantity
+      const resolvedItemPrice = isCustomProduct
+        ? (item.price || 0)
         : (item.price || 0);
 
       // Extraer imágenes y prompts EN ORDEN
@@ -691,13 +692,15 @@ export const generateQuotePDF = async (
       // If description is empty, show prompts + components as usual.
       if (!descriptionIsEmpty) {
         return {
+          product_id: item.product_id,
+          isCustomProduct,
           name: item.name || item.product_name || 'Producto',
           description: safeDescription,
           description_manual: item.description_manual === true,
           prompts: [],
           price: resolvedItemPrice,
-          quantity: quantityValue,
-          displayQuantity,
+          quantity: isCustomProduct ? null : quantityValue,
+          displayQuantity: isCustomProduct ? null : displayQuantity,
           images: images,
           components: [],
           item_additionals: formattedAdditionals,
@@ -708,12 +711,14 @@ export const generateQuotePDF = async (
       // Description is empty — use prompts + components
       if (hideAllPromptsInDocs) {
         return {
+          product_id: item.product_id,
+          isCustomProduct,
           name: item.name || item.product_name || 'Producto',
           description: '',
           prompts: [],
           price: resolvedItemPrice,
-          quantity: quantityValue,
-          displayQuantity,
+          quantity: isCustomProduct ? null : quantityValue,
+          displayQuantity: isCustomProduct ? null : displayQuantity,
           images: images,
           components: componentSections,
           item_additionals: formattedAdditionals,
@@ -722,13 +727,15 @@ export const generateQuotePDF = async (
       }
 
       return {
+        product_id: item.product_id,
+        isCustomProduct,
         name: item.name || item.product_name || 'Producto',
         description: '',
         description_manual: item.description_manual === true,
         prompts: promptsFormatted,
         price: resolvedItemPrice,
-        quantity: quantityValue,
-        displayQuantity,
+        quantity: isCustomProduct ? null : quantityValue,
+        displayQuantity: isCustomProduct ? null : displayQuantity,
         images: images,
         components: componentSections,
         item_additionals: formattedAdditionals,

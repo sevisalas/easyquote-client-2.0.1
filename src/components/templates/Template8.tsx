@@ -187,6 +187,7 @@ export default function Template8({ data }: Template8Props) {
           <tbody>
             {page.items.map((item: any, index: number) => {
               const hasMulti = item.multi_extra && item.multi_extra.length > 0;
+              const hideItemAmounts = item.isCustomProduct === true;
 
               return (
               <React.Fragment key={index}>
@@ -280,7 +281,7 @@ export default function Template8({ data }: Template8Props) {
                 <tr style={{ borderBottom: hasMulti ? 'none' : '1px solid #ddd' }}>
                   <td style={{ padding: '4px 8px' }}></td>
                   <td style={{ padding: '4px 8px', textAlign: 'center', fontSize: '12px' }}>
-                    {(() => {
+                    {!hideItemAmounts && (() => {
                       const quantity = getItemQuantity(item);
                       if (quantity == null || quantity === '') return '';
                       const numericQuantity = typeof quantity === 'string'
@@ -292,10 +293,10 @@ export default function Template8({ data }: Template8Props) {
                     })()}
                   </td>
                   <td style={{ padding: '4px 8px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap', width: PRICE_COLUMN_WIDTH, minWidth: PRICE_COLUMN_WIDTH }}>
-                    {fmtEUR(item.price || 0)}
+                    {!hideItemAmounts ? fmtEUR(item.price || 0) : ''}
                   </td>
                 </tr>
-                {hasMulti && item.multi_extra.map((me: any, meIdx: number) => {
+                {!hideItemAmounts && hasMulti && item.multi_extra.map((me: any, meIdx: number) => {
                   let adjTotal = 0;
                   const adjs = item._raw_additionals || item.item_additionals || [];
                   adjs.forEach((adj: any) => {
