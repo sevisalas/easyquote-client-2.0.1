@@ -977,19 +977,27 @@ Deno.serve(async (req) => {
         // BUT: if unit_price is 0, the total comes entirely from item_additionals (fixed amounts)
         // In that case, keep units=1 so Holded gets the correct total without dividing
         if (isCustomProduct) {
+          // Productos personalizados (sin motor de precios): el usuario decide.
+          // Si NO introdujo cantidad/precio, NO inventamos ni lanzamos error.
+          // Enviamos units=1 como contenedor neutro y mantenemos totalPrice = item.price tal cual.
           const cq = typeof customQuantity === 'number'
             ? customQuantity
             : parseFloat(String(customQuantity ?? '').replace(/\./g, '').replace(',', '.'));
-          units = Number.isFinite(cq) && cq > 0 ? cq : 0;
+          const cup = parseLocaleNumber(customUnitPrice);
+          if (Number.isFinite(cq) && cq > 0 && cup > 0) {
+            units = cq;
+            totalPrice = cq * cup;
+          } else {
+            units = 1;
+            totalPrice = parseLocaleNumber(item.price);
+            console.log('📦 Custom product sin cantidad/precio del usuario: enviando item.price tal cual con units=1');
+          }
         }
 
-        // Validación estricta: si units sigue en su valor inicial 1 sin que ningún prompt lo haya
-        // confirmado, o quedó en 0 para custom, abortamos con error claro.
-        // Detectamos "no resuelto" cuando isCustomProduct y units<=0, o cuando para no-custom no
-        // hubo prompt detectado y units sigue en el valor inicial 1 pero el item NO declara quantity.
+        // Validación estricta SOLO para productos del API EasyQuote (los custom no la necesitan).
         const itemDeclaredQty = parseLocaleNumber(item.quantity);
         const quantityResolved = isCustomProduct
-          ? units > 0
+          ? true
           : units > 1 || (Number.isFinite(itemDeclaredQty) && itemDeclaredQty > 0);
         if (!quantityResolved) {
           const productName = item.product_name || 'artículo sin nombre';
