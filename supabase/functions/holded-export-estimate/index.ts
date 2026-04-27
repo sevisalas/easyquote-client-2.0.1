@@ -871,6 +871,9 @@ Deno.serve(async (req) => {
         // Get price ONLY from outputs type "Price" (sin IVA)
         let totalPrice = 0;
         let units = 1;
+        // When true, totalPrice already includes item_additionals (came from item.price),
+        // so we MUST NOT re-apply additionals to avoid double-charging in Holded.
+        let priceIncludesAdditionals = false;
         
         console.log('🔍 Item outputs:', JSON.stringify(item.outputs, null, 2));
         
@@ -891,17 +894,20 @@ Deno.serve(async (req) => {
             // This happens with composite products where the price is stored directly on the item
             if (totalPrice === 0 && parseLocaleNumber(item.price) > 0) {
               totalPrice = parseLocaleNumber(item.price);
+              priceIncludesAdditionals = true;
               console.log('💰 Output Price was 0, using item.price fallback:', totalPrice);
             }
           } else {
             console.log('⚠️ No output with type=Price found! Available types:', item.outputs.map((o: any) => ({ type: o.type, name: o.name })));
             // Fallback: use item.price but it might include IVA
             totalPrice = parseLocaleNumber(item.price);
+            priceIncludesAdditionals = true;
             console.log('⚠️ Using item.price as fallback (may include IVA):', totalPrice);
           }
         } else {
           console.log('⚠️ No outputs available, using item.price fallback');
           totalPrice = parseLocaleNumber(item.price);
+          priceIncludesAdditionals = true;
         }
 
         // For custom products: use base price (qty × unit_price) instead of item.price
@@ -910,6 +916,7 @@ Deno.serve(async (req) => {
           const basePrice = parseLocaleNumber(customUnitPrice) * (parseLocaleNumber(customQuantity) || 1);
           if (basePrice > 0) {
             totalPrice = basePrice;
+            priceIncludesAdditionals = false;
             console.log('💰 Custom product: using base price (qty × unit_price):', { totalPrice, customQuantity, customUnitPrice });
           }
         }
@@ -1028,6 +1035,12 @@ Deno.serve(async (req) => {
                   break;
               }
             } else {
+              // CRITICAL: if totalPrice came from item.price (fallback), it ALREADY
+              // includes item_additionals. Re-applying them here would DOUBLE the amount
+              // exported to Holded (real bug observed in production).
+              if (priceIncludesAdditionals) {
+                return;
+              }
               // Apply non-discount adjustments to total price
               switch (additional.type) {
                 case 'net_amount':
