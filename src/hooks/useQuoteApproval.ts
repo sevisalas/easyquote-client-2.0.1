@@ -11,6 +11,7 @@ import {
   promptsToArray,
   syncPromptsWithQuantity,
 } from "@/utils/approvedMultiQuantity";
+import { resolveItemQuantityStrict, buildQuantityErrorMessage } from "@/utils/strictQuantity";
 
 interface ApproveQuoteParams {
   quoteId: string;
