@@ -82,8 +82,8 @@ export const cleanupObsoleteHoldedCustomers = async (
     500,
   )) {
     const [quoteRefs, orderRefs] = await Promise.all([
-      collectReferencedCustomerIds(supabaseClient, 'quotes', organizationId, customerIdChunk),
-      collectReferencedCustomerIds(supabaseClient, 'sales_orders', organizationId, customerIdChunk),
+      collectReferencedCustomerIds(supabaseClient, 'quotes', organizationId, customerIdChunk as string[]),
+      collectReferencedCustomerIds(supabaseClient, 'sales_orders', organizationId, customerIdChunk as string[]),
     ]);
 
     quoteRefs.forEach((id) => referencedIds.add(id));
