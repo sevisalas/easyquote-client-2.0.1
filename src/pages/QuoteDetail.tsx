@@ -148,7 +148,12 @@ const getDisplayedItemPrice = (item: any): number => {
   }
   const qtyPrompt = item.prompts.find((prompt: any) => String(prompt?.id || prompt?.name || '').trim() === 'custom_quantity');
   const unitPricePrompt = item.prompts.find((prompt: any) => String(prompt?.id || prompt?.name || '').trim() === 'custom_unit_price');
-  const qty = parseLocaleNumber(qtyPrompt?.value ?? item.quantity ?? 1) || 1;
+  // Sin fallback a 1: si no hay cantidad válida, usamos el precio total ya persistido del item.
+  const rawQty = qtyPrompt?.value ?? item.quantity;
+  const qty = parseLocaleNumber(rawQty);
+  if (!Number.isFinite(qty) || qty <= 0) {
+    return Number(item?.price || 0);
+  }
   const unitPrice = parseLocaleNumber(unitPricePrompt?.value);
   return unitPrice > 0 ? unitPrice * qty : Number(item?.price || 0);
 };
