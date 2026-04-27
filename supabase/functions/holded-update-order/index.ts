@@ -455,9 +455,20 @@ Deno.serve(async (req) => {
       }
       
       if (isCustomProduct) {
-        units = typeof customQuantity === 'number'
+        const cq = typeof customQuantity === 'number'
           ? customQuantity
-          : parseFloat(String(customQuantity ?? item.quantity ?? 1).replace(/\./g, '').replace(',', '.')) || 1;
+          : parseFloat(String(customQuantity ?? '').replace(/\./g, '').replace(',', '.'));
+        units = Number.isFinite(cq) && cq > 0 ? cq : 0;
+      }
+
+      // Validación estricta: si units no se pudo determinar, abortamos con error claro.
+      const itemDeclaredQty = parseFloat(String(item.quantity ?? '').replace(/\./g, '').replace(',', '.'));
+      const quantityResolved = isCustomProduct
+        ? units > 0
+        : units > 1 || (Number.isFinite(itemDeclaredQty) && itemDeclaredQty > 0);
+      if (!quantityResolved) {
+        const productName = item.product_name || 'artículo sin nombre';
+        throw new Error(`No se pudo determinar la cantidad del artículo "${productName}". Revisa el motor de precios del producto y asegúrate de que tiene un campo de cantidad válido.`);
       }
       
       // Apply item additionals
