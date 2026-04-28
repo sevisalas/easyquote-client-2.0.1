@@ -13,9 +13,9 @@ export interface Template7PaginationPage<T = Template7PaginationItem> {
   showSummary: boolean;
 }
 
-const STANDARD_PAGE_CAPACITY = 34;
-const LAST_PAGE_CAPACITY = 34;
-const FIXED_FOOTER_LINES = 6;
+const STANDARD_PAGE_CAPACITY = 48;
+const LAST_PAGE_CAPACITY = 48;
+const FIXED_FOOTER_LINES = 4;
 
 const stripHtml = (value: string) =>
   String(value || '')
