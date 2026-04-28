@@ -26,14 +26,23 @@ interface Version {
 
 const versions: Version[] = [
   {
-    version: "2.7.25",
+    version: "2.7.26",
     date: "2026-04-28",
     changes: {
       fixed: [
+        "Paginación del PDF (Campillo/Anebri): los artículos ya no se parten entre páginas. Si las notas no caben con los totales, solo las notas saltan a una nueva página, manteniendo los artículos íntegros.",
         "Artículos personalizados sin precio base: el PDF ya no muestra la línea '1 × 0,00 €' cuando el artículo solo tiene ajustes (additionals), calculando el total correctamente a partir de estos.",
         "Precios estables al guardar sin editar: los presupuestos guardados sin tocar ningún artículo conservan exactamente el total original (corrige caídas como 1.845,75 € → 1.680 €)",
         "La tarifa de cliente nunca se aplica sobre los ajustes (importe fijo, porcentaje, multiplicador o divisor); solo afecta al precio base del API",
-        "Paginación del PDF (Campillo/Anebri): los artículos ya no se parten entre páginas. Si las notas no caben con los totales, solo las notas saltan a una nueva página, manteniendo los artículos íntegros.",
+      ],
+    },
+  },
+  {
+    version: "2.7.25",
+    date: "2026-04-27",
+    changes: {
+      fixed: [
+        "Correcciones internas y estabilidad de base de datos.",
       ],
     },
   },
