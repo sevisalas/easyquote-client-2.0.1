@@ -371,7 +371,7 @@ export default function Template7({ data }: Template7Props) {
         )}
 
         {/* Notas */}
-        {page.showSummary && quote.notes && (
+        {page.showNotes && quote.notes && (
           <div style={{ marginBottom: '6px' }}>
             <h3 style={{ fontSize: '11px', fontWeight: 'bold', color: '#1a3a5c', textTransform: 'uppercase', marginBottom: '2px' }}>Notas</h3>
             <p style={{ fontSize: '11px', color: '#444', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{quote.notes}</p>
