@@ -11,6 +11,7 @@ export interface Template7PaginationItem {
 export interface Template7PaginationPage<T = Template7PaginationItem> {
   items: T[];
   showSummary: boolean;
+  showNotes?: boolean;
 }
 
 const STANDARD_PAGE_CAPACITY = 48;
@@ -91,10 +92,6 @@ const estimateSummaryLines = ({
     lines += quoteAdditionals.length;
   }
 
-  if (quote.notes) {
-    lines += 1.2 + estimateWrappedLines(quote.notes, 88);
-  }
-
   if (quote.tax_amount > 0 || quote.discount_amount > 0) {
     lines += 1;
   }
@@ -110,6 +107,11 @@ const estimateSummaryLines = ({
   }
 
   return lines;
+};
+
+const estimateNotesLines = (quote: any) => {
+  if (!quote?.notes) return 0;
+  return 1.2 + estimateWrappedLines(quote.notes, 88);
 };
 
 export const paginateTemplate7Items = <T extends Template7PaginationItem>({
@@ -143,14 +145,25 @@ export const paginateTemplate7Items = <T extends Template7PaginationItem>({
     quote: { ...quote, items_count: items.length },
     quoteAdditionals,
   });
+  const notesLines = estimateNotesLines(quote);
 
-  if (currentLines + summaryLines <= LAST_PAGE_CAPACITY) {
+  // Caso 1: TOTAL + notas caben con los items
+  if (currentLines + summaryLines + notesLines <= LAST_PAGE_CAPACITY) {
     pages[pages.length - 1].showSummary = true;
+    pages[pages.length - 1].showNotes = notesLines > 0;
     return pages;
   }
 
-  // Si el resumen no cabe junto con los items en la última página,
-  // NUNCA partimos artículos: añadimos una página extra solo para el resumen.
-  pages.push({ items: [] as T[], showSummary: true });
+  // Caso 2: TOTAL cabe con los items, las notas no → notas a página nueva
+  if (currentLines + summaryLines <= LAST_PAGE_CAPACITY) {
+    pages[pages.length - 1].showSummary = true;
+    if (notesLines > 0) {
+      pages.push({ items: [] as T[], showSummary: false, showNotes: true });
+    }
+    return pages;
+  }
+
+  // Caso 3: Ni TOTAL cabe → TOTAL (+ notas si caben juntas) a página nueva
+  pages.push({ items: [] as T[], showSummary: true, showNotes: notesLines > 0 });
   return pages;
 };
