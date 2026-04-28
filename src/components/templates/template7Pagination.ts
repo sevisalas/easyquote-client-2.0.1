@@ -176,7 +176,7 @@ export const paginateTemplate7Items = <T extends Template7PaginationItem>({
   }
 
   const lastContentPage = pages[pages.length - 1];
-  if (lastContentPage && getItemsLines(lastContentPage.items) + summaryLines <= LAST_PAGE_CAPACITY) {
+  if (summaryPageItems.length === 0 && lastContentPage && getItemsLines(lastContentPage.items) + summaryLines <= LAST_PAGE_CAPACITY) {
     lastContentPage.showSummary = true;
     return pages;
   }
