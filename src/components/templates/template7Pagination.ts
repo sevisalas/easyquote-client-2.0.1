@@ -244,7 +244,4 @@ export const paginateTemplate7Items = <T extends Template7PaginationItem>({
   lastPage.showNotes = notesLines > 0;
 
   return pages;
-  // (lastPageItemsCapacity ya no se usa directamente, pero se conserva para
-  // futuras heurísticas de reserva de espacio del pie en la última página.)
-  void lastPageItemsCapacity;
 };
