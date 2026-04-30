@@ -130,7 +130,7 @@ const fetchQuote = async (id: string): Promise<Quote> => {
 const statusLabels: Record<string, string> = {
   draft: "Borrador",
   pending: "Pendiente",
-  sent: "Listo para enviar",
+  sent: "Preparado",
   approved: "Aprobado",
   rejected: "Rechazado",
 };
