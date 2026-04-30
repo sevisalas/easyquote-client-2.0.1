@@ -3,6 +3,11 @@ import { es } from 'date-fns/locale';
 import React from 'react';
 import { paginateTemplate7Items } from './template7Pagination';
 
+const formatPdfDescription = (value?: string) =>
+  String(value ?? '')
+    .replace(/^%+\s*(.+?)\s*%+$/gm, '── $1 ──')
+    .replace(/%%\s*([^%\n]+?)\s*%%/g, '── $1 ──');
+
 interface Template9Props {
   data: any;
 }
@@ -201,7 +206,7 @@ export default function Template9({ data }: Template9Props) {
                         {(!item.prompts || item.prompts.length === 0) && item.description && (
                           <tr>
                             <td colSpan={3} style={{ padding: '2px 10px 2px 22px' }}>
-                              <div style={{ fontSize: '10.5px', color: '#555', lineHeight: '1.45', whiteSpace: 'pre-line' }} dangerouslySetInnerHTML={{ __html: item.description.replace(/\n/g, '<br/>') }} />
+                              <div style={{ fontSize: '10.5px', color: '#555', lineHeight: '1.45', whiteSpace: 'pre-line' }} dangerouslySetInnerHTML={{ __html: formatPdfDescription(item.description).replace(/\n/g, '<br/>') }} />
                             </td>
                           </tr>
                         )}
