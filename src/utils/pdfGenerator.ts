@@ -317,8 +317,8 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
 
     if (logo) {
       try {
-        const logoMaxW = 55;
-        const logoMaxH = 18;
+        const logoMaxW = 75;
+        const logoMaxH = 25;
         const ratio = logo.width / logo.height;
         let lw = logoMaxW;
         let lh = lw / ratio;
