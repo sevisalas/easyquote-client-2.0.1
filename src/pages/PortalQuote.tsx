@@ -164,7 +164,7 @@ const PortalQuote = () => {
                 <CardTitle className="text-2xl">Presupuesto {quote.quote_number}</CardTitle>
               </div>
               <Badge variant={quote.status === "approved" ? "default" : quote.status === "rejected" ? "destructive" : "secondary"}>
-                {quote.status === "approved" ? "Aprobado" : quote.status === "rejected" ? "Rechazado" : quote.status === "sent" ? "Enviado" : quote.status}
+                {quote.status === "approved" ? "Aprobado" : quote.status === "rejected" ? "Rechazado" : quote.status === "sent" ? "Listo para enviar" : quote.status}
               </Badge>
             </div>
             {customer_name && <p className="text-muted-foreground mt-1">Cliente: {customer_name}</p>}

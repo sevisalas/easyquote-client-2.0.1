@@ -26,7 +26,7 @@ import { useSubscription } from "@/contexts/SubscriptionContext";
 const statusOptions = ["draft", "sent", "approved", "rejected", "cancelled"] as const;
 const statusLabel: Record<string, string> = {
   draft: "Borrador",
-  sent: "Enviado",
+  sent: "Listo para enviar",
   approved: "Aprobado",
   rejected: "Rechazado",
   cancelled: "Anulado",
