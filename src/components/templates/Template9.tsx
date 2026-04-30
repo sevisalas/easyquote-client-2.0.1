@@ -3,10 +3,40 @@ import { es } from 'date-fns/locale';
 import React from 'react';
 import { paginateTemplate7Items } from './template7Pagination';
 
-const formatPdfDescription = (value?: string) =>
-  String(value ?? '')
+const formatPdfDescription = (value?: string) => {
+  const container = document.createElement('div');
+  container.innerHTML = String(value ?? '').replace(/&(percnt|#37|#x25);/gi, '%');
+
+  const replaceMarkers = (text: string) =>
+    text.replace(/%{2,}\s*([^%\n]+?)\s*%{2,}/g, '── $1 ──');
+
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  const textNodes: Text[] = [];
+  let currentNode = walker.nextNode();
+
+  while (currentNode) {
+    textNodes.push(currentNode as Text);
+    currentNode = walker.nextNode();
+  }
+
+  textNodes.forEach((node) => {
+    const original = node.textContent || '';
+    const replaced = replaceMarkers(original);
+    if (replaced !== original) node.textContent = replaced;
+  });
+
+  Array.from(container.querySelectorAll('*')).forEach((element) => {
+    const rawText = (element.textContent || '').replace(/\u00a0/g, ' ').trim();
+    const markerMatch = rawText.match(/^%{2,}\s*([\s\S]+?)\s*%{2,}$/);
+    if (markerMatch) {
+      element.innerHTML = `── ${markerMatch[1].trim()} ──`;
+    }
+  });
+
+  return container.innerHTML
     .replace(/^%+\s*(.+?)\s*%+$/gm, '── $1 ──')
-    .replace(/%%\s*([^%\n]+?)\s*%%/g, '── $1 ──');
+    .replace(/%{2,}\s*([^%\n]+?)\s*%{2,}/g, '── $1 ──');
+};
 
 interface Template9Props {
   data: any;

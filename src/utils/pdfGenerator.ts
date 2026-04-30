@@ -88,6 +88,12 @@ const formatPdfCurrency = (amount: number) => {
   return `${intPart},${parts[1]} €`;
 };
 
+const sanitizePdfMarkerText = (value: unknown) =>
+  String(value ?? '')
+    .replace(/&(percnt|#37|#x25);/gi, '%')
+    .replace(/%{2,}\s*([^%\n]+?)\s*%{2,}/g, '── $1 ──')
+    .trim();
+
 const stripHtmlToPlainText = (value: string) => {
   if (!value) return '';
   // Drop <style>/<script>/<head>/comments BEFORE parsing so their raw CSS/JS
@@ -604,7 +610,8 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
 
       if (Array.isArray(item.components)) {
         item.components.forEach((component: any) => {
-          detailLines.push(`── ${component.alias} ──`);
+          const cleanAlias = sanitizePdfMarkerText(component.alias || 'Componente').replace(/^──\s*|\s*──$/g, '').trim() || 'Componente';
+          detailLines.push(`── ${cleanAlias} ──`);
           (component.prompts || []).forEach((prompt: any) => {
             detailLines.push(`  ${prompt.label}: ${prompt.value ?? ''}`);
           });
@@ -1243,11 +1250,13 @@ export const generateQuotePDF = async (
         });
       }
 
-      const safeDescription = sanitizeDescriptionForDocs(
-        item.description || '',
-        parentHiddenPromptKeys,
-        componentHiddenByAlias
-      ).replace(/%%\s*([^%\n]+?)\s*%%/g, '── $1 ──');
+      const safeDescription = sanitizePdfMarkerText(
+        sanitizeDescriptionForDocs(
+          item.description || '',
+          parentHiddenPromptKeys,
+          componentHiddenByAlias
+        )
+      );
       
       // Extract displayQuantity: prefer Q1 from multi, then custom_quantity, then is_quantity prompt, then heuristic
       let displayQuantity: string | number | null = null;
@@ -1357,7 +1366,9 @@ export const generateQuotePDF = async (
         for (const compKey of sortedKeys) {
           const comp = componentsMap[compKey];
           if (!comp) continue;
-          const alias = comp.alias || 'Componente';
+          const alias = sanitizePdfMarkerText(comp.alias || 'Componente')
+            .replace(/^──\s*|\s*──$/g, '')
+            .trim() || 'Componente';
           const compPrompts = Array.isArray(comp.prompts) ? comp.prompts : [];
           
           // Get hidden prompts for this component's REAL easyquote product id
