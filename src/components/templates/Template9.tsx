@@ -19,7 +19,6 @@ const PAGE_STYLE: React.CSSProperties = {
 };
 
 const PRICE_COLUMN_WIDTH = '110px';
-const TAX_COLUMN_WIDTH = '60px';
 const QTY_COLUMN_WIDTH = '70px';
 
 export default function Template9({ data }: Template9Props) {
@@ -171,7 +170,6 @@ export default function Template9({ data }: Template9Props) {
                     <th style={{ textAlign: 'left', padding: '8px 10px', fontSize: '11px', fontWeight: 'bold', borderBottom: '1px solid #e5e5e5' }}>CONCEPTO</th>
                     <th style={{ textAlign: 'right', padding: '8px 10px', fontSize: '11px', fontWeight: 'bold', width: QTY_COLUMN_WIDTH, borderBottom: '1px solid #e5e5e5' }}>UNIDADES</th>
                     <th style={{ textAlign: 'right', padding: '8px 10px', fontSize: '11px', fontWeight: 'bold', width: PRICE_COLUMN_WIDTH, borderBottom: '1px solid #e5e5e5' }}>SUBTOTAL</th>
-                    <th style={{ textAlign: 'right', padding: '8px 10px', fontSize: '11px', fontWeight: 'bold', width: TAX_COLUMN_WIDTH, borderBottom: '1px solid #e5e5e5' }}>IVA</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -198,12 +196,11 @@ export default function Template9({ data }: Template9Props) {
                           </td>
                           <td></td>
                           <td></td>
-                          <td></td>
                         </tr>
                         {/* Descripción */}
                         {(!item.prompts || item.prompts.length === 0) && item.description && (
                           <tr>
-                            <td colSpan={4} style={{ padding: '2px 10px 2px 22px' }}>
+                            <td colSpan={3} style={{ padding: '2px 10px 2px 22px' }}>
                               <div style={{ fontSize: '10.5px', color: '#555', lineHeight: '1.45', whiteSpace: 'pre-line' }} dangerouslySetInnerHTML={{ __html: item.description.replace(/\n/g, '<br/>') }} />
                             </td>
                           </tr>
@@ -211,7 +208,7 @@ export default function Template9({ data }: Template9Props) {
                         {/* Prompts */}
                         {item.prompts && item.prompts.length > 0 && (
                           <tr>
-                            <td colSpan={4} style={{ padding: '2px 10px 2px 22px' }}>
+                            <td colSpan={3} style={{ padding: '2px 10px 2px 22px' }}>
                               <div style={{ fontSize: '10.5px', color: '#555', lineHeight: '1.45' }}>
                                 {item.prompts.map((prompt: any, pIdx: number) => (
                                   <div key={pIdx}><span style={{ fontWeight: 600, textTransform: 'uppercase' }}>{prompt.label}:</span> {prompt.value}</div>
@@ -223,7 +220,7 @@ export default function Template9({ data }: Template9Props) {
                         {/* Components */}
                         {item.components && item.components.length > 0 && (
                           <tr>
-                            <td colSpan={4} style={{ padding: '2px 10px 2px 22px' }}>
+                            <td colSpan={3} style={{ padding: '2px 10px 2px 22px' }}>
                               {item.components.map((comp: any, cIdx: number) => (
                                 <div key={cIdx} style={{ marginBottom: '4px' }}>
                                   <div style={{ fontSize: '10.5px', fontWeight: 'bold', color: '#333', textTransform: 'uppercase', marginBottom: '1px' }}>── {comp.alias} ──</div>
@@ -240,7 +237,7 @@ export default function Template9({ data }: Template9Props) {
                         {/* Item additionals */}
                         {item.item_additionals && item.item_additionals.length > 0 && (
                           <tr>
-                            <td colSpan={4} style={{ padding: '2px 10px 2px 22px' }}>
+                            <td colSpan={3} style={{ padding: '2px 10px 2px 22px' }}>
                               <div style={{ fontSize: '10.5px', color: '#555', lineHeight: '1.45' }}>
                                 {item.item_additionals.map((adj: any, aIdx: number) => {
                                   const qty = getItemQuantity(item);
@@ -289,9 +286,6 @@ export default function Template9({ data }: Template9Props) {
                           <td style={{ padding: '4px 10px 8px', textAlign: 'right', fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap', color: '#1a1a1a' }}>
                             {!hideItemAmounts ? fmtEUR(item.price || 0) : ''}
                           </td>
-                          <td style={{ padding: '4px 10px 8px', textAlign: 'right', fontSize: '11px', color: '#3a3a3a' }}>
-                            {!hideItemAmounts ? `${taxRate}%` : ''}
-                          </td>
                         </tr>
                         {/* Multi-qty rows */}
                         {!hideItemAmounts && hasMulti && item.multi_extra.map((me: any, meIdx: number) => (
@@ -302,9 +296,6 @@ export default function Template9({ data }: Template9Props) {
                             </td>
                             <td style={{ padding: '4px 10px 8px', textAlign: 'right', fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap', color: '#1a1a1a' }}>
                               {fmtEUR(me.price || 0)}
-                            </td>
-                            <td style={{ padding: '4px 10px 8px', textAlign: 'right', fontSize: '11px', color: '#3a3a3a' }}>
-                              {taxRate}%
                             </td>
                           </tr>
                         ))}
@@ -323,40 +314,33 @@ export default function Template9({ data }: Template9Props) {
                       <tr key={`qa-${aIdx}`} style={{ borderBottom: '1px solid #e5e5e5' }}>
                         <td colSpan={2} style={{ padding: '6px 10px', fontSize: '11px', color: '#555' }}>{label}</td>
                         <td style={{ padding: '6px 10px', textAlign: 'right', fontSize: '11px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>{fmtEUR(amount)}</td>
-                        <td style={{ padding: '6px 10px', textAlign: 'right', fontSize: '11px', color: '#3a3a3a' }}>{taxRate}%</td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
 
-              {/* Totales tipo factura: 4 columnas centradas */}
+              {/* Totales tipo factura: Base + Total */}
               {page.showSummary && (items.length > 0 || quote.tax_amount > 0) && (
                 <div style={{ marginTop: '14px', borderTop: '1px solid #e5e5e5', paddingTop: '10px' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                       <tr>
-                        <th style={{ textAlign: 'center', padding: '6px 10px', fontSize: '11px', fontWeight: 'bold', color: '#3a3a3a', width: '25%' }}>BASE IMPONIBLE</th>
-                        <th style={{ textAlign: 'center', padding: '6px 10px', fontSize: '11px', fontWeight: 'bold', color: '#3a3a3a', width: '25%' }}>IMPUESTO</th>
-                        <th style={{ textAlign: 'center', padding: '6px 10px', fontSize: '11px', fontWeight: 'bold', color: '#3a3a3a', width: '25%' }}>TOTAL IMPUESTO</th>
-                        <th style={{ textAlign: 'center', padding: '6px 10px', fontSize: '11px', fontWeight: 'bold', color: '#3a3a3a', width: '25%' }}>TOTAL</th>
+                        <th style={{ textAlign: 'center', padding: '6px 10px', fontSize: '11px', fontWeight: 'bold', color: '#3a3a3a', width: '50%' }}>BASE IMPONIBLE</th>
+                        <th style={{ textAlign: 'center', padding: '6px 10px', fontSize: '11px', fontWeight: 'bold', color: '#3a3a3a', width: '50%' }}>TOTAL</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr style={{ borderBottom: '1px solid #e5e5e5' }}>
                         <td style={{ textAlign: 'center', padding: '4px 10px 8px', fontSize: '11.5px', color: '#1a1a1a' }}>{fmtEUR(quote.subtotal || quote.final_price || 0)}</td>
-                        <td style={{ textAlign: 'center', padding: '4px 10px 8px', fontSize: '11.5px', color: '#1a1a1a' }}>IVA {taxRate}%</td>
-                        <td style={{ textAlign: 'center', padding: '4px 10px 8px', fontSize: '11.5px', color: '#1a1a1a' }}>{fmtEUR(quote.tax_amount || 0)}</td>
                         <td style={{ textAlign: 'center', padding: '4px 10px 8px', fontSize: '11.5px', color: '#1a1a1a' }}>
-                          {fmtEUR((Number(quote.subtotal || quote.final_price || 0)) + Number(quote.tax_amount || 0) - Number(quote.discount_amount || 0))}
+                          {fmtEUR((Number(quote.subtotal || quote.final_price || 0)) - Number(quote.discount_amount || 0))}
                         </td>
                       </tr>
                       <tr>
                         <td style={{ textAlign: 'center', padding: '8px 10px', fontSize: '12.5px', color: '#1a1a1a', fontWeight: 'bold' }}>{fmtEUR(quote.subtotal || quote.final_price || 0)}</td>
-                        <td></td>
-                        <td></td>
                         <td style={{ textAlign: 'center', padding: '8px 10px', fontSize: '12.5px', color: '#1a1a1a', fontWeight: 'bold' }}>
-                          {fmtEUR((Number(quote.subtotal || quote.final_price || 0)) + Number(quote.tax_amount || 0) - Number(quote.discount_amount || 0))}
+                          {fmtEUR((Number(quote.subtotal || quote.final_price || 0)) - Number(quote.discount_amount || 0))}
                         </td>
                       </tr>
                     </tbody>
