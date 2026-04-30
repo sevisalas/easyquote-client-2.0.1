@@ -1349,7 +1349,7 @@ Deno.serve(async (req) => {
     console.error('Error in holded-export-estimate:', error);
     return new Response(
       JSON.stringify({
-        error: (error as Error).message || 'Failed to export estimate to Holded'
+        error: 'Failed to export estimate to Holded'
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

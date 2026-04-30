@@ -164,7 +164,7 @@ serve(async (req) => {
     console.error('Error in create-subscriber:', error);
     return new Response(
       JSON.stringify({
-        error: (error as Error).message || 'An error occurred',
+        error: 'An error occurred',
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
