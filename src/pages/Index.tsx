@@ -205,7 +205,7 @@ const Index = () => {
             <CardContent className="p-3 md:p-6">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                 <div>
-                  <p className="text-xs md:text-sm text-muted-foreground mb-1">Enviado</p>
+                  <p className="text-xs md:text-sm text-muted-foreground mb-1">Listo para enviar</p>
                   <p className="text-2xl md:text-3xl font-bold text-foreground">{stats?.sent ?? 0}</p>
                 </div>
                 <div className="w-8 h-8 md:w-12 md:h-12 bg-blue-500/10 rounded-full flex items-center justify-center">
