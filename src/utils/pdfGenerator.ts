@@ -405,7 +405,11 @@ const renderWrappedText = (
   pdf.setTextColor(color[0], color[1], color[2]);
 
   let cursorY = y;
-  const paragraphs = String(text ?? '').replace(/\r/g, '').split('\n');
+  const safeText = String(text ?? '')
+    .replace(/─/g, '-')
+    .replace(/–/g, '-')
+    .replace(/—/g, '-');
+  const paragraphs = safeText.replace(/\r/g, '').split('\n');
 
   paragraphs.forEach((paragraph, paragraphIndex) => {
     const lines = paragraph ? pdf.splitTextToSize(paragraph, maxWidth) : [''];
