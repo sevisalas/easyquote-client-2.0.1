@@ -8,7 +8,7 @@ const formatPdfDescription = (value?: string) => {
   container.innerHTML = String(value ?? '').replace(/&(percnt|#37|#x25);/gi, '%');
 
   const replaceMarkers = (text: string) =>
-    text.replace(/%{2,}\s*([^%\n]+?)\s*%{2,}/g, '── $1 ──');
+    text.replace(/(?:%\s*){2,}([^%\n]+?)(?:\s*%){2,}/g, '── $1 ──');
 
   const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
   const textNodes: Text[] = [];
@@ -27,7 +27,7 @@ const formatPdfDescription = (value?: string) => {
 
   Array.from(container.querySelectorAll('*')).forEach((element) => {
     const rawText = (element.textContent || '').replace(/\u00a0/g, ' ').trim();
-    const markerMatch = rawText.match(/^%{2,}\s*([\s\S]+?)\s*%{2,}$/);
+    const markerMatch = rawText.match(/^(?:%\s*){2,}([\s\S]+?)(?:\s*%){2,}$/);
     if (markerMatch) {
       element.innerHTML = `── ${markerMatch[1].trim()} ──`;
     }
@@ -35,7 +35,7 @@ const formatPdfDescription = (value?: string) => {
 
   return container.innerHTML
     .replace(/^%+\s*(.+?)\s*%+$/gm, '── $1 ──')
-    .replace(/%{2,}\s*([^%\n]+?)\s*%{2,}/g, '── $1 ──');
+    .replace(/(?:%\s*){2,}([^%\n]+?)(?:\s*%){2,}/g, '── $1 ──');
 };
 
 interface Template9Props {
