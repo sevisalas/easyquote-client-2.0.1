@@ -5,6 +5,9 @@ import { resolveApprovedQuoteItemState } from '@/utils/approvedMultiQuantity';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { getEasyQuoteToken, invokeEasyQuoteFunction } from '@/lib/easyquoteApi';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { paginateTemplate7Items } from '@/components/templates/template7Pagination';
 
 const parsePositiveQuantity = (value: unknown): number | null => {
   if (typeof value === 'number') {
@@ -73,6 +76,483 @@ export interface PDFGeneratorOptions {
   filename?: string;
   quality?: number;
 }
+
+const PDF_IMAGE_CACHE = new Map<string, Promise<{ dataUrl: string; format: 'PNG' | 'JPEG' } | null>>();
+
+const formatPdfDate = (value?: string | null) =>
+  value ? format(new Date(value), 'dd/MM/yyyy', { locale: es }) : '-';
+
+const formatPdfCurrency = (amount: number) => {
+  const parts = Number(amount || 0).toFixed(2).split('.');
+  const intPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return `${intPart},${parts[1]} €`;
+};
+
+const stripHtmlToPlainText = (value: string) => {
+  if (!value) return '';
+  const container = document.createElement('div');
+  container.innerHTML = value
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n')
+    .replace(/<\/div>/gi, '\n');
+  return (container.textContent || '')
+    .replace(/\u00a0/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+};
+
+const getTemplate9CustomerLines = (customer: any): string[] => {
+  const lines: string[] = [];
+  if (customer?.name) lines.push(customer.name);
+  if (customer?.tax_id) lines.push(customer.tax_id);
+
+  if (customer?.address) {
+    const parts = String(customer.address)
+      .split(',')
+      .map((s: string) => s.trim())
+      .filter(Boolean);
+
+    if (parts.length >= 4) {
+      const street = parts.slice(0, -3).join(', ');
+      const cpCity = `${parts[parts.length - 2] || ''} ${parts[parts.length - 3] || ''}`.trim();
+      const provCountry = [parts[parts.length - 1]].filter(Boolean).join(', ');
+      if (street) lines.push(street);
+      if (cpCity) lines.push(cpCity);
+      if (provCountry) lines.push(provCountry);
+    } else {
+      lines.push(String(customer.address));
+    }
+  }
+
+  return lines;
+};
+
+const loadImageForPdf = async (url: string): Promise<{ dataUrl: string; format: 'PNG' | 'JPEG' } | null> => {
+  if (!url) return null;
+  const absoluteUrl = /^https?:\/\//i.test(url) ? url : new URL(url, window.location.origin).toString();
+
+  if (!PDF_IMAGE_CACHE.has(absoluteUrl)) {
+    PDF_IMAGE_CACHE.set(absoluteUrl, (async () => {
+      try {
+        const response = await fetch(absoluteUrl);
+        if (!response.ok) return null;
+
+        const blob = await response.blob();
+        const objectUrl = URL.createObjectURL(blob);
+
+        try {
+          const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = objectUrl;
+          });
+
+          const canvas = document.createElement('canvas');
+          canvas.width = image.naturalWidth || image.width;
+          canvas.height = image.naturalHeight || image.height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return null;
+
+          ctx.drawImage(image, 0, 0);
+          const isPng = blob.type.includes('png');
+          return {
+            dataUrl: canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', isPng ? undefined : 0.72),
+            format: isPng ? 'PNG' : 'JPEG',
+          };
+        } finally {
+          URL.revokeObjectURL(objectUrl);
+        }
+      } catch {
+        return null;
+      }
+    })());
+  }
+
+  return PDF_IMAGE_CACHE.get(absoluteUrl)!;
+};
+
+const renderWrappedText = (
+  pdf: jsPDF,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  options: {
+    fontSize?: number;
+    lineHeight?: number;
+    style?: 'normal' | 'bold';
+    color?: [number, number, number];
+    align?: 'left' | 'right' | 'center';
+  } = {}
+) => {
+  const {
+    fontSize = 10.5,
+    lineHeight = 4.2,
+    style = 'normal',
+    color = [26, 26, 26],
+    align = 'left',
+  } = options;
+
+  pdf.setFont('helvetica', style);
+  pdf.setFontSize(fontSize);
+  pdf.setTextColor(color[0], color[1], color[2]);
+
+  let cursorY = y;
+  const paragraphs = String(text ?? '').replace(/\r/g, '').split('\n');
+
+  paragraphs.forEach((paragraph, paragraphIndex) => {
+    const lines = paragraph ? pdf.splitTextToSize(paragraph, maxWidth) : [''];
+    lines.forEach((line: string) => {
+      if (align === 'left') {
+        pdf.text(line, x, cursorY);
+      } else {
+        pdf.text(line, x, cursorY, { align });
+      }
+      cursorY += lineHeight;
+    });
+
+    if (paragraphIndex < paragraphs.length - 1) cursorY += 0.4;
+  });
+
+  return cursorY;
+};
+
+const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
+  const quote = templateData.quote || {};
+  const customer = templateData.customer || {};
+  const items = templateData.items || [];
+  const quoteAdditionals = templateData.quote_additionals || [];
+  const pages = paginateTemplate7Items({ items, quote, quoteAdditionals, reserveFooterShare: 0.22 });
+  const customerLines = getTemplate9CustomerLines(customer);
+  const logo = await loadImageForPdf('/assets/campillo-logo.png?v=20260224c');
+
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const marginX = 8;
+  const contentWidth = pageWidth - marginX * 2;
+  const qtyColumnWidth = 26;
+  const priceColumnWidth = 42;
+  const conceptColumnWidth = contentWidth - qtyColumnWidth - priceColumnWidth;
+  const qtyColumnX = marginX + conceptColumnWidth + qtyColumnWidth;
+  const priceColumnX = pageWidth - marginX;
+  const footerTopY = pageHeight - 20;
+
+  const drawFooter = (pageIndex: number) => {
+    pdf.setDrawColor(229, 229, 229);
+    pdf.line(marginX, footerTopY, pageWidth - marginX, footerTopY);
+
+    renderWrappedText(pdf, 'Inscrita en el Reg. Merc. nº de Madrid. Tomo 781, General, de la Sección 3ª, Folio 37, Hoja 67855-1, Inscripción 1ª.', pageWidth / 2, footerTopY + 4.5, contentWidth, {
+      fontSize: 8.5,
+      lineHeight: 3.6,
+      color: [122, 122, 122],
+      align: 'center',
+    });
+    renderWrappedText(pdf, 'CAMPILLO NEVADO S.A. A78094166 c/ Desierto de tabernas, 8', pageWidth / 2, footerTopY + 8.2, contentWidth, {
+      fontSize: 8.5,
+      lineHeight: 3.6,
+      color: [122, 122, 122],
+      align: 'center',
+    });
+    renderWrappedText(pdf, 'Pinto (28320), Madrid, España +34 91 560 93 34 contabilidad@campillonevado.es', pageWidth / 2, footerTopY + 11.9, contentWidth, {
+      fontSize: 8.5,
+      lineHeight: 3.6,
+      color: [122, 122, 122],
+      align: 'center',
+    });
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(8.5);
+    pdf.setTextColor(122, 122, 122);
+    pdf.text(`${pageIndex + 1}/${pages.length}`, pageWidth - marginX, pageHeight - 4, { align: 'right' });
+  };
+
+  const renderItemImage = async (item: any, x: number, y: number) => {
+    const firstImage = Array.isArray(item.images) ? item.images[0] : null;
+    if (!firstImage) return 0;
+    const image = await loadImageForPdf(firstImage);
+    if (!image) return 0;
+    try {
+      pdf.addImage(image.dataUrl, image.format, x, y, 8, 8);
+      return 10;
+    } catch {
+      return 0;
+    }
+  };
+
+  for (let pageIndex = 0; pageIndex < pages.length; pageIndex++) {
+    if (pageIndex > 0) pdf.addPage();
+    const page = pages[pageIndex];
+    const isLastPage = pageIndex === pages.length - 1;
+
+    if (quote.status === 'draft') {
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(64);
+      pdf.setTextColor(236, 236, 236);
+      pdf.text('BORRADOR', pageWidth / 2, pageHeight / 2, { align: 'center', angle: -45 });
+    }
+
+    if (logo) {
+      try {
+        pdf.addImage(logo.dataUrl, logo.format, marginX, 8, 60, 18);
+      } catch {
+      }
+    }
+
+    renderWrappedText(pdf, 'PRESUPUESTO', pageWidth - marginX, 14, 60, {
+      fontSize: 24,
+      lineHeight: 8,
+      style: 'normal',
+      color: [58, 58, 58],
+      align: 'right',
+    });
+    renderWrappedText(pdf, quote.quote_number || '-', pageWidth - marginX, 21.5, 60, {
+      fontSize: 12,
+      lineHeight: 4.8,
+      color: [154, 154, 154],
+      align: 'right',
+    });
+
+    const metaLines = [
+      `Fecha: ${formatPdfDate(quote.created_at)}`,
+      ...(quote.valid_until ? [`Fecha vencimiento: ${formatPdfDate(quote.valid_until)}`] : []),
+      `Ref: ${quote.reference || ''}`,
+    ];
+
+    let leftMetaY = 38;
+    metaLines.forEach((line) => {
+      leftMetaY = renderWrappedText(pdf, line, marginX, leftMetaY, 82, {
+        fontSize: 10.8,
+        lineHeight: 4.2,
+        color: [58, 58, 58],
+      });
+    });
+
+    let customerY = 38;
+    customerLines.forEach((line, index) => {
+      customerY = renderWrappedText(pdf, line, 132, customerY, 70, {
+        fontSize: index === 0 ? 11.5 : 10.8,
+        lineHeight: 4,
+        style: index === 0 ? 'bold' : 'normal',
+        color: [58, 58, 58],
+      });
+    });
+
+    let cursorY = Math.max(leftMetaY, customerY) + 4;
+
+    if (quote.title || quote.description) {
+      if (quote.title) {
+        cursorY = renderWrappedText(pdf, quote.title, marginX, cursorY, contentWidth, {
+          fontSize: 12.5,
+          lineHeight: 4.4,
+          style: 'bold',
+          color: [26, 26, 26],
+        });
+      }
+      if (quote.description) {
+        cursorY = renderWrappedText(pdf, quote.description, marginX, cursorY + 0.8, contentWidth, {
+          fontSize: 10.5,
+          lineHeight: 4,
+          color: [68, 68, 68],
+        });
+      }
+      cursorY += 2;
+    }
+
+    pdf.setFillColor(243, 243, 243);
+    pdf.rect(marginX, cursorY, contentWidth, 8, 'F');
+    pdf.setDrawColor(229, 229, 229);
+    pdf.line(marginX, cursorY + 8, pageWidth - marginX, cursorY + 8);
+    renderWrappedText(pdf, 'CONCEPTO', marginX + 2, cursorY + 5.1, 60, { fontSize: 10.5, style: 'bold', color: [58, 58, 58] });
+    renderWrappedText(pdf, 'UNIDADES', qtyColumnX - 2, cursorY + 5.1, qtyColumnWidth, { fontSize: 10.5, style: 'bold', color: [58, 58, 58], align: 'right' });
+    renderWrappedText(pdf, 'SUBTOTAL', priceColumnX - 2, cursorY + 5.1, priceColumnWidth, { fontSize: 10.5, style: 'bold', color: [58, 58, 58], align: 'right' });
+    cursorY += 11;
+
+    for (const item of page.items) {
+      const customPriceNum = parseFloat(String(item.price ?? 0).toString().replace(/\./g, '').replace(',', '.')) || 0;
+      const hideItemAmounts = item.isCustomProduct === true && customPriceNum <= 0;
+      const imageOffset = await renderItemImage(item, marginX + 2, cursorY - 0.5);
+      const textStartX = marginX + 2 + imageOffset;
+      const textWidth = conceptColumnWidth - 6 - imageOffset;
+
+      cursorY = renderWrappedText(pdf, item.name || 'Producto', textStartX, cursorY + 3.4, textWidth, {
+        fontSize: 11.3,
+        lineHeight: 4,
+        style: 'bold',
+        color: [26, 26, 26],
+      });
+
+      const detailLines: string[] = [];
+
+      if ((!item.prompts || item.prompts.length === 0) && item.description) {
+        detailLines.push(...String(item.description).split(/\r?\n/));
+      }
+
+      if (Array.isArray(item.prompts)) {
+        item.prompts.forEach((prompt: any) => {
+          detailLines.push(`${String(prompt.label || '').toUpperCase()}: ${prompt.value ?? ''}`);
+        });
+      }
+
+      if (Array.isArray(item.components)) {
+        item.components.forEach((component: any) => {
+          detailLines.push(`── ${component.alias} ──`);
+          (component.prompts || []).forEach((prompt: any) => {
+            detailLines.push(`  ${prompt.label}: ${prompt.value ?? ''}`);
+          });
+        });
+      }
+
+      if (Array.isArray(item.item_additionals)) {
+        item.item_additionals.forEach((adj: any) => {
+          const qty = item.displayQuantity ?? item.quantity ?? 1;
+          const numQty = typeof qty === 'string' ? parseFloat(qty.replace(/\./g, '').replace(',', '.')) : (qty || 1);
+          let subtotal = adj.value;
+          let detail = '';
+          if (adj.type === 'percentage') {
+            const itemPrice = parseFloat(String(item.price || 0).replace(/\./g, '').replace(',', '.')) || 0;
+            subtotal = (itemPrice * adj.value) / 100;
+            detail = ` (${adj.value}%)`;
+          } else if (adj.type === 'quantity_multiplier') {
+            subtotal = adj.value * numQty;
+            detail = ` (${adj.value} €/ud × ${numQty})`;
+          } else if (adj.type === 'capacity_divider') {
+            const cap = adj.capacity_value || 1;
+            const units = Math.ceil(numQty / cap);
+            subtotal = adj.value * units;
+            detail = ` (${adj.value} € × ${units} uds)`;
+          }
+          detailLines.push(`${adj.name}: ${formatPdfCurrency(subtotal)}${detail}`);
+        });
+      }
+
+      if (detailLines.length > 0) {
+        cursorY = renderWrappedText(pdf, detailLines.join('\n'), marginX + 6, cursorY + 0.6, conceptColumnWidth - 10, {
+          fontSize: 10.2,
+          lineHeight: 3.8,
+          color: [85, 85, 85],
+        });
+      }
+
+      const quantity = item.displayQuantity != null && item.displayQuantity !== '' ? item.displayQuantity : item.quantity;
+      if (!hideItemAmounts && quantity != null && quantity !== '') {
+        const numericQuantity = typeof quantity === 'string'
+          ? parseFloat(String(quantity).replace(/\./g, '').replace(',', '.'))
+          : quantity;
+        const quantityLabel = Number.isFinite(numericQuantity)
+          ? new Intl.NumberFormat('es-ES').format(numericQuantity as number)
+          : String(quantity);
+        renderWrappedText(pdf, quantityLabel, qtyColumnX - 2, cursorY + 0.6, qtyColumnWidth, {
+          fontSize: 10.8,
+          lineHeight: 3.8,
+          color: [58, 58, 58],
+          align: 'right',
+        });
+        renderWrappedText(pdf, formatPdfCurrency(item.price || 0), priceColumnX - 2, cursorY + 0.6, priceColumnWidth, {
+          fontSize: 10.8,
+          lineHeight: 3.8,
+          style: 'bold',
+          color: [26, 26, 26],
+          align: 'right',
+        });
+      }
+
+      cursorY += 5.4;
+
+      if (!hideItemAmounts && Array.isArray(item.multi_extra)) {
+        item.multi_extra.forEach((row: any) => {
+          renderWrappedText(pdf, new Intl.NumberFormat('es-ES').format(row.qty), qtyColumnX - 2, cursorY, qtyColumnWidth, {
+            fontSize: 10.8,
+            lineHeight: 3.8,
+            color: [58, 58, 58],
+            align: 'right',
+          });
+          renderWrappedText(pdf, formatPdfCurrency(row.price || 0), priceColumnX - 2, cursorY, priceColumnWidth, {
+            fontSize: 10.8,
+            lineHeight: 3.8,
+            style: 'bold',
+            color: [26, 26, 26],
+            align: 'right',
+          });
+          cursorY += 4.3;
+        });
+      }
+
+      pdf.setDrawColor(229, 229, 229);
+      pdf.line(marginX, cursorY, pageWidth - marginX, cursorY);
+      cursorY += 3;
+    }
+
+    if (page.showSummary && quoteAdditionals.length > 0) {
+      quoteAdditionals.forEach((adj: any) => {
+        let amount = adj.value;
+        let label = adj.name;
+        if (adj.type === 'percentage') {
+          amount = ((quote.subtotal || 0) * adj.value) / 100;
+          label = `${adj.name} (${adj.value}%)`;
+        }
+        renderWrappedText(pdf, label, marginX + 2, cursorY + 1.4, conceptColumnWidth + qtyColumnWidth - 4, {
+          fontSize: 10.5,
+          lineHeight: 4,
+          color: [85, 85, 85],
+        });
+        renderWrappedText(pdf, formatPdfCurrency(amount), priceColumnX - 2, cursorY + 1.4, priceColumnWidth, {
+          fontSize: 10.5,
+          lineHeight: 4,
+          style: 'bold',
+          align: 'right',
+        });
+        cursorY += 5.2;
+        pdf.line(marginX, cursorY - 1.1, pageWidth - marginX, cursorY - 1.1);
+      });
+      cursorY += 2.2;
+    }
+
+    if (page.showSummary && (items.length > 0 || quote.tax_amount > 0)) {
+      pdf.line(marginX, cursorY, pageWidth - marginX, cursorY);
+      cursorY += 4;
+
+      const baseX = pageWidth / 2;
+      renderWrappedText(pdf, 'BASE IMPONIBLE', pageWidth * 0.25, cursorY, 50, { fontSize: 10.5, style: 'bold', color: [58, 58, 58], align: 'center' });
+      renderWrappedText(pdf, 'TOTAL', pageWidth * 0.75, cursorY, 50, { fontSize: 10.5, style: 'bold', color: [58, 58, 58], align: 'center' });
+      cursorY += 4.8;
+      pdf.line(marginX, cursorY - 1.2, pageWidth - marginX, cursorY - 1.2);
+
+      renderWrappedText(pdf, formatPdfCurrency(quote.subtotal || quote.final_price || 0), pageWidth * 0.25, cursorY + 1, 50, { fontSize: 11, color: [26, 26, 26], align: 'center' });
+      renderWrappedText(pdf, formatPdfCurrency((Number(quote.subtotal || quote.final_price || 0)) - Number(quote.discount_amount || 0)), pageWidth * 0.75, cursorY + 1, 50, { fontSize: 11, color: [26, 26, 26], align: 'center' });
+      cursorY += 6;
+      renderWrappedText(pdf, formatPdfCurrency(quote.subtotal || quote.final_price || 0), pageWidth * 0.25, cursorY, 50, { fontSize: 12.5, style: 'bold', color: [26, 26, 26], align: 'center' });
+      renderWrappedText(pdf, formatPdfCurrency((Number(quote.subtotal || quote.final_price || 0)) - Number(quote.discount_amount || 0)), pageWidth * 0.75, cursorY, 50, { fontSize: 12.5, style: 'bold', color: [26, 26, 26], align: 'center' });
+      cursorY += 7.5;
+    }
+
+    if (page.showNotes && quote.notes) {
+      cursorY = renderWrappedText(pdf, 'NOTAS', marginX, cursorY + 1.5, contentWidth, {
+        fontSize: 10.5,
+        style: 'bold',
+        color: [26, 26, 26],
+      });
+      cursorY = renderWrappedText(pdf, quote.notes, marginX, cursorY, contentWidth, {
+        fontSize: 10.2,
+        lineHeight: 3.8,
+        color: [68, 68, 68],
+      });
+    }
+
+    if (isLastPage && templateData.config?.footerText) {
+      const footerText = stripHtmlToPlainText(templateData.config.footerText);
+      if (footerText) {
+        renderWrappedText(pdf, footerText, marginX, Math.min(cursorY + 4, footerTopY - 12), contentWidth, {
+          fontSize: 10.2,
+          lineHeight: 3.8,
+          color: [58, 58, 58],
+        });
+      }
+    }
+
+    drawFooter(pageIndex);
+  }
+};
 
 // Get saved template configuration from Supabase
 const getTemplateConfig = async (overrideOrgId?: string | null) => {
