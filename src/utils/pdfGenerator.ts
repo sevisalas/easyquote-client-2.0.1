@@ -224,6 +224,11 @@ const renderRichText = (
     const blockX = x + indent;
     const blockMaxWidth = maxWidth - indent;
 
+    // Trim leading whitespace from the first segment so paragraphs don't start with a space.
+    if (block.segments.length > 0) {
+      block.segments[0] = { ...block.segments[0], text: block.segments[0].text.replace(/^\s+/, '') };
+    }
+
     // Build a flat token stream (word + style), expanding explicit \n into line breaks.
     type Token = { text: string; bold: boolean; italic: boolean; br?: boolean };
     const tokens: Token[] = [];
