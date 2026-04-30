@@ -91,7 +91,7 @@ const formatPdfCurrency = (amount: number) => {
 const sanitizePdfMarkerText = (value: unknown) =>
   String(value ?? '')
     .replace(/&(percnt|#37|#x25);/gi, '%')
-    .replace(/%{2,}\s*([^%\n]+?)\s*%{2,}/g, '── $1 ──')
+    .replace(/(?:%\s*){2,}([^%\n]+?)(?:\s*%){2,}/g, '── $1 ──')
     .trim();
 
 const stripHtmlToPlainText = (value: string) => {
@@ -597,7 +597,7 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
       if ((!item.prompts || item.prompts.length === 0) && item.description) {
         const cleanedDescription = String(item.description)
           .split(/\r?\n/)
-          .map((line) => line.replace(/%%\s*([^%]+?)\s*%%/g, '── $1 ──').trimEnd())
+          .map((line) => sanitizePdfMarkerText(line).trimEnd())
           .filter((line) => line.trim() !== '');
         detailLines.push(...cleanedDescription);
       }
