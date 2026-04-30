@@ -112,6 +112,171 @@ const stripHtmlToPlainText = (value: string) => {
     .trim();
 };
 
+// ===== Rich text (vector) parser =====
+// Parses minimal HTML into a list of "blocks" (paragraph / list item) where
+// each block is a sequence of styled text segments. Renders with jsPDF.text
+// (selectable vector text, NO html2canvas, NO images).
+type RichSegment = { text: string; bold: boolean; italic: boolean };
+type RichBlock = { type: 'p' | 'li-bullet' | 'li-num'; index?: number; segments: RichSegment[] };
+
+const parseHtmlToRichBlocks = (html: string): RichBlock[] => {
+  if (!html) return [];
+  const sanitized = String(html)
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<head[\s\S]*?<\/head>/gi, '');
+  const container = document.createElement('div');
+  container.innerHTML = sanitized;
+
+  const blocks: RichBlock[] = [];
+  let current: RichBlock | null = null;
+  const ensure = (type: RichBlock['type'] = 'p', index?: number) => {
+    if (!current) {
+      current = { type, index, segments: [] };
+      blocks.push(current);
+    }
+  };
+  const flush = () => { current = null; };
+
+  const walk = (node: Node, bold: boolean, italic: boolean) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = (node.textContent || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ');
+      if (!text) return;
+      ensure();
+      current!.segments.push({ text, bold, italic });
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    const el = node as HTMLElement;
+    const tag = el.tagName.toLowerCase();
+
+    if (tag === 'br') { ensure(); current!.segments.push({ text: '\n', bold, italic }); return; }
+    if (tag === 'p' || /^h[1-6]$/.test(tag) || tag === 'div') {
+      flush();
+      const isHeading = /^h[1-6]$/.test(tag);
+      el.childNodes.forEach((c) => walk(c, bold || isHeading, italic));
+      flush();
+      return;
+    }
+    if (tag === 'ul' || tag === 'ol') {
+      flush();
+      let i = 1;
+      el.childNodes.forEach((c) => {
+        if (c.nodeType === Node.ELEMENT_NODE && (c as HTMLElement).tagName.toLowerCase() === 'li') {
+          flush();
+          current = { type: tag === 'ol' ? 'li-num' : 'li-bullet', index: i++, segments: [] };
+          blocks.push(current);
+          (c as HTMLElement).childNodes.forEach((cc) => walk(cc, bold, italic));
+          flush();
+        }
+      });
+      return;
+    }
+    if (tag === 'strong' || tag === 'b') { el.childNodes.forEach((c) => walk(c, true, italic)); return; }
+    if (tag === 'em' || tag === 'i') { el.childNodes.forEach((c) => walk(c, bold, true)); return; }
+    el.childNodes.forEach((c) => walk(c, bold, italic));
+  };
+
+  container.childNodes.forEach((c) => walk(c, false, false));
+
+  // Drop empty blocks
+  return blocks.filter((b) => b.segments.some((s) => s.text.trim() !== '' || s.text === '\n'));
+};
+
+const richTextHasContent = (html: string) => parseHtmlToRichBlocks(html).length > 0;
+
+const renderRichText = (
+  pdf: jsPDF,
+  html: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  options: {
+    fontSize?: number;
+    lineHeight?: number;
+    color?: [number, number, number];
+    paragraphGap?: number;
+  } = {}
+): number => {
+  const { fontSize = 10.2, lineHeight = 3.8, color = [58, 58, 58], paragraphGap = 1.2 } = options;
+  const blocks = parseHtmlToRichBlocks(html);
+  if (!blocks.length) return y;
+
+  pdf.setFontSize(fontSize);
+  pdf.setTextColor(color[0], color[1], color[2]);
+
+  const setStyle = (bold: boolean, italic: boolean) => {
+    const style = bold && italic ? 'bolditalic' : bold ? 'bold' : italic ? 'italic' : 'normal';
+    pdf.setFont('helvetica', style);
+  };
+
+  const measure = (txt: string, bold: boolean, italic: boolean) => {
+    setStyle(bold, italic);
+    return pdf.getTextWidth(txt);
+  };
+
+  let cursorY = y;
+
+  for (const block of blocks) {
+    const indent = block.type === 'p' ? 0 : 4.5;
+    const bullet = block.type === 'li-bullet' ? '• ' : block.type === 'li-num' ? `${block.index}. ` : '';
+    const blockX = x + indent;
+    const blockMaxWidth = maxWidth - indent;
+
+    // Build a flat token stream (word + style), expanding explicit \n into line breaks.
+    type Token = { text: string; bold: boolean; italic: boolean; br?: boolean };
+    const tokens: Token[] = [];
+    block.segments.forEach((seg) => {
+      const parts = seg.text.split('\n');
+      parts.forEach((part, idx) => {
+        if (idx > 0) tokens.push({ text: '', bold: seg.bold, italic: seg.italic, br: true });
+        const words = part.split(/(\s+)/).filter((w) => w !== '');
+        words.forEach((w) => tokens.push({ text: w, bold: seg.bold, italic: seg.italic }));
+      });
+    });
+
+    // Wrap into lines respecting blockMaxWidth.
+    const lines: Token[][] = [[]];
+    let lineWidth = 0;
+    const pushNewLine = () => { lines.push([]); lineWidth = 0; };
+
+    for (const tok of tokens) {
+      if (tok.br) { pushNewLine(); continue; }
+      const w = measure(tok.text, tok.bold, tok.italic);
+      const isSpace = /^\s+$/.test(tok.text);
+      if (lineWidth + w > blockMaxWidth && lines[lines.length - 1].length > 0) {
+        pushNewLine();
+        if (isSpace) continue;
+      }
+      lines[lines.length - 1].push(tok);
+      lineWidth += w;
+    }
+
+    // Render lines.
+    lines.forEach((line, lineIdx) => {
+      // Trim trailing spaces.
+      while (line.length && /^\s+$/.test(line[line.length - 1].text)) line.pop();
+      let drawX = blockX;
+      if (lineIdx === 0 && bullet) {
+        setStyle(false, false);
+        pdf.text(bullet, x, cursorY);
+      }
+      for (const tok of line) {
+        if (!tok.text) continue;
+        setStyle(tok.bold, tok.italic);
+        pdf.text(tok.text, drawX, cursorY);
+        drawX += pdf.getTextWidth(tok.text);
+      }
+      cursorY += lineHeight;
+    });
+
+    cursorY += paragraphGap;
+  }
+
+  return cursorY;
+};
+
 const getTemplate9CustomerLines = (customer: any): string[] => {
   const lines: string[] = [];
   if (customer?.name) lines.push(customer.name);
@@ -382,7 +547,7 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
         });
       }
       if (quote.description) {
-        cursorY = renderWrappedText(pdf, quote.description, marginX, cursorY + 0.8, contentWidth, {
+        cursorY = renderRichText(pdf, quote.description, marginX, cursorY + 0.8, contentWidth, {
           fontSize: 10.5,
           lineHeight: 4,
           color: [68, 68, 68],
@@ -563,22 +728,19 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
         style: 'bold',
         color: [26, 26, 26],
       });
-      cursorY = renderWrappedText(pdf, quote.notes, marginX, cursorY, contentWidth, {
+      cursorY = renderRichText(pdf, quote.notes, marginX, cursorY, contentWidth, {
         fontSize: 10.2,
         lineHeight: 3.8,
         color: [68, 68, 68],
       });
     }
 
-    if (isLastPage && templateData.config?.footerText) {
-      const footerText = stripHtmlToPlainText(templateData.config.footerText);
-      if (footerText) {
-        renderWrappedText(pdf, footerText, marginX, Math.min(cursorY + 4, footerTopY - 12), contentWidth, {
-          fontSize: 10.2,
-          lineHeight: 3.8,
-          color: [58, 58, 58],
-        });
-      }
+    if (isLastPage && templateData.config?.footerText && richTextHasContent(templateData.config.footerText)) {
+      renderRichText(pdf, templateData.config.footerText, marginX, Math.min(cursorY + 4, footerTopY - 12), contentWidth, {
+        fontSize: 10.2,
+        lineHeight: 3.8,
+        color: [58, 58, 58],
+      });
     }
 
     drawFooter(pageIndex);
