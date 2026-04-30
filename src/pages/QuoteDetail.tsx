@@ -737,7 +737,7 @@ export default function QuoteDetail() {
           <CardTitle className="text-base">Información del presupuesto</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1.5fr)_minmax(0,1.4fr)_minmax(140px,auto)_minmax(140px,auto)] md:items-start">
             <div>
               <label className="text-xs font-medium text-muted-foreground">cliente</label>
               <p className="text-sm font-medium mt-0.5">
@@ -858,11 +858,11 @@ export default function QuoteDetail() {
                 )}
               </div>
             </div>
-            <div className="text-right">
+            <div className="text-right self-start">
               <label className="text-xs font-medium text-muted-foreground">total</label>
               <p className="text-base font-semibold mt-0.5">{fmtEUR(quote.final_price || 0)}</p>
             </div>
-            <div className="text-right">
+            <div className="text-right self-start">
               <label className="text-xs font-medium text-muted-foreground">válido hasta</label>
               <p className="text-sm mt-0.5">
                 {quote.valid_until 
