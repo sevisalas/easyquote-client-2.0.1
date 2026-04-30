@@ -14,8 +14,12 @@ export interface Template7PaginationPage<T = Template7PaginationItem> {
   showNotes?: boolean;
 }
 
-const STANDARD_PAGE_CAPACITY = 48;
-const LAST_PAGE_CAPACITY = 48;
+// Capacidad efectiva de líneas por página A4 con la cabecera/pie de T7/T8.
+// Reducida desde 48 → 42 para evitar que items grandes con múltiples
+// componentes y multi-cantidades se desborden al renderizar HTML real
+// (la estimación es conservadora pero no exacta).
+const STANDARD_PAGE_CAPACITY = 42;
+const LAST_PAGE_CAPACITY = 42;
 const FIXED_FOOTER_LINES = 4;
 
 const stripHtml = (value: string) =>
@@ -40,7 +44,8 @@ const estimateWrappedLines = (value: string, charsPerLine: number) => {
 };
 
 const estimateItemLines = (item: Template7PaginationItem) => {
-  let lines = 2.5;
+  // Base por item: cabecera del producto + margen entre artículos.
+  let lines = 3.5;
 
   if ((!item.prompts || item.prompts.length === 0) && item.description) {
     const charsPerLine = item.description_manual ? 60 : 72;
@@ -61,7 +66,8 @@ const estimateItemLines = (item: Template7PaginationItem) => {
         (promptTotal, prompt) => promptTotal + estimateWrappedLines(`${prompt.label || ''}: ${prompt.value || ''}`, 68),
         0
       );
-      return total + 1.2 + promptLines;
+      // 1.8 para header del componente "── Alias ──" + spacing
+      return total + 1.8 + promptLines;
     }, 0);
   }
 
@@ -70,10 +76,11 @@ const estimateItemLines = (item: Template7PaginationItem) => {
   }
 
   if (item.multi_extra?.length) {
-    lines += item.multi_extra.length;
+    // Cada fila multi-cantidad renderiza con padding ~1.4 líneas
+    lines += item.multi_extra.length * 1.4;
   }
 
-  return lines + 0.8;
+  return lines + 1.2;
 };
 
 const getItemsLines = (items: Template7PaginationItem[]) =>
