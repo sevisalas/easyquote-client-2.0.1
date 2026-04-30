@@ -590,7 +590,11 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
       const detailLines: string[] = [];
 
       if ((!item.prompts || item.prompts.length === 0) && item.description) {
-        detailLines.push(...String(item.description).split(/\r?\n/));
+        const cleanedDescription = String(item.description)
+          .split(/\r?\n/)
+          .map((line) => line.replace(/%%\s*([^%]+?)\s*%%/g, '── $1 ──').trimEnd())
+          .filter((line) => line.trim() !== '');
+        detailLines.push(...cleanedDescription);
       }
 
       if (Array.isArray(item.prompts)) {
