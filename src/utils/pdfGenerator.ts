@@ -31,6 +31,44 @@ const parseLocaleNumber = (value: unknown): number => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const parseOptionalLocaleNumber = (value: unknown): number | null => {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'string' && value.trim() === '') return null;
+  const parsed = parseLocaleNumber(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const calculateMultiRowAdditionalsTotal = (
+  additionals: any[],
+  qty: number,
+  rowIndex: number,
+  rawBasePrice: number
+): number => {
+  if (!Array.isArray(additionals) || additionals.length === 0) return 0;
+
+  return additionals.reduce((sum, additional) => {
+    const rawValue = additional?.type === 'net_amount' && Array.isArray(additional?.multiValues)
+      ? additional.multiValues[rowIndex] ?? additional.value
+      : additional?.value;
+
+    const absoluteValue = Math.abs(parseLocaleNumber(rawValue));
+    const isDiscount = additional?.is_discount === true || parseLocaleNumber(rawValue) < 0;
+
+    let subtotal = absoluteValue;
+
+    if (additional?.type === 'percentage') {
+      subtotal = (Math.abs(rawBasePrice) * absoluteValue) / 100;
+    } else if (additional?.type === 'quantity_multiplier') {
+      subtotal = absoluteValue * qty;
+    } else if (additional?.type === 'capacity_divider') {
+      const capacity = parsePositiveQuantity(additional?.capacity_value) ?? 1;
+      subtotal = absoluteValue * Math.ceil(qty / capacity);
+    }
+
+    return sum + (isDiscount ? -subtotal : subtotal);
+  }, 0);
+};
+
 export interface PDFGeneratorOptions {
   filename?: string;
   quality?: number;
@@ -690,7 +728,8 @@ export const generateQuotePDF = async (
       }
 
       // Format item_additionals for display
-      const formattedAdditionals = (item.item_additionals || []).map((adj: any) => ({
+      const rawItemAdditionals = Array.isArray(item.item_additionals) ? item.item_additionals : [];
+      const formattedAdditionals = rawItemAdditionals.map((adj: any) => ({
         name: adj.name || '',
         type: adj.type || 'net_amount',
         value: adj.value || 0,
@@ -702,11 +741,33 @@ export const generateQuotePDF = async (
       // Format multi-quantity rows (Q2, Q3, etc.) for informational display
       const multiExtraRows: Array<{qty: number, price: number}> = [];
       if (item.multi?.rows && Array.isArray(item.multi.rows) && item.multi.rows.length > 1) {
+        const q1Row = item.multi.rows[0];
+        const q1RawBasePrice = parseLocaleNumber(q1Row?.totalStr);
+        const q1Qty = parsePositiveQuantity(q1Row?.qty) ?? 1;
+        const q1StoredFinalPrice = parseLocaleNumber(item.price);
+        const q1AdditionalsTotal = calculateMultiRowAdditionalsTotal(rawItemAdditionals, q1Qty, 0, q1RawBasePrice);
+        const inferredTariffMultiplier = q1RawBasePrice > 0
+          ? (q1StoredFinalPrice - q1AdditionalsTotal) / q1RawBasePrice
+          : 1;
+        const safeTariffMultiplier = Number.isFinite(inferredTariffMultiplier) ? inferredTariffMultiplier : 1;
+        const modifiedPrices = item.multi?.modifiedPrices && typeof item.multi.modifiedPrices === 'object'
+          ? item.multi.modifiedPrices
+          : {};
+
         for (let i = 1; i < item.multi.rows.length; i++) {
           const row = item.multi.rows[i];
           if (row?.qty && row?.totalStr != null) {
-            const price = typeof row.totalStr === 'number' ? row.totalStr : parseLocaleNumber(row.totalStr);
-            multiExtraRows.push({ qty: row.qty, price });
+            const qty = parsePositiveQuantity(row.qty) ?? 0;
+            const rawBasePrice = parseLocaleNumber(row.totalStr);
+            const modifiedBasePrice = parseOptionalLocaleNumber(modifiedPrices?.[i]);
+            const adjustedBasePrice = modifiedBasePrice ?? (rawBasePrice * safeTariffMultiplier);
+            const additionalsTotal = calculateMultiRowAdditionalsTotal(rawItemAdditionals, qty, i, rawBasePrice);
+            const finalPrice = adjustedBasePrice + additionalsTotal;
+
+            multiExtraRows.push({
+              qty: row.qty,
+              price: Number.isFinite(finalPrice) ? finalPrice : 0,
+            });
           }
         }
       }
