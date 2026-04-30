@@ -84,9 +84,11 @@ const estimateItemLines = (item: Template7PaginationItem) => {
     }, 0);
   }
 
-  if (item.item_additionals?.length) {
-    lines += item.item_additionals.length;
-  }
+  // En T7/T8 los item_additionals no se imprimen como líneas propias en el PDF:
+  // se vacían antes de renderizar y solo se usan internamente para calcular los
+  // importes de filas multi-cantidad. Si los contamos aquí, la paginación cree
+  // que el artículo ocupa más de lo que realmente ocupa y empuja artículos a la
+  // siguiente página sin necesidad (caso 1+2 en vez de 2+1).
 
   if (item.multi_extra?.length) {
     // Cada fila multi-cantidad renderiza con padding ~1.4 líneas
