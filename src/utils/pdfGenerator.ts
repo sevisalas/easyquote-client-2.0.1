@@ -547,7 +547,7 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
         });
       }
       if (quote.description) {
-        cursorY = renderWrappedText(pdf, quote.description, marginX, cursorY + 0.8, contentWidth, {
+        cursorY = renderRichText(pdf, quote.description, marginX, cursorY + 0.8, contentWidth, {
           fontSize: 10.5,
           lineHeight: 4,
           color: [68, 68, 68],
@@ -728,22 +728,19 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
         style: 'bold',
         color: [26, 26, 26],
       });
-      cursorY = renderWrappedText(pdf, quote.notes, marginX, cursorY, contentWidth, {
+      cursorY = renderRichText(pdf, quote.notes, marginX, cursorY, contentWidth, {
         fontSize: 10.2,
         lineHeight: 3.8,
         color: [68, 68, 68],
       });
     }
 
-    if (isLastPage && templateData.config?.footerText) {
-      const footerText = stripHtmlToPlainText(templateData.config.footerText);
-      if (footerText) {
-        renderWrappedText(pdf, footerText, marginX, Math.min(cursorY + 4, footerTopY - 12), contentWidth, {
-          fontSize: 10.2,
-          lineHeight: 3.8,
-          color: [58, 58, 58],
-        });
-      }
+    if (isLastPage && templateData.config?.footerText && richTextHasContent(templateData.config.footerText)) {
+      renderRichText(pdf, templateData.config.footerText, marginX, Math.min(cursorY + 4, footerTopY - 12), contentWidth, {
+        fontSize: 10.2,
+        lineHeight: 3.8,
+        color: [58, 58, 58],
+      });
     }
 
     drawFooter(pageIndex);
