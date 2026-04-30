@@ -313,13 +313,6 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
     const page = pages[pageIndex] as any;
     const isLastPage = pageIndex === pages.length - 1;
 
-    if (quote.status === 'draft') {
-      pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(64);
-      pdf.setTextColor(236, 236, 236);
-      pdf.text('BORRADOR', pageWidth / 2, pageHeight / 2, { align: 'center', angle: -45 });
-    }
-
     if (logo) {
       try {
         pdf.addImage(logo.dataUrl, logo.format, marginX, 8, 60, 18);
