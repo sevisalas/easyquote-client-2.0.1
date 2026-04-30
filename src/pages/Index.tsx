@@ -370,11 +370,11 @@ const Index = () => {
         </div>
 
         {/* Version Info */}
-         <div className="mt-6 md:mt-8 flex justify-end">
-           <button onClick={() => navigate("/novedades")} className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
-               EasyQuote v2.7.27
-           </button>
-         </div>
+          <div className="mt-6 md:mt-8 flex justify-end">
+            <button onClick={() => navigate("/novedades")} className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer">
+                EasyQuote v2.7.28
+            </button>
+          </div>
 
         {/* EasyQuote Brand Image */}
         <div className="mt-4 flex justify-center">
