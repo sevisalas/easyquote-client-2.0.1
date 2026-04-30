@@ -1366,7 +1366,9 @@ export const generateQuotePDF = async (
         for (const compKey of sortedKeys) {
           const comp = componentsMap[compKey];
           if (!comp) continue;
-          const alias = sanitizePdfMarkerText(comp.alias || 'Componente') || 'Componente';
+          const alias = sanitizePdfMarkerText(comp.alias || 'Componente')
+            .replace(/^──\s*|\s*──$/g, '')
+            .trim() || 'Componente';
           const compPrompts = Array.isArray(comp.prompts) ? comp.prompts : [];
           
           // Get hidden prompts for this component's REAL easyquote product id
