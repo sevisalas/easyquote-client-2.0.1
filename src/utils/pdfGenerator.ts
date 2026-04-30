@@ -77,7 +77,7 @@ export interface PDFGeneratorOptions {
   quality?: number;
 }
 
-const PDF_IMAGE_CACHE = new Map<string, Promise<{ dataUrl: string; format: 'PNG' | 'JPEG' } | null>>();
+const PDF_IMAGE_CACHE = new Map<string, Promise<{ dataUrl: string; format: 'PNG' | 'JPEG'; width: number; height: number } | null>>();
 
 const formatPdfDate = (value?: string | null) =>
   value ? format(new Date(value), 'dd/MM/yyyy', { locale: es }) : '-';
