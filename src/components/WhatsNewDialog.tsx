@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Search } from "lucide-react";
 
-const CURRENT_VERSION = "2.7.27";
+const CURRENT_VERSION = "2.7.28";
 const SILENT_UPDATE = true;
 const LS_KEY = "whats_new_seen_version";
 
@@ -23,6 +23,12 @@ interface ReleaseNote {
 }
 
 const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    icon: <Sparkles className="h-5 w-5 text-primary" />,
+    title: "Separadores de componentes en PDF",
+    description:
+      "Los marcadores de componentes (Interior, Cubierta, etc.) ahora se renderizan correctamente como \"-- Interior --\" en todos los PDFs, sustituyendo los símbolos \"%%\" que aparecían con ciertas fuentes.",
+  },
   {
     icon: <Sparkles className="h-5 w-5 text-primary" />,
     title: "Artículos personalizados sin precio base",
