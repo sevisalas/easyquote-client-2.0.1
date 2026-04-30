@@ -20,6 +20,7 @@ export interface Template7PaginationPage<T = Template7PaginationItem> {
 // ligeramente la capacidad, manteniendo margen para los casos complejos.
 const STANDARD_PAGE_CAPACITY = 46;
 const LAST_PAGE_CAPACITY = 48;
+const FOOTER_RESERVE_SHARE = 0.25;
 const FIXED_FOOTER_LINES = 4;
 
 const stripHtml = (value: string) =>
@@ -133,15 +134,19 @@ const estimateNotesLines = (quote: any) => {
   return 1.2 + estimateWrappedLines(quote.notes, 124);
 };
 
-export const paginateTemplate7Items = <T extends Template7PaginationItem>({
-  items,
+const shouldRenderSummary = ({
+  itemsCount,
   quote,
   quoteAdditionals,
 }: {
-  items: T[];
+  itemsCount: number;
   quote: any;
   quoteAdditionals: any[];
-}): Template7PaginationPage<T>[] => {
+}) => itemsCount > 1 || quoteAdditionals.length > 0 || quote.tax_amount > 0 || quote.discount_amount > 0;
+
+const buildItemOnlyPages = <T extends Template7PaginationItem>(items: T[]) => {
+  if (items.length === 0) return [] as Template7PaginationPage<T>[];
+
   const pages: Template7PaginationPage<T>[] = [{ items: [], showSummary: false }];
   let currentPageIndex = 0;
   let currentLines = 0;
@@ -160,29 +165,68 @@ export const paginateTemplate7Items = <T extends Template7PaginationItem>({
     currentLines += itemLines;
   });
 
-  const summaryLines = estimateSummaryLines({
-    quote: { ...quote, items_count: items.length },
+  return pages;
+};
+
+export const paginateTemplate7Items = <T extends Template7PaginationItem>({
+  items,
+  quote,
+  quoteAdditionals,
+  reserveFooterShare = 0,
+}: {
+  items: T[];
+  quote: any;
+  quoteAdditionals: any[];
+  reserveFooterShare?: number;
+}): Template7PaginationPage<T>[] => {
+  const showSummary = shouldRenderSummary({
+    itemsCount: items.length,
+    quote,
     quoteAdditionals,
   });
+
+  const summaryLines = showSummary
+    ? estimateSummaryLines({
+        quote: { ...quote, items_count: items.length },
+        quoteAdditionals,
+      })
+    : 0;
   const notesLines = estimateNotesLines(quote);
+  const reservedFooterLines = Math.ceil(LAST_PAGE_CAPACITY * Math.min(Math.max(reserveFooterShare, 0), FOOTER_RESERVE_SHARE));
+  const lastPageItemsCapacity = Math.max(0, LAST_PAGE_CAPACITY - reservedFooterLines - summaryLines - notesLines);
 
-  // Caso 1: TOTAL + notas caben con los items
-  if (currentLines + summaryLines + notesLines <= LAST_PAGE_CAPACITY) {
-    pages[pages.length - 1].showSummary = true;
-    pages[pages.length - 1].showNotes = notesLines > 0;
-    return pages;
+  if (items.length === 0) {
+    return [{ items: [], showSummary, showNotes: notesLines > 0 }];
   }
 
-  // Caso 2: TOTAL cabe con los items, las notas no → notas a página nueva
-  if (currentLines + summaryLines <= LAST_PAGE_CAPACITY) {
-    pages[pages.length - 1].showSummary = true;
-    if (notesLines > 0) {
-      pages.push({ items: [] as T[], showSummary: false, showNotes: true });
+  const lastPageItems: T[] = [];
+  let lastPageItemsLines = 0;
+  let splitIndex = items.length;
+
+  for (let index = items.length - 1; index >= 0; index -= 1) {
+    const item = items[index];
+    const itemLines = estimateItemLines(item);
+
+    if (lastPageItems.length === 0) {
+      lastPageItems.unshift(item);
+      lastPageItemsLines += itemLines;
+      splitIndex = index;
+      continue;
     }
-    return pages;
+
+    if (lastPageItemsLines + itemLines <= lastPageItemsCapacity) {
+      lastPageItems.unshift(item);
+      lastPageItemsLines += itemLines;
+      splitIndex = index;
+      continue;
+    }
+
+    break;
   }
 
-  // Caso 3: Ni TOTAL cabe → TOTAL (+ notas si caben juntas) a página nueva
-  pages.push({ items: [] as T[], showSummary: true, showNotes: notesLines > 0 });
+  const leadingItems = items.slice(0, splitIndex);
+  const pages = buildItemOnlyPages(leadingItems);
+  pages.push({ items: lastPageItems, showSummary, showNotes: notesLines > 0 });
+
   return pages;
 };
