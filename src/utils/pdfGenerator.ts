@@ -647,13 +647,13 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
         const quantityLabel = Number.isFinite(numericQuantity)
           ? new Intl.NumberFormat('es-ES').format(numericQuantity as number)
           : String(quantity);
-        renderWrappedText(pdf, quantityLabel, qtyColumnX - 2, cursorY + 0.6, qtyColumnWidth, {
+        renderWrappedText(pdf, quantityLabel, qtyColumnX - 2, cursorY, qtyColumnWidth, {
           fontSize: 10.8,
           lineHeight: 3.8,
           color: [58, 58, 58],
           align: 'right',
         });
-        renderWrappedText(pdf, formatPdfCurrency(item.price || 0), priceColumnX - 2, cursorY + 0.6, priceColumnWidth, {
+        renderWrappedText(pdf, formatPdfCurrency(item.price || 0), priceColumnX - 2, cursorY, priceColumnWidth, {
           fontSize: 10.8,
           lineHeight: 3.8,
           style: 'bold',
@@ -662,7 +662,7 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
         });
       }
 
-      cursorY += 5.4;
+      cursorY += 4.6;
 
       if (!hideItemAmounts && Array.isArray(item.multi_extra)) {
         item.multi_extra.forEach((row: any) => {
@@ -679,7 +679,7 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
             color: [26, 26, 26],
             align: 'right',
           });
-          cursorY += 4.3;
+          cursorY += 4.6;
         });
       }
 
