@@ -1247,7 +1247,7 @@ export const generateQuotePDF = async (
         item.description || '',
         parentHiddenPromptKeys,
         componentHiddenByAlias
-      );
+      ).replace(/%%\s*([^%\n]+?)\s*%%/g, '── $1 ──');
       
       // Extract displayQuantity: prefer Q1 from multi, then custom_quantity, then is_quantity prompt, then heuristic
       let displayQuantity: string | number | null = null;
