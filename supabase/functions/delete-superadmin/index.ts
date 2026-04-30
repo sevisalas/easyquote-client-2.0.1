@@ -131,7 +131,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in delete-superadmin function:', error);
     return new Response(
-      JSON.stringify({ error: (error as Error).message }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

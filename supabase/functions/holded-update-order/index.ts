@@ -619,7 +619,7 @@ Deno.serve(async (req) => {
   } catch (error: any) {
     console.error('Error in holded-update-order:', error);
     return new Response(
-      JSON.stringify({ error: (error as Error).message }),
+      JSON.stringify({ error: 'Internal server error' }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400 
