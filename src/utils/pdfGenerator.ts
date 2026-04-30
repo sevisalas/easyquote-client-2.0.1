@@ -737,7 +737,7 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
 
     if (isLastPage && templateData.config?.footerText && richTextHasContent(templateData.config.footerText)) {
       // Medimos primero la altura real renderizando en un PDF dummy fuera de pantalla.
-      const measurePdf = new (pdf.constructor as any)({ unit: 'mm', format: 'a4' });
+      const measurePdf = new jsPDF({ unit: 'mm', format: 'a4' });
       const endY = renderRichText(measurePdf, templateData.config.footerText, marginX, 0, contentWidth, {
         fontSize: 8,
         lineHeight: 2.9,
