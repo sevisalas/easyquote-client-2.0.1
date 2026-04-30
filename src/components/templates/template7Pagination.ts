@@ -193,7 +193,6 @@ export const paginateTemplate7Items = <T extends Template7PaginationItem>({
     : 0;
   const notesLines = estimateNotesLines(quote);
   const reservedFooterLines = Math.ceil(LAST_PAGE_CAPACITY * Math.min(Math.max(reserveFooterShare, 0), FOOTER_RESERVE_SHARE));
-  const lastPageItemsCapacity = Math.max(0, LAST_PAGE_CAPACITY - reservedFooterLines - summaryLines - notesLines);
 
   if (items.length === 0) {
     return [{ items: [], showSummary, showNotes: notesLines > 0 }];
