@@ -147,7 +147,7 @@ const loadImageForPdf = async (
   url: string,
   maxPixels = 360,
   background: string = '#ffffff',
-): Promise<{ dataUrl: string; format: 'PNG' | 'JPEG' } | null> => {
+): Promise<{ dataUrl: string; format: 'PNG' | 'JPEG'; width: number; height: number } | null> => {
   if (!url) return null;
   const absoluteUrl = /^https?:\/\//i.test(url) ? url : new URL(url, window.location.origin).toString();
   const cacheKey = `${absoluteUrl}|${maxPixels}|${background}`;
@@ -187,6 +187,8 @@ const loadImageForPdf = async (
           return {
             dataUrl: canvas.toDataURL('image/jpeg', 0.78),
             format: 'JPEG' as const,
+            width: targetWidth,
+            height: targetHeight,
           };
         } finally {
           URL.revokeObjectURL(objectUrl);
