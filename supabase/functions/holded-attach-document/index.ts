@@ -178,7 +178,7 @@ Deno.serve(async (req) => {
   } catch (error: any) {
     console.error('Error in holded-attach-document:', error);
     return new Response(
-      JSON.stringify({ error: (error as Error).message || 'Failed to attach documents' }),
+      JSON.stringify({ error: 'Failed to attach documents' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
     );
   }
