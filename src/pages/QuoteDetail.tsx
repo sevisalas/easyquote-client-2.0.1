@@ -768,7 +768,7 @@ export default function QuoteDetail() {
                     disabled={updateStatusMutation.isPending}
                     className="h-6 text-xs px-2"
                   >
-                    {canExportQuotesOnSend ? 'Enviar a Holded' : 'Enviar'}
+                    {canExportQuotesOnSend ? 'Enviar a Holded' : 'Marcar como listo para enviar'}
                   </Button>
                 )}
                 {quote.status === 'sent' && (!isComercial || isOwnQuote) && (

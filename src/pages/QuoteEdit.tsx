@@ -1266,7 +1266,7 @@ export default function QuoteEdit() {
                     onClick={() => handleStatusChange('sent')}
                     className="h-7 text-xs"
                   >
-                    {canExportQuotesOnSend ? 'Enviar a Holded' : 'Enviar'}
+                    {canExportQuotesOnSend ? 'Enviar a Holded' : 'Marcar como listo para enviar'}
                   </Button>
                 )}
               </div>
