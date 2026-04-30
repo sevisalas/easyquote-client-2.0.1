@@ -57,7 +57,7 @@ const estimateItemLines = (item: Template7PaginationItem) => {
   let lines = hasStructuredDetails ? 3.2 : 2.7;
 
   if ((!item.prompts || item.prompts.length === 0) && item.description) {
-    const charsPerLine = item.description_manual ? 112 : 104;
+    const charsPerLine = item.description_manual ? 128 : 120;
     const descriptionLines = estimateWrappedLines(item.description, charsPerLine);
     // Colchón pequeño para absorber pequeñas diferencias de render sin volver a
     // empujar artículos completos a la página siguiente antes de tiempo.
@@ -130,7 +130,7 @@ const estimateSummaryLines = ({
 
 const estimateNotesLines = (quote: any) => {
   if (!quote?.notes) return 0;
-  return 1.2 + estimateWrappedLines(quote.notes, 112);
+  return 1.2 + estimateWrappedLines(quote.notes, 124);
 };
 
 export const paginateTemplate7Items = <T extends Template7PaginationItem>({
