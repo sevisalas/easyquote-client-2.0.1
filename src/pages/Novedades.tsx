@@ -27,9 +27,12 @@ interface Version {
 const versions: Version[] = [
   {
     version: "2.7.26",
-    date: "2026-04-28",
+    date: "2026-04-30",
     changes: {
       fixed: [
+        "Ocultar en documentos: ahora reconoce correctamente etiquetas con sufijos o unidades (ej. 'Lomo mm' coincide con la configuración 'Lomo (entrada)'), evitando que campos marcados como ocultos aparezcan en los PDF.",
+        "Paginación PDF (plantillas 7 y 8): cálculo de capacidad por página recalibrado para que artículos con muchos componentes/multi-cantidad no se partan entre páginas.",
+        "Tipografía consistente en 'Archivos Excel' y 'Configuración de producto': los títulos y subtítulos ya no se ven desproporcionados por herencia de estilos globales.",
         "Paginación del PDF (Campillo/Anebri): los artículos ya no se parten entre páginas. Si las notas no caben con los totales, solo las notas saltan a una nueva página, manteniendo los artículos íntegros.",
         "Artículos personalizados sin precio base: el PDF ya no muestra la línea '1 × 0,00 €' cuando el artículo solo tiene ajustes (additionals), calculando el total correctamente a partir de estos.",
         "Precios estables al guardar sin editar: los presupuestos guardados sin tocar ningún artículo conservan exactamente el total original (corrige caídas como 1.845,75 € → 1.680 €)",
