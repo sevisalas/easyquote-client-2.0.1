@@ -1,7 +1,7 @@
 // Artículos de ayuda estáticos con acceso progresivo por rol
 // Roles: user < comercial < operador < admin < superadmin
 
-export type UserRole = 'user' | 'comercial' | 'operador' | 'admin' | 'superadmin';
+export type UserRole = "user" | "comercial" | "operador" | "admin" | "superadmin";
 
 export interface HelpArticle {
   id: string;
@@ -33,76 +33,76 @@ export const roleHierarchy: Record<UserRole, number> = {
 
 export const helpCategories: HelpCategory[] = [
   {
-    id: 'getting-started',
-    name: 'Primeros pasos',
-    icon: 'Rocket',
-    description: 'Aprende lo básico para empezar a usar EasyQuote',
-    minRole: 'user',
+    id: "getting-started",
+    name: "Primeros pasos",
+    icon: "Rocket",
+    description: "Aprende lo básico para empezar a usar EasyQuote",
+    minRole: "user",
   },
   {
-    id: 'quotes',
-    name: 'Presupuestos',
-    icon: 'FileText',
-    description: 'Crea y gestiona presupuestos profesionales',
-    minRole: 'user',
+    id: "quotes",
+    name: "Presupuestos",
+    icon: "FileText",
+    description: "Crea y gestiona presupuestos profesionales",
+    minRole: "user",
   },
   {
-    id: 'customers',
-    name: 'Clientes',
-    icon: 'Users',
-    description: 'Gestión de tu cartera de clientes',
-    minRole: 'user',
+    id: "customers",
+    name: "Clientes",
+    icon: "Users",
+    description: "Gestión de tu cartera de clientes",
+    minRole: "user",
   },
   {
-    id: 'orders',
-    name: 'Pedidos',
-    icon: 'Package',
-    description: 'Convierte presupuestos en pedidos y gestiona producción',
-    minRole: 'comercial',
+    id: "orders",
+    name: "Pedidos",
+    icon: "Package",
+    description: "Convierte presupuestos en pedidos y gestiona producción",
+    minRole: "comercial",
   },
   {
-    id: 'production',
-    name: 'Producción',
-    icon: 'Factory',
-    description: 'Panel de taller y gestión de tareas',
-    minRole: 'operador',
+    id: "production",
+    name: "Producción",
+    icon: "Factory",
+    description: "Panel de taller y gestión de tareas",
+    minRole: "operador",
   },
   {
-    id: 'integrations',
-    name: 'Integraciones',
-    icon: 'Plug',
-    description: 'Conecta con Holded, WooCommerce y más',
-    minRole: 'admin',
+    id: "integrations",
+    name: "Integraciones",
+    icon: "Plug",
+    description: "Conecta con Holded, WooCommerce y más",
+    minRole: "admin",
   },
   {
-    id: 'excel',
-    name: 'Archivos Excel',
-    icon: 'FileSpreadsheet',
-    description: 'Gestión de archivos Excel y maestros',
-    minRole: 'admin',
+    id: "excel",
+    name: "Archivos Excel",
+    icon: "FileSpreadsheet",
+    description: "Gestión de archivos Excel y maestros",
+    minRole: "admin",
   },
   {
-    id: 'settings',
-    name: 'Configuración',
-    icon: 'Settings',
-    description: 'Personaliza EasyQuote para tu empresa',
-    minRole: 'admin',
+    id: "settings",
+    name: "Configuración",
+    icon: "Settings",
+    description: "Personaliza EasyQuote para tu empresa",
+    minRole: "admin",
   },
   {
-    id: 'admin',
-    name: 'Administración',
-    icon: 'Shield',
-    description: 'Gestión de suscriptores y sistema',
-    minRole: 'superadmin',
+    id: "admin",
+    name: "Administración",
+    icon: "Shield",
+    description: "Gestión de suscriptores y sistema",
+    minRole: "superadmin",
   },
 ];
 
 export const helpArticles: HelpArticle[] = [
   // ====== PRIMEROS PASOS ======
   {
-    id: 'welcome',
-    title: 'Bienvenido a EasyQuote',
-    summary: 'Introducción general a la aplicación y sus funcionalidades principales.',
+    id: "welcome",
+    title: "Bienvenido a EasyQuote",
+    summary: "Introducción general a la aplicación y sus funcionalidades principales.",
     content: `
 ## ¿Qué es EasyQuote?
 
@@ -126,15 +126,15 @@ EasyQuote es una aplicación de presupuestación profesional que te permite:
 2. Crea un presupuesto de prueba
 3. Explora las configuraciones de tu cuenta
     `,
-    category: 'getting-started',
-    icon: 'Rocket',
-    minRole: 'user',
-    tags: ['inicio', 'bienvenida', 'introducción'],
+    category: "getting-started",
+    icon: "Rocket",
+    minRole: "user",
+    tags: ["inicio", "bienvenida", "introducción"],
   },
   {
-    id: 'navigation',
-    title: 'Navegación por la aplicación',
-    summary: 'Cómo moverte por EasyQuote y encontrar lo que necesitas.',
+    id: "navigation",
+    title: "Navegación por la aplicación",
+    summary: "Cómo moverte por EasyQuote y encontrar lo que necesitas.",
     content: `
 ## Estructura del menú
 
@@ -158,17 +158,17 @@ El sidebar contiene todas las secciones principales:
 - Usa el botón de contraer para más espacio
 - Cambia de organización desde el footer del menú
     `,
-    category: 'getting-started',
-    icon: 'Navigation',
-    minRole: 'user',
-    tags: ['navegación', 'menú', 'sidebar'],
+    category: "getting-started",
+    icon: "Navigation",
+    minRole: "user",
+    tags: ["navegación", "menú", "sidebar"],
   },
 
   // ====== PRESUPUESTOS ======
   {
-    id: 'create-quote',
-    title: 'Crear un presupuesto',
-    summary: 'Paso a paso para crear tu primer presupuesto.',
+    id: "create-quote",
+    title: "Crear un presupuesto",
+    summary: "Paso a paso para crear tu primer presupuesto.",
     content: `
 ## Crear un nuevo presupuesto
 
@@ -181,8 +181,8 @@ El sidebar contiene todas las secciones principales:
 Cada artículo se configura mediante:
 
 1. **Selección de producto**: Elige del catálogo disponible
-2. **Prompts**: Responde las preguntas del producto (cantidad, tamaño, etc.)
-3. **Outputs**: Configura acabados y opciones
+2. **Datos de entrada**: Responde las preguntas del producto (cantidad, tamaño, etc.)
+3. **Datos de salida**: Configura acabados y opciones
 4. **Precio automático**: Se calcula en base a tus respuestas
 
 ## Guardar y enviar
@@ -191,28 +191,28 @@ Cada artículo se configura mediante:
 - Puedes generar PDF para enviar al cliente
 - Exportar a Holded si tienes la integración activa
     `,
-    category: 'quotes',
-    icon: 'FileText',
-    minRole: 'user',
-    tags: ['presupuesto', 'crear', 'artículos', 'prompts'],
+    category: "quotes",
+    icon: "FileText",
+    minRole: "user",
+    tags: ["presupuesto", "crear", "artículos", "entradas"],
   },
   {
-    id: 'quote-products',
-    title: 'Configurar productos en presupuestos',
-    summary: 'Cómo funcionan los prompts, outputs y el cálculo de precios.',
+    id: "quote-products",
+    title: "Configurar productos en presupuestos",
+    summary: "Cómo funcionan los datos de entrada, de salida y el cálculo de precios.",
     content: `
 ## Sistema de configuración de productos
 
 Los productos en EasyQuote se configuran dinámicamente:
 
-### Prompts
+### Datos de entrada
 Son las preguntas que definen el producto:
 - Cantidad
 - Tamaño/formato
 - Tipo de papel
 - Colores de impresión
 
-### Outputs
+### Datos de salida
 Resultados calculados y opciones adicionales:
 - Acabados disponibles
 - Precio base calculado
@@ -223,19 +223,19 @@ Configuración de cantidades múltiples para un mismo producto.
 
 ## Importante
 
-⚠️ **No modifiques precios manualmente** - El sistema calcula automáticamente desde la API de EasyQuote según los prompts configurados.
+⚠️ **No modifiques precios manualmente** - El sistema calcula automáticamente desde la API de EasyQuote según los datos de entrada configurados.
     `,
-    category: 'quotes',
-    icon: 'Calculator',
-    minRole: 'user',
-    tags: ['productos', 'prompts', 'outputs', 'precios'],
+    category: "quotes",
+    icon: "Calculator",
+    minRole: "user",
+    tags: ["productos", "entradas", "salidas", "precios"],
   },
 
   // ====== CLIENTES ======
   {
-    id: 'manage-customers',
-    title: 'Gestionar clientes',
-    summary: 'Crear, editar y organizar tu cartera de clientes.',
+    id: "manage-customers",
+    title: "Gestionar clientes",
+    summary: "Crear, editar y organizar tu cartera de clientes.",
     content: `
 ## Añadir un cliente
 
@@ -258,15 +258,15 @@ Si tienes integración con Holded:
 - Usa el buscador en la lista de clientes
 - Filtra por nombre, email o teléfono
     `,
-    category: 'customers',
-    icon: 'Users',
-    minRole: 'user',
-    tags: ['clientes', 'contactos', 'holded'],
+    category: "customers",
+    icon: "Users",
+    minRole: "user",
+    tags: ["clientes", "contactos", "holded"],
   },
   {
-    id: 'customer-tariffs',
-    title: 'Tarifas de cliente',
-    summary: 'Aplica descuentos o recargos automáticos a presupuestos y pedidos de un cliente.',
+    id: "customer-tariffs",
+    title: "Tarifas de cliente",
+    summary: "Aplica descuentos o recargos automáticos a presupuestos y pedidos de un cliente.",
     content: `
 ## ¿Qué son las tarifas?
 
@@ -306,17 +306,17 @@ Si un cliente tiene una tarifa del **−10%** y el precio base de un artículo e
 - Un ajuste fijo de **20 €** se mantiene en **20 €** (sin descuento)
 - Un ajuste porcentual del **5%** se calcula sobre **100 €** (precio base sin tarifa) → **5 €**
     `,
-    category: 'customers',
-    icon: 'Percent',
-    minRole: 'admin',
-    tags: ['tarifas', 'descuentos', 'recargos', 'clientes', 'precios'],
+    category: "customers",
+    icon: "Percent",
+    minRole: "admin",
+    tags: ["tarifas", "descuentos", "recargos", "clientes", "precios"],
   },
 
   // ====== PEDIDOS (comercial+) ======
   {
-    id: 'create-order',
-    title: 'Crear y gestionar pedidos',
-    summary: 'Convertir presupuestos en pedidos y hacer seguimiento.',
+    id: "create-order",
+    title: "Crear y gestionar pedidos",
+    summary: "Convertir presupuestos en pedidos y hacer seguimiento.",
     content: `
 ## Crear pedido desde presupuesto
 
@@ -338,17 +338,17 @@ La forma más rápida:
 - **Completado**: Listo para entregar
 - **Entregado**: Finalizado
     `,
-    category: 'orders',
-    icon: 'Package',
-    minRole: 'comercial',
-    tags: ['pedidos', 'convertir', 'estados'],
+    category: "orders",
+    icon: "Package",
+    minRole: "comercial",
+    tags: ["pedidos", "convertir", "estados"],
   },
 
   // ====== PRODUCCIÓN (operador+) ======
   {
-    id: 'production-panel',
-    title: 'Panel de taller',
-    summary: 'Gestión visual de tareas de producción.',
+    id: "production-panel",
+    title: "Panel de taller",
+    summary: "Gestión visual de tareas de producción.",
     content: `
 ## Acceder al panel
 
@@ -373,17 +373,17 @@ Las tareas se organizan en columnas por fase:
 - Por operador asignado
 - Por estado
     `,
-    category: 'production',
-    icon: 'Factory',
-    minRole: 'operador',
-    tags: ['producción', 'taller', 'kanban', 'tareas'],
+    category: "production",
+    icon: "Factory",
+    minRole: "operador",
+    tags: ["producción", "taller", "kanban", "tareas"],
   },
 
   // ====== INTEGRACIONES (admin+) ======
   {
-    id: 'holded-integration',
-    title: 'Integración con Holded',
-    summary: 'Configura la conexión con Holded para facturación automática.',
+    id: "holded-integration",
+    title: "Integración con Holded",
+    summary: "Configura la conexión con Holded para facturación automática.",
     content: `
 ## Configurar Holded
 
@@ -406,17 +406,17 @@ Configura las cuentas contables para:
 - Productos
 - Impuestos
     `,
-    category: 'integrations',
-    icon: 'Plug',
-    minRole: 'admin',
-    tags: ['holded', 'integración', 'facturación', 'api'],
+    category: "integrations",
+    icon: "Plug",
+    minRole: "admin",
+    tags: ["holded", "integración", "facturación", "api"],
   },
 
   // ====== ARCHIVOS EXCEL (admin+) ======
   {
-    id: 'excel-master-files',
-    title: 'Archivos Excel maestros',
-    summary: 'Cómo funcionan los archivos maestros y la vinculación con archivos hijos.',
+    id: "excel-master-files",
+    title: "Archivos Excel maestros",
+    summary: "Cómo funcionan los archivos maestros y la vinculación con archivos hijos.",
     content: `
 ## ¿Qué son los archivos maestros?
 
@@ -466,16 +466,16 @@ Sí. Puedes marcar varios archivos como maestros, cada uno con su nombre de refe
 **¿Qué pasa si actualizo el maestro?**
 Los archivos hijos que ya fueron subidos con la referencia al maestro seguirán funcionando. Si cambias la estructura del maestro, deberás re-subir los archivos hijos.
     `,
-    category: 'excel',
-    icon: 'Crown',
-    minRole: 'admin',
-    tags: ['excel', 'maestro', 'master', 'archivos', 'vinculación', 'fórmulas'],
+    category: "excel",
+    icon: "Crown",
+    minRole: "admin",
+    tags: ["excel", "maestro", "master", "archivos", "vinculación", "fórmulas"],
   },
 
   {
-    id: 'excel-error-scanner',
-    title: 'Revisión previa de archivos Excel',
-    summary: 'Escanea tu archivo Excel antes de subirlo para detectar errores y problemas.',
+    id: "excel-error-scanner",
+    title: "Revisión previa de archivos Excel",
+    summary: "Escanea tu archivo Excel antes de subirlo para detectar errores y problemas.",
     content: `
 ## ¿Para qué sirve?
 
@@ -520,17 +520,17 @@ El escáner busca los problemas más comunes:
 - Presta especial atención a los errores **#REF!** ya que suelen causar fallos en el motor de cálculo
 - Si el archivo tiene enlaces externos, considera usar la función de **archivos maestros** para gestionarlos
     `,
-    category: 'excel',
-    icon: 'Search',
-    minRole: 'admin',
-    tags: ['excel', 'errores', 'revisión', 'escanear', 'problemas', 'fórmulas', 'diagnóstico'],
+    category: "excel",
+    icon: "Search",
+    minRole: "admin",
+    tags: ["excel", "errores", "revisión", "escanear", "problemas", "fórmulas", "diagnóstico"],
   },
 
   // ====== CONFIGURACIÓN (admin+) ======
   {
-    id: 'numbering-formats',
-    title: 'Formatos de numeración',
-    summary: 'Personaliza la numeración de presupuestos y pedidos.',
+    id: "numbering-formats",
+    title: "Formatos de numeración",
+    summary: "Personaliza la numeración de presupuestos y pedidos.",
     content: `
 ## Configurar numeración
 
@@ -549,15 +549,15 @@ Ve a **Configuración** → **Numeración**
 - P24001
 - 2024/PRE/00001
     `,
-    category: 'settings',
-    icon: 'Hash',
-    minRole: 'admin',
-    tags: ['numeración', 'formato', 'prefijo'],
+    category: "settings",
+    icon: "Hash",
+    minRole: "admin",
+    tags: ["numeración", "formato", "prefijo"],
   },
   {
-    id: 'user-management',
-    title: 'Gestión de usuarios',
-    summary: 'Añadir, editar y gestionar los miembros de tu equipo.',
+    id: "user-management",
+    title: "Gestión de usuarios",
+    summary: "Añadir, editar y gestionar los miembros de tu equipo.",
     content: `
 ## Roles disponibles
 
@@ -577,17 +577,17 @@ Ve a **Configuración** → **Numeración**
 
 Solo los administradores pueden cambiar roles de otros usuarios.
     `,
-    category: 'settings',
-    icon: 'UserCog',
-    minRole: 'admin',
-    tags: ['usuarios', 'roles', 'permisos', 'invitar'],
+    category: "settings",
+    icon: "UserCog",
+    minRole: "admin",
+    tags: ["usuarios", "roles", "permisos", "invitar"],
   },
 
   // ====== ADMINISTRACIÓN (superadmin) ======
   {
-    id: 'subscriber-management',
-    title: 'Gestión de suscriptores',
-    summary: 'Administrar organizaciones y planes de suscripción.',
+    id: "subscriber-management",
+    title: "Gestión de suscriptores",
+    summary: "Administrar organizaciones y planes de suscripción.",
     content: `
 ## Panel de suscriptores
 
@@ -606,39 +606,32 @@ Accede desde el menú lateral → **Suscriptores**
 - **Client**: Presupuestos + Clientes
 - **ERP**: + Pedidos + Producción
     `,
-    category: 'admin',
-    icon: 'Shield',
-    minRole: 'superadmin',
-    tags: ['suscriptores', 'planes', 'organizaciones'],
+    category: "admin",
+    icon: "Shield",
+    minRole: "superadmin",
+    tags: ["suscriptores", "planes", "organizaciones"],
   },
 ];
 
 // Helper para filtrar artículos por rol
 export function getArticlesForRole(userRole: UserRole): HelpArticle[] {
   const userRoleLevel = roleHierarchy[userRole];
-  return helpArticles.filter(
-    (article) => roleHierarchy[article.minRole] <= userRoleLevel
-  );
+  return helpArticles.filter((article) => roleHierarchy[article.minRole] <= userRoleLevel);
 }
 
 // Helper para filtrar categorías por rol
 export function getCategoriesForRole(userRole: UserRole): HelpCategory[] {
   const userRoleLevel = roleHierarchy[userRole];
-  return helpCategories.filter(
-    (category) => roleHierarchy[category.minRole] <= userRoleLevel
-  );
+  return helpCategories.filter((category) => roleHierarchy[category.minRole] <= userRoleLevel);
 }
 
 // Helper para buscar artículos
-export function searchArticles(
-  articles: HelpArticle[],
-  query: string
-): HelpArticle[] {
+export function searchArticles(articles: HelpArticle[], query: string): HelpArticle[] {
   const lowerQuery = query.toLowerCase();
   return articles.filter(
     (article) =>
       article.title.toLowerCase().includes(lowerQuery) ||
       article.summary.toLowerCase().includes(lowerQuery) ||
-      article.tags.some((tag) => tag.toLowerCase().includes(lowerQuery))
+      article.tags.some((tag) => tag.toLowerCase().includes(lowerQuery)),
   );
 }
