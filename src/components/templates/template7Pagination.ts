@@ -15,11 +15,11 @@ export interface Template7PaginationPage<T = Template7PaginationItem> {
 }
 
 // Capacidad efectiva de líneas por página A4 con la cabecera/pie de T7/T8.
-// Reducida desde 48 → 42 para evitar que items grandes con múltiples
-// componentes y multi-cantidades se desborden al renderizar HTML real
-// (la estimación es conservadora pero no exacta).
-const STANDARD_PAGE_CAPACITY = 42;
-const LAST_PAGE_CAPACITY = 42;
+// 42 estaba siendo demasiado conservador para artículos simples con descripción
+// manual larga, dejando huecos grandes y forzando saltos innecesarios. Subimos
+// ligeramente la capacidad, manteniendo margen para los casos complejos.
+const STANDARD_PAGE_CAPACITY = 46;
+const LAST_PAGE_CAPACITY = 48;
 const FIXED_FOOTER_LINES = 4;
 
 const stripHtml = (value: string) =>
@@ -44,16 +44,24 @@ const estimateWrappedLines = (value: string, charsPerLine: number) => {
 };
 
 const estimateItemLines = (item: Template7PaginationItem) => {
-  // Base por item: cabecera del producto + margen entre artículos.
-  let lines = 3.5;
+  const hasStructuredDetails = Boolean(
+    item.prompts?.length ||
+    item.components?.length ||
+    item.item_additionals?.length ||
+    item.multi_extra?.length
+  );
+
+  // Base por item: cabecera del producto + fila de cantidad/precio + margen.
+  // Para artículos simples (solo descripción) usamos una base algo menor porque
+  // el cálculo anterior estaba sobredimensionando su altura real en PDF.
+  let lines = hasStructuredDetails ? 3.2 : 2.7;
 
   if ((!item.prompts || item.prompts.length === 0) && item.description) {
-    const charsPerLine = item.description_manual ? 68 : 72;
+    const charsPerLine = item.description_manual ? 112 : 104;
     const descriptionLines = estimateWrappedLines(item.description, charsPerLine);
-    // Las descripciones manuales largas en T7/T8 se estaban penalizando demasiado
-    // con un multiplicador porcentual, provocando saltos innecesarios de página.
-    // Dejamos un colchón fijo y acotado en lugar de inflar todo el bloque.
-    const safetyLines = item.description_manual ? Math.min(2, descriptionLines * 0.12) : 0;
+    // Colchón pequeño para absorber pequeñas diferencias de render sin volver a
+    // empujar artículos completos a la página siguiente antes de tiempo.
+    const safetyLines = item.description_manual ? 0.6 : 0.3;
     lines += descriptionLines + safetyLines;
   }
 
@@ -84,7 +92,7 @@ const estimateItemLines = (item: Template7PaginationItem) => {
     lines += item.multi_extra.length * 1.4;
   }
 
-  return lines + 1.2;
+  return lines + 0.8;
 };
 
 const getItemsLines = (items: Template7PaginationItem[]) =>
@@ -122,7 +130,7 @@ const estimateSummaryLines = ({
 
 const estimateNotesLines = (quote: any) => {
   if (!quote?.notes) return 0;
-  return 1.2 + estimateWrappedLines(quote.notes, 88);
+  return 1.2 + estimateWrappedLines(quote.notes, 112);
 };
 
 export const paginateTemplate7Items = <T extends Template7PaginationItem>({
