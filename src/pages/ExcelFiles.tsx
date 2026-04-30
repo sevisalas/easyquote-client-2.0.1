@@ -890,8 +890,10 @@ export default function ExcelFiles() {
       {/* Header */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 max-w-4xl space-y-2">
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Gestión de archivos Excel</h1>
-          <p className="max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg">
+          <h1 className="!text-2xl font-bold tracking-tight sm:!text-3xl" style={{ fontSize: '1.875rem', lineHeight: 1.15 }}>
+            Gestión de archivos Excel
+          </h1>
+          <p className="max-w-3xl !text-base leading-7 text-muted-foreground sm:!text-lg" style={{ fontSize: '1.125rem', lineHeight: 1.6 }}>
             Administra archivos Excel desde EasyQuote para tus productos
           </p>
         </div>
