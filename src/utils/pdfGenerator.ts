@@ -520,7 +520,6 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
     const metaLines = [
       `Fecha: ${formatPdfDate(quote.created_at)}`,
       ...(quote.valid_until ? [`Fecha vencimiento: ${formatPdfDate(quote.valid_until)}`] : []),
-      `Ref: ${quote.reference || ''}`,
     ];
 
     let leftMetaY = 38;
