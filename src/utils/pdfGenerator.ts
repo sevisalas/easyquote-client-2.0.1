@@ -90,13 +90,24 @@ const formatPdfCurrency = (amount: number) => {
 
 const stripHtmlToPlainText = (value: string) => {
   if (!value) return '';
-  const container = document.createElement('div');
-  container.innerHTML = value
+  // Drop <style>/<script>/<head>/comments BEFORE parsing so their raw CSS/JS
+  // contents don't leak as visible text in the PDF.
+  const sanitized = value
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<head[\s\S]*?<\/head>/gi, '')
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/p>/gi, '\n')
-    .replace(/<\/div>/gi, '\n');
+    .replace(/<\/div>/gi, '\n')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<\/h[1-6]>/gi, '\n');
+  const container = document.createElement('div');
+  container.innerHTML = sanitized;
   return (container.textContent || '')
     .replace(/\u00a0/g, ' ')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n[ \t]+/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 };
@@ -127,12 +138,22 @@ const getTemplate9CustomerLines = (customer: any): string[] => {
   return lines;
 };
 
-const loadImageForPdf = async (url: string): Promise<{ dataUrl: string; format: 'PNG' | 'JPEG' } | null> => {
+/**
+ * Loads an image and re-encodes it as a compact JPEG, downscaled so the
+ * largest side stays under `maxPixels`. Always flattens onto a solid
+ * background so the resulting JPEG is small (no alpha).
+ */
+const loadImageForPdf = async (
+  url: string,
+  maxPixels = 360,
+  background: string = '#ffffff',
+): Promise<{ dataUrl: string; format: 'PNG' | 'JPEG' } | null> => {
   if (!url) return null;
   const absoluteUrl = /^https?:\/\//i.test(url) ? url : new URL(url, window.location.origin).toString();
+  const cacheKey = `${absoluteUrl}|${maxPixels}|${background}`;
 
-  if (!PDF_IMAGE_CACHE.has(absoluteUrl)) {
-    PDF_IMAGE_CACHE.set(absoluteUrl, (async () => {
+  if (!PDF_IMAGE_CACHE.has(cacheKey)) {
+    PDF_IMAGE_CACHE.set(cacheKey, (async () => {
       try {
         const response = await fetch(absoluteUrl);
         if (!response.ok) return null;
@@ -148,17 +169,24 @@ const loadImageForPdf = async (url: string): Promise<{ dataUrl: string; format: 
             img.src = objectUrl;
           });
 
+          const sourceWidth = image.naturalWidth || image.width || maxPixels;
+          const sourceHeight = image.naturalHeight || image.height || maxPixels;
+          const scale = Math.min(1, maxPixels / Math.max(sourceWidth, sourceHeight));
+          const targetWidth = Math.max(1, Math.round(sourceWidth * scale));
+          const targetHeight = Math.max(1, Math.round(sourceHeight * scale));
+
           const canvas = document.createElement('canvas');
-          canvas.width = image.naturalWidth || image.width;
-          canvas.height = image.naturalHeight || image.height;
+          canvas.width = targetWidth;
+          canvas.height = targetHeight;
           const ctx = canvas.getContext('2d');
           if (!ctx) return null;
 
-          ctx.drawImage(image, 0, 0);
-          const isPng = blob.type.includes('png');
+          ctx.fillStyle = background;
+          ctx.fillRect(0, 0, targetWidth, targetHeight);
+          ctx.drawImage(image, 0, 0, targetWidth, targetHeight);
           return {
-            dataUrl: canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', isPng ? undefined : 0.72),
-            format: isPng ? 'PNG' : 'JPEG',
+            dataUrl: canvas.toDataURL('image/jpeg', 0.78),
+            format: 'JPEG' as const,
           };
         } finally {
           URL.revokeObjectURL(objectUrl);
@@ -169,7 +197,7 @@ const loadImageForPdf = async (url: string): Promise<{ dataUrl: string; format: 
     })());
   }
 
-  return PDF_IMAGE_CACHE.get(absoluteUrl)!;
+  return PDF_IMAGE_CACHE.get(cacheKey)!;
 };
 
 const renderWrappedText = (
