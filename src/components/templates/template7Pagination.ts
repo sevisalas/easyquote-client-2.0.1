@@ -48,9 +48,13 @@ const estimateItemLines = (item: Template7PaginationItem) => {
   let lines = 3.5;
 
   if ((!item.prompts || item.prompts.length === 0) && item.description) {
-    const charsPerLine = item.description_manual ? 60 : 72;
-    const safetyMultiplier = item.description_manual ? 1.35 : 1;
-    lines += estimateWrappedLines(item.description, charsPerLine) * safetyMultiplier;
+    const charsPerLine = item.description_manual ? 68 : 72;
+    const descriptionLines = estimateWrappedLines(item.description, charsPerLine);
+    // Las descripciones manuales largas en T7/T8 se estaban penalizando demasiado
+    // con un multiplicador porcentual, provocando saltos innecesarios de página.
+    // Dejamos un colchón fijo y acotado en lugar de inflar todo el bloque.
+    const safetyLines = item.description_manual ? Math.min(2, descriptionLines * 0.12) : 0;
+    lines += descriptionLines + safetyLines;
   }
 
   if (item.prompts?.length) {
