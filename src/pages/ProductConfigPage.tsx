@@ -1002,8 +1002,12 @@ export default function ProductConfigPage() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl lg:text-2xl font-bold truncate">{selectedProduct.productName}</h1>
-          <p className="text-sm text-muted-foreground">Configuración del producto</p>
+          <h1 className="truncate !text-xl font-bold lg:!text-2xl" style={{ lineHeight: 1.2 }}>
+            {selectedProduct.productName}
+          </h1>
+          <p className="!text-sm text-muted-foreground" style={{ fontSize: '0.875rem', lineHeight: 1.4 }}>
+            Configuración del producto
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="destructive" size="sm" onClick={() => setIsDeleteProductDialogOpen(true)} disabled={updateProductMutation.isPending}>
