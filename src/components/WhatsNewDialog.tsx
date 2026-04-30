@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Sparkles, Search } from "lucide-react";
 
 const CURRENT_VERSION = "2.7.26";
-const SILENT_UPDATE = false;
+const SILENT_UPDATE = true;
 const LS_KEY = "whats_new_seen_version";
 
 interface ReleaseNote {
