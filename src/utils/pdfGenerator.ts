@@ -739,15 +739,15 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
       // Medimos primero la altura real renderizando en un PDF dummy fuera de pantalla.
       const measurePdf = new (pdf.constructor as any)({ unit: 'mm', format: 'a4' });
       const endY = renderRichText(measurePdf, templateData.config.footerText, marginX, 0, contentWidth, {
-        fontSize: 9.5,
-        lineHeight: 3.4,
+        fontSize: 8,
+        lineHeight: 2.9,
         color: [88, 88, 88],
       });
       const blockHeight = endY;
       const startY = Math.max(cursorY + 4, footerTopY - 2 - blockHeight);
       renderRichText(pdf, templateData.config.footerText, marginX, startY, contentWidth, {
-        fontSize: 9.5,
-        lineHeight: 3.4,
+        fontSize: 8,
+        lineHeight: 2.9,
         color: [88, 88, 88],
       });
     }
