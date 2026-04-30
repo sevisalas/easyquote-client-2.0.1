@@ -610,7 +610,8 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
 
       if (Array.isArray(item.components)) {
         item.components.forEach((component: any) => {
-          detailLines.push(sanitizePdfMarkerText(component.alias || 'Componente'));
+          const cleanAlias = sanitizePdfMarkerText(component.alias || 'Componente').replace(/^──\s*|\s*──$/g, '').trim() || 'Componente';
+          detailLines.push(`── ${cleanAlias} ──`);
           (component.prompts || []).forEach((prompt: any) => {
             detailLines.push(`  ${prompt.label}: ${prompt.value ?? ''}`);
           });
