@@ -496,13 +496,15 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
       }
     }
 
-    renderWrappedText(pdf, 'PRESUPUESTO', pageWidth - marginX, 14, 80, {
-      fontSize: 24,
+    pdf.setCharSpace(0.6);
+    renderWrappedText(pdf, 'PRESUPUESTO', pageWidth - marginX, 14, 90, {
+      fontSize: 22,
       lineHeight: 8,
       style: 'normal',
       color: [58, 58, 58],
       align: 'right',
     });
+    pdf.setCharSpace(0);
     renderWrappedText(pdf, quote.quote_number || '-', pageWidth - marginX, 21.5, 60, {
       fontSize: 12,
       lineHeight: 4.8,
