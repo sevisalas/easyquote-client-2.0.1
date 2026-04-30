@@ -1249,10 +1249,12 @@ export const generateQuotePDF = async (
         });
       }
 
-      const safeDescription = sanitizeDescriptionForDocs(
-        item.description || '',
-        parentHiddenPromptKeys,
-        componentHiddenByAlias
+      const safeDescription = sanitizePdfMarkerText(
+        sanitizeDescriptionForDocs(
+          item.description || '',
+          parentHiddenPromptKeys,
+          componentHiddenByAlias
+        )
       );
       
       // Extract displayQuantity: prefer Q1 from multi, then custom_quantity, then is_quantity prompt, then heuristic
