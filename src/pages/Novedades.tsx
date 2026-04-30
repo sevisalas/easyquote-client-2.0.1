@@ -26,6 +26,15 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.7.28",
+    date: "2026-04-30",
+    changes: {
+      added: [
+        "Nueva plantilla PDF 'Campillo Limpia' (#9), exclusiva para Campillo Nevado: hereda toda la lógica de la plantilla 7 pero sin fondo PNG, con cabecera limpia, totales en bloque tipo factura y footer corporativo centrado.",
+      ],
+    },
+  },
+  {
     version: "2.7.27",
     date: "2026-04-30",
     changes: {
