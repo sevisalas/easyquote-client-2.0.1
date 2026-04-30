@@ -50,7 +50,7 @@ const statusLabel = (status: string) => {
     case 'pending': return 'Pendiente';
     case 'approved': return 'Aprobado';
     case 'rejected': return 'Rechazado';
-    case 'sent': return 'Listo para enviar';
+    case 'sent': return 'Preparado';
     case 'cancelled': return 'Anulado';
     default: return status;
   }
@@ -663,7 +663,7 @@ export default function QuoteDetail() {
                       className="gap-2"
                       disabled
                       variant="outline"
-                      title="Para aprobar el presupuesto, primero debes cambiarlo a estado 'Listo para enviar'"
+                      title="Para aprobar el presupuesto, primero debes cambiarlo a estado 'Preparado'"
                     >
                       <CheckCircle className="h-4 w-4" />
                       Aprobar (primero enviar)
