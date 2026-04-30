@@ -568,7 +568,7 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
     pdf.setCharSpace(0.4);
     renderWrappedText(pdf, 'CONCEPTO', marginX + 2, cursorY + 5.1, 60, { fontSize: 10.5, style: 'bold', color: [58, 58, 58] });
     renderWrappedText(pdf, 'UNIDADES', qtyColumnX - 2, cursorY + 5.1, qtyColumnWidth, { fontSize: 10.5, style: 'bold', color: [58, 58, 58], align: 'right' });
-    renderWrappedText(pdf, 'SUBTOTAL', priceColumnX - 2, cursorY + 5.1, priceColumnWidth, { fontSize: 10.5, style: 'bold', color: [58, 58, 58], align: 'right' });
+    renderWrappedText(pdf, 'SUBTOTAL', priceColumnX - 5, cursorY + 5.1, priceColumnWidth, { fontSize: 10.5, style: 'bold', color: [58, 58, 58], align: 'right' });
     pdf.setCharSpace(0);
     cursorY += 11;
 
