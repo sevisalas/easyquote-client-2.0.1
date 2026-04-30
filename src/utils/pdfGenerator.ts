@@ -1383,7 +1383,9 @@ export const generateQuotePDF = async (
     const effScale = isTemplate9 ? t9Scale : renderScale;
     const jpegQ = isTemplate9 ? t9Quality : 0.65;
 
-    if (hasMultiplePages) {
+    if (isTemplate9) {
+      await renderTemplate9VectorPdf(pdf, templateData);
+    } else if (hasMultiplePages) {
       // Multi-page template: render each top-level child as a separate PDF page
       const children = container.firstChild
         ? (container.firstChild as HTMLElement).parentElement === container
