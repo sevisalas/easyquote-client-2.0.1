@@ -560,9 +560,11 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
     pdf.rect(marginX, cursorY, contentWidth, 8, 'F');
     pdf.setDrawColor(229, 229, 229);
     pdf.line(marginX, cursorY + 8, pageWidth - marginX, cursorY + 8);
+    pdf.setCharSpace(0.4);
     renderWrappedText(pdf, 'CONCEPTO', marginX + 2, cursorY + 5.1, 60, { fontSize: 10.5, style: 'bold', color: [58, 58, 58] });
     renderWrappedText(pdf, 'UNIDADES', qtyColumnX - 2, cursorY + 5.1, qtyColumnWidth, { fontSize: 10.5, style: 'bold', color: [58, 58, 58], align: 'right' });
     renderWrappedText(pdf, 'SUBTOTAL', priceColumnX - 2, cursorY + 5.1, priceColumnWidth, { fontSize: 10.5, style: 'bold', color: [58, 58, 58], align: 'right' });
+    pdf.setCharSpace(0);
     cursorY += 11;
 
     for (const item of page.items) {
@@ -709,17 +711,12 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
       pdf.line(marginX, cursorY, pageWidth - marginX, cursorY);
       cursorY += 4;
 
-      renderWrappedText(pdf, 'BASE IMPONIBLE', pageWidth * 0.25, cursorY, 50, { fontSize: 10.5, style: 'bold', color: [58, 58, 58], align: 'center' });
-      renderWrappedText(pdf, 'TOTAL', pageWidth * 0.75, cursorY, 50, { fontSize: 10.5, style: 'bold', color: [58, 58, 58], align: 'center' });
-      cursorY += 4.8;
-      pdf.line(marginX, cursorY - 1.2, pageWidth - marginX, cursorY - 1.2);
-
-      renderWrappedText(pdf, formatPdfCurrency(quote.subtotal || quote.final_price || 0), pageWidth * 0.25, cursorY + 1, 50, { fontSize: 11, color: [26, 26, 26], align: 'center' });
-      renderWrappedText(pdf, formatPdfCurrency((Number(quote.subtotal || quote.final_price || 0)) - Number(quote.discount_amount || 0)), pageWidth * 0.75, cursorY + 1, 50, { fontSize: 11, color: [26, 26, 26], align: 'center' });
-      cursorY += 6;
-      renderWrappedText(pdf, formatPdfCurrency(quote.subtotal || quote.final_price || 0), pageWidth * 0.25, cursorY, 50, { fontSize: 12.5, style: 'bold', color: [26, 26, 26], align: 'center' });
-      renderWrappedText(pdf, formatPdfCurrency((Number(quote.subtotal || quote.final_price || 0)) - Number(quote.discount_amount || 0)), pageWidth * 0.75, cursorY, 50, { fontSize: 12.5, style: 'bold', color: [26, 26, 26], align: 'center' });
-      cursorY += 7.5;
+      const totalAmount = Number(quote.final_price ?? quote.subtotal ?? 0) - Number(quote.discount_amount || 0);
+      pdf.setCharSpace(0.4);
+      renderWrappedText(pdf, 'TOTAL', pageWidth - marginX - 60, cursorY, 30, { fontSize: 11.5, style: 'bold', color: [58, 58, 58], align: 'right' });
+      pdf.setCharSpace(0);
+      renderWrappedText(pdf, formatPdfCurrency(totalAmount), pageWidth - marginX, cursorY, 50, { fontSize: 13, style: 'bold', color: [26, 26, 26], align: 'right' });
+      cursorY += 8;
     }
 
     if (page.showNotes && quote.notes) {
