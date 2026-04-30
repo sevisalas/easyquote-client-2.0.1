@@ -331,12 +331,35 @@ export const isDescriptionLabelHidden = (label: string, hiddenKeys: Set<string>)
     .map((key) => normalizeDescriptionLabel(key))
     .filter(Boolean);
 
+  // Extract "base token" of the description label: first word(s) before any
+  // parenthesis or unit suffix. Example:
+  //   "Lomo mm"        -> "LOMO"
+  //   "Lomo (entrada)" -> "LOMO"
+  //   "Ancho cms."     -> "ANCHO"
+  // This lets us match settings whose stored label diverged from the live
+  // EasyQuote promptText (e.g. "Lomo (entrada)" hidden -> still hides
+  // "Lomo mm" rendered in the document).
+  const baseToken = (s: string): string => {
+    const stripped = s.replace(/\(.*?\)/g, ' ').replace(/\s+/g, ' ').trim();
+    return stripped.split(' ')[0] ?? '';
+  };
+
+  const labelBase = baseToken(normalizedLabel);
+
   return normalizedHiddenKeys.some((hidden) => {
     // Exact label match
     if (hidden === normalizedLabel) return true;
 
     // Hide variants with suffixes (e.g. "Lomo" -> "Lomo mm")
     if (normalizedLabel.startsWith(`${hidden} `)) return true;
+
+    // Match by base token (first word before parens/units).
+    // Only when the base token is meaningful (>= 3 chars) to avoid
+    // false positives on tiny generic words.
+    const hiddenBase = baseToken(hidden);
+    if (hiddenBase && labelBase && hiddenBase.length >= 3 && hiddenBase === labelBase) {
+      return true;
+    }
 
     return false;
   });
