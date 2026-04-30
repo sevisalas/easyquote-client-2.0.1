@@ -897,6 +897,12 @@ export const generateQuotePDF = async (
     const pdfHeight = pdf.internal.pageSize.getHeight();
 
     const isTemplate7 = config.selectedTemplate === 7;
+    const isTemplate9 = config.selectedTemplate === 9;
+    // Template 9 (Campillo Limpia): texto sobre blanco sin fondo PNG → optimizamos peso
+    const t9Scale = 1.5;
+    const t9Quality = 0.55;
+    const effScale = isTemplate9 ? t9Scale : renderScale;
+    const jpegQ = isTemplate9 ? t9Quality : 0.65;
 
     if (hasMultiplePages) {
       // Multi-page template: render each top-level child as a separate PDF page
@@ -909,7 +915,7 @@ export const generateQuotePDF = async (
       for (let i = 0; i < children.length; i++) {
         const child = children[i];
         const canvas = await html2canvas(child, {
-          scale: renderScale,
+          scale: effScale,
           useCORS: true,
           logging: false,
           backgroundColor: isTemplate7 ? null : '#ffffff',
@@ -917,7 +923,7 @@ export const generateQuotePDF = async (
           windowHeight: 1123,
         });
 
-        const imgData = canvas.toDataURL('image/jpeg', 0.65);
+        const imgData = canvas.toDataURL('image/jpeg', jpegQ);
         const ratio = pdfWidth / canvas.width;
         const scaledHeight = canvas.height * ratio;
 
@@ -928,7 +934,7 @@ export const generateQuotePDF = async (
     } else {
       // Single-page or overflow template
       const canvas = await html2canvas(container.firstChild as HTMLElement, {
-        scale: renderScale,
+        scale: effScale,
         useCORS: true,
         logging: false,
         backgroundColor: isTemplate7 ? null : '#ffffff',
@@ -942,10 +948,10 @@ export const generateQuotePDF = async (
       const scaledHeight = imgHeight * ratio;
 
       if (scaledHeight <= pdfHeight) {
-        const imgData = canvas.toDataURL('image/jpeg', 0.65);
+        const imgData = canvas.toDataURL('image/jpeg', jpegQ);
         pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, Math.min(scaledHeight, pdfHeight));
       } else {
-        const imgData = canvas.toDataURL('image/jpeg', 0.65);
+        const imgData = canvas.toDataURL('image/jpeg', jpegQ);
         let heightLeft = scaledHeight;
         let position = 0;
 
