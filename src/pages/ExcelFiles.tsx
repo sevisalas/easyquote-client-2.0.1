@@ -888,14 +888,14 @@ export default function ExcelFiles() {
   }
   return <div className="container mx-auto py-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Gestión de archivos Excel</h1>
-          <p className="text-muted-foreground mt-2">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0 max-w-4xl space-y-2">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Gestión de archivos Excel</h1>
+          <p className="max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg">
             Administra archivos Excel desde EasyQuote para tus productos
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex shrink-0 flex-wrap gap-3">
           <Dialog open={isCreateProductDialogOpen} onOpenChange={setIsCreateProductDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline">​<Package className="h-4 w-4 mr-2" />
