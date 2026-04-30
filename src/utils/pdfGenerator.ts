@@ -77,7 +77,7 @@ export interface PDFGeneratorOptions {
   quality?: number;
 }
 
-const PDF_IMAGE_CACHE = new Map<string, Promise<{ dataUrl: string; format: 'PNG' | 'JPEG' } | null>>();
+const PDF_IMAGE_CACHE = new Map<string, Promise<{ dataUrl: string; format: 'PNG' | 'JPEG'; width: number; height: number } | null>>();
 
 const formatPdfDate = (value?: string | null) =>
   value ? format(new Date(value), 'dd/MM/yyyy', { locale: es }) : '-';
@@ -147,7 +147,7 @@ const loadImageForPdf = async (
   url: string,
   maxPixels = 360,
   background: string = '#ffffff',
-): Promise<{ dataUrl: string; format: 'PNG' | 'JPEG' } | null> => {
+): Promise<{ dataUrl: string; format: 'PNG' | 'JPEG'; width: number; height: number } | null> => {
   if (!url) return null;
   const absoluteUrl = /^https?:\/\//i.test(url) ? url : new URL(url, window.location.origin).toString();
   const cacheKey = `${absoluteUrl}|${maxPixels}|${background}`;
@@ -187,6 +187,8 @@ const loadImageForPdf = async (
           return {
             dataUrl: canvas.toDataURL('image/jpeg', 0.78),
             format: 'JPEG' as const,
+            width: targetWidth,
+            height: targetHeight,
           };
         } finally {
           URL.revokeObjectURL(objectUrl);
@@ -315,12 +317,21 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
 
     if (logo) {
       try {
-        pdf.addImage(logo.dataUrl, logo.format, marginX, 8, 60, 18);
+        const logoMaxW = 55;
+        const logoMaxH = 18;
+        const ratio = logo.width / logo.height;
+        let lw = logoMaxW;
+        let lh = lw / ratio;
+        if (lh > logoMaxH) {
+          lh = logoMaxH;
+          lw = lh * ratio;
+        }
+        pdf.addImage(logo.dataUrl, logo.format, marginX, 8, lw, lh);
       } catch {
       }
     }
 
-    renderWrappedText(pdf, 'PRESUPUESTO', pageWidth - marginX, 14, 60, {
+    renderWrappedText(pdf, 'PRESUPUESTO', pageWidth - marginX, 14, 80, {
       fontSize: 24,
       lineHeight: 8,
       style: 'normal',
