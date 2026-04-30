@@ -282,7 +282,7 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
 
   for (let pageIndex = 0; pageIndex < pages.length; pageIndex++) {
     if (pageIndex > 0) pdf.addPage();
-    const page = pages[pageIndex];
+    const page = pages[pageIndex] as any;
     const isLastPage = pageIndex === pages.length - 1;
 
     if (quote.status === 'draft') {
@@ -512,7 +512,6 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
       pdf.line(marginX, cursorY, pageWidth - marginX, cursorY);
       cursorY += 4;
 
-      const baseX = pageWidth / 2;
       renderWrappedText(pdf, 'BASE IMPONIBLE', pageWidth * 0.25, cursorY, 50, { fontSize: 10.5, style: 'bold', color: [58, 58, 58], align: 'center' });
       renderWrappedText(pdf, 'TOTAL', pageWidth * 0.75, cursorY, 50, { fontSize: 10.5, style: 'bold', color: [58, 58, 58], align: 'center' });
       cursorY += 4.8;
