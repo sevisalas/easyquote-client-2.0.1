@@ -610,7 +610,7 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
 
       if (Array.isArray(item.components)) {
         item.components.forEach((component: any) => {
-          detailLines.push(`── ${component.alias} ──`);
+          detailLines.push(sanitizePdfMarkerText(component.alias || 'Componente'));
           (component.prompts || []).forEach((prompt: any) => {
             detailLines.push(`  ${prompt.label}: ${prompt.value ?? ''}`);
           });
