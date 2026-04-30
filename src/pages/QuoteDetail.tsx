@@ -858,11 +858,11 @@ export default function QuoteDetail() {
                 )}
               </div>
             </div>
-            <div className="text-right self-start">
+            <div className="text-left self-start">
               <label className="text-xs font-medium text-muted-foreground">total</label>
               <p className="text-base font-semibold mt-0.5">{fmtEUR(quote.final_price || 0)}</p>
             </div>
-            <div className="text-right self-start">
+            <div className="text-left self-start">
               <label className="text-xs font-medium text-muted-foreground">válido hasta</label>
               <p className="text-sm mt-0.5">
                 {quote.valid_until 
