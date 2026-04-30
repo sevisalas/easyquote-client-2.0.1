@@ -91,7 +91,7 @@ const formatPdfCurrency = (amount: number) => {
 const sanitizePdfMarkerText = (value: unknown) =>
   String(value ?? '')
     .replace(/&(percnt|#37|#x25);/gi, '%')
-    .replace(/(?:%\s*){2,}([^%\n]+?)(?:\s*%){2,}/g, '── $1 ──')
+    .replace(/(?:%\s*){2,}([^%\n]+?)(?:\s*%){2,}/g, '-- $1 --')
     .trim();
 
 const stripHtmlToPlainText = (value: string) => {
@@ -405,7 +405,11 @@ const renderWrappedText = (
   pdf.setTextColor(color[0], color[1], color[2]);
 
   let cursorY = y;
-  const paragraphs = String(text ?? '').replace(/\r/g, '').split('\n');
+  const safeText = String(text ?? '')
+    .replace(/─/g, '-')
+    .replace(/–/g, '-')
+    .replace(/—/g, '-');
+  const paragraphs = safeText.replace(/\r/g, '').split('\n');
 
   paragraphs.forEach((paragraph, paragraphIndex) => {
     const lines = paragraph ? pdf.splitTextToSize(paragraph, maxWidth) : [''];
@@ -610,8 +614,8 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
 
       if (Array.isArray(item.components)) {
         item.components.forEach((component: any) => {
-          const cleanAlias = sanitizePdfMarkerText(component.alias || 'Componente').replace(/^──\s*|\s*──$/g, '').trim() || 'Componente';
-          detailLines.push(`── ${cleanAlias} ──`);
+          const cleanAlias = sanitizePdfMarkerText(component.alias || 'Componente').replace(/^--\s*|\s*--$/g, '').trim() || 'Componente';
+          detailLines.push(`-- ${cleanAlias} --`);
           (component.prompts || []).forEach((prompt: any) => {
             detailLines.push(`  ${prompt.label}: ${prompt.value ?? ''}`);
           });
@@ -1367,7 +1371,7 @@ export const generateQuotePDF = async (
           const comp = componentsMap[compKey];
           if (!comp) continue;
           const alias = sanitizePdfMarkerText(comp.alias || 'Componente')
-            .replace(/^──\s*|\s*──$/g, '')
+            .replace(/^--\s*|\s*--$/g, '')
             .trim() || 'Componente';
           const compPrompts = Array.isArray(comp.prompts) ? comp.prompts : [];
           
