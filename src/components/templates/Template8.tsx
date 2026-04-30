@@ -38,7 +38,7 @@ export default function Template8({ data }: Template8Props) {
   const customer = data.customer || {};
   const items = data.items || [];
   const quoteAdditionals = data.quote_additionals || [];
-  const paginatedPages = paginateTemplate7Items({ items, quote, quoteAdditionals });
+  const paginatedPages = paginateTemplate7Items({ items, quote, quoteAdditionals, reserveFooterShare: 0.25 });
 
   const fmtEUR = (amount: number) => {
     const parts = amount.toFixed(2).split('.');
@@ -62,7 +62,10 @@ export default function Template8({ data }: Template8Props) {
 
   return (
     <>
-      {paginatedPages.map((page, pageIndex) => (
+      {paginatedPages.map((page, pageIndex) => {
+        const isLastPage = pageIndex === paginatedPages.length - 1;
+
+        return (
     <div data-template8-page data-terms-page key={`template8-page-${pageIndex}`} style={PAGE_STYLE}>
       {/* Background image */}
       <img
@@ -388,11 +391,11 @@ export default function Template8({ data }: Template8Props) {
       </div>
 
       {/* Texto legal configurable - izquierda, mitad de ancho */}
-      {page.showSummary && data.config?.footerText && (
+      {isLastPage && data.config?.footerText && (
         <div
           style={{
             position: 'absolute',
-            bottom: '15px',
+            bottom: '30px',
             left: '20px',
             width: '50%',
             fontSize: '9px',
@@ -404,6 +407,20 @@ export default function Template8({ data }: Template8Props) {
           dangerouslySetInnerHTML={{ __html: data.config.footerText }}
         />
       )}
+
+      <div
+        style={{
+          position: 'absolute',
+          left: '20px',
+          bottom: '12px',
+          fontSize: '9px',
+          color: '#666',
+          lineHeight: '1',
+          zIndex: 1,
+        }}
+      >
+        Página {pageIndex + 1} de {paginatedPages.length}
+      </div>
 
       {/* Datos Anebri - abajo derecha */}
       <div
@@ -426,7 +443,8 @@ export default function Template8({ data }: Template8Props) {
         <p style={{ margin: 0 }}>www.campillonevado.es</p>
       </div>
     </div>
-      ))}
+        );
+      })}
     </>
   );
 }
