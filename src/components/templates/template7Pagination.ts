@@ -273,7 +273,7 @@ export const paginateTemplate7Items = <T extends Template7PaginationItem>({
   };
 
   const pageRanges = solve(0) || [[0, items.length - 1]];
-  const pages = pageRanges.map(([startIndex, endIndex]) => ({
+  const pages: Template7PaginationPage<T>[] = pageRanges.map(([startIndex, endIndex]) => ({
     items: items.slice(startIndex, endIndex + 1),
     showSummary: false,
   }));
