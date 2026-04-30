@@ -26,6 +26,15 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.7.27",
+    date: "2026-04-30",
+    changes: {
+      changed: [
+        "Estado 'Listo para enviar' renombrado a 'Preparado' en el listado, detalle, edición y portal del cliente, para que la etiqueta entre completa en los badges sin cortarse.",
+      ],
+    },
+  },
+  {
     version: "2.7.26",
     date: "2026-04-30",
     changes: {
