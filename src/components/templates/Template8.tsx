@@ -303,18 +303,6 @@ export default function Template8({ data }: Template8Props) {
                   </td>
                 </tr>
                 {!hideItemAmounts && hasMulti && item.multi_extra.map((me: any, meIdx: number) => {
-                  let adjTotal = 0;
-                  const adjs = item._raw_additionals || item.item_additionals || [];
-                  adjs.forEach((adj: any) => {
-                    const qtyIndex = meIdx + 1;
-                    let baseValue = (adj.type === 'net_amount' && Array.isArray(adj.multiValues) && adj.multiValues[qtyIndex] != null)
-                      ? adj.multiValues[qtyIndex] : adj.value;
-                    let subtotal = baseValue;
-                    if (adj.type === 'percentage') subtotal = (me.price * adj.value) / 100;
-                    else if (adj.type === 'quantity_multiplier') subtotal = adj.value * me.qty;
-                    else if (adj.type === 'capacity_divider') subtotal = adj.value * Math.ceil(me.qty / (adj.capacity_value || 1));
-                    adjTotal += adj.is_discount ? -subtotal : subtotal;
-                  });
                   return (
                     <tr key={`multi-${meIdx}`} style={{ borderBottom: meIdx === item.multi_extra.length - 1 ? '1px solid #ddd' : 'none' }}>
                       <td style={{ padding: '4px 8px' }}></td>
@@ -322,7 +310,7 @@ export default function Template8({ data }: Template8Props) {
                         {new Intl.NumberFormat('es-ES').format(me.qty)}
                       </td>
                       <td style={{ padding: '4px 8px', textAlign: 'right', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap', width: PRICE_COLUMN_WIDTH, minWidth: PRICE_COLUMN_WIDTH }}>
-                        {fmtEUR(me.price + adjTotal)}
+                        {fmtEUR(me.price || 0)}
                       </td>
                     </tr>
                   );
