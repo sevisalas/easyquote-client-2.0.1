@@ -608,29 +608,6 @@ const renderTemplate9VectorPdf = async (pdf: jsPDF, templateData: any) => {
         });
       }
 
-      if (Array.isArray(item.item_additionals)) {
-        item.item_additionals.forEach((adj: any) => {
-          const qty = item.displayQuantity ?? item.quantity ?? 1;
-          const numQty = typeof qty === 'string' ? parseFloat(qty.replace(/\./g, '').replace(',', '.')) : (qty || 1);
-          let subtotal = adj.value;
-          let detail = '';
-          if (adj.type === 'percentage') {
-            const itemPrice = parseFloat(String(item.price || 0).replace(/\./g, '').replace(',', '.')) || 0;
-            subtotal = (itemPrice * adj.value) / 100;
-            detail = ` (${adj.value}%)`;
-          } else if (adj.type === 'quantity_multiplier') {
-            subtotal = adj.value * numQty;
-            detail = ` (${adj.value} €/ud × ${numQty})`;
-          } else if (adj.type === 'capacity_divider') {
-            const cap = adj.capacity_value || 1;
-            const units = Math.ceil(numQty / cap);
-            subtotal = adj.value * units;
-            detail = ` (${adj.value} € × ${units} uds)`;
-          }
-          detailLines.push(`${adj.name}: ${formatPdfCurrency(subtotal)}${detail}`);
-        });
-      }
-
       if (detailLines.length > 0) {
         cursorY = renderWrappedText(pdf, detailLines.join('\n'), marginX + 6, cursorY + 0.6, conceptColumnWidth - 10, {
           fontSize: 10.2,
