@@ -198,47 +198,87 @@ export const paginateTemplate7Items = <T extends Template7PaginationItem>({
     return [{ items: [], showSummary, showNotes: notesLines > 0 }];
   }
 
-  // Empaquetado hacia adelante: llenamos cada página con los artículos en orden
-  // hasta agotar la capacidad estándar. Esto produce el reparto natural que el
-  // usuario espera (p. ej. 2 + 1 en lugar de 1 + 2 cuando los primeros caben).
-  const pages: Template7PaginationPage<T>[] = [{ items: [], showSummary: false }];
-  let currentLines = 0;
-
-  items.forEach((item) => {
-    const itemLines = estimateItemLines(item);
-    const currentPage = pages[pages.length - 1];
-    if (currentPage.items.length > 0 && currentLines + itemLines > STANDARD_PAGE_CAPACITY) {
-      pages.push({ items: [], showSummary: false });
-      currentLines = 0;
-    }
-    pages[pages.length - 1].items.push(item);
-    currentLines += itemLines;
-  });
-
-  // Asegurar que el resumen + notas + footer caben junto al último artículo en
-  // la última página. Si no caben, movemos artículos del final a una página
-  // nueva hasta que entren con el bloque de cierre. El total nunca puede
-  // quedarse solo: siempre arrastra al menos el último artículo.
   const summaryBlockLines = summaryLines + notesLines + reservedFooterLines;
+  const lastPageItemsCapacity = Math.max(0, LAST_PAGE_CAPACITY - summaryBlockLines);
+  const itemLines = items.map((item) => estimateItemLines(item));
 
-  while (pages[pages.length - 1].items.length > 1) {
-    const lastPage = pages[pages.length - 1];
-    const lastPageLines = getItemsLines(lastPage.items);
-    if (lastPageLines + summaryBlockLines <= LAST_PAGE_CAPACITY) break;
-    // Movemos el primer artículo de la última página a una nueva página previa
-    const moved = lastPage.items.shift() as T;
-    pages.splice(pages.length - 1, 0, { items: [moved], showSummary: false });
-  }
+  const linePrefix = itemLines.reduce<number[]>((acc, value) => {
+    acc.push((acc[acc.length - 1] || 0) + value);
+    return acc;
+  }, []);
 
-  // Si tras el empaquetado natural el último artículo + resumen no caben en
-  // una sola página, partimos: dejamos el último artículo solo con el resumen.
+  const getRangeLines = (start: number, end: number) => {
+    if (start > end) return 0;
+    return linePrefix[end] - (start > 0 ? linePrefix[start - 1] : 0);
+  };
+
+  const memo = new Map<number, number[][] | null>();
+
+  const isBetterCandidate = (candidate: number[][], currentBest: number[][] | null) => {
+    if (!currentBest) return true;
+    if (candidate.length !== currentBest.length) {
+      return candidate.length < currentBest.length;
+    }
+
+    for (let pageIndex = 0; pageIndex < candidate.length; pageIndex += 1) {
+      const candidateLines = getRangeLines(candidate[pageIndex][0], candidate[pageIndex][1]);
+      const bestLines = getRangeLines(currentBest[pageIndex][0], currentBest[pageIndex][1]);
+
+      if (candidateLines !== bestLines) {
+        return candidateLines > bestLines;
+      }
+    }
+
+    return false;
+  };
+
+  const solve = (startIndex: number): number[][] | null => {
+    if (startIndex >= items.length) return [];
+
+    const cached = memo.get(startIndex);
+    if (cached !== undefined) return cached;
+
+    let best: number[][] | null = null;
+
+    // Si el resto cabe en la última página junto al bloque de cierre, usamos esa
+    // solución directamente. Esto minimiza páginas y deja la última lo más vacía
+    // posible solo cuando no aumenta el número total de páginas.
+    if (startIndex === items.length - 1 || getRangeLines(startIndex, items.length - 1) <= lastPageItemsCapacity) {
+      best = [[startIndex, items.length - 1]];
+    }
+
+    let currentLines = 0;
+    for (let endIndex = startIndex; endIndex < items.length - 1; endIndex += 1) {
+      currentLines += itemLines[endIndex];
+
+      if (endIndex > startIndex && currentLines > STANDARD_PAGE_CAPACITY) {
+        break;
+      }
+
+      const remainder = solve(endIndex + 1);
+      if (!remainder) continue;
+
+      const candidate = [[startIndex, endIndex], ...remainder];
+      if (isBetterCandidate(candidate, best)) {
+        best = candidate;
+      }
+
+      if (currentLines > STANDARD_PAGE_CAPACITY) {
+        break;
+      }
+    }
+
+    memo.set(startIndex, best);
+    return best;
+  };
+
+  const pageRanges = solve(0) || [[0, items.length - 1]];
+  const pages = pageRanges.map(([startIndex, endIndex]) => ({
+    items: items.slice(startIndex, endIndex + 1),
+    showSummary: false,
+  }));
+
   const lastPage = pages[pages.length - 1];
-  const lastPageLines = getItemsLines(lastPage.items);
-  if (lastPage.items.length === 1 && lastPageLines + summaryBlockLines > LAST_PAGE_CAPACITY) {
-    // No hay forma de evitar overflow con un solo artículo enorme; lo dejamos
-    // con el resumen igualmente (mejor que separarlo del total).
-  }
-
   lastPage.showSummary = showSummary;
   lastPage.showNotes = notesLines > 0;
 
