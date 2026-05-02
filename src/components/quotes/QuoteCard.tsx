@@ -62,7 +62,10 @@ export function QuoteCard({
             <p className="text-xs text-muted-foreground">Presupuesto</p>
             <p className="text-lg font-bold">{quote.quote_number}</p>
           </div>
-          <Badge variant={getStatusVariant(quote.status)} className="text-xs px-2 py-1">
+          <Badge
+            variant={getStatusVariant(quote.status)}
+            className={`text-xs px-2 py-1 ${quote.status === 'grouped' ? 'bg-muted text-muted-foreground border-muted-foreground/20 hover:bg-muted' : ''}`}
+          >
             {statusLabel[quote.status] || quote.status}
           </Badge>
         </div>
