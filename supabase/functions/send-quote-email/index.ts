@@ -194,7 +194,8 @@ Deno.serve(async (req) => {
       connection: {
         hostname: smtp.smtp_host,
         port: smtp.smtp_port,
-        tls: smtp.use_tls,
+        // Implicit TLS only on port 465. For 587/25 use STARTTLS (tls:false → upgrades automatically).
+        tls: smtp.smtp_port === 465,
         auth: {
           username: smtp.smtp_username,
           password: smtp.smtp_password_encrypted,
