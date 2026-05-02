@@ -13,6 +13,21 @@ import { ChevronDown, ChevronRight, Search, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+const getEdgeFunctionErrorMessage = async (error: any) => {
+  try {
+    const response = error?.context;
+    if (response?.json) {
+      const body = await response.json();
+      if (typeof body?.error === "string") return body.error;
+      if (typeof body?.message === "string") return body.message;
+    }
+  } catch {
+    // ignore JSON parsing issues
+  }
+
+  return error?.message || "Error al crear el presupuesto agrupado";
+};
+
 const fmtEUR = (n: any) => {
   const num = typeof n === "number" ? n : parseFloat(String(n ?? "0"));
   if (!Number.isFinite(num)) return "0,00 €";
@@ -157,7 +172,7 @@ export default function GroupedQuoteNew() {
       toast.success(`Presupuesto agrupado creado: ${(data as any)?.quote_number}`);
       navigate(`/presupuestos/${newId}`);
     } catch (e: any) {
-      toast.error(e?.message || "Error al crear el presupuesto agrupado");
+      toast.error(await getEdgeFunctionErrorMessage(e));
     } finally {
       setSubmitting(false);
     }
