@@ -1651,6 +1651,12 @@ export const generateQuotePDF = async (
       }
     }
 
+    if (returnBase64) {
+      // Returns base64-encoded PDF data (without data URI prefix)
+      const dataUri = pdf.output('datauristring');
+      const base64 = dataUri.split(',')[1] || '';
+      return base64;
+    }
     pdf.save(filename);
   } catch (error) {
     console.error('Error generating PDF:', error);
