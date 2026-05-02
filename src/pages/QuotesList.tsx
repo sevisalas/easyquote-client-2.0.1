@@ -477,8 +477,8 @@ const QuotesList = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedQuotes.map((q: any) => (
-                   <TableRow key={q.id} className="h-auto">
+                 {paginatedQuotes.map((q: any) => (
+                    <TableRow key={q.id} className={cn("h-auto", q.status === 'grouped' && "bg-muted/60 hover:bg-muted/70")}>
                     <TableCell className="py-1.5 px-3 text-sm whitespace-nowrap">
                       <TooltipProvider delayDuration={200}>
                         <Tooltip>
