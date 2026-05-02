@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { quoteId, recipientEmail, recipientName, subject, body, pdfUrl, pdfBase64, pdfFilename } = await req.json();
+    const { quoteId, recipientEmail, recipientName, subject, body, pdfUrl } = await req.json();
 
     if (!quoteId || !recipientEmail) {
       return new Response(JSON.stringify({ error: "quoteId y recipientEmail son obligatorios" }), {
@@ -150,13 +150,11 @@ Deno.serve(async (req) => {
       ? `<p><a href="${portalUrl}" style="display: inline-block; background-color: ${buttonColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Ver y aprobar presupuesto</a></p>`
       : "";
 
-    const pdfButton = pdfBase64
-      ? `<p style="font-size: 14px; color: #555;">📎 Encontrarás el presupuesto en PDF adjunto a este correo.</p>`
-      : pdfUrl
-        ? portalUrl
-          ? `<p><a href="${pdfUrl}" style="color: ${buttonColor}; text-decoration: underline; font-size: 14px;">Descargar PDF</a></p>`
-          : `<p><a href="${pdfUrl}" style="display: inline-block; background-color: ${buttonColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>`
-        : "";
+    const pdfButton = pdfUrl
+      ? portalUrl
+        ? `<p><a href="${pdfUrl}" style="color: ${buttonColor}; text-decoration: underline; font-size: 14px;">Descargar PDF</a></p>`
+        : `<p><a href="${pdfUrl}" style="display: inline-block; background-color: ${buttonColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>`
+      : "";
 
     const priceText = priceFormatted
       ? ` por un importe de <strong>${priceFormatted}</strong>`
@@ -206,21 +204,11 @@ Deno.serve(async (req) => {
       },
     });
 
-    const attachments = pdfBase64
-      ? [{
-          filename: pdfFilename || `presupuesto-${quote.quote_number || 'documento'}.pdf`,
-          content: pdfBase64,
-          encoding: 'base64',
-          contentType: 'application/pdf',
-        }]
-      : undefined;
-
     await transporter.sendMail({
       from: `${fromName} <${smtp.from_email}>`,
       to: recipientEmail,
       subject: emailSubject,
       html: htmlBody,
-      attachments,
     });
 
     console.log(`Email sent to ${recipientEmail} for quote ${quote.quote_number}`);
