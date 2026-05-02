@@ -1066,6 +1066,19 @@ export default function QuoteDetail() {
                                   No aprobado
                                 </Badge>
                               )}
+                              {item.source_quote_id && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs bg-secondary/10 text-secondary border-secondary/30 cursor-pointer hover:bg-secondary/20"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/presupuestos/${item.source_quote_id}`);
+                                  }}
+                                  title="Ver presupuesto de origen"
+                                >
+                                  Origen: {sourceQuotesMap?.[item.source_quote_id] || '…'}
+                                </Badge>
+                              )}
                               {item.description && (
                                 <Button
                                   variant={itemDescriptionVisibility.has(String(item.id ?? index)) ? "secondary" : "ghost"}
