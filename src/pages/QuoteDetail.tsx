@@ -186,12 +186,10 @@ export default function QuoteDetail() {
   });
 
   const quoteSubtotal = useMemo(() => {
-    const storedSubtotal = quote?.subtotal;
-    if (storedSubtotal !== null && storedSubtotal !== undefined) {
-      return Number(storedSubtotal) || 0;
-    }
-
-    return (quote?.items || []).reduce((sum: number, item: any) => sum + getDisplayedItemPrice(item), 0);
+    const storedSubtotal = Number(quote?.subtotal ?? 0);
+    const computed = (quote?.items || []).reduce((sum: number, item: any) => sum + getDisplayedItemPrice(item), 0);
+    // Fallback to computed when stored is missing or zero (e.g. grouped quotes that only persist final_price)
+    return storedSubtotal > 0 ? storedSubtotal : computed;
   }, [quote]);
 
   const quoteTotal = useMemo(() => {
