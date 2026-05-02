@@ -733,6 +733,30 @@ export default function QuoteDetail() {
           </CardContent>
         </Card>
       )}
+      {sourceQuoteIds.length > 0 && quote.status !== 'grouped' && (
+        <Card className="border bg-muted/30">
+          <CardContent className="py-3 text-sm">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Presupuesto agrupado · Origen
+            </p>
+            <p className="text-sm text-muted-foreground mb-2">
+              Este presupuesto agrupa artículos de los siguientes presupuestos originales (solo informativo):
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {sourceQuoteIds.map((srcId) => (
+                <Badge
+                  key={srcId}
+                  variant="outline"
+                  className="cursor-pointer bg-secondary/10 text-secondary border-secondary/30 hover:bg-secondary/20"
+                  onClick={() => navigate(`/presupuestos/${srcId}`)}
+                >
+                  {sourceQuotesMap?.[srcId] || '…'}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {/* Header */}
       <Card>
         <CardHeader className="pb-2">
