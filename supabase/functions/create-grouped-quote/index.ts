@@ -28,6 +28,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
+    console.log('[create-grouped-quote] Request received');
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) return json({ error: 'Missing Authorization header' }, 401);
 
@@ -48,6 +49,7 @@ Deno.serve(async (req) => {
 
     const body = (await req.json()) as Payload;
     const { customer_id, organization_id, selections, notes } = body || ({} as Payload);
+    console.log('[create-grouped-quote] Payload:', { customer_id, organization_id, selectionsCount: selections?.length });
 
     if (!customer_id || !organization_id || !Array.isArray(selections) || selections.length === 0) {
       return json({ error: 'customer_id, organization_id y selections son obligatorios' }, 400);
@@ -62,6 +64,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!membership) return json({ error: 'Acceso denegado a la organización' }, 403);
+    console.log('[create-grouped-quote] Membership OK, role:', membership.role);
 
     // Fetch and validate source items
     const itemIds = selections.map((s) => s.source_item_id);
@@ -70,7 +73,7 @@ Deno.serve(async (req) => {
       .select('*, quotes!inner(id, organization_id, quote_number)')
       .in('id', itemIds);
 
-    if (itemsErr) return json({ error: itemsErr.message }, 500);
+    if (itemsErr) { console.error('[create-grouped-quote] itemsErr:', itemsErr); return json({ error: itemsErr.message }, 500); }
     if (!srcItems || srcItems.length !== itemIds.length) {
       return json({ error: 'Algunos items no existen' }, 400);
     }
@@ -93,6 +96,7 @@ Deno.serve(async (req) => {
       return json({ error: 'No se pudo generar el número de presupuesto: ' + (numErr?.message || 'sin datos') }, 500);
     }
     const newQuoteNumber = (numData as any[])[0].document_number as string;
+    console.log('[create-grouped-quote] New number:', newQuoteNumber);
 
     // Compute total as sum of source item prices (cantidad principal/aprobada)
     const totalPrice = srcItems.reduce((sum, it: any) => sum + Number(it.price || 0), 0);
@@ -114,6 +118,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (insertQuoteErr || !newQuote) {
+      console.error('[create-grouped-quote] insertQuoteErr:', insertQuoteErr);
       return json({ error: 'Error al crear el presupuesto: ' + (insertQuoteErr?.message || 'desconocido') }, 500);
     }
 
@@ -144,6 +149,7 @@ Deno.serve(async (req) => {
 
     const { error: insertItemsErr } = await db.from('quote_items').insert(newItemsPayload);
     if (insertItemsErr) {
+      console.error('[create-grouped-quote] insertItemsErr:', insertItemsErr);
       // Rollback: remove the new quote
       await db.from('quotes').delete().eq('id', newQuote.id);
       return json({ error: 'Error copiando items: ' + insertItemsErr.message }, 500);
@@ -178,6 +184,7 @@ Deno.serve(async (req) => {
 
     return json({ quote_id: newQuote.id, quote_number: newQuote.quote_number }, 200);
   } catch (e: any) {
+    console.error('[create-grouped-quote] Unexpected error:', e?.message, e?.stack);
     return json({ error: e?.message || 'Error inesperado' }, 500);
   }
 });
