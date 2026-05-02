@@ -1461,6 +1461,19 @@ export default function QuoteEdit() {
                                       <span className="text-xs text-muted-foreground ml-2">(cantidad múltiple activada)</span>
                                     )}
                                   </p>
+                                  {(item as any).source_quote_id && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs bg-secondary/10 text-secondary border-secondary/30 cursor-pointer hover:bg-secondary/20 shrink-0"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(`/presupuestos/${(item as any).source_quote_id}`);
+                                      }}
+                                      title="Ver presupuesto de origen"
+                                    >
+                                      Origen: {sourceQuotesMap?.[(item as any).source_quote_id] || '…'}
+                                    </Badge>
+                                  )}
                                 </div>
                                 <div className="flex items-center gap-3 shrink-0">
                                   <div className="text-sm font-medium text-secondary text-right">{fmtEUR(calculateItemEffectivePrice(item))}</div>
