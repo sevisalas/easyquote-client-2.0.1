@@ -541,7 +541,13 @@ const QuotesList = () => {
                       </>
                     )}
                     <TableCell className="py-1.5 px-3">
-                      <Badge variant={getStatusVariant(q.status)} className="text-xs px-2 py-0 h-5">
+                      <Badge
+                        variant={getStatusVariant(q.status)}
+                        className={cn(
+                          "text-xs px-2 py-0 h-5",
+                          q.status === 'grouped' && "bg-muted text-muted-foreground border-muted-foreground/20 hover:bg-muted"
+                        )}
+                      >
                         {statusLabel[q.status] || q.status}
                       </Badge>
                     </TableCell>
