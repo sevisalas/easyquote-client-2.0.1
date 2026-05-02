@@ -13,6 +13,7 @@ import AppLayout from "./components/layout/AppLayout";
 import QuoteNew from "./pages/QuoteNew";
 import QuoteEdit from "./pages/QuoteEdit";
 import QuotesList from "./pages/QuotesList";
+import GroupedQuoteNew from "./pages/GroupedQuoteNew";
 import SettingsPdfTemplate from "./pages/SettingsPdfTemplate";
 import SettingsNumberingFormats from "./pages/SettingsNumberingFormats";
 import SettingsThemeCorporate from "./pages/SettingsThemeCorporate";
@@ -150,6 +151,16 @@ const AppContent = () => {
           <ProtectedRoute>
             <AppLayout>
               <QuoteNew />
+            </AppLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/presupuestos/agrupado/nuevo"
+        element={
+          <ProtectedRoute>
+            <AppLayout>
+              <GroupedQuoteNew />
             </AppLayout>
           </ProtectedRoute>
         }
