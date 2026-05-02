@@ -52,6 +52,7 @@ const statusLabel = (status: string) => {
     case 'rejected': return 'Rechazado';
     case 'sent': return 'Preparado';
     case 'cancelled': return 'Anulado';
+    case 'grouped': return 'Agrupado';
     default: return status;
   }
 };
@@ -63,6 +64,7 @@ const getStatusVariant = (status: string) => {
     case 'sent': return 'outline';
     case 'rejected': return 'destructive';
     case 'cancelled': return 'destructive';
+    case 'grouped': return 'secondary';
     default: return 'secondary';
   }
 };
