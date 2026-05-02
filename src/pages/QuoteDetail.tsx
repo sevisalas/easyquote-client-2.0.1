@@ -718,6 +718,18 @@ export default function QuoteDetail() {
               Este presupuesto ha sido agrupado{quote.grouped_at ? ` el ${format(new Date(quote.grouped_at as any), 'dd/MM/yyyy', { locale: es })}` : ''}.
               No puede aprobarse, enviarse ni editarse.
             </p>
+            {destinationQuote && (
+              <p className="mt-1 text-sm" style={{ color: 'hsl(330 60% 35%)' }}>
+                Presupuesto destino:{' '}
+                <button
+                  type="button"
+                  className="font-semibold underline hover:opacity-80"
+                  onClick={() => navigate(`/presupuestos/${destinationQuote.id}`)}
+                >
+                  {destinationQuote.quote_number}
+                </button>
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
