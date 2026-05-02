@@ -187,7 +187,7 @@ export default function QuoteDetail() {
 
   const quoteSubtotal = useMemo(() => {
     const storedSubtotal = quote?.subtotal;
-    if (storedSubtotal !== null && storedSubtotal !== undefined && storedSubtotal !== '') {
+    if (storedSubtotal !== null && storedSubtotal !== undefined) {
       return Number(storedSubtotal) || 0;
     }
 
@@ -196,7 +196,7 @@ export default function QuoteDetail() {
 
   const quoteTotal = useMemo(() => {
     const storedFinalPrice = quote?.final_price;
-    if (storedFinalPrice !== null && storedFinalPrice !== undefined && storedFinalPrice !== '') {
+    if (storedFinalPrice !== null && storedFinalPrice !== undefined) {
       return Number(storedFinalPrice) || 0;
     }
 
