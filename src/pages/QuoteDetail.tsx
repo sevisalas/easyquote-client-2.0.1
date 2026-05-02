@@ -185,6 +185,30 @@ export default function QuoteDetail() {
     enabled: !!id,
   });
 
+  // Lookup of source quote numbers for grouped quote items (trazabilidad de origen)
+  const sourceQuoteIds = useMemo(() => {
+    const ids = new Set<string>();
+    (quote?.items || []).forEach((it: any) => {
+      if (it?.source_quote_id) ids.add(it.source_quote_id);
+    });
+    return Array.from(ids);
+  }, [quote]);
+
+  const { data: sourceQuotesMap } = useQuery({
+    queryKey: ['quote-sources', sourceQuoteIds],
+    enabled: sourceQuoteIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('quotes')
+        .select('id, quote_number')
+        .in('id', sourceQuoteIds);
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      (data || []).forEach((q: any) => { map[q.id] = q.quote_number; });
+      return map;
+    },
+  });
+
   const quoteSubtotal = useMemo(() => {
     const storedSubtotal = Number(quote?.subtotal ?? 0);
     const computed = (quote?.items || []).reduce((sum: number, item: any) => sum + getDisplayedItemPrice(item), 0);
@@ -1040,6 +1064,19 @@ export default function QuoteDetail() {
                               {quote.status === 'approved' && item.accepted === false && (
                                 <Badge variant="outline" className="text-xs bg-muted text-muted-foreground">
                                   No aprobado
+                                </Badge>
+                              )}
+                              {item.source_quote_id && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs bg-secondary/10 text-secondary border-secondary/30 cursor-pointer hover:bg-secondary/20"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/presupuestos/${item.source_quote_id}`);
+                                  }}
+                                  title="Ver presupuesto de origen"
+                                >
+                                  Origen: {sourceQuotesMap?.[item.source_quote_id] || '…'}
                                 </Badge>
                               )}
                               {item.description && (
