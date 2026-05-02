@@ -396,8 +396,8 @@ export default function QuoteDetail() {
         return;
       }
 
-      // Generate PDF as base64 to attach to the email
-      let pdfBase64: string | undefined;
+      // Generate PDF, upload it to private storage and send a signed download link
+      let pdfUrl: string | undefined;
       let pdfFilename: string | undefined;
       try {
         pdfFilename = `presupuesto-${quote.quote_number || quote.id}.pdf`;
@@ -405,10 +405,44 @@ export default function QuoteDetail() {
           filename: pdfFilename,
           returnBase64: true,
         });
-        if (typeof result === 'string') pdfBase64 = result;
+        if (typeof result !== 'string' || !result) {
+          throw new Error('No se pudo generar el contenido del PDF');
+        }
+
+        const binary = atob(result);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+          bytes[i] = binary.charCodeAt(i);
+        }
+
+        const pdfBlob = new Blob([bytes], { type: 'application/pdf' });
+        const timestamp = Date.now();
+        const safeFilename = (pdfFilename || 'presupuesto.pdf').replace(/[^a-zA-Z0-9._-]/g, '_');
+        const storagePath = `${quote.organization_id}/quote/${quote.id}/email/${timestamp}_${safeFilename}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('document-attachments')
+          .upload(storagePath, pdfBlob, {
+            contentType: 'application/pdf',
+            upsert: false,
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+          .from('document-attachments')
+          .createSignedUrl(storagePath, 60 * 60 * 24 * 7, {
+            download: pdfFilename,
+          });
+
+        if (signedUrlError || !signedUrlData?.signedUrl) {
+          throw signedUrlError || new Error('No se pudo crear el enlace de descarga del PDF');
+        }
+
+        pdfUrl = signedUrlData.signedUrl;
       } catch (pdfErr) {
-        console.error('Error generating PDF for email attachment:', pdfErr);
-        toast.error('No se pudo generar el PDF para adjuntar.');
+        console.error('Error generating PDF download link for email:', pdfErr);
+        toast.error('No se pudo preparar el enlace de descarga del PDF.');
         return;
       }
 
@@ -417,8 +451,7 @@ export default function QuoteDetail() {
           quoteId: quote.id,
           recipientEmail: customer.email,
           recipientName: customer.name,
-          pdfBase64,
-          pdfFilename,
+          pdfUrl,
         },
       });
 
