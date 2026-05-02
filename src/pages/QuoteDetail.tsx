@@ -185,6 +185,43 @@ export default function QuoteDetail() {
     enabled: !!id,
   });
 
+  const quoteSubtotal = useMemo(() => {
+    const storedSubtotal = quote?.subtotal;
+    if (storedSubtotal !== null && storedSubtotal !== undefined) {
+      return Number(storedSubtotal) || 0;
+    }
+
+    return (quote?.items || []).reduce((sum: number, item: any) => sum + getDisplayedItemPrice(item), 0);
+  }, [quote]);
+
+  const quoteTotal = useMemo(() => {
+    const storedFinalPrice = quote?.final_price;
+    if (storedFinalPrice !== null && storedFinalPrice !== undefined) {
+      return Number(storedFinalPrice) || 0;
+    }
+
+    let total = quoteSubtotal;
+    if (quote?.quote_additionals) {
+      quote.quote_additionals.forEach((additional: any) => {
+        switch (additional.type) {
+          case 'percentage':
+            total += (quoteSubtotal * additional.value) / 100;
+            break;
+          case 'net_amount':
+            total += additional.value;
+            break;
+          case 'quantity_multiplier':
+            total *= additional.value;
+            break;
+          default:
+            total += additional.value;
+        }
+      });
+    }
+
+    return total;
+  }, [quote, quoteSubtotal]);
+
   // Portal actions for this quote
   const { data: portalActions } = useQuery({
     queryKey: ['portal-actions', id],
@@ -1352,7 +1389,7 @@ export default function QuoteDetail() {
                 <div className="bg-card rounded-md p-3 border border-border space-y-1.5">
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-muted-foreground">Subtotal:</span>
-                    <span className="text-sm font-medium">{fmtEUR(quote.subtotal || 0)}</span>
+                    <span className="text-sm font-medium">{fmtEUR(quoteSubtotal)}</span>
                   </div>
                   
                   {/* Mostrar ajustes aplicados */}
@@ -1369,7 +1406,7 @@ export default function QuoteDetail() {
                         
                         switch (additional.type) {
                           case 'percentage':
-                            amount = (quote.subtotal * additional.value) / 100;
+                            amount = (quoteSubtotal * additional.value) / 100;
                             displayText = `${cleanName} (${additional.value}%)`;
                             break;
                           case 'net_amount':
@@ -1404,27 +1441,7 @@ export default function QuoteDetail() {
                   <div className="flex justify-between items-center pt-1">
                     <span className="text-base font-semibold text-foreground">Total del presupuesto:</span>
                     <span className="text-xl font-bold text-secondary">
-                      {fmtEUR((() => {
-                        let total = quote.subtotal || 0;
-                        if (quote.quote_additionals) {
-                          quote.quote_additionals.forEach((additional: any) => {
-                            switch (additional.type) {
-                              case 'percentage':
-                                total += (quote.subtotal * additional.value) / 100;
-                                break;
-                              case 'net_amount':
-                                total += additional.value;
-                                break;
-                              case 'quantity_multiplier':
-                                total *= additional.value;
-                                break;
-                              default:
-                                total += additional.value;
-                            }
-                          });
-                        }
-                        return total;
-                      })())}
+                      {fmtEUR(quoteTotal)}
                     </span>
                   </div>
                 </div>
