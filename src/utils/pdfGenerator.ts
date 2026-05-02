@@ -1134,10 +1134,11 @@ export const sanitizeDescriptionForDocs = (
 export const generateQuotePDF = async (
   quoteId: string,
   options: PDFGeneratorOptions = {}
-): Promise<void> => {
+): Promise<string | void> => {
   const { 
     filename = 'presupuesto.pdf', 
-    quality = 2 
+    quality = 2,
+    returnBase64 = false
   } = options;
 
   try {
