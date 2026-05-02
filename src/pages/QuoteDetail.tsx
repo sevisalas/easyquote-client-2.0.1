@@ -209,6 +209,26 @@ export default function QuoteDetail() {
     },
   });
 
+  // If THIS quote was grouped INTO another, fetch destination quote (any item points to it)
+  const groupedIntoId = useMemo(() => {
+    const item = (quote?.items || []).find((it: any) => it?.grouped_into_quote_id);
+    return item?.grouped_into_quote_id || null;
+  }, [quote]);
+
+  const { data: destinationQuote } = useQuery({
+    queryKey: ['quote-destination', groupedIntoId],
+    enabled: !!groupedIntoId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('quotes')
+        .select('id, quote_number')
+        .eq('id', groupedIntoId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const quoteSubtotal = useMemo(() => {
     const storedSubtotal = Number(quote?.subtotal ?? 0);
     const computed = (quote?.items || []).reduce((sum: number, item: any) => sum + getDisplayedItemPrice(item), 0);
