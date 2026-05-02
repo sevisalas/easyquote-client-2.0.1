@@ -23,13 +23,14 @@ import { QuoteCard } from "@/components/quotes/QuoteCard";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 
-const statusOptions = ["draft", "sent", "approved", "rejected", "cancelled"] as const;
+const statusOptions = ["draft", "sent", "approved", "rejected", "cancelled", "grouped"] as const;
 const statusLabel: Record<string, string> = {
   draft: "Borrador",
   sent: "Preparado",
   approved: "Aprobado",
   rejected: "Rechazado",
   cancelled: "Anulado",
+  grouped: "Agrupado",
 };
 
 const fmtEUR = (n: any) => {
@@ -238,13 +239,23 @@ const QuotesList = () => {
         <CardHeader className="pb-2 px-3 md:px-6">
           <div className="flex items-center justify-between gap-2">
             <CardTitle className="text-base md:text-lg">Presupuestos</CardTitle>
-            <Button 
-              size={isMobile ? "default" : "sm"}
-              onClick={() => navigate('/presupuestos/nuevo')}
-              className="h-9 md:h-8 text-sm md:text-xs px-4 md:px-3"
-            >
-              Nuevo
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size={isMobile ? "default" : "sm"}
+                variant="outline"
+                onClick={() => navigate('/presupuestos/agrupado/nuevo')}
+                className="h-9 md:h-8 text-sm md:text-xs px-3"
+              >
+                Nuevo agrupado
+              </Button>
+              <Button
+                size={isMobile ? "default" : "sm"}
+                onClick={() => navigate('/presupuestos/nuevo')}
+                className="h-9 md:h-8 text-sm md:text-xs px-4 md:px-3"
+              >
+                Nuevo
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-2 md:p-6">
