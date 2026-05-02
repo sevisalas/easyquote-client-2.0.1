@@ -2677,6 +2677,7 @@ export type Database = {
           description: string | null
           description_manual: boolean
           discount_percentage: number | null
+          grouped_into_quote_id: string | null
           id: string
           item_additionals: Json | null
           multi: Json | null
@@ -2689,6 +2690,8 @@ export type Database = {
           prompts: Json | null
           quantity: number | null
           quote_id: string
+          source_item_id: string | null
+          source_quote_id: string | null
           updated_at: string
         }
         Insert: {
@@ -2699,6 +2702,7 @@ export type Database = {
           description?: string | null
           description_manual?: boolean
           discount_percentage?: number | null
+          grouped_into_quote_id?: string | null
           id?: string
           item_additionals?: Json | null
           multi?: Json | null
@@ -2711,6 +2715,8 @@ export type Database = {
           prompts?: Json | null
           quantity?: number | null
           quote_id: string
+          source_item_id?: string | null
+          source_quote_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -2721,6 +2727,7 @@ export type Database = {
           description?: string | null
           description_manual?: boolean
           discount_percentage?: number | null
+          grouped_into_quote_id?: string | null
           id?: string
           item_additionals?: Json | null
           multi?: Json | null
@@ -2733,6 +2740,8 @@ export type Database = {
           prompts?: Json | null
           quantity?: number | null
           quote_id?: string
+          source_item_id?: string | null
+          source_quote_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2837,6 +2846,7 @@ export type Database = {
           description: string | null
           discount_amount: number
           final_price: number
+          grouped_at: string | null
           hide_holded_totals: boolean
           holded_estimate_id: string | null
           holded_estimate_number: string | null
@@ -2866,6 +2876,7 @@ export type Database = {
           description?: string | null
           discount_amount?: number
           final_price?: number
+          grouped_at?: string | null
           hide_holded_totals?: boolean
           holded_estimate_id?: string | null
           holded_estimate_number?: string | null
@@ -2895,6 +2906,7 @@ export type Database = {
           description?: string | null
           discount_amount?: number
           final_price?: number
+          grouped_at?: string | null
           hide_holded_totals?: boolean
           holded_estimate_id?: string | null
           holded_estimate_number?: string | null
