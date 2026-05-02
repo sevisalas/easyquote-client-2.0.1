@@ -150,11 +150,13 @@ Deno.serve(async (req) => {
       ? `<p><a href="${portalUrl}" style="display: inline-block; background-color: ${buttonColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Ver y aprobar presupuesto</a></p>`
       : "";
 
-    const pdfButton = pdfUrl
-      ? portalUrl
-        ? `<p><a href="${pdfUrl}" style="color: ${buttonColor}; text-decoration: underline; font-size: 14px;">Descargar PDF</a></p>`
-        : `<p><a href="${pdfUrl}" style="display: inline-block; background-color: ${buttonColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>`
-      : "";
+    const pdfButton = pdfBase64
+      ? `<p style="font-size: 14px; color: #555;">📎 Encontrarás el presupuesto en PDF adjunto a este correo.</p>`
+      : pdfUrl
+        ? portalUrl
+          ? `<p><a href="${pdfUrl}" style="color: ${buttonColor}; text-decoration: underline; font-size: 14px;">Descargar PDF</a></p>`
+          : `<p><a href="${pdfUrl}" style="display: inline-block; background-color: ${buttonColor}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>`
+        : "";
 
     const priceText = priceFormatted
       ? ` por un importe de <strong>${priceFormatted}</strong>`
