@@ -396,11 +396,29 @@ export default function QuoteDetail() {
         return;
       }
 
+      // Generate PDF as base64 to attach to the email
+      let pdfBase64: string | undefined;
+      let pdfFilename: string | undefined;
+      try {
+        pdfFilename = `presupuesto-${quote.quote_number || quote.id}.pdf`;
+        const result = await generateQuotePDF(quote.id, {
+          filename: pdfFilename,
+          returnBase64: true,
+        });
+        if (typeof result === 'string') pdfBase64 = result;
+      } catch (pdfErr) {
+        console.error('Error generating PDF for email attachment:', pdfErr);
+        toast.error('No se pudo generar el PDF para adjuntar.');
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke('send-quote-email', {
         body: {
           quoteId: quote.id,
           recipientEmail: customer.email,
           recipientName: customer.name,
+          pdfBase64,
+          pdfFilename,
         },
       });
 
