@@ -224,6 +224,30 @@ export default function QuoteEdit() {
     [activeDiscounts],
   );
 
+  // Trazabilidad de origen para presupuestos agrupados
+  const sourceQuoteIds = useMemo(() => {
+    const ids = new Set<string>();
+    items.forEach((it: any) => {
+      if (it?.source_quote_id) ids.add(it.source_quote_id);
+    });
+    return Array.from(ids);
+  }, [items]);
+
+  const { data: sourceQuotesMap } = useQuery({
+    queryKey: ['quote-edit-sources', sourceQuoteIds],
+    enabled: sourceQuoteIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('quotes')
+        .select('id, quote_number')
+        .in('id', sourceQuoteIds);
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      (data || []).forEach((q: any) => { map[q.id] = q.quote_number; });
+      return map;
+    },
+  });
+
   useEffect(() => {
     if (!editCustomerId) return;
     void refetchCustomerDiscounts();
