@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { corsHeaders } from "../_shared/cors.ts";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import nodemailer from "npm:nodemailer@6.9.14";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -189,29 +189,27 @@ Deno.serve(async (req) => {
       htmlBody = buildDefaultHtml(quote, clientName, priceFormatted, pdfUrl, portalUrl, fromName, buttonColor);
     }
 
-    // Send via SMTP
-    const client = new SMTPClient({
-      connection: {
-        hostname: smtp.smtp_host,
-        port: smtp.smtp_port,
-        // Implicit TLS only on port 465. For 587/25 use STARTTLS (tls:false → upgrades automatically).
-        tls: smtp.smtp_port === 465,
-        auth: {
-          username: smtp.smtp_username,
-          password: smtp.smtp_password_encrypted,
-        },
+    // Send via SMTP using nodemailer (more reliable than denomailer for STARTTLS on 587)
+    const transporter = nodemailer.createTransport({
+      host: smtp.smtp_host,
+      port: smtp.smtp_port,
+      secure: smtp.smtp_port === 465, // true for 465, false for 587 (STARTTLS)
+      auth: {
+        user: smtp.smtp_username,
+        pass: smtp.smtp_password_encrypted,
+      },
+      tls: {
+        // Tolerate self-signed / hostname mismatches commonly found on shared hosting
+        rejectUnauthorized: false,
       },
     });
 
-    await client.send({
+    await transporter.sendMail({
       from: `${fromName} <${smtp.from_email}>`,
       to: recipientEmail,
       subject: emailSubject,
-      content: "auto",
       html: htmlBody,
     });
-
-    await client.close();
 
     console.log(`Email sent to ${recipientEmail} for quote ${quote.quote_number}`);
 
@@ -221,8 +219,9 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     console.error("Error sending email:", error);
+    const message = error instanceof Error ? error.message : "Error al enviar el email";
     return new Response(
-      JSON.stringify({ error: "Error al enviar el email" }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
