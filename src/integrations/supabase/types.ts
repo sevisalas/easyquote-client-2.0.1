@@ -3448,6 +3448,7 @@ export type Database = {
       }
     }
     Functions: {
+      cleanup_old_api_performance_metrics: { Args: never; Returns: number }
       create_organization_api_credential: {
         Args: {
           p_api_key: string
