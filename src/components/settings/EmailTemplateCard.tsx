@@ -52,6 +52,7 @@ export default function EmailTemplateCard() {
       .replace(/\{\{cliente\}\}/g, "Juan Pérez")
       .replace(/\{\{precio\}\}/g, ' por un importe de <strong>1.250,00 €</strong>')
       .replace(/\{\{boton_pdf\}\}/g, '<p><a href="#" style="display: inline-block; background-color: #c83077; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Descargar presupuesto PDF</a></p>')
+      .replace(/\{\{boton_portal\}\}/g, '<p><a href="#" style="display: inline-block; background-color: #c83077; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Ver y aprobar presupuesto</a></p>')
       .replace(/\{\{empresa\}\}/g, "Mi Empresa S.L.");
   };
 

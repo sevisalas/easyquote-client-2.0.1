@@ -28,6 +28,7 @@ export const EMAIL_TEMPLATE_VARIABLES = [
   { key: "{{cliente}}", label: "Nombre del cliente" },
   { key: "{{precio}}", label: "Precio formateado" },
   { key: "{{boton_pdf}}", label: "Botón descargar PDF" },
+  { key: "{{boton_portal}}", label: "Botón portal del cliente" },
   { key: "{{empresa}}", label: "Nombre de la empresa" },
 ];
 
