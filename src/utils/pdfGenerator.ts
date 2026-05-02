@@ -75,6 +75,7 @@ const calculateMultiRowAdditionalsTotal = (
 export interface PDFGeneratorOptions {
   filename?: string;
   quality?: number;
+  returnBase64?: boolean;
 }
 
 const PDF_IMAGE_CACHE = new Map<string, Promise<{ dataUrl: string; format: 'PNG' | 'JPEG'; width: number; height: number } | null>>();
@@ -1133,10 +1134,11 @@ export const sanitizeDescriptionForDocs = (
 export const generateQuotePDF = async (
   quoteId: string,
   options: PDFGeneratorOptions = {}
-): Promise<void> => {
+): Promise<string | void> => {
   const { 
     filename = 'presupuesto.pdf', 
-    quality = 2 
+    quality = 2,
+    returnBase64 = false
   } = options;
 
   try {
@@ -1649,6 +1651,12 @@ export const generateQuotePDF = async (
       }
     }
 
+    if (returnBase64) {
+      // Returns base64-encoded PDF data (without data URI prefix)
+      const dataUri = pdf.output('datauristring');
+      const base64 = dataUri.split(',')[1] || '';
+      return base64;
+    }
     pdf.save(filename);
   } catch (error) {
     console.error('Error generating PDF:', error);

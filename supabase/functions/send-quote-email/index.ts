@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { quoteId, recipientEmail, recipientName, subject, body, pdfUrl } = await req.json();
+    const { quoteId, recipientEmail, recipientName, subject, body, pdfUrl, pdfBase64, pdfFilename } = await req.json();
 
     if (!quoteId || !recipientEmail) {
       return new Response(JSON.stringify({ error: "quoteId y recipientEmail son obligatorios" }), {
@@ -204,11 +204,21 @@ Deno.serve(async (req) => {
       },
     });
 
+    const attachments = pdfBase64
+      ? [{
+          filename: pdfFilename || `presupuesto-${quote.quote_number || 'documento'}.pdf`,
+          content: pdfBase64,
+          encoding: 'base64',
+          contentType: 'application/pdf',
+        }]
+      : undefined;
+
     await transporter.sendMail({
       from: `${fromName} <${smtp.from_email}>`,
       to: recipientEmail,
       subject: emailSubject,
       html: htmlBody,
+      attachments,
     });
 
     console.log(`Email sent to ${recipientEmail} for quote ${quote.quote_number}`);
