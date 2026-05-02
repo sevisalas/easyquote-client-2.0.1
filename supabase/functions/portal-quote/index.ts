@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
         .from("quotes")
         .select(`
           id, quote_number, status, final_price, notes, created_at,
-          organization_id, customer_id, validity_days,
+          organization_id, customer_id,
           items:quote_items(id, product_name, description, quantity, price, prompts, outputs),
           quote_additionals:quote_additionals(id, name, value, is_discount)
         `)
@@ -82,6 +82,7 @@ Deno.serve(async (req) => {
         .single();
 
       if (quoteError || !quote) {
+        console.error("portal-quote: quote fetch error", quoteError);
         return new Response(JSON.stringify({ error: "Presupuesto no encontrado" }), {
           status: 404,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -133,7 +134,7 @@ Deno.serve(async (req) => {
             final_price: quote.final_price,
             notes: quote.notes,
             created_at: quote.created_at,
-            validity_days: quote.validity_days,
+            validity_days: null,
             items: quote.items,
             additionals: quote.quote_additionals,
           },
