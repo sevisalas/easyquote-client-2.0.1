@@ -632,6 +632,16 @@ export default function QuoteDetail() {
 
   return (
     <div className="container mx-auto py-2 space-y-3">
+      {quote.status === 'grouped' && (
+        <Card className="border-2" style={{ borderColor: 'hsl(330 60% 45%)' }}>
+          <CardContent className="py-3 text-sm">
+            <p className="font-semibold" style={{ color: 'hsl(330 60% 35%)' }}>
+              Este presupuesto ha sido agrupado{quote.grouped_at ? ` el ${format(new Date(quote.grouped_at as any), 'dd/MM/yyyy', { locale: es })}` : ''}.
+              No puede aprobarse, enviarse ni editarse.
+            </p>
+          </CardContent>
+        </Card>
+      )}
       {/* Header */}
       <Card>
         <CardHeader className="pb-2">
@@ -645,7 +655,7 @@ export default function QuoteDetail() {
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              {canApprove && (
+              {canApprove && quote.status !== 'grouped' && (
                 <>
                   {isApprovable ? (
                     <Button
@@ -684,7 +694,7 @@ export default function QuoteDetail() {
                 </>
               )}
               {/* Botón editar/duplicar: comercial solo puede editar los suyos */}
-              {(!isComercial || isOwnQuote || !isEditable) && (
+              {(!isComercial || isOwnQuote || !isEditable) && quote.status !== 'grouped' && (
                 <Button
                   onClick={handleEditOrDuplicate}
                   size="sm"
