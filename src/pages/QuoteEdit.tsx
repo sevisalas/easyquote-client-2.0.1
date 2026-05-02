@@ -224,6 +224,30 @@ export default function QuoteEdit() {
     [activeDiscounts],
   );
 
+  // Trazabilidad de origen para presupuestos agrupados
+  const sourceQuoteIds = useMemo(() => {
+    const ids = new Set<string>();
+    items.forEach((it: any) => {
+      if (it?.source_quote_id) ids.add(it.source_quote_id);
+    });
+    return Array.from(ids);
+  }, [items]);
+
+  const { data: sourceQuotesMap } = useQuery({
+    queryKey: ['quote-edit-sources', sourceQuoteIds],
+    enabled: sourceQuoteIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('quotes')
+        .select('id, quote_number')
+        .in('id', sourceQuoteIds);
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      (data || []).forEach((q: any) => { map[q.id] = q.quote_number; });
+      return map;
+    },
+  });
+
   useEffect(() => {
     if (!editCustomerId) return;
     void refetchCustomerDiscounts();
@@ -521,6 +545,8 @@ export default function QuoteEdit() {
             descriptionManual: item.description_manual || false,  // Flag: usuario editó la descripción
             itemAdditionals: Array.isArray(item.item_additionals) ? item.item_additionals : [],
             compositeData: item.composite_data || undefined,
+            source_quote_id: item.source_quote_id || null,
+            source_item_id: item.source_item_id || null,
           };
           console.log(`🔍 Mapped item ${idx}:`, {
             id: mappedItem.id,
@@ -1331,6 +1357,31 @@ export default function QuoteEdit() {
 
       {/* Items card continues below */}
 
+      {sourceQuoteIds.length > 0 && (
+        <Card className="border bg-muted/30">
+          <CardContent className="py-3 text-sm">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Presupuesto agrupado · Origen
+            </p>
+            <p className="text-sm text-muted-foreground mb-2">
+              Este presupuesto agrupa artículos de los siguientes presupuestos originales (solo informativo):
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {sourceQuoteIds.map((srcId) => (
+                <Badge
+                  key={srcId}
+                  variant="outline"
+                  className="cursor-pointer bg-secondary/10 text-secondary border-secondary/30 hover:bg-secondary/20"
+                  onClick={() => navigate(`/presupuestos/${srcId}`)}
+                >
+                  {sourceQuotesMap?.[srcId] || '…'}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Quote Items */}
       <Card>
         <CardHeader className="pb-2">
@@ -1435,6 +1486,19 @@ export default function QuoteEdit() {
                                       <span className="text-xs text-muted-foreground ml-2">(cantidad múltiple activada)</span>
                                     )}
                                   </p>
+                                  {(item as any).source_quote_id && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs bg-secondary/10 text-secondary border-secondary/30 cursor-pointer hover:bg-secondary/20 shrink-0"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(`/presupuestos/${(item as any).source_quote_id}`);
+                                      }}
+                                      title="Ver presupuesto de origen"
+                                    >
+                                      Origen: {sourceQuotesMap?.[(item as any).source_quote_id] || '…'}
+                                    </Badge>
+                                  )}
                                 </div>
                                 <div className="flex items-center gap-3 shrink-0">
                                   <div className="text-sm font-medium text-secondary text-right">{fmtEUR(calculateItemEffectivePrice(item))}</div>
