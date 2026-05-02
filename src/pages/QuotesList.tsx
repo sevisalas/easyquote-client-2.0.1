@@ -478,7 +478,7 @@ const QuotesList = () => {
               </TableHeader>
               <TableBody>
                  {paginatedQuotes.map((q: any) => (
-                    <TableRow key={q.id} className={cn("h-auto", q.status === 'grouped' && "bg-muted/60 hover:bg-muted/70")}>
+                    <TableRow key={q.id} className="h-auto">
                     <TableCell className="py-1.5 px-3 text-sm whitespace-nowrap">
                       <TooltipProvider delayDuration={200}>
                         <Tooltip>
@@ -541,7 +541,13 @@ const QuotesList = () => {
                       </>
                     )}
                     <TableCell className="py-1.5 px-3">
-                      <Badge variant={getStatusVariant(q.status)} className="text-xs px-2 py-0 h-5">
+                      <Badge
+                        variant={getStatusVariant(q.status)}
+                        className={cn(
+                          "text-xs px-2 py-0 h-5",
+                          q.status === 'grouped' && "bg-muted text-muted-foreground border-muted-foreground/20 hover:bg-muted"
+                        )}
+                      >
                         {statusLabel[q.status] || q.status}
                       </Badge>
                     </TableCell>

@@ -54,7 +54,7 @@ export function QuoteCard({
   };
 
   return (
-    <Card className={`mb-3 hover:shadow-md transition-shadow active:scale-[0.99] animate-fade-in ${quote.status === 'grouped' ? 'bg-muted/60' : ''}`}>
+    <Card className="mb-3 hover:shadow-md transition-shadow active:scale-[0.99] animate-fade-in">
       <CardContent className="p-4">
         {/* Header: Quote Number + Status */}
         <div className="flex items-start justify-between mb-3">
@@ -62,7 +62,10 @@ export function QuoteCard({
             <p className="text-xs text-muted-foreground">Presupuesto</p>
             <p className="text-lg font-bold">{quote.quote_number}</p>
           </div>
-          <Badge variant={getStatusVariant(quote.status)} className="text-xs px-2 py-1">
+          <Badge
+            variant={getStatusVariant(quote.status)}
+            className={`text-xs px-2 py-1 ${quote.status === 'grouped' ? 'bg-muted text-muted-foreground border-muted-foreground/20 hover:bg-muted' : ''}`}
+          >
             {statusLabel[quote.status] || quote.status}
           </Badge>
         </div>
