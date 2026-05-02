@@ -75,6 +75,7 @@ const calculateMultiRowAdditionalsTotal = (
 export interface PDFGeneratorOptions {
   filename?: string;
   quality?: number;
+  returnBase64?: boolean;
 }
 
 const PDF_IMAGE_CACHE = new Map<string, Promise<{ dataUrl: string; format: 'PNG' | 'JPEG'; width: number; height: number } | null>>();
