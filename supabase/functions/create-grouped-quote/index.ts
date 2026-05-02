@@ -88,11 +88,12 @@ Deno.serve(async (req) => {
     }
 
     // Generate document number for new quote
-    const { data: numData, error: numErr } = await db.rpc('next_document_number', {
+    const { data: numData, error: numErr } = await authClient.rpc('next_document_number', {
       p_organization_id: organization_id,
       p_document_type: 'quote',
     });
     if (numErr || !numData || (numData as any[]).length === 0) {
+      console.error('[create-grouped-quote] next_document_number error:', numErr, numData);
       return json({ error: 'No se pudo generar el número de presupuesto: ' + (numErr?.message || 'sin datos') }, 500);
     }
     const newQuoteNumber = (numData as any[])[0].document_number as string;
