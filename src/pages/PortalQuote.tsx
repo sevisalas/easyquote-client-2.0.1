@@ -194,11 +194,17 @@ const PortalQuote = () => {
     if (Array.isArray(rows) && rows.length > 0) {
       const sel = itemQuantities[item.id];
       const row = rows.find((r: any) => Number(r.qty ?? r.quantity) === sel) || rows[0];
-      const base = Number(row?.outs?.find((o: any) => o.type === "Price")?.value ?? row?.price ?? item.price ?? 0);
-      const qty = Number(row?.qty ?? row?.quantity ?? item.quantity ?? 1);
+      const priceRaw =
+        row?.outs?.find((o: any) => o.type === "Price")?.value ??
+        row?.price ??
+        item.price ??
+        0;
+      const base = Number(priceRaw);
+      const qty = Number(row?.qty ?? row?.quantity ?? item.quantity ?? 1) || 1;
+      if (!Number.isFinite(base)) return { qty, price: Number(item.price) || 0 };
       return { qty, price: base };
     }
-    return { qty: item.quantity, price: item.price };
+    return { qty: Number(item.quantity) || 1, price: Number(item.price) || 0 };
   };
 
   const visibleSubtotal = quote.items.reduce((sum, item) => {
@@ -267,10 +273,12 @@ const PortalQuote = () => {
                                 }
                               />
                             )}
-                            <div>
+                            <div className="min-w-0">
                               <div className="font-medium">{item.product_name}</div>
-                              {item.description && (
-                                <div className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{item.description}</div>
+                              {item.description && item.description.trim() !== item.product_name?.trim() && (
+                                <div className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap leading-relaxed">
+                                  {item.description}
+                                </div>
                               )}
                             </div>
                           </div>
