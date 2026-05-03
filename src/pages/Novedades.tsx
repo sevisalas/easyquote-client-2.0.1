@@ -31,6 +31,7 @@ const versions: Version[] = [
     changes: {
       added: [
         "Nueva plantilla PDF 'Campillo Limpia' (#9), exclusiva para Campillo Nevado: hereda toda la lógica de la plantilla 7 pero sin fondo PNG, con cabecera limpia, totales en bloque tipo factura y footer corporativo centrado.",
+        "Agrupación de presupuestos: nuevo modal en el listado de presupuestos para combinar varios presupuestos en uno solo. Los originales quedan en estado 'Agrupado' (bloqueado para aprobación) y el nuevo presupuesto agrupado hereda los artículos manteniendo la trazabilidad de origen sin mostrarla en los documentos. Versión inicial sin soporte de multi-cantidad.",
       ],
     },
   },
