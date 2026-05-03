@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CheckCircle, XCircle, Loader2, FileText, Clock, AlertTriangle } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -27,6 +29,8 @@ interface PortalQuoteData {
       price: number;
       prompts: any;
       outputs: any;
+      multi?: any;
+      item_additionals?: any;
     }>;
     additionals: Array<{
       id: string;
@@ -52,6 +56,8 @@ const PortalQuote = () => {
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [actionDone, setActionDone] = useState<string | null>(null);
+  const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
+  const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
 
   const primaryColor = useMemo(() => {
     if (!data?.organization?.primary_color) return "#c83077";
@@ -62,6 +68,23 @@ const PortalQuote = () => {
     if (!token) return;
     fetchQuoteData();
   }, [token]);
+
+  // Initialize selection state once data loads
+  useEffect(() => {
+    if (!data?.quote?.items) return;
+    const sel: Record<string, boolean> = {};
+    const qty: Record<string, number> = {};
+    for (const it of data.quote.items) {
+      sel[it.id] = true;
+      const rows = (it.multi as any)?.rows;
+      if (Array.isArray(rows) && rows.length > 0) {
+        const firstQty = Number(rows[0]?.qty ?? rows[0]?.quantity ?? it.quantity ?? 1);
+        qty[it.id] = firstQty;
+      }
+    }
+    setSelectedItems(sel);
+    setItemQuantities(qty);
+  }, [data?.quote?.items]);
 
   const fetchQuoteData = async () => {
     try {
@@ -87,8 +110,28 @@ const PortalQuote = () => {
 
   const handleAction = async (action: "approved" | "rejected") => {
     if (!token) return;
+
+    if (action === "approved") {
+      const approvedIds = Object.entries(selectedItems).filter(([, v]) => v).map(([k]) => k);
+      if (approvedIds.length === 0) {
+        setError("Selecciona al menos un artículo para aprobar");
+        return;
+      }
+      // Check that every multi-qty selected item has a chosen quantity
+      for (const it of data?.quote.items || []) {
+        if (!selectedItems[it.id]) continue;
+        const rows = (it.multi as any)?.rows;
+        if (Array.isArray(rows) && rows.length > 1 && !itemQuantities[it.id]) {
+          setError(`Selecciona una cantidad para "${it.product_name}"`);
+          return;
+        }
+      }
+    }
+
     setSubmitting(true);
+    setError(null);
     try {
+      const approvedIds = Object.entries(selectedItems).filter(([, v]) => v).map(([k]) => k);
       const res = await fetch(
         `${SUPABASE_URL}/functions/v1/portal-quote?token=${token}`,
         {
@@ -97,7 +140,12 @@ const PortalQuote = () => {
             "Content-Type": "application/json",
             apikey: SUPABASE_KEY,
           },
-          body: JSON.stringify({ action, comment: comment || undefined }),
+          body: JSON.stringify({
+            action,
+            comment: comment || undefined,
+            selectedItemIds: action === "approved" ? approvedIds : undefined,
+            itemQuantities: action === "approved" ? itemQuantities : undefined,
+          }),
         }
       );
       if (!res.ok) {
@@ -140,7 +188,24 @@ const PortalQuote = () => {
   if (!data) return null;
 
   const { quote, organization, customer_name } = data;
-  const subtotal = quote.items.reduce((sum, item) => sum + item.quantity * item.price, 0);
+  const isPending = !actionDone && (quote.status === "sent" || quote.status === "draft");
+  const getItemPriceForSelection = (item: any) => {
+    const rows = item.multi?.rows;
+    if (Array.isArray(rows) && rows.length > 0) {
+      const sel = itemQuantities[item.id];
+      const row = rows.find((r: any) => Number(r.qty ?? r.quantity) === sel) || rows[0];
+      const base = Number(row?.outs?.find((o: any) => o.type === "Price")?.value ?? row?.price ?? item.price ?? 0);
+      const qty = Number(row?.qty ?? row?.quantity ?? item.quantity ?? 1);
+      return { qty, price: base };
+    }
+    return { qty: item.quantity, price: item.price };
+  };
+
+  const visibleSubtotal = quote.items.reduce((sum, item) => {
+    if (isPending && !selectedItems[item.id]) return sum;
+    const { price } = getItemPriceForSelection(item);
+    return sum + price;
+  }, 0);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -183,21 +248,68 @@ const PortalQuote = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {quote.items.map((item) => (
-                    <tr key={item.id} className="border-b last:border-0">
-                      <td className="py-3 pr-2">
-                        <div className="font-medium">{item.product_name}</div>
-                        {item.description && (
-                          <div className="text-xs text-muted-foreground mt-1">{item.description}</div>
-                        )}
-                      </td>
-                      <td className="text-right py-3 px-2">{item.quantity}</td>
-                      <td className="text-right py-3 px-2">{Number(item.price).toLocaleString("es-ES", { style: "currency", currency: "EUR" })}</td>
-                      <td className="text-right py-3 pl-2 font-medium">
-                        {(item.quantity * item.price).toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
-                      </td>
-                    </tr>
-                  ))}
+                  {quote.items.map((item) => {
+                    const rows = (item.multi as any)?.rows;
+                    const hasMulti = Array.isArray(rows) && rows.length > 1;
+                    const { qty, price } = getItemPriceForSelection(item);
+                    const checked = selectedItems[item.id] ?? true;
+                    const dimmed = isPending && !checked;
+                    return (
+                      <tr key={item.id} className={`border-b last:border-0 ${dimmed ? "opacity-40" : ""}`}>
+                        <td className="py-3 pr-2">
+                          <div className="flex items-start gap-2">
+                            {isPending && (
+                              <Checkbox
+                                className="mt-1"
+                                checked={checked}
+                                onCheckedChange={(v) =>
+                                  setSelectedItems((prev) => ({ ...prev, [item.id]: v === true }))
+                                }
+                              />
+                            )}
+                            <div>
+                              <div className="font-medium">{item.product_name}</div>
+                              {item.description && (
+                                <div className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{item.description}</div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="text-right py-3 px-2 align-top">
+                          {isPending && hasMulti ? (
+                            <Select
+                              value={String(itemQuantities[item.id] ?? "")}
+                              onValueChange={(v) =>
+                                setItemQuantities((prev) => ({ ...prev, [item.id]: Number(v) }))
+                              }
+                            >
+                              <SelectTrigger className="w-28 ml-auto h-8 text-xs">
+                                <SelectValue placeholder="Cant." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {rows.map((r: any, i: number) => {
+                                  const q = Number(r.qty ?? r.quantity);
+                                  return (
+                                    <SelectItem key={i} value={String(q)}>
+                                      {q.toLocaleString("es-ES")} ud
+                                    </SelectItem>
+                                  );
+                                })}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            qty
+                          )}
+                        </td>
+                        <td className="text-right py-3 px-2 align-top">
+                          {Number(price / (qty || 1)).toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
+                        </td>
+                        <td className="text-right py-3 pl-2 font-medium align-top">
+                          {Number(price).toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -224,9 +336,14 @@ const PortalQuote = () => {
             <div className="flex justify-between items-center">
               <span className="text-lg font-semibold">Total</span>
               <span className="text-2xl font-bold" style={{ color: primaryColor }}>
-                {Number(quote.final_price || subtotal).toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
+                {Number(isPending ? visibleSubtotal : (quote.final_price || visibleSubtotal)).toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
               </span>
             </div>
+            {isPending && (
+              <p className="text-xs text-muted-foreground text-right">
+                Total estimado según artículos y cantidades seleccionadas (sin recargos/descuentos globales).
+              </p>
+            )}
 
             {/* Validity info */}
             {quote.validity_days && (
