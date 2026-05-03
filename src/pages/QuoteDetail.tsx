@@ -1662,6 +1662,32 @@ export default function QuoteDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Approval Confirmation Dialog */}
+      <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Aprobar presupuesto</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedItems.size > 0
+                ? `Se aprobarán ${selectedItems.size} artículo(s) seleccionado(s) y se creará el pedido correspondiente. Esta acción no se puede deshacer.`
+                : 'Se aprobarán todos los artículos del presupuesto y se creará el pedido correspondiente. Esta acción no se puede deshacer.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isApproving}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isApproving}
+              onClick={(e) => {
+                e.preventDefault();
+                handleConfirmApprove();
+              }}
+            >
+              {isApproving ? 'Aprobando...' : 'Confirmar aprobación'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
