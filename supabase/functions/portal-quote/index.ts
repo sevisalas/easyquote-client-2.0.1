@@ -1,5 +1,106 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { corsHeaders } from "../_shared/cors.ts";
+import nodemailer from "npm:nodemailer@6.9.14";
+
+async function notifyTenantOfPortalAction(
+  supabase: any,
+  quoteId: string,
+  action: "approved" | "rejected",
+  comment: string | null,
+  clientIp: string,
+) {
+  try {
+    const { data: quote } = await supabase
+      .from("quotes")
+      .select("id, quote_number, organization_id, user_id, customer_id, final_price")
+      .eq("id", quoteId)
+      .single();
+    if (!quote) return;
+
+    // Recipient = quote sender (created_by / user_id)
+    let recipientEmail: string | null = null;
+    if (quote.user_id) {
+      const { data: userRes } = await supabase.auth.admin.getUserById(quote.user_id);
+      recipientEmail = userRes?.user?.email ?? null;
+    }
+    if (!recipientEmail) {
+      console.log("notifyTenant: no recipient email, skipping");
+      return;
+    }
+
+    const { data: smtp } = await supabase
+      .from("organization_smtp_settings")
+      .select("*")
+      .eq("organization_id", quote.organization_id)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (!smtp) {
+      console.log("notifyTenant: no SMTP configured, skipping");
+      return;
+    }
+
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("name")
+      .eq("id", quote.organization_id)
+      .single();
+
+    let customerName = "";
+    if (quote.customer_id) {
+      const { data: c } = await supabase
+        .from("customers")
+        .select("name, trade_name")
+        .eq("id", quote.customer_id)
+        .maybeSingle();
+      customerName = c?.trade_name || c?.name || "";
+    }
+
+    const isApproved = action === "approved";
+    const emoji = isApproved ? "✅" : "❌";
+    const actionLabel = isApproved ? "aprobado" : "rechazado";
+    const subject = `${emoji} Presupuesto ${quote.quote_number} ${actionLabel} por el cliente`;
+    const priceText = quote.final_price
+      ? Number(quote.final_price).toLocaleString("es-ES", { style: "currency", currency: "EUR" })
+      : "—";
+    const when = new Date().toLocaleString("es-ES", { dateStyle: "long", timeStyle: "short" });
+    const fromName = smtp.from_name || org?.name || "EasyQuote";
+
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color:#333;">${emoji} Presupuesto ${actionLabel} desde el portal del cliente</h2>
+        <p>El cliente <strong>${customerName || "(sin nombre)"}</strong> ha <strong>${actionLabel}</strong> el presupuesto <strong>${quote.quote_number}</strong> directamente desde el portal del cliente.</p>
+        <table style="border-collapse:collapse;margin:16px 0;font-size:14px;">
+          <tr><td style="padding:4px 12px;color:#666;">Presupuesto</td><td style="padding:4px 12px;"><strong>${quote.quote_number}</strong></td></tr>
+          <tr><td style="padding:4px 12px;color:#666;">Cliente</td><td style="padding:4px 12px;">${customerName || "—"}</td></tr>
+          <tr><td style="padding:4px 12px;color:#666;">Importe</td><td style="padding:4px 12px;">${priceText}</td></tr>
+          <tr><td style="padding:4px 12px;color:#666;">Fecha</td><td style="padding:4px 12px;">${when}</td></tr>
+          <tr><td style="padding:4px 12px;color:#666;">IP cliente</td><td style="padding:4px 12px;">${clientIp}</td></tr>
+        </table>
+        ${comment ? `<p><strong>Comentario del cliente:</strong></p><blockquote style="border-left:3px solid #ccc;padding-left:12px;color:#555;">${comment.replace(/</g, "&lt;")}</blockquote>` : ""}
+        <hr style="border:none;border-top:1px solid #eee;margin:24px 0;" />
+        <p style="font-size:12px;color:#999;">Notificación automática enviada desde ${fromName}. La acción fue realizada por el cliente desde el enlace público del portal.</p>
+      </div>
+    `;
+
+    const transporter = nodemailer.createTransport({
+      host: smtp.smtp_host,
+      port: smtp.smtp_port,
+      secure: smtp.smtp_port === 465,
+      auth: { user: smtp.smtp_username, pass: smtp.smtp_password_encrypted },
+      tls: { rejectUnauthorized: false },
+    });
+
+    await transporter.sendMail({
+      from: `${fromName} <${smtp.from_email}>`,
+      to: recipientEmail,
+      subject,
+      html,
+    });
+    console.log(`notifyTenant: sent ${action} notification to ${recipientEmail} for ${quote.quote_number}`);
+  } catch (err) {
+    console.error("notifyTenant error (non-blocking):", err);
+  }
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -201,6 +302,15 @@ Deno.serve(async (req) => {
           .from("quote_portal_tokens")
           .update({ is_active: false })
           .eq("id", tokenData.id);
+
+        // Notify tenant (sender) by email — non-blocking
+        await notifyTenantOfPortalAction(
+          supabase,
+          tokenData.quote_id,
+          action,
+          comment || null,
+          clientIp,
+        );
       }
 
       return new Response(
