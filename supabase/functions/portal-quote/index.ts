@@ -176,7 +176,7 @@ Deno.serve(async (req) => {
         .select(`
           id, quote_number, status, final_price, notes, created_at,
           organization_id, customer_id,
-          items:quote_items(id, product_name, description, quantity, price, prompts, outputs),
+          items:quote_items(id, product_name, description, quantity, price, prompts, outputs, multi, item_additionals, product_id),
           quote_additionals:quote_additionals(id, name, value, is_discount)
         `)
         .eq("id", tokenData.quote_id)
@@ -251,9 +251,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    // POST: register client action
+      // POST: register client action
     if (req.method === "POST") {
-      const { action, comment } = await req.json();
+      const { action, comment, selectedItemIds, itemQuantities } = await req.json();
 
       if (!action || !["approved", "rejected", "commented"].includes(action)) {
         return new Response(JSON.stringify({ error: "Acción inválida" }), {
@@ -292,10 +292,37 @@ Deno.serve(async (req) => {
 
       // Update quote status if approved/rejected
       if (action === "approved" || action === "rejected") {
-        await supabase
-          .from("quotes")
-          .update({ status: action })
-          .eq("id", tokenData.quote_id);
+        // For approval, delegate to approve-quote (creates sales order, applies multi-qty selection, etc.)
+        if (action === "approved") {
+          try {
+            const { error: approveErr } = await supabase.functions.invoke("approve-quote", {
+              body: {
+                quoteId: tokenData.quote_id,
+                selectedItemIds: Array.isArray(selectedItemIds) && selectedItemIds.length > 0 ? selectedItemIds : undefined,
+                itemQuantities: itemQuantities && typeof itemQuantities === "object" ? itemQuantities : undefined,
+              },
+            });
+            if (approveErr) {
+              console.error("portal-quote: approve-quote invoke error", approveErr);
+              throw new Error("No se pudo crear el pedido. Contacta con el remitente.");
+            }
+          } catch (e: any) {
+            // Roll back the action insert so the client can retry
+            await supabase.from("quote_portal_actions")
+              .delete()
+              .eq("token_id", tokenData.id)
+              .eq("action", action);
+            return new Response(
+              JSON.stringify({ error: e.message || "Error al aprobar" }),
+              { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+        } else {
+          await supabase
+            .from("quotes")
+            .update({ status: action })
+            .eq("id", tokenData.quote_id);
+        }
 
         // Deactivate token after final action
         await supabase
