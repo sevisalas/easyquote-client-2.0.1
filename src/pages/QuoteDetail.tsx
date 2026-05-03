@@ -175,6 +175,7 @@ export default function QuoteDetail() {
   const { approveQuote, loading: isApproving } = useQuoteApproval();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [itemDescriptionVisibility, setItemDescriptionVisibility] = useState<Set<string>>(new Set());
   const [itemNotesVisibility, setItemNotesVisibility] = useState<Set<string>>(new Set());
   const [isSendingEmail, setIsSendingEmail] = useState(false);
@@ -714,7 +715,12 @@ export default function QuoteDetail() {
       toast.error('El cliente no está vinculado a Holded. Importa o crea el contacto en Holded primero.');
       return;
     }
-    
+
+    setShowApproveDialog(true);
+  };
+
+  const handleConfirmApprove = async () => {
+    if (!id) return;
     try {
       await approveQuote({
         quoteId: id,
@@ -728,6 +734,7 @@ export default function QuoteDetail() {
       
       setSelectedItems(new Set());
       setItemQuantities({});
+      setShowApproveDialog(false);
     } catch (error) {
       // Error already handled in hook
     }
