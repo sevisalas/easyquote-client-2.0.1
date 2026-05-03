@@ -253,8 +253,8 @@ async function approveQuoteCore(
     let price = isCustomProductItem(item)
       ? applyItemAdditionals(customBasePrice(item, rq), item, rq)
       : (item.price || 0);
-    if (m?.rows?.length && itemQuantities?.[item.id]) {
-      const sQ = itemQuantities[item.id];
+    if (m?.rows?.length && resolvedQuantities[item.id]) {
+      const sQ = resolvedQuantities[item.id];
       const row = m.rows.find((r: any) => parseQuantity(r.qty) === sQ || parseQuantity(r.quantity) === sQ);
       if (row) {
         const base = parseFloat(row.outs?.find((o: any) => o.type === "Price")?.value || row.price || item.price || 0);
@@ -315,7 +315,7 @@ async function approveQuoteCore(
   const orderItems = itemsToApprove.map((item: any, index: number) => {
     const m = item.multi as any;
     let finalQuantity = resolveQty(item);
-    if (m?.rows?.length > 1 && itemQuantities?.[item.id]) finalQuantity = itemQuantities[item.id];
+    if (m?.rows?.length > 1 && resolvedQuantities[item.id]) finalQuantity = resolvedQuantities[item.id];
 
     const isCustom = isCustomProductItem(item);
     let fPrice = item.price || 0;
@@ -329,8 +329,8 @@ async function approveQuoteCore(
       fPrice = applyItemAdditionals(customBasePrice(item, finalQuantity), item, finalQuantity);
     }
 
-    if (m?.rows?.length > 1 && itemQuantities?.[item.id]) {
-      const sQ = itemQuantities[item.id];
+    if (m?.rows?.length > 1 && resolvedQuantities[item.id]) {
+      const sQ = resolvedQuantities[item.id];
       const row = m.rows.find((r: any) => parseQuantity(r.qty) === sQ || parseQuantity(r.quantity) === sQ);
       fPrompts = syncPromptsWithQuantity(item.prompts, sQ);
       if (row) {
