@@ -26,6 +26,16 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.7.29",
+    date: "2026-05-03",
+    changes: {
+      security: [
+        "Refuerzo de seguridad en políticas RLS: los operarios ya no pueden editar ni eliminar pedidos de venta (solo lectura).",
+        "Privacidad de clientes mejorada: los operarios ya no tienen acceso a datos sensibles (email, teléfono, dirección) en el listado de clientes.",
+      ],
+    },
+  },
+  {
     version: "2.7.28",
     date: "2026-04-30",
     changes: {
