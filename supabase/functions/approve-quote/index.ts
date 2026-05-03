@@ -111,6 +111,72 @@ const applyItemAdditionals = (basePrice: number, item: any, quantity: number): n
 const isCustomProductItem = (item: any) =>
   String(item?.product_id ?? "").trim() === "__CUSTOM_PRODUCT__";
 
+const getYearString = (year: number, format: string) =>
+  format === "YYYY" ? String(year) : String(year % 100).padStart(2, "0");
+
+const getNextOrderNumberFallback = async (supabase: any, organizationId: string) => {
+  const currentYear = new Date().getUTCFullYear();
+
+  const { data: formatRow } = await supabase
+    .from("numbering_formats")
+    .select("prefix, suffix, use_year, year_format, sequential_digits")
+    .eq("organization_id", organizationId)
+    .eq("document_type", "order")
+    .maybeSingle();
+
+  const prefix = formatRow?.prefix ?? "SO-";
+  const suffix = formatRow?.suffix ?? "";
+  const useYear = formatRow?.use_year ?? true;
+  const yearFormat = formatRow?.year_format ?? "YYYY";
+  const digits = formatRow?.sequential_digits ?? 4;
+  const yearBucket = useYear ? currentYear : 0;
+
+  let ordersQuery = supabase
+    .from("sales_orders")
+    .select("order_number, created_at")
+    .eq("organization_id", organizationId)
+    .not("order_number", "is", null);
+
+  if (useYear) {
+    ordersQuery = ordersQuery
+      .gte("created_at", `${currentYear}-01-01T00:00:00.000Z`)
+      .lt("created_at", `${currentYear + 1}-01-01T00:00:00.000Z`);
+  }
+
+  const [{ data: existingOrders }, { data: sequenceRow }] = await Promise.all([
+    ordersQuery,
+    supabase
+      .from("document_sequences")
+      .select("last_number")
+      .eq("organization_id", organizationId)
+      .eq("document_type", "order")
+      .eq("year", yearBucket)
+      .maybeSingle(),
+  ]);
+
+  const existingMax = Math.max(
+    0,
+    ...(existingOrders || []).map((order: any) => {
+      const match = String(order?.order_number ?? "").match(/(\d+)$/);
+      return match ? Number(match[1]) || 0 : 0;
+    }),
+  );
+
+  const nextSequential = Math.max((sequenceRow?.last_number ?? 0) + 1, existingMax + 1, 1);
+  const yearString = useYear ? `${getYearString(currentYear, yearFormat)}-` : "";
+  const orderNumber = `${prefix}${yearString}${String(nextSequential).padStart(digits, "0")}${suffix}`;
+
+  await supabase.from("document_sequences").upsert({
+    organization_id: organizationId,
+    document_type: "order",
+    year: yearBucket,
+    last_number: nextSequential,
+    updated_at: new Date().toISOString(),
+  });
+
+  return orderNumber;
+};
+
 // ---------- main approval logic (port of useQuoteApproval) ----------
 async function approveQuoteCore(
   supabase: any,
@@ -167,13 +233,20 @@ async function approveQuoteCore(
   const organizationId = quote.organization_id;
   if (!organizationId) throw new Error("No se pudo determinar la organización");
 
-  // Order number with retry
+  // Order number with retry. Public portal approvals may not have auth.uid(),
+  // so fall back to service-role sequence generation if the RPC denies access.
   let orderNumber = "";
   for (let i = 0; i < 3; i++) {
     const { data: docNumber, error: docErr } = await supabase
       .rpc("next_document_number", { p_organization_id: organizationId, p_document_type: "order" });
-    if (docErr || !docNumber?.length) throw new Error("Error generando número de pedido");
-    orderNumber = docNumber[0].document_number;
+
+    if (docErr || !docNumber?.length) {
+      console.warn("next_document_number failed in approve-quote, using fallback:", docErr?.message || "sin resultado");
+      orderNumber = await getNextOrderNumberFallback(supabase, organizationId);
+    } else {
+      orderNumber = docNumber[0].document_number;
+    }
+
     const { data: ex } = await supabase
       .from("sales_orders")
       .select("id")
