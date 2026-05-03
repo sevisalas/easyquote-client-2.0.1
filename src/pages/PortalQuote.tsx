@@ -6,7 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Fragment } from "react";
 import { CheckCircle, XCircle, Loader2, FileText, Clock, AlertTriangle } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -261,7 +262,8 @@ const PortalQuote = () => {
                     const checked = selectedItems[item.id] ?? true;
                     const dimmed = isPending && !checked;
                     return (
-                      <tr key={item.id} className={`border-b last:border-0 ${dimmed ? "opacity-40" : ""}`}>
+                      <Fragment key={item.id}>
+                      <tr className={`border-b last:border-0 ${dimmed ? "opacity-40" : ""} ${hasMulti ? "border-b-0" : ""}`}>
                         <td className="py-3 pr-2">
                           <div className="flex items-start gap-2">
                             {isPending && (
@@ -306,39 +308,65 @@ const PortalQuote = () => {
                              </div>
                           </div>
                         </td>
-                        <td className="text-right py-3 px-2 align-top">
-                          {isPending && hasMulti ? (
-                            <Select
-                              value={String(itemQuantities[item.id] ?? "")}
-                              onValueChange={(v) =>
-                                setItemQuantities((prev) => ({ ...prev, [item.id]: Number(v) }))
-                              }
-                            >
-                              <SelectTrigger className="w-28 ml-auto h-8 text-xs">
-                                <SelectValue placeholder="Cant." />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {rows.map((r: any, i: number) => {
-                                  const q = Number(r.qty ?? r.quantity);
-                                  return (
-                                    <SelectItem key={i} value={String(q)}>
-                                      {q.toLocaleString("es-ES")} ud
-                                    </SelectItem>
-                                  );
-                                })}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            qty
-                          )}
-                        </td>
-                        <td className="text-right py-3 px-2 align-top">
-                          {Number(price / (qty || 1)).toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
-                        </td>
-                        <td className="text-right py-3 pl-2 font-medium align-top">
-                          {Number(price).toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
-                        </td>
+                        {hasMulti ? (
+                          <td colSpan={3} className="py-3 px-2 align-top text-right text-xs text-muted-foreground">
+                            {isPending ? "Selecciona la cantidad a aprobar →" : ""}
+                          </td>
+                        ) : (
+                          <>
+                            <td className="text-right py-3 px-2 align-top">{qty}</td>
+                            <td className="text-right py-3 px-2 align-top">
+                              {Number(price / (qty || 1)).toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
+                            </td>
+                            <td className="text-right py-3 pl-2 font-medium align-top">
+                              {Number(price).toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
+                            </td>
+                          </>
+                        )}
                       </tr>
+                      {hasMulti && rows.map((r: any, i: number) => {
+                        const rowQty = Number(r.qty ?? r.quantity);
+                        if (!rowQty) return null;
+                        const rowPrice = Number(
+                          r?.outs?.find((o: any) => o.type === "Price")?.value ?? r?.price ?? 0
+                        );
+                        const isSelected = Number(itemQuantities[item.id]) === rowQty;
+                        const rowDimmed = isPending && (!checked || (checked && !isSelected));
+                        return (
+                          <tr
+                            key={`${item.id}-r${i}`}
+                            className={`border-b last:border-0 ${rowDimmed ? "opacity-50" : ""} ${isPending && checked && isSelected ? "bg-muted/40" : ""}`}
+                          >
+                            <td className="py-2 pl-8 pr-2">
+                              {isPending && checked ? (
+                                <Label className="flex items-center gap-2 cursor-pointer text-sm font-normal">
+                                  <input
+                                    type="radio"
+                                    name={`qty-${item.id}`}
+                                    className="accent-current"
+                                    style={{ accentColor: primaryColor }}
+                                    checked={isSelected}
+                                    onChange={() =>
+                                      setItemQuantities((prev) => ({ ...prev, [item.id]: rowQty }))
+                                    }
+                                  />
+                                  <span>Opción {i + 1}</span>
+                                </Label>
+                              ) : (
+                                <span className="text-xs text-muted-foreground pl-1">Opción {i + 1}</span>
+                              )}
+                            </td>
+                            <td className="text-right py-2 px-2 text-sm">{rowQty.toLocaleString("es-ES")} ud</td>
+                            <td className="text-right py-2 px-2 text-sm">
+                              {Number(rowPrice / (rowQty || 1)).toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
+                            </td>
+                            <td className="text-right py-2 pl-2 text-sm font-medium">
+                              {rowPrice.toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      </Fragment>
                     );
                   })}
                 </tbody>
