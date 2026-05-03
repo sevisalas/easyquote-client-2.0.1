@@ -6,8 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Fragment } from "react";
 import { CheckCircle, XCircle, Loader2, FileText, Clock, AlertTriangle } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -262,8 +262,8 @@ const PortalQuote = () => {
                     const checked = selectedItems[item.id] ?? true;
                     const dimmed = isPending && !checked;
                     return (
-                      <>
-                      <tr key={item.id} className={`border-b last:border-0 ${dimmed ? "opacity-40" : ""} ${hasMulti ? "border-b-0" : ""}`}>
+                      <Fragment key={item.id}>
+                      <tr className={`border-b last:border-0 ${dimmed ? "opacity-40" : ""} ${hasMulti ? "border-b-0" : ""}`}>
                         <td className="py-3 pr-2">
                           <div className="flex items-start gap-2">
                             {isPending && (
@@ -366,7 +366,7 @@ const PortalQuote = () => {
                           </tr>
                         );
                       })}
-                      </>
+                      </Fragment>
                     );
                   })}
                 </tbody>
