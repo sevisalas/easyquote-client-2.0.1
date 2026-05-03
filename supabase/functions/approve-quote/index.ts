@@ -147,11 +147,19 @@ async function approveQuoteCore(
     : quote.items;
   if (!itemsToApprove?.length) throw new Error("No hay items para aprobar");
 
+  // Ensure every multi-qty item has a quantity; fallback to first row if missing
+  const resolvedQuantities: Record<string, number> = { ...(itemQuantities || {}) };
   for (const it of itemsToApprove) {
     const m = it.multi as any;
     if (m?.rows && Array.isArray(m.rows) && m.rows.length > 1) {
-      if (!itemQuantities || !itemQuantities[it.id]) {
-        throw new Error("Debes seleccionar una cantidad para cada item con múltiples opciones");
+      const provided = Number(resolvedQuantities[it.id]);
+      if (!Number.isFinite(provided) || provided <= 0) {
+        const firstQty = Number(m.rows[0]?.qty ?? m.rows[0]?.quantity);
+        if (Number.isFinite(firstQty) && firstQty > 0) {
+          resolvedQuantities[it.id] = firstQty;
+        } else {
+          throw new Error("Debes seleccionar una cantidad para cada item con múltiples opciones");
+        }
       }
     }
   }
