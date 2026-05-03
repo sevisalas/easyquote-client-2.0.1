@@ -275,8 +275,8 @@ const PortalQuote = () => {
                             )}
                             <div className="min-w-0">
                               <div className="font-medium">{item.product_name}</div>
-                              {item.description && item.description.trim() !== item.product_name?.trim() && (
-                                <div className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap leading-relaxed">
+                              {item.description && (
+                                <div className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap leading-relaxed break-words">
                                   {item.description}
                                 </div>
                               )}
