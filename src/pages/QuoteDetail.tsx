@@ -175,6 +175,7 @@ export default function QuoteDetail() {
   const { approveQuote, loading: isApproving } = useQuoteApproval();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [itemDescriptionVisibility, setItemDescriptionVisibility] = useState<Set<string>>(new Set());
   const [itemNotesVisibility, setItemNotesVisibility] = useState<Set<string>>(new Set());
   const [isSendingEmail, setIsSendingEmail] = useState(false);
@@ -714,7 +715,12 @@ export default function QuoteDetail() {
       toast.error('El cliente no está vinculado a Holded. Importa o crea el contacto en Holded primero.');
       return;
     }
-    
+
+    setShowApproveDialog(true);
+  };
+
+  const handleConfirmApprove = async () => {
+    if (!id) return;
     try {
       await approveQuote({
         quoteId: id,
@@ -728,6 +734,7 @@ export default function QuoteDetail() {
       
       setSelectedItems(new Set());
       setItemQuantities({});
+      setShowApproveDialog(false);
     } catch (error) {
       // Error already handled in hook
     }
@@ -1651,6 +1658,32 @@ export default function QuoteDetail() {
               }}
             >
               Confirmar anulación
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Approval Confirmation Dialog */}
+      <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Aprobar presupuesto</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedItems.size > 0
+                ? `Se aprobarán ${selectedItems.size} artículo(s) seleccionado(s) y se creará el pedido correspondiente. Esta acción no se puede deshacer.`
+                : 'Se aprobarán todos los artículos del presupuesto y se creará el pedido correspondiente. Esta acción no se puede deshacer.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isApproving}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isApproving}
+              onClick={(e) => {
+                e.preventDefault();
+                handleConfirmApprove();
+              }}
+            >
+              {isApproving ? 'Aprobando...' : 'Confirmar aprobación'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
