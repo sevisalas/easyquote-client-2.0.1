@@ -273,14 +273,37 @@ const PortalQuote = () => {
                                 }
                               />
                             )}
-                            <div className="min-w-0">
-                              <div className="font-medium">{item.product_name}</div>
-                              {item.description && (
-                                <div className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap leading-relaxed break-words">
-                                  {item.description}
-                                </div>
-                              )}
-                            </div>
+                             <div className="min-w-0">
+                               <div className="font-medium">{item.product_name}</div>
+                               {(() => {
+                                 const desc = (item.description || "").trim();
+                                 const name = (item.product_name || "").trim();
+                                 if (desc && desc !== name) {
+                                   return (
+                                     <div className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap leading-relaxed break-words">
+                                       {desc}
+                                     </div>
+                                   );
+                                 }
+                                 const prompts = Array.isArray(item.prompts) ? item.prompts : [];
+                                 const specs = prompts
+                                   .filter((p: any) => p && p.label && p.value !== undefined && p.value !== null && String(p.value).trim() !== "")
+                                   .map((p: any) => {
+                                     let v = String(p.value);
+                                     if (/^https?:\/\//i.test(v)) {
+                                       const fn = v.split("/").pop() || v;
+                                       v = fn.replace(/\.[a-z0-9]+$/i, "").replace(/[_-]/g, " ");
+                                     }
+                                     return `${p.label}: ${v}`;
+                                   });
+                                 if (specs.length === 0) return null;
+                                 return (
+                                   <div className="text-xs text-muted-foreground mt-1 leading-relaxed break-words">
+                                     {specs.map((s, i) => <div key={i}>{s}</div>)}
+                                   </div>
+                                 );
+                               })()}
+                             </div>
                           </div>
                         </td>
                         <td className="text-right py-3 px-2 align-top">
