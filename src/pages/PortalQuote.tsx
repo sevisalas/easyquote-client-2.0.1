@@ -436,7 +436,7 @@ const PortalQuote = () => {
                     <div key={add.id} className="flex justify-between text-sm">
                       <span className={add.is_discount ? "text-green-600" : ""}>{add.name}</span>
                       <span className={add.is_discount ? "text-green-600" : ""}>
-                        {add.is_discount ? "-" : "+"}{Number(Math.abs(add.value)).toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
+                        {add.is_discount ? "-" : "+"}{formatPortalCurrency(Math.abs(parsePortalNumber(add.value)))}
                       </span>
                     </div>
                   ))}
@@ -449,7 +449,7 @@ const PortalQuote = () => {
             <div className="flex justify-between items-center">
               <span className="text-lg font-semibold">Total</span>
               <span className="text-2xl font-bold" style={{ color: primaryColor }}>
-                {Number(isPending ? visibleSubtotal : (quote.final_price || visibleSubtotal)).toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
+                {formatPortalCurrency(isPending ? visibleSubtotal : (quote.final_price ?? visibleSubtotal))}
               </span>
             </div>
             {isPending && (
