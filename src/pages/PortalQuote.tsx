@@ -26,6 +26,7 @@ interface PortalQuoteData {
     items: Array<{
       id: string;
       product_name: string;
+      name?: string | null;
       description: string | null;
       description_manual?: boolean | null;
       quantity: number;
@@ -268,7 +269,7 @@ const PortalQuote = () => {
 
   const getItemDescriptionForSelection = (item: any, selectedQty: number | null) => {
     const description = (item.description || "").trim();
-    const productName = (item.product_name || "").trim();
+    const productName = (item.name || item.product_name || "").trim();
     const baseAutoDescription = buildAutoDescriptionFromPrompts(item.prompts)?.trim();
     const selectedPrompts = selectedQty ? syncPromptsWithQuantity(item.prompts, selectedQty) : item.prompts;
     const selectedAutoDescription = buildAutoDescriptionFromPrompts(selectedPrompts)?.trim();
@@ -368,10 +369,10 @@ const PortalQuote = () => {
                               />
                             )}
                              <div className="min-w-0">
-                               <div className="font-medium">{item.product_name}</div>
+                               <div className="font-medium">{item.name || item.product_name}</div>
                                {(() => {
                                  const desc = (selectedDescription || "").trim();
-                                 const name = (item.product_name || "").trim();
+                                  const name = (item.name || item.product_name || "").trim();
                                  if (desc && desc !== name) {
                                    return (
                                      <div className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap leading-relaxed break-words">
