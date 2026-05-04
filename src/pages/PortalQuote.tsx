@@ -111,6 +111,7 @@ const PortalQuote = () => {
   const [actionDone, setActionDone] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
+  const [approvalMode, setApprovalMode] = useState(false);
 
   const primaryColor = useMemo(() => {
     if (!data?.organization?.primary_color) return "#c83077";
@@ -243,7 +244,8 @@ const PortalQuote = () => {
   if (!data) return null;
 
   const { quote, organization, customer_name } = data;
-  const isPending = !actionDone && (quote.status === "sent" || quote.status === "draft");
+  const canRespond = !actionDone && (quote.status === "sent" || quote.status === "draft");
+  const isPending = canRespond && approvalMode;
   const getItemPriceForSelection = (item: any) => {
     const rows = item.multi?.rows;
     if (Array.isArray(rows) && rows.length > 0) {
@@ -495,7 +497,7 @@ const PortalQuote = () => {
               )}
             </CardContent>
           </Card>
-        ) : (
+        ) : !approvalMode ? (
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="text-lg">¿Qué desea hacer con este presupuesto?</CardTitle>
@@ -511,10 +513,10 @@ const PortalQuote = () => {
                 <Button
                   className="flex-1 text-white"
                   style={{ backgroundColor: primaryColor }}
-                  onClick={() => handleAction("approved")}
+                  onClick={() => { setError(null); setApprovalMode(true); }}
                   disabled={submitting}
                 >
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+                  <CheckCircle className="h-4 w-4 mr-2" />
                   Aprobar presupuesto
                 </Button>
                 <Button
@@ -525,6 +527,43 @@ const PortalQuote = () => {
                 >
                   {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <XCircle className="h-4 w-4 mr-2" />}
                   Rechazar
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-lg">Selecciona los artículos y cantidades a aprobar</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Marca los artículos que quieres aprobar. Para los que tengan varias opciones de cantidad, elige una.
+              </p>
+              <Textarea
+                placeholder="Añadir un comentario (opcional)..."
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                rows={3}
+              />
+              {error && <p className="text-sm text-red-600">{error}</p>}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => { setApprovalMode(false); setError(null); }}
+                  disabled={submitting}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  className="flex-1 text-white"
+                  style={{ backgroundColor: primaryColor }}
+                  onClick={() => handleAction("approved")}
+                  disabled={submitting}
+                >
+                  {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+                  Confirmar aprobación
                 </Button>
               </div>
             </CardContent>
