@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
 
       if (!tokenError && tokenData) {
         // Use the app's published URL
-        const appUrl = "https://easyquote-client.lovable.app";
+        const appUrl = "https://app.easyquote.cloud";
         portalUrl = `${appUrl}/portal/${tokenData.token}`;
       }
     }
