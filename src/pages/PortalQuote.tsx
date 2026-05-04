@@ -268,6 +268,13 @@ const PortalQuote = () => {
     return sum + price;
   }, 0);
 
+  const visibleAdditionals = (quote.additionals || []).reduce((sum, add) => {
+    const value = Math.abs(parsePortalNumber(add.value));
+    return sum + (add.is_discount ? -value : value);
+  }, 0);
+
+  const displayedTotal = visibleSubtotal + visibleAdditionals;
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header with org branding */}
@@ -303,7 +310,6 @@ const PortalQuote = () => {
                 <thead>
                   <tr className="border-b">
                     <th className="text-left py-2 pr-2">Producto</th>
-                    <th className="text-right py-2 px-2">Cant.</th>
                     <th className="text-right py-2 pl-2">Total</th>
                   </tr>
                 </thead>
@@ -361,18 +367,20 @@ const PortalQuote = () => {
                              </div>
                           </div>
                         </td>
-                        {hasMulti ? (
-                          <td colSpan={2} className="py-3 px-2 align-top text-right text-xs text-muted-foreground">
-                            {isPending ? "Selecciona la cantidad a aprobar →" : ""}
-                          </td>
-                        ) : (
-                          <>
-                            <td className="text-right py-3 px-2 align-top">{qty}</td>
-                            <td className="text-right py-3 pl-2 font-medium align-top">
-                              {formatPortalCurrency(price)}
-                            </td>
-                          </>
-                        )}
+                        <td className="text-right py-3 pl-2 align-top">
+                          {hasMulti ? (
+                            <div className="space-y-1">
+                              {isPending ? (
+                                <div className="text-xs text-muted-foreground">Selecciona la cantidad a aprobar →</div>
+                              ) : qty ? (
+                                <div className="text-xs text-muted-foreground">{formatPortalQuantity(qty)} ud</div>
+                              ) : null}
+                              <div className="font-medium">{formatPortalCurrency(price)}</div>
+                            </div>
+                          ) : (
+                            <div className="font-medium align-top">{formatPortalCurrency(price)}</div>
+                          )}
+                        </td>
                       </tr>
                       {hasMulti && rows.map((r: any, i: number) => {
                         const rowQty = parsePortalQuantity(r.qty ?? r.quantity);
@@ -400,13 +408,12 @@ const PortalQuote = () => {
                                       setItemQuantities((prev) => ({ ...prev, [item.id]: rowQty }))
                                     }
                                   />
-                                  <span>Opción {i + 1}</span>
+                                  <span>Opción {i + 1} · {formatPortalQuantity(rowQty)} ud</span>
                                 </Label>
                               ) : (
-                                <span className="text-xs text-muted-foreground pl-1">Opción {i + 1}</span>
+                                <span className="text-xs text-muted-foreground pl-1">Opción {i + 1} · {formatPortalQuantity(rowQty)} ud</span>
                               )}
                             </td>
-                            <td className="text-right py-2 px-2 text-sm">{formatPortalQuantity(rowQty)} ud</td>
                             <td className="text-right py-2 pl-2 text-sm font-medium">
                               {formatPortalCurrency(rowPrice)}
                             </td>
@@ -442,12 +449,12 @@ const PortalQuote = () => {
             <div className="flex justify-between items-center">
               <span className="text-lg font-semibold">Total</span>
               <span className="text-2xl font-bold" style={{ color: primaryColor }}>
-                {formatPortalCurrency(isPending ? visibleSubtotal : (quote.final_price ?? visibleSubtotal))}
+                {formatPortalCurrency(displayedTotal)}
               </span>
             </div>
             {isPending && (
               <p className="text-xs text-muted-foreground text-right">
-                Total estimado según artículos y cantidades seleccionadas (sin recargos/descuentos globales).
+                Total estimado según artículos, cantidades y ajustes seleccionados.
               </p>
             )}
 
