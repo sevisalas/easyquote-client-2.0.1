@@ -261,3 +261,68 @@ export const resolveApprovedQuoteItemState = (item: any) => {
     selectedRow,
   };
 };
+
+const isQuantityPromptText = (text: string) => {
+  const t = normalizePromptKey(text);
+  return (
+    t.includes('CANTIDAD') ||
+    t.includes('UNIDADES') ||
+    t.includes('EJEMPLAR') ||
+    t.includes('QUANTITY') ||
+    t === 'QTY'
+  );
+};
+
+/**
+ * Updates the "quantity" prompt (currentValue) in every component instance
+ * of a composite_data structure. This keeps each component description and
+ * stored prompts aligned with the approved/selected quantity in multi-qty
+ * approvals.
+ */
+export const syncCompositeDataWithQuantity = (compositeData: any, quantity: number): any => {
+  if (!compositeData || typeof compositeData !== 'object') return compositeData;
+  const components = compositeData.components;
+  if (!components || typeof components !== 'object') return compositeData;
+
+  const newComponents: any = Array.isArray(components) ? [...components] : { ...components };
+
+  const updateInstance = (instance: any) => {
+    if (!instance || typeof instance !== 'object') return instance;
+    const prompts = Array.isArray(instance.prompts) ? instance.prompts : null;
+    if (!prompts) return instance;
+    const newPrompts = prompts.map((p: any) => {
+      if (!p || typeof p !== 'object') return p;
+      const text = p.promptText || p.label || p.name || p.id || '';
+      if (isQuantityPromptText(String(text))) {
+        const next = { ...p };
+        if ('currentValue' in p) next.currentValue = String(quantity);
+        if ('value' in p) next.value = String(quantity);
+        if (!('currentValue' in p) && !('value' in p)) next.currentValue = String(quantity);
+        return next;
+      }
+      return p;
+    });
+    return { ...instance, prompts: newPrompts };
+  };
+
+  for (const compId of Object.keys(newComponents)) {
+    const compEntry = newComponents[compId];
+    if (!compEntry || typeof compEntry !== 'object') continue;
+    // Shape: { [instanceIndex]: instance }
+    const instances = { ...compEntry };
+    let changed = false;
+    for (const idx of Object.keys(instances)) {
+      const inst = instances[idx];
+      // It might be an instance directly (has prompts) or a map of instances
+      if (inst && typeof inst === 'object') {
+        if (Array.isArray((inst as any).prompts)) {
+          instances[idx] = updateInstance(inst);
+          changed = true;
+        }
+      }
+    }
+    if (changed) newComponents[compId] = instances;
+  }
+
+  return { ...compositeData, components: newComponents };
+};
