@@ -49,12 +49,22 @@ interface PortalQuoteData {
   existing_action: { action: string; created_at: string; comment: string | null } | null;
 }
 
+const normalizePortalNumericString = (value: unknown): string => {
+  const raw = String(value ?? "").trim();
+  if (!raw) return "";
+
+  return raw
+    .replace(/\s+/g, "")
+    .replace(/[^\d,.-]/g, "")
+    .replace(/(?!^)-/g, "");
+};
+
 const parsePortalQuantity = (value: unknown): number | null => {
   if (typeof value === "number") {
     return Number.isFinite(value) && value > 0 ? value : null;
   }
 
-  const raw = String(value ?? "").trim();
+  const raw = normalizePortalNumericString(value);
   if (!raw) return null;
 
   const normalized = raw.includes(",")
@@ -67,13 +77,18 @@ const parsePortalQuantity = (value: unknown): number | null => {
 
 const parsePortalNumber = (value: unknown): number => {
   if (typeof value === "number") return Number.isFinite(value) ? value : 0;
-  const raw = String(value ?? "").trim();
+  const raw = normalizePortalNumericString(value);
   if (!raw) return 0;
   const normalized = raw.includes(",")
     ? raw.replace(/\./g, "").replace(",", ".")
     : raw;
   const parsed = Number.parseFloat(normalized);
   return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const formatPortalCurrency = (value: unknown): string => {
+  const parsed = parsePortalNumber(value);
+  return parsed.toLocaleString("es-ES", { style: "currency", currency: "EUR" });
 };
 
 const formatPortalQuantity = (value: unknown): string => {
@@ -355,10 +370,10 @@ const PortalQuote = () => {
                           <>
                             <td className="text-right py-3 px-2 align-top">{qty}</td>
                             <td className="text-right py-3 px-2 align-top">
-                              {Number(price / (qty || 1)).toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
+                              {formatPortalCurrency(price / (qty || 1))}
                             </td>
                             <td className="text-right py-3 pl-2 font-medium align-top">
-                              {Number(price).toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
+                              {formatPortalCurrency(price)}
                             </td>
                           </>
                         )}
@@ -397,10 +412,10 @@ const PortalQuote = () => {
                             </td>
                             <td className="text-right py-2 px-2 text-sm">{formatPortalQuantity(rowQty)} ud</td>
                             <td className="text-right py-2 px-2 text-sm">
-                              {Number(rowPrice / (rowQty || 1)).toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
+                              {formatPortalCurrency(rowPrice / (rowQty || 1))}
                             </td>
                             <td className="text-right py-2 pl-2 text-sm font-medium">
-                              {rowPrice.toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
+                              {formatPortalCurrency(rowPrice)}
                             </td>
                           </tr>
                         );
