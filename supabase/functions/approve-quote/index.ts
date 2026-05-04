@@ -395,7 +395,9 @@ async function approveQuoteCore(
     let fMulti = item.multi;
     let fOutputs = Array.isArray(item.outputs) ? item.outputs : [];
     let fPrompts = syncPromptsWithQuantity(item.prompts, finalQuantity);
-    const isDescManual = item.description_manual === true;
+    const baseAutoDesc = buildAutoDescriptionFromPrompts(item.prompts);
+    const hasManualDescription = item.description_manual === true
+      || (!!item.description?.trim() && item.description?.trim() !== (item.product_name || item.name || "").trim() && item.description?.trim() !== (baseAutoDesc || "").trim());
     let fDesc = item.description;
 
     if (isCustom) {
@@ -423,7 +425,7 @@ async function approveQuoteCore(
     }
 
     if (isCustom) fDesc = item.description || fDesc || "";
-    else if (isDescManual && fDesc?.trim()) { /* keep */ }
+    else if (hasManualDescription && fDesc?.trim()) { /* keep */ }
     else fDesc = buildAutoDescriptionFromPrompts(fPrompts) || fDesc || "";
 
     return {
@@ -431,7 +433,7 @@ async function approveQuoteCore(
       product_id: item.product_id,
       product_name: item.name || item.product_name,
       description: fDesc,
-      description_manual: isCustom ? true : isDescManual,
+      description_manual: isCustom ? true : hasManualDescription,
       quantity: finalQuantity,
       price: fPrice,
       outputs: fOutputs,
