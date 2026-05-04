@@ -1262,11 +1262,10 @@ export default function QuoteDetail() {
                                 <Select
                                   value={itemQuantities[item.id]?.toString() || ''}
                                   onValueChange={(value) => {
-                                    // Parse Spanish-formatted numbers (e.g., "1.000" → 1000)
-                                    const parsed = Number(String(value).replace(/\./g, '').replace(',', '.'));
+                                    const parsed = parseLocaleNumber(value);
                                     setItemQuantities(prev => ({
                                       ...prev,
-                                      [item.id]: Number.isFinite(parsed) ? parsed : parseInt(value)
+                                      [item.id]: parsed
                                     }));
                                   }}
                                 >
@@ -1310,8 +1309,8 @@ export default function QuoteDetail() {
                                   })
                                   .map((row: any, idx: number) => {
                                     const qty = row.qty || row.quantity;
-                                    const rowPrice = parseFloat(row.outs?.find((o: any) => o.type === 'Price')?.value || row.price || 0);
-                                    const isApproved = Number(qty) === Number(item.accepted_quantity);
+                                    const rowPrice = parseLocaleNumber(row.outs?.find((o: any) => o.type === 'Price')?.value ?? row.price ?? 0);
+                                    const isApproved = parseLocaleNumber(qty) === parseLocaleNumber(item.accepted_quantity);
                                     return (
                                       <div 
                                         key={idx} 

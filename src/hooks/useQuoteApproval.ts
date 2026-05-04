@@ -254,10 +254,10 @@ export const useQuoteApproval = () => {
             parseQuantity(row.qty) === selectedQuantity || parseQuantity(row.quantity) === selectedQuantity
           );
           if (selectedRow) {
-            const basePrice = parseFloat(
-              selectedRow.outs?.find((o: any) => o.type === 'Price')?.value ||
-                selectedRow.price ||
-                item.price ||
+            const basePrice = parseLocaleNumber(
+              selectedRow.outs?.find((o: any) => o.type === 'Price')?.value ??
+                selectedRow.price ??
+                item.price ??
                 0
             );
             itemPrice = applyItemAdditionals(basePrice, item, selectedQuantity);
@@ -367,10 +367,10 @@ export const useQuoteApproval = () => {
           finalPrompts = syncPromptsWithSelectedQuantity(item, selectedQuantity);
 
           if (selectedRow) {
-            const basePrice = parseFloat(
-              selectedRow.outs?.find((o: any) => o.type === 'Price')?.value ||
-                selectedRow.price ||
-                item.price ||
+            const basePrice = parseLocaleNumber(
+              selectedRow.outs?.find((o: any) => o.type === 'Price')?.value ??
+                selectedRow.price ??
+                item.price ??
                 0
             );
             // Apply item_additionals to the selected row's base price
@@ -387,10 +387,10 @@ export const useQuoteApproval = () => {
         // If there's only one row in multi, keep that row price (with additionals)
         if (multi?.rows && Array.isArray(multi.rows) && multi.rows.length === 1) {
           const singleRow = multi.rows[0];
-          const basePrice = parseFloat(
-            singleRow.outs?.find((o: any) => o.type === 'Price')?.value ||
-              singleRow.price ||
-              item.price ||
+          const basePrice = parseLocaleNumber(
+            singleRow.outs?.find((o: any) => o.type === 'Price')?.value ??
+              singleRow.price ??
+              item.price ??
               0
           );
           const rowQty = parseQuantity(singleRow.qty) || parseQuantity(singleRow.quantity) || finalQuantity;
