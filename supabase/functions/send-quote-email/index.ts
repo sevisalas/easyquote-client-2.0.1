@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { quoteId, recipientEmail, recipientName, subject, body, pdfUrl } = await req.json();
+    const { quoteId, recipientEmail, recipientName, subject, body, pdfUrl, appUrl: appUrlFromClient } = await req.json();
 
     if (!quoteId || !recipientEmail) {
       return new Response(JSON.stringify({ error: "quoteId y recipientEmail son obligatorios" }), {
@@ -76,8 +76,25 @@ Deno.serve(async (req) => {
         .single();
 
       if (!tokenError && tokenData) {
-        // Use the app's published URL
-        const appUrl = "https://app.easyquote.cloud";
+        // Derive the app URL from the request (origin/referer) so the portal
+        // link always points to the same deployment that triggered the email.
+        // Fallback order: explicit appUrl from client → Origin header → Referer header → published URL.
+        let appUrl = (appUrlFromClient && typeof appUrlFromClient === "string") ? appUrlFromClient : "";
+        if (!appUrl) {
+          const originHeader = req.headers.get("origin") || "";
+          if (originHeader) appUrl = originHeader;
+        }
+        if (!appUrl) {
+          const refererHeader = req.headers.get("referer") || "";
+          if (refererHeader) {
+            try {
+              const u = new URL(refererHeader);
+              appUrl = `${u.protocol}//${u.host}`;
+            } catch (_) { /* ignore */ }
+          }
+        }
+        if (!appUrl) appUrl = "https://app.easyquote.cloud";
+        appUrl = appUrl.replace(/\/$/, "");
         portalUrl = `${appUrl}/portal/${tokenData.token}`;
       }
     }
