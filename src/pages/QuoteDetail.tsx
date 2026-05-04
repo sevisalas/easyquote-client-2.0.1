@@ -87,6 +87,13 @@ const parseLocaleNumber = (value: unknown): number => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const isUnitPricePrompt = (promptKey: string, promptData: any) => {
+  const promptId = String(promptData?.id || promptData?.name || promptKey || '').trim();
+  const promptLabel = String(promptData?.label || promptKey || '').trim().toLowerCase();
+
+  return promptId === 'custom_unit_price' || promptLabel.includes('precio unitario');
+};
+
 const buildItemAdditionalsBreakdown = (item: any, finalPrice: number, resolvedQuantity: number) => {
   const additionals = Array.isArray(item?.item_additionals) ? item.item_additionals : [];
   if (additionals.length === 0) {
@@ -146,19 +153,7 @@ const buildItemAdditionalsBreakdown = (item: any, finalPrice: number, resolvedQu
 };
 
 const getDisplayedItemPrice = (item: any): number => {
-  if (item?.product_id !== '__CUSTOM_PRODUCT__' || !Array.isArray(item?.prompts)) {
-    return Number(item?.price || 0);
-  }
-  const qtyPrompt = item.prompts.find((prompt: any) => String(prompt?.id || prompt?.name || '').trim() === 'custom_quantity');
-  const unitPricePrompt = item.prompts.find((prompt: any) => String(prompt?.id || prompt?.name || '').trim() === 'custom_unit_price');
-  // Sin fallback a 1: si no hay cantidad válida, usamos el precio total ya persistido del item.
-  const rawQty = qtyPrompt?.value ?? item.quantity;
-  const qty = parseLocaleNumber(rawQty);
-  if (!Number.isFinite(qty) || qty <= 0) {
-    return Number(item?.price || 0);
-  }
-  const unitPrice = parseLocaleNumber(unitPricePrompt?.value);
-  return unitPrice > 0 ? unitPrice * qty : Number(item?.price || 0);
+  return parseLocaleNumber(item?.price || 0);
 };
 
 export default function QuoteDetail() {
@@ -1131,7 +1126,8 @@ export default function QuoteDetail() {
                    const compositeData = (item as any).composite_data;
                    const isComposite = compositeData?.components && Object.keys(compositeData.components).length > 0;
                    const isCustomProduct = !item.product_id || item.product_id === '__CUSTOM_PRODUCT__';
-                   const hasDetails = isCustomProduct ? !!item.description : (Object.keys(itemPrompts).length > 0 || itemOutputs.length > 0 || isComposite || (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0));
+                   const itemDescription = item.description || approvedState?.resolvedDescription || '';
+                   const hasDetails = isCustomProduct ? !!itemDescription : (Object.keys(itemPrompts).length > 0 || itemOutputs.length > 0 || isComposite || (item.item_additionals && Array.isArray(item.item_additionals) && item.item_additionals.length > 0));
                    const isExpanded = expandedItems.has(index);
                   
                   return (
