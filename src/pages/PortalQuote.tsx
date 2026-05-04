@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label";
 import { Fragment } from "react";
 import { CheckCircle, XCircle, Loader2, FileText, Clock, AlertTriangle } from "lucide-react";
 import { buildAutoDescriptionFromPrompts, syncPromptsWithQuantity, type QuantityPromptResolver } from "@/utils/approvedMultiQuantity";
-import { supabase } from "@/integrations/supabase/client";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -25,6 +24,7 @@ interface PortalQuoteData {
     created_at: string;
     organization_id: string;
     validity_days: number | null;
+    quantity_prompt_settings?: Record<string, QuantityPromptResolver>;
     items: Array<{
       id: string;
       product_id?: string | null;
@@ -118,7 +118,6 @@ const PortalQuote = () => {
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
   const [approvalMode, setApprovalMode] = useState(false);
-  const [quantityPromptByProduct, setQuantityPromptByProduct] = useState<Record<string, QuantityPromptResolver>>({});
 
   const primaryColor = useMemo(() => {
     if (!data?.organization?.primary_color) return "#c83077";
@@ -148,45 +147,6 @@ const PortalQuote = () => {
     setSelectedItems(sel);
     setItemQuantities(qty);
   }, [data?.quote?.items]);
-
-  useEffect(() => {
-    const loadQuantityPromptSettings = async () => {
-      const organizationId = data?.quote?.organization_id;
-      const productIds = Array.from(new Set((data?.quote?.items || []).map((item) => String(item.product_id ?? '').trim()).filter(Boolean)));
-
-      if (!organizationId || productIds.length === 0) {
-        setQuantityPromptByProduct({});
-        return;
-      }
-
-      const { data: settings, error: settingsError } = await supabase
-        .from("product_prompt_settings")
-        .select("easyquote_product_id, prompt_name, label")
-        .eq("organization_id", organizationId)
-        .eq("is_quantity", true)
-        .in("easyquote_product_id", productIds);
-
-      if (settingsError) {
-        console.warn("PortalQuote: no se pudo cargar is_quantity, usando heurística", settingsError);
-        setQuantityPromptByProduct({});
-        return;
-      }
-
-      const nextMap = (settings || []).reduce<Record<string, QuantityPromptResolver>>((acc, row) => {
-        if (!acc[row.easyquote_product_id]) {
-          acc[row.easyquote_product_id] = {
-            promptName: row.prompt_name,
-            label: row.label,
-          };
-        }
-        return acc;
-      }, {});
-
-      setQuantityPromptByProduct(nextMap);
-    };
-
-    void loadQuantityPromptSettings();
-  }, [data?.quote?.organization_id, data?.quote?.items]);
 
   const fetchQuoteData = async () => {
     try {
@@ -313,7 +273,7 @@ const PortalQuote = () => {
   const getItemDescriptionForSelection = (item: any, selectedQty: number | null) => {
     const description = (item.description || "").trim();
     const productName = (item.name || item.product_name || "").trim();
-    const quantityResolver = item.product_id ? quantityPromptByProduct[String(item.product_id)] : undefined;
+    const quantityResolver = item.product_id ? data?.quote?.quantity_prompt_settings?.[String(item.product_id)] : undefined;
     const baseAutoDescription = buildAutoDescriptionFromPrompts(item.prompts)?.trim();
     const selectedPrompts = selectedQty ? syncPromptsWithQuantity(item.prompts, selectedQty, quantityResolver) : item.prompts;
     const selectedAutoDescription = buildAutoDescriptionFromPrompts(selectedPrompts)?.trim();
