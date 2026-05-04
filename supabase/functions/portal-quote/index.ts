@@ -127,7 +127,6 @@ Deno.serve(async (req) => {
       .from("quote_portal_tokens")
       .select("*")
       .eq("token", token)
-      .eq("is_active", true)
       .maybeSingle();
 
     if (tokenError || !tokenData) {
@@ -142,6 +141,14 @@ Deno.serve(async (req) => {
         status: 410,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // If token is inactive, only allow GET (read-only view of already-acted quote)
+    if (!tokenData.is_active && req.method !== "GET" && req.method !== "OPTIONS") {
+      return new Response(
+        JSON.stringify({ error: "Este presupuesto ya ha sido respondido" }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // GET: return quote data for portal view
