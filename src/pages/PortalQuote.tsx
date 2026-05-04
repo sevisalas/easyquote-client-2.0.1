@@ -252,6 +252,10 @@ const PortalQuote = () => {
   const { quote, organization, customer_name } = data;
   const canRespond = !actionDone && (quote.status === "sent" || quote.status === "draft");
   const isPending = canRespond && approvalMode;
+  // After approval, hide items that were not accepted
+  const visibleItems = actionDone === "approved"
+    ? quote.items.filter((it: any) => it.accepted !== false)
+    : quote.items;
   const getItemPriceForSelection = (item: any) => {
     const rows = item.multi?.rows;
     if (Array.isArray(rows) && rows.length > 0) {
@@ -302,7 +306,7 @@ const PortalQuote = () => {
     return selectedAutoDescription || null;
   };
 
-  const visibleSubtotal = quote.items.reduce((sum, item) => {
+  const visibleSubtotal = visibleItems.reduce((sum, item) => {
     if (isPending && !selectedItems[item.id]) return sum;
     const { price } = getItemPriceForSelection(item);
     return sum + price;
@@ -357,7 +361,7 @@ const PortalQuote = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {quote.items.map((item, itemIndex) => {
+                  {visibleItems.map((item, itemIndex) => {
                     const rows = (item.multi as any)?.rows;
                     const hasMulti = Array.isArray(rows) && rows.length > 1;
                     const { qty, price } = getItemPriceForSelection(item);
@@ -457,7 +461,7 @@ const PortalQuote = () => {
                           </tr>
                         );
                       })}
-                       {itemIndex < quote.items.length - 1 && (
+                       {itemIndex < visibleItems.length - 1 && (
                          <tr aria-hidden="true">
                            <td colSpan={2} className="py-0">
                              <div className="my-2 h-[2px] w-full bg-border/80" />
