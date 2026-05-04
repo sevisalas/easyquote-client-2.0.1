@@ -183,7 +183,7 @@ Deno.serve(async (req) => {
         .select(`
           id, quote_number, status, final_price, notes, created_at,
           organization_id, customer_id,
-          items:quote_items(id, product_name, name, description, description_manual, quantity, price, prompts, outputs, multi, item_additionals, product_id),
+          items:quote_items(id, product_name, name, description, description_manual, quantity, price, prompts, outputs, multi, item_additionals, product_id, accepted, accepted_quantity),
           quote_additionals:quote_additionals(id, name, value, is_discount)
         `)
         .eq("id", tokenData.quote_id)
