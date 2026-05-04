@@ -372,7 +372,7 @@ const PortalQuote = () => {
                         <td className="text-right py-3 pl-2 align-top">
                           {hasMulti ? (
                             <div className="space-y-1">
-                              {isPending ? (
+                              {isPending && !itemQuantities[item.id] ? (
                                 <div className="text-xs text-muted-foreground">Selecciona la cantidad a aprobar →</div>
                               ) : qty ? (
                                 <div className="text-xs text-muted-foreground">{formatPortalQuantity(qty)} ud</div>
