@@ -226,6 +226,32 @@ Deno.serve(async (req) => {
         .limit(1)
         .maybeSingle();
 
+      const productIds = Array.from(new Set(
+        (quote.items || [])
+          .map((item: any) => String(item?.product_id ?? "").trim())
+          .filter(Boolean)
+      ));
+
+      let quantityPromptSettings: Record<string, { promptName: string | null; label: string | null }> = {};
+      if (quote.organization_id && productIds.length > 0) {
+        const { data: quantitySettings } = await supabase
+          .from("product_prompt_settings")
+          .select("easyquote_product_id, prompt_name, label")
+          .eq("organization_id", quote.organization_id)
+          .eq("is_quantity", true)
+          .in("easyquote_product_id", productIds);
+
+        quantityPromptSettings = (quantitySettings || []).reduce((acc: Record<string, { promptName: string | null; label: string | null }>, row: any) => {
+          if (!acc[row.easyquote_product_id]) {
+            acc[row.easyquote_product_id] = {
+              promptName: row.prompt_name ?? null,
+              label: row.label ?? null,
+            };
+          }
+          return acc;
+        }, {});
+      }
+
       return new Response(
         JSON.stringify({
           quote: {
@@ -235,7 +261,9 @@ Deno.serve(async (req) => {
             final_price: quote.final_price,
             notes: quote.notes,
             created_at: quote.created_at,
+            organization_id: quote.organization_id,
             validity_days: null,
+            quantity_prompt_settings: quantityPromptSettings,
             items: quote.items,
             additionals: quote.quote_additionals,
           },
