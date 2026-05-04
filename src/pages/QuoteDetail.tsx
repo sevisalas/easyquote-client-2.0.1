@@ -453,6 +453,7 @@ export default function QuoteDetail() {
           recipientEmail: customer.email,
           recipientName: customer.name,
           pdfUrl,
+          appUrl: window.location.origin,
         },
       });
 
