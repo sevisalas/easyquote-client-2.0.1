@@ -1519,9 +1519,6 @@ export default function QuoteDetail() {
                               )}
                             </CollapsibleContent>
                           </div>
-                            <div className="text-right">
-                              <p className="text-base font-semibold text-primary">{fmtEUR(displayedItemPrice)}</p>
-                            </div>
                         </div>
                       </div>
                     </Collapsible>
