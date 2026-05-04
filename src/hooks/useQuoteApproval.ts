@@ -10,6 +10,7 @@ import {
   parseQuantity,
   promptsToArray,
   syncPromptsWithQuantity,
+  syncCompositeDataWithQuantity,
 } from "@/utils/approvedMultiQuantity";
 import { resolveItemQuantityStrict, buildQuantityErrorMessage, isCustomProductItem } from "@/utils/strictQuantity";
 
@@ -422,7 +423,9 @@ export const useQuoteApproval = () => {
           prompts: finalPrompts,
           multi: finalMulti,
           position: index,
-          composite_data: item.composite_data || null,
+          composite_data: item.composite_data
+            ? syncCompositeDataWithQuantity(item.composite_data, finalQuantity)
+            : null,
           item_additionals: item.item_additionals || null,
         };
       });
