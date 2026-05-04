@@ -320,10 +320,15 @@ const PortalQuote = () => {
       {/* Header with org branding */}
       <div className="w-full py-6 px-4" style={{ backgroundColor: primaryColor }}>
         <div className="max-w-3xl mx-auto flex items-center gap-4">
-          {organization.logo_url && (
-            <img src={organization.logo_url} alt={organization.name} className="h-10 w-auto rounded bg-white/90 p-1" />
+          {organization.logo_url ? (
+            <img
+              src={organization.logo_url}
+              alt={organization.name}
+              className="h-12 w-auto rounded bg-white/90 p-1.5"
+            />
+          ) : (
+            <h1 className="text-white text-xl font-bold">{organization.name}</h1>
           )}
-          <h1 className="text-white text-xl font-bold">{organization.name}</h1>
         </div>
       </div>
 

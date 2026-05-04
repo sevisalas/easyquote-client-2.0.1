@@ -205,6 +205,15 @@ Deno.serve(async (req) => {
         .eq("is_active", true)
         .maybeSingle();
 
+      // Get PDF configuration logo (preferred over theme logo for portal header)
+      const { data: pdfConfig } = await supabase
+        .from("pdf_configurations")
+        .select("logo_url")
+        .eq("organization_id", quote.organization_id)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
       // Get customer name
       let customerName = "";
       if (quote.customer_id) {
@@ -269,7 +278,7 @@ Deno.serve(async (req) => {
           },
           organization: {
             name: org?.name || "",
-            logo_url: theme?.logo_url || null,
+            logo_url: pdfConfig?.logo_url || theme?.logo_url || null,
             primary_color: theme?.primary_color || null,
           },
           customer_name: customerName,
