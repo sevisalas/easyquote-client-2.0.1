@@ -111,6 +111,7 @@ const PortalQuote = () => {
   const [actionDone, setActionDone] = useState<string | null>(null);
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
+  const [approvalMode, setApprovalMode] = useState(false);
 
   const primaryColor = useMemo(() => {
     if (!data?.organization?.primary_color) return "#c83077";
@@ -243,7 +244,8 @@ const PortalQuote = () => {
   if (!data) return null;
 
   const { quote, organization, customer_name } = data;
-  const isPending = !actionDone && (quote.status === "sent" || quote.status === "draft");
+  const canRespond = !actionDone && (quote.status === "sent" || quote.status === "draft");
+  const isPending = canRespond && approvalMode;
   const getItemPriceForSelection = (item: any) => {
     const rows = item.multi?.rows;
     if (Array.isArray(rows) && rows.length > 0) {
