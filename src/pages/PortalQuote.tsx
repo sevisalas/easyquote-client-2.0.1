@@ -49,6 +49,32 @@ interface PortalQuoteData {
   existing_action: { action: string; created_at: string; comment: string | null } | null;
 }
 
+const parsePortalQuantity = (value: unknown): number | null => {
+  if (typeof value === "number") {
+    return Number.isFinite(value) && value > 0 ? value : null;
+  }
+
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+
+  const normalized = raw.includes(",")
+    ? raw.replace(/\./g, "").replace(",", ".")
+    : raw;
+
+  const parsed = Number.parseFloat(normalized);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+
+const formatPortalQuantity = (value: unknown): string => {
+  const parsed = parsePortalQuantity(value);
+  if (parsed === null) return String(value ?? "").trim();
+
+  return parsed.toLocaleString("es-ES", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 3,
+  });
+};
+
 const PortalQuote = () => {
   const { token } = useParams<{ token: string }>();
   const [data, setData] = useState<PortalQuoteData | null>(null);
@@ -79,8 +105,10 @@ const PortalQuote = () => {
       sel[it.id] = true;
       const rows = (it.multi as any)?.rows;
       if (Array.isArray(rows) && rows.length > 0) {
-        const firstQty = Number(rows[0]?.qty ?? rows[0]?.quantity ?? it.quantity ?? 1);
-        qty[it.id] = firstQty;
+        const firstQty = parsePortalQuantity(rows[0]?.qty ?? rows[0]?.quantity ?? it.quantity ?? 1);
+        if (firstQty !== null) {
+          qty[it.id] = firstQty;
+        }
       }
     }
     setSelectedItems(sel);
@@ -194,18 +222,18 @@ const PortalQuote = () => {
     const rows = item.multi?.rows;
     if (Array.isArray(rows) && rows.length > 0) {
       const sel = itemQuantities[item.id];
-      const row = rows.find((r: any) => Number(r.qty ?? r.quantity) === sel) || rows[0];
+      const row = rows.find((r: any) => parsePortalQuantity(r.qty ?? r.quantity) === sel) || rows[0];
       const priceRaw =
         row?.outs?.find((o: any) => o.type === "Price")?.value ??
         row?.price ??
         item.price ??
         0;
       const base = Number(priceRaw);
-      const qty = Number(row?.qty ?? row?.quantity ?? item.quantity ?? 1) || 1;
+      const qty = parsePortalQuantity(row?.qty ?? row?.quantity ?? item.quantity ?? 1) ?? 1;
       if (!Number.isFinite(base)) return { qty, price: Number(item.price) || 0 };
       return { qty, price: base };
     }
-    return { qty: Number(item.quantity) || 1, price: Number(item.price) || 0 };
+    return { qty: parsePortalQuantity(item.quantity) ?? 1, price: Number(item.price) || 0 };
   };
 
   const visibleSubtotal = quote.items.reduce((sum, item) => {
@@ -325,8 +353,8 @@ const PortalQuote = () => {
                         )}
                       </tr>
                       {hasMulti && rows.map((r: any, i: number) => {
-                        const rowQty = Number(r.qty ?? r.quantity);
-                        if (!rowQty) return null;
+                        const rowQty = parsePortalQuantity(r.qty ?? r.quantity);
+                        if (rowQty === null) return null;
                         const rowPrice = Number(
                           r?.outs?.find((o: any) => o.type === "Price")?.value ?? r?.price ?? 0
                         );
@@ -356,7 +384,7 @@ const PortalQuote = () => {
                                 <span className="text-xs text-muted-foreground pl-1">Opción {i + 1}</span>
                               )}
                             </td>
-                            <td className="text-right py-2 px-2 text-sm">{rowQty.toLocaleString("es-ES")} ud</td>
+                            <td className="text-right py-2 px-2 text-sm">{formatPortalQuantity(rowQty)} ud</td>
                             <td className="text-right py-2 px-2 text-sm">
                               {Number(rowPrice / (rowQty || 1)).toLocaleString("es-ES", { style: "currency", currency: "EUR" })}
                             </td>
