@@ -65,6 +65,17 @@ const parsePortalQuantity = (value: unknown): number | null => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 };
 
+const parsePortalNumber = (value: unknown): number => {
+  if (typeof value === "number") return Number.isFinite(value) ? value : 0;
+  const raw = String(value ?? "").trim();
+  if (!raw) return 0;
+  const normalized = raw.includes(",")
+    ? raw.replace(/\./g, "").replace(",", ".")
+    : raw;
+  const parsed = Number.parseFloat(normalized);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
 const formatPortalQuantity = (value: unknown): string => {
   const parsed = parsePortalQuantity(value);
   if (parsed === null) return String(value ?? "").trim();
@@ -228,12 +239,12 @@ const PortalQuote = () => {
         row?.price ??
         item.price ??
         0;
-      const base = Number(priceRaw);
+      const base = parsePortalNumber(priceRaw);
       const qty = parsePortalQuantity(row?.qty ?? row?.quantity ?? item.quantity ?? 1) ?? 1;
-      if (!Number.isFinite(base)) return { qty, price: Number(item.price) || 0 };
+      if (!Number.isFinite(base)) return { qty, price: parsePortalNumber(item.price) };
       return { qty, price: base };
     }
-    return { qty: parsePortalQuantity(item.quantity) ?? 1, price: Number(item.price) || 0 };
+    return { qty: parsePortalQuantity(item.quantity) ?? 1, price: parsePortalNumber(item.price) };
   };
 
   const visibleSubtotal = quote.items.reduce((sum, item) => {
@@ -355,7 +366,7 @@ const PortalQuote = () => {
                       {hasMulti && rows.map((r: any, i: number) => {
                         const rowQty = parsePortalQuantity(r.qty ?? r.quantity);
                         if (rowQty === null) return null;
-                        const rowPrice = Number(
+                        const rowPrice = parsePortalNumber(
                           r?.outs?.find((o: any) => o.type === "Price")?.value ?? r?.price ?? 0
                         );
                         const isSelected = Number(itemQuantities[item.id]) === rowQty;
