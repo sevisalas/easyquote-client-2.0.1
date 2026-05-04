@@ -304,7 +304,6 @@ const PortalQuote = () => {
                   <tr className="border-b">
                     <th className="text-left py-2 pr-2">Producto</th>
                     <th className="text-right py-2 px-2">Cant.</th>
-                    <th className="text-right py-2 px-2">Precio</th>
                     <th className="text-right py-2 pl-2">Total</th>
                   </tr>
                 </thead>
@@ -363,15 +362,12 @@ const PortalQuote = () => {
                           </div>
                         </td>
                         {hasMulti ? (
-                          <td colSpan={3} className="py-3 px-2 align-top text-right text-xs text-muted-foreground">
+                          <td colSpan={2} className="py-3 px-2 align-top text-right text-xs text-muted-foreground">
                             {isPending ? "Selecciona la cantidad a aprobar →" : ""}
                           </td>
                         ) : (
                           <>
                             <td className="text-right py-3 px-2 align-top">{qty}</td>
-                            <td className="text-right py-3 px-2 align-top">
-                              {formatPortalCurrency(price / (qty || 1))}
-                            </td>
                             <td className="text-right py-3 pl-2 font-medium align-top">
                               {formatPortalCurrency(price)}
                             </td>
@@ -411,9 +407,6 @@ const PortalQuote = () => {
                               )}
                             </td>
                             <td className="text-right py-2 px-2 text-sm">{formatPortalQuantity(rowQty)} ud</td>
-                            <td className="text-right py-2 px-2 text-sm">
-                              {formatPortalCurrency(rowPrice / (rowQty || 1))}
-                            </td>
                             <td className="text-right py-2 pl-2 text-sm font-medium">
                               {formatPortalCurrency(rowPrice)}
                             </td>
