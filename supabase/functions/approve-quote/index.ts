@@ -525,7 +525,9 @@ async function approveQuoteCore(
       prompts: fPrompts,
       multi: fMulti,
       position: index,
-      composite_data: item.composite_data || null,
+      composite_data: item.composite_data
+        ? syncCompositeDataWithQuantity(item.composite_data, finalQuantity)
+        : null,
       item_additionals: item.item_additionals || null,
     };
   });
