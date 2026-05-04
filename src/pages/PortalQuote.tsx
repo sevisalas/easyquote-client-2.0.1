@@ -23,9 +23,11 @@ interface PortalQuoteData {
     final_price: number | null;
     notes: string | null;
     created_at: string;
+    organization_id: string;
     validity_days: number | null;
     items: Array<{
       id: string;
+      product_id?: string | null;
       product_name: string;
       name?: string | null;
       description: string | null;
