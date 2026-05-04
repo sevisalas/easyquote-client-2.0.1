@@ -151,6 +151,44 @@ const applyItemAdditionals = (basePrice: number, item: any, quantity: number): n
 const isCustomProductItem = (item: any) =>
   String(item?.product_id ?? "").trim() === "__CUSTOM_PRODUCT__";
 
+const isQuantityPromptText = (text: string) => {
+  const t = normalizePromptKey(text);
+  return t.includes("CANTIDAD") || t.includes("UNIDADES") || t.includes("EJEMPLAR")
+    || t.includes("QUANTITY") || t === "QTY";
+};
+
+const syncCompositeDataWithQuantity = (compositeData: any, quantity: number): any => {
+  if (!compositeData || typeof compositeData !== "object") return compositeData;
+  const components = compositeData.components;
+  if (!components || typeof components !== "object") return compositeData;
+  const newComponents: any = Array.isArray(components) ? [...components] : { ...components };
+  for (const compId of Object.keys(newComponents)) {
+    const compEntry = newComponents[compId];
+    if (!compEntry || typeof compEntry !== "object") continue;
+    const instances: any = { ...compEntry };
+    for (const idx of Object.keys(instances)) {
+      const inst = instances[idx];
+      if (inst && typeof inst === "object" && Array.isArray((inst as any).prompts)) {
+        const newPrompts = (inst as any).prompts.map((p: any) => {
+          if (!p || typeof p !== "object") return p;
+          const text = p.promptText || p.label || p.name || p.id || "";
+          if (isQuantityPromptText(String(text))) {
+            const next = { ...p };
+            if ("currentValue" in p) next.currentValue = String(quantity);
+            if ("value" in p) next.value = String(quantity);
+            if (!("currentValue" in p) && !("value" in p)) next.currentValue = String(quantity);
+            return next;
+          }
+          return p;
+        });
+        instances[idx] = { ...(inst as any), prompts: newPrompts };
+      }
+    }
+    newComponents[compId] = instances;
+  }
+  return { ...compositeData, components: newComponents };
+};
+
 const getYearString = (year: number, format: string) =>
   format === "YYYY" ? String(year) : String(year % 100).padStart(2, "0");
 
