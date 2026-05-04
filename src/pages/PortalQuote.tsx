@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Fragment } from "react";
 import { CheckCircle, XCircle, Loader2, FileText, Clock, AlertTriangle } from "lucide-react";
-import { buildAutoDescriptionFromPrompts, syncPromptsWithQuantity } from "@/utils/approvedMultiQuantity";
+import { buildAutoDescriptionFromPrompts, syncPromptsWithQuantity, type QuantityPromptResolver } from "@/utils/approvedMultiQuantity";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -22,9 +22,12 @@ interface PortalQuoteData {
     final_price: number | null;
     notes: string | null;
     created_at: string;
+    organization_id: string;
     validity_days: number | null;
+    quantity_prompt_settings?: Record<string, QuantityPromptResolver>;
     items: Array<{
       id: string;
+      product_id?: string | null;
       product_name: string;
       name?: string | null;
       description: string | null;
@@ -270,8 +273,9 @@ const PortalQuote = () => {
   const getItemDescriptionForSelection = (item: any, selectedQty: number | null) => {
     const description = (item.description || "").trim();
     const productName = (item.name || item.product_name || "").trim();
+    const quantityResolver = item.product_id ? data?.quote?.quantity_prompt_settings?.[String(item.product_id)] : undefined;
     const baseAutoDescription = buildAutoDescriptionFromPrompts(item.prompts)?.trim();
-    const selectedPrompts = selectedQty ? syncPromptsWithQuantity(item.prompts, selectedQty) : item.prompts;
+    const selectedPrompts = selectedQty ? syncPromptsWithQuantity(item.prompts, selectedQty, quantityResolver) : item.prompts;
     const selectedAutoDescription = buildAutoDescriptionFromPrompts(selectedPrompts)?.trim();
 
     if (item.description_manual === true) {

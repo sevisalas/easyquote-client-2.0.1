@@ -57,9 +57,39 @@ const findQuantityPromptIndex = (arr: any[]) => {
   });
 };
 
-const syncPromptsWithQuantity = (prompts: any, qty: number) => {
+const syncPromptsWithQuantity = (
+  prompts: any,
+  qty: number,
+  resolver?: { promptName?: string | null; label?: string | null },
+) => {
   const arr = [...promptsToArray(prompts)];
-  const idx = findQuantityPromptIndex(arr);
+  let idx = -1;
+
+  if (resolver?.promptName || resolver?.label) {
+    const normalizedPromptName = resolver.promptName ? normalizePromptKey(resolver.promptName) : "";
+    const normalizedLabel = resolver.label ? normalizePromptKey(resolver.label) : "";
+
+    idx = arr.findIndex((p) => {
+      const promptId = normalizePromptKey(p?.id || "");
+      const promptName = normalizePromptKey(p?.name || "");
+      const promptLabel = normalizePromptKey(p?.label || "");
+
+      return (
+        (!!normalizedPromptName && (
+          promptId === normalizedPromptName ||
+          promptName === normalizedPromptName ||
+          promptLabel === normalizedPromptName
+        )) ||
+        (!!normalizedLabel && (
+          promptId === normalizedLabel ||
+          promptName === normalizedLabel ||
+          promptLabel === normalizedLabel
+        ))
+      );
+    });
+  }
+
+  if (idx < 0) idx = findQuantityPromptIndex(arr);
   if (idx >= 0) arr[idx] = { ...arr[idx], value: String(qty) };
   return arr;
 };
@@ -403,7 +433,10 @@ async function approveQuoteCore(
     let fPrice = item.price || 0;
     let fMulti = item.multi;
     let fOutputs = Array.isArray(item.outputs) ? item.outputs : [];
-    let fPrompts = syncPromptsWithQuantity(item.prompts, finalQuantity);
+    const quantityResolver = item.product_id
+      ? quantityPromptByProduct.get(String(item.product_id))
+      : undefined;
+    let fPrompts = syncPromptsWithQuantity(item.prompts, finalQuantity, quantityResolver);
     const baseAutoDesc = buildAutoDescriptionFromPrompts(item.prompts);
     const trimmedDescription = item.description?.trim() || "";
     const hasManualDescription = item.description_manual === true
@@ -420,7 +453,7 @@ async function approveQuoteCore(
     if (m?.rows?.length > 1 && resolvedQuantities[item.id]) {
       const sQ = resolvedQuantities[item.id];
       const row = m.rows.find((r: any) => parseQuantity(r.qty) === sQ || parseQuantity(r.quantity) === sQ);
-      fPrompts = syncPromptsWithQuantity(item.prompts, sQ);
+      fPrompts = syncPromptsWithQuantity(item.prompts, sQ, quantityResolver);
       if (row) {
         const base = parseFloat(row.outs?.find((o: any) => o.type === "Price")?.value || row.price || item.price || 0);
         fPrice = applyItemAdditionals(base, item, sQ);

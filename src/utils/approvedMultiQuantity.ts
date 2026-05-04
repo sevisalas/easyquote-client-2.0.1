@@ -11,6 +11,11 @@ const AUTO_DESCRIPTION_EXCLUDED_LABELS = [
 const normalizePromptKey = (value: string) =>
   String(value ?? '').replace(/\$/g, '').trim().toUpperCase();
 
+export interface QuantityPromptResolver {
+  promptName?: string | null;
+  label?: string | null;
+}
+
 export const parseQuantity = (value: unknown): number => {
   if (typeof value === 'number') {
     return Number.isFinite(value) && value > 0 ? value : 1;
@@ -77,13 +82,40 @@ export const promptsToObject = (prompts: any): Record<string, { label: string; v
 };
 
 const findQuantityPromptIndex = (
-  prompts: Array<{ id: string; label: string; value: any; order: number }>,
+  prompts: Array<{ id: string; label: string; value: any; order: number; name?: string }>,
+  resolver?: QuantityPromptResolver,
 ) => {
   const customQuantityIndex = prompts.findIndex(
     (prompt) => String(prompt.id || '').trim() === 'custom_quantity',
   );
 
   if (customQuantityIndex >= 0) return customQuantityIndex;
+
+  if (resolver?.promptName || resolver?.label) {
+    const normalizedPromptName = resolver.promptName ? normalizePromptKey(resolver.promptName) : '';
+    const normalizedLabel = resolver.label ? normalizePromptKey(resolver.label) : '';
+
+    const configuredIndex = prompts.findIndex((prompt) => {
+      const promptId = normalizePromptKey(prompt.id || '');
+      const promptName = normalizePromptKey(prompt.name || '');
+      const promptLabel = normalizePromptKey(prompt.label || '');
+
+      return (
+        (!!normalizedPromptName && (
+          promptId === normalizedPromptName ||
+          promptName === normalizedPromptName ||
+          promptLabel === normalizedPromptName
+        )) ||
+        (!!normalizedLabel && (
+          promptId === normalizedLabel ||
+          promptName === normalizedLabel ||
+          promptLabel === normalizedLabel
+        ))
+      );
+    });
+
+    if (configuredIndex >= 0) return configuredIndex;
+  }
 
   return prompts.findIndex((prompt) => {
     const text = normalizePromptKey(prompt.label || prompt.id || '');
@@ -97,9 +129,13 @@ const findQuantityPromptIndex = (
   });
 };
 
-export const syncPromptsWithQuantity = (prompts: any, quantity: number) => {
+export const syncPromptsWithQuantity = (
+  prompts: any,
+  quantity: number,
+  resolver?: QuantityPromptResolver,
+) => {
   const promptsArray = [...promptsToArray(prompts)];
-  const quantityPromptIndex = findQuantityPromptIndex(promptsArray);
+  const quantityPromptIndex = findQuantityPromptIndex(promptsArray, resolver);
 
   if (quantityPromptIndex >= 0) {
     promptsArray[quantityPromptIndex] = {
