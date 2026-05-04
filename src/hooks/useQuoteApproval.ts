@@ -10,6 +10,7 @@ import {
   parseQuantity,
   promptsToArray,
   syncPromptsWithQuantity,
+  syncCompositeDataWithQuantity,
 } from "@/utils/approvedMultiQuantity";
 import { resolveItemQuantityStrict, buildQuantityErrorMessage, isCustomProductItem } from "@/utils/strictQuantity";
 
