@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Fragment } from "react";
 import { CheckCircle, XCircle, Loader2, FileText, Clock, AlertTriangle } from "lucide-react";
+import { buildAutoDescriptionFromPrompts, syncPromptsWithQuantity } from "@/utils/approvedMultiQuantity";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -264,6 +265,24 @@ const PortalQuote = () => {
     return { qty: parsePortalQuantity(item.quantity) ?? 1, price: parsePortalNumber(item.price) };
   };
 
+  const getItemDescriptionForSelection = (item: any, selectedQty: number | null) => {
+    const description = (item.description || "").trim();
+    const productName = (item.product_name || "").trim();
+    const baseAutoDescription = buildAutoDescriptionFromPrompts(item.prompts)?.trim();
+    const selectedPrompts = selectedQty ? syncPromptsWithQuantity(item.prompts, selectedQty) : item.prompts;
+    const selectedAutoDescription = buildAutoDescriptionFromPrompts(selectedPrompts)?.trim();
+
+    if (selectedAutoDescription && (!description || description === productName || description === baseAutoDescription)) {
+      return selectedAutoDescription;
+    }
+
+    if (description && description !== productName) {
+      return description;
+    }
+
+    return selectedAutoDescription || null;
+  };
+
   const visibleSubtotal = quote.items.reduce((sum, item) => {
     if (isPending && !selectedItems[item.id]) return sum;
     const { price } = getItemPriceForSelection(item);
@@ -320,8 +339,9 @@ const PortalQuote = () => {
                     const rows = (item.multi as any)?.rows;
                     const hasMulti = Array.isArray(rows) && rows.length > 1;
                     const { qty, price } = getItemPriceForSelection(item);
-                    const checked = selectedItems[item.id] ?? true;
+                     const checked = selectedItems[item.id] ?? true;
                     const dimmed = isPending && !checked;
+                     const selectedDescription = getItemDescriptionForSelection(item, qty);
                     return (
                       <Fragment key={item.id}>
                       <tr className={`border-b last:border-0 ${dimmed ? "opacity-40" : ""} ${hasMulti ? "border-b-0" : ""}`}>
@@ -339,7 +359,7 @@ const PortalQuote = () => {
                              <div className="min-w-0">
                                <div className="font-medium">{item.product_name}</div>
                                {(() => {
-                                 const desc = (item.description || "").trim();
+                                 const desc = (selectedDescription || "").trim();
                                  const name = (item.product_name || "").trim();
                                  if (desc && desc !== name) {
                                    return (
@@ -371,14 +391,7 @@ const PortalQuote = () => {
                         </td>
                         <td className="text-right py-3 pl-2 align-top">
                           {hasMulti ? (
-                            <div className="space-y-1">
-                              {isPending && !itemQuantities[item.id] ? (
-                                <div className="text-xs text-muted-foreground">Selecciona la cantidad a aprobar →</div>
-                              ) : qty ? (
-                                <div className="text-xs text-muted-foreground">{formatPortalQuantity(qty)} ud</div>
-                              ) : null}
-                              <div className="font-medium">{formatPortalCurrency(price)}</div>
-                            </div>
+                            <div className="font-medium">{formatPortalCurrency(price)}</div>
                           ) : (
                             <div className="font-medium align-top">{formatPortalCurrency(price)}</div>
                           )}
