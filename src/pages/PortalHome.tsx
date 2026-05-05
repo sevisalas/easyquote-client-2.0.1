@@ -403,14 +403,22 @@ const PortalHome = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {catalog.map((it) => (
                         <div key={it.id} className="border rounded-lg p-4 flex flex-col">
-                          {it.image_url && (
-                            <img
-                              src={it.image_url}
-                              alt={it.name}
-                              className="w-full h-32 object-cover rounded mb-3"
-                              loading="lazy"
-                            />
-                          )}
+                          {(() => {
+                            const src = apiImages[it.id] || it.image_url;
+                            return src ? (
+                              <img
+                                src={src}
+                                alt={it.name}
+                                className="w-full h-32 object-cover rounded mb-3"
+                                loading="lazy"
+                                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                              />
+                            ) : (
+                              <div className="w-full h-32 bg-muted rounded mb-3 flex items-center justify-center text-xs text-muted-foreground">
+                                Sin imagen
+                              </div>
+                            );
+                          })()}
                           <div className="font-medium">{it.name}</div>
                           {it.description && (
                             <p className="text-xs text-muted-foreground mt-1 flex-1">{it.description}</p>
