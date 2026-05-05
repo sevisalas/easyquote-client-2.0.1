@@ -81,7 +81,11 @@ export function QuoteCard({
         {/* User */}
         <div className="mb-2">
           <p className="text-xs text-muted-foreground">Usuario</p>
-          <p className="text-sm">{getUserName(quote.user_id)}</p>
+          <p className="text-sm">
+            {typeof quote.notes === "string" && quote.notes.includes("portal B2B")
+              ? "Portal B2B"
+              : getUserName(quote.user_id)}
+          </p>
         </div>
 
         {/* Date */}

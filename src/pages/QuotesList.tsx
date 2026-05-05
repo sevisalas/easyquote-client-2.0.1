@@ -48,7 +48,7 @@ const fetchQuotes = async () => {
   
   let query = supabase
     .from("quotes")
-    .select("id, created_at, updated_at, sent_at, approved_at, quote_number, customer_id, product_name, final_price, status, selections, description, holded_estimate_number, holded_estimate_id, holded_id, user_id, organization_id")
+    .select("id, created_at, updated_at, sent_at, approved_at, quote_number, customer_id, product_name, final_price, status, selections, description, notes, holded_estimate_number, holded_estimate_id, holded_id, user_id, organization_id")
     .order("created_at", { ascending: false });
   
   if (organizationId) {
@@ -114,6 +114,10 @@ const QuotesList = () => {
 
   const getCustomerName = (id?: string | null) => customers.find((c: any) => c.id === id)?.name || "—";
   const getUserName = (userId?: string | null) => orgMembers.find((m: any) => m.user_id === userId)?.display_name || "—";
+  const isPortalQuote = (q: any) =>
+    typeof q?.notes === "string" && q.notes.includes("portal B2B");
+  const getQuoteUserLabel = (q: any) =>
+    isPortalQuote(q) ? "Portal B2B" : getUserName(q?.user_id);
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -404,7 +408,7 @@ const QuotesList = () => {
                   aprobado: fmtTs(q.approved_at),
                   numero: q.quote_number || "",
                   cliente: getCustomerName(q.customer_id),
-                  usuario: getUserName(q.user_id),
+                  usuario: getQuoteUserLabel(q),
                   descripcion: q.description || "",
                   total: Number(q.final_price) || 0,
                   estado: statusLabel[q.status as keyof typeof statusLabel] || q.status,
@@ -516,7 +520,13 @@ const QuotesList = () => {
                     <TableCell className="py-1.5 px-3 text-sm truncate">
                       <CustomerName customerId={q.customer_id} />
                     </TableCell>
-                    <TableCell className="py-1.5 px-3 text-sm text-muted-foreground truncate">{getUserName(q.user_id)}</TableCell>
+                    <TableCell className="py-1.5 px-3 text-sm text-muted-foreground truncate">
+                      {isPortalQuote(q) ? (
+                        <Badge variant="secondary" className="text-[10px] font-medium">Portal B2B</Badge>
+                      ) : (
+                        getUserName(q.user_id)
+                      )}
+                    </TableCell>
                     <TableCell className="py-1.5 px-3 text-sm truncate">{q.description || ""}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm text-right font-medium whitespace-nowrap">{fmtEUR(q.final_price)}</TableCell>
                     {hasHoldedAccess && (
