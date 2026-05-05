@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
     const ids = items.map((i) => i.catalog_item_id);
     const { data: catalogRows } = await ctx.admin
       .from("b2b_catalog_items")
-      .select("id, organization_id, name, product_id, default_prompts, exposed_prompt_ids, is_active")
+      .select("id, organization_id, name, product_id, is_active")
       .in("id", ids);
 
     const catalogMap = new Map((catalogRows || []).map((r: any) => [r.id, r]));
@@ -85,13 +85,12 @@ Deno.serve(async (req) => {
       }
       if (!def.product_id) continue;
 
-      const defaults = (def.default_prompts as Record<string, any>) || {};
-      const exposed = new Set((def.exposed_prompt_ids as string[]) || []);
-      const merged: Record<string, any> = { ...defaults };
-      for (const [k, v] of Object.entries(it.overrides || {})) {
-        if (exposed.has(k)) merged[k] = v;
-      }
-      const inputs = Object.entries(merged).map(([id, value]) => ({ id, value }));
+      // The product is the source of truth (same as the main app). The API merges
+      // its own defaults; the portal only forwards what the customer changed.
+      const overrides = (it.overrides || {}) as Record<string, any>;
+      const inputs = Object.entries(overrides)
+        .filter(([, v]) => v !== undefined && v !== null && v !== "")
+        .map(([id, value]) => ({ id, value }));
       const pricing = await callEasyQuotePricing(token, def.product_id, inputs);
       if (!pricing.ok) {
         return new Response(JSON.stringify({ error: `Error calculando precio: ${def.name}` }), {
@@ -103,23 +102,17 @@ Deno.serve(async (req) => {
       const finalLine = await applyCustomerTariff(ctx.admin, ctx.customer.tariff_id, basePrice);
       subtotal += finalLine;
 
-      // Build prompts map { id: { label, value, order } }
+      // Build prompts map { id: { label, value, order } } from the API response so
+      // the saved quote item mirrors what the main app would have stored.
       const promptsMap: Record<string, { label: string; value: any; order: number }> = {};
       const apiPrompts: any[] = pricing.data?.prompts ?? [];
-      const labelById = new Map<string, { label: string; order: number }>();
       apiPrompts.forEach((p: any, idx: number) => {
         const id = String(p.id);
-        labelById.set(id, {
-          label: p.promptText || p.label || id,
-          order: p.promptSequence ?? p.order ?? idx,
-        });
-      });
-      Object.entries(merged).forEach(([id, value], idx) => {
-        const meta = labelById.get(String(id));
+        const value = overrides[id] ?? p.currentValue ?? p.defaultValue ?? "";
         promptsMap[id] = {
-          label: meta?.label || id,
+          label: p.promptText || p.label || id,
           value,
-          order: meta?.order ?? idx,
+          order: p.promptSequence ?? p.order ?? idx,
         };
       });
 

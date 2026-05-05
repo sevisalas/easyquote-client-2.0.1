@@ -167,3 +167,45 @@ export function extractPrice(pricingData: any): number {
   }
   return 0;
 }
+
+/**
+ * Load the prompt visibility config that the main app uses (product_prompt_settings),
+ * shared by api_user_id (sister organizations).
+ * Returns a Set of normalized prompt keys (UPPERCASE, no `$`) that must be HIDDEN
+ * to the portal customer (either is_hidden or admin_only).
+ */
+export async function getHiddenPromptKeysForProduct(
+  admin: SupabaseClient,
+  organizationId: string,
+  productId: string,
+): Promise<{ hidden: Set<string>; settingsByKey: Map<string, any> }> {
+  const { data: org } = await admin
+    .from("organizations")
+    .select("api_user_id")
+    .eq("id", organizationId)
+    .maybeSingle();
+  const apiUserId = (org as any)?.api_user_id;
+  const hidden = new Set<string>();
+  const settingsByKey = new Map<string, any>();
+  if (!apiUserId) return { hidden, settingsByKey };
+
+  const { data } = await admin
+    .from("product_prompt_settings")
+    .select("prompt_name, label, is_hidden, admin_only, hide_in_documents, force_result, is_quantity")
+    .eq("api_user_id", apiUserId)
+    .eq("easyquote_product_id", productId);
+
+  const norm = (v: any) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
+  for (const s of (data as any[]) || []) {
+    const keys = [s.prompt_name, s.label].filter(Boolean).map(norm);
+    for (const k of keys) {
+      settingsByKey.set(k, s);
+      // Customer-facing portal: hide admin-only and explicitly hidden prompts.
+      if (s.is_hidden || s.admin_only) hidden.add(k);
+    }
+  }
+  return { hidden, settingsByKey };
+}
+
+export const normalizePromptKey = (v: any) =>
+  String(v ?? "").replace(/\$/g, "").trim().toUpperCase();

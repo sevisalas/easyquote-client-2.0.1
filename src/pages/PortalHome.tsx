@@ -33,8 +33,6 @@ interface CatalogItem {
   description: string | null;
   image_url: string | null;
   product_id: string | null;
-  exposed_prompt_ids: string[];
-  default_prompts: Record<string, any>;
 }
 
 const statusLabel: Record<string, string> = {
@@ -72,8 +70,8 @@ const PortalHome = () => {
   const [livePrice, setLivePrice] = useState<number | null>(null);
   const [pricingError, setPricingError] = useState<string | null>(null);
   const [submittingQuote, setSubmittingQuote] = useState(false);
-  // Prompt defs we discover via the first pricing call (so we can render proper inputs for exposed ones)
-  const [exposedDefs, setExposedDefs] = useState<Array<{ id: string; label: string; options: { value: any; label: string }[] | null }>>([]);
+  // All visible prompt definitions for the current product (filtered server-side).
+  const [promptDefs, setPromptDefs] = useState<Array<{ id: string; label: string; options: { value: any; label: string }[] | null }>>([]);
 
   useEffect(() => {
     const load = async () => {
@@ -127,15 +125,11 @@ const PortalHome = () => {
       if (isB2b) {
         const { data: cat } = await portalSupabase
           .from("b2b_catalog_items")
-          .select("id, name, description, image_url, product_id, exposed_prompt_ids, default_prompts")
+          .select("id, name, description, image_url, product_id")
           .eq("organization_id", cust.organization_id)
           .eq("is_active", true)
           .order("display_order", { ascending: true });
-        const items = ((cat as any[]) || []).map((c: any) => ({
-          ...c,
-          exposed_prompt_ids: c.exposed_prompt_ids || [],
-          default_prompts: c.default_prompts || {},
-        }));
+        const items = ((cat as any[]) || []) as CatalogItem[];
         setCatalog(items);
         // Fetch image outputs from API in parallel for each item
         items.forEach(async (it: CatalogItem) => {
@@ -195,7 +189,7 @@ const PortalHome = () => {
     setConfigOverrides({});
     setLivePrice(null);
     setPricingError(null);
-    setExposedDefs([]);
+    setPromptDefs([]);
     await fetchPrice(item, {});
   };
 
@@ -213,12 +207,9 @@ const PortalHome = () => {
         setLivePrice(null);
       } else {
         setLivePrice(typeof d.final_price === "number" ? d.final_price : null);
-        // Hydrate exposed defs from API prompts
+        // Hydrate prompt defs from API (already filtered server-side by visibility config)
         const apiPrompts: any[] = d?.prompts || [];
-        const exposedSet = new Set(item.exposed_prompt_ids || []);
-        const defs = apiPrompts
-          .filter((p) => exposedSet.has(String(p.id)))
-          .map((p: any) => {
+        const defs = apiPrompts.map((p: any) => {
             const opts = p.valueOptions || p.options || p.values;
             const optionList = Array.isArray(opts) && opts.length > 0
               ? opts.map((o: any) => ({
@@ -232,15 +223,15 @@ const PortalHome = () => {
               options: optionList,
             };
           });
-        setExposedDefs(defs);
-        // Initialize override defaults from API current value if not yet set
+        setPromptDefs(defs);
+        // Seed override values from the API current value if the customer hasn't touched them
         setConfigOverrides((prev) => {
           let changed = false;
           const next = { ...prev };
 
           apiPrompts.forEach((p: any) => {
             const id = String(p.id);
-            if (exposedSet.has(id) && next[id] === undefined) {
+            if (next[id] === undefined) {
               next[id] = p.currentValue ?? "";
               changed = true;
             }
@@ -454,12 +445,12 @@ const PortalHome = () => {
             {configItem?.description && (
               <p className="text-sm text-muted-foreground">{configItem.description}</p>
             )}
-            {exposedDefs.length === 0 && !pricingLoading && !pricingError && (
+            {promptDefs.length === 0 && !pricingLoading && !pricingError && (
               <p className="text-sm text-muted-foreground">
                 Producto preconfigurado por el comercial. Revisa el precio y solicita.
               </p>
             )}
-            {exposedDefs.map((p) => (
+            {promptDefs.map((p) => (
               <div key={p.id}>
                 <Label>{p.label}</Label>
                 {p.options ? (
