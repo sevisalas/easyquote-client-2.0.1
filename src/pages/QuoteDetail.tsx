@@ -378,6 +378,11 @@ export default function QuoteDetail() {
   const handleSendEmail = async () => {
     if (!quote?.id || !quote?.customer_id) return;
 
+    if (quote.status === 'draft') {
+      toast.error('No puedes enviar un presupuesto en borrador. Márcalo como "Listo para enviar" primero.');
+      return;
+    }
+
     setIsSendingEmail(true);
     try {
       // Get customer email
@@ -899,7 +904,8 @@ export default function QuoteDetail() {
                 size="sm"
                 variant="outline"
                 className="gap-2"
-                disabled={isSendingEmail}
+                disabled={isSendingEmail || quote?.status === 'draft'}
+                title={quote?.status === 'draft' ? 'Marca el presupuesto como "Listo para enviar" antes de enviarlo por email' : undefined}
               >
                 {isSendingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
                 {isSendingEmail ? 'Enviando...' : 'Email'}
