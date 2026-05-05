@@ -223,13 +223,15 @@ Deno.serve(async (req) => {
 
       // Get customer name
       let customerName = "";
+      let customerPortalEnabled = false;
       if (quote.customer_id) {
         const { data: customer } = await supabase
           .from("customers")
-          .select("name, trade_name")
+          .select("name, trade_name, portal_enabled")
           .eq("id", quote.customer_id)
           .single();
         customerName = customer?.trade_name || customer?.name || "";
+        customerPortalEnabled = !!(customer as any)?.portal_enabled;
       }
 
       // Check if already acted upon
@@ -289,6 +291,7 @@ Deno.serve(async (req) => {
             primary_color: theme?.primary_color || null,
           },
           customer_name: customerName,
+          customer_portal_enabled: customerPortalEnabled,
           existing_action: existingAction || null,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
