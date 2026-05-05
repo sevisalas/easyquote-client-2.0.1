@@ -541,9 +541,9 @@ export default function QuoteNew() {
           if (productIdsForForce.size > 0) {
             await Promise.all(Array.from(productIdsForForce).map(async (productId) => {
               try {
-                const { data } = await supabase.functions.invoke('easyquote-prompts', {
-                  body: { productId },
-                });
+                const token = await getEasyQuoteToken();
+                if (!token) return;
+                const { data } = await invokeEasyQuoteFunction<any[]>('easyquote-prompts', { token, productId });
                 if (!data || !Array.isArray(data)) return;
                 data.forEach((def: any) => {
                   const defId = String(def?.id ?? '').trim();
