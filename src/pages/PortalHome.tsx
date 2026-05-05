@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, LogOut, FileText, ExternalLink, ShoppingBag, Settings2, CheckCircle2 } from "lucide-react";
+import { Loader2, LogOut, FileText, ExternalLink, ShoppingBag, Settings2, CheckCircle2, Download } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,6 +61,7 @@ const PortalHome = () => {
   const [primary, setPrimary] = useState<string>("#1B1B3A");
   const [logoUrl, setLogoUrl] = useState<string>("");
   const [openingId, setOpeningId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [b2bEnabled, setB2bEnabled] = useState(false);
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
   const [apiImages, setApiImages] = useState<Record<string, string>>({});
@@ -191,6 +192,23 @@ const PortalHome = () => {
       window.open(`/portal/${data.token}`, "_blank", "noopener");
     } finally {
       setOpeningId(null);
+    }
+  };
+
+  const downloadPdf = async (quoteId: string) => {
+    try {
+      setDownloadingId(quoteId);
+      const { data, error } = await portalSupabase.functions.invoke("portal-issue-token", {
+        body: { quote_id: quoteId },
+      });
+      if (error || !data?.token) {
+        toast({ title: "No se pudo generar el enlace", variant: "destructive" });
+        return;
+      }
+      // Open the public quote view with auto-print flag — user gets a "Save as PDF" dialog
+      window.open(`/portal/${data.token}?print=1`, "_blank", "noopener");
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -338,6 +356,21 @@ const PortalHome = () => {
                     ) : (
                       <>
                         <ExternalLink className="w-4 h-4 mr-1" /> Abrir
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => downloadPdf(q.id)}
+                    disabled={downloadingId === q.id}
+                    title="Descargar PDF"
+                  >
+                    {downloadingId === q.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4 mr-1" /> PDF
                       </>
                     )}
                   </Button>
