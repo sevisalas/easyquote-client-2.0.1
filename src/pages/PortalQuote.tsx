@@ -54,6 +54,7 @@ interface PortalQuoteData {
     primary_color: string | null;
   };
   customer_name: string;
+  customer_portal_enabled?: boolean;
   existing_action: { action: string; created_at: string; comment: string | null } | null;
 }
 
