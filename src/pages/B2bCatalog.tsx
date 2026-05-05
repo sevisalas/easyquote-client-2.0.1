@@ -10,8 +10,10 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, AlertTriangle, Settings2, Loader2 } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Settings2, Loader2, Check, ChevronsUpDown } from "lucide-react";
 import { invokeEasyQuoteFunction, getEasyQuoteToken } from "@/lib/easyquoteApi";
 
 interface CatalogItem {
@@ -30,6 +32,8 @@ interface CatalogItem {
 interface ProductOption {
   id: string;
   name: string;
+  category: string;
+  isActive: boolean;
 }
 
 interface PromptDef {
@@ -49,6 +53,9 @@ const B2bCatalog = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [products, setProducts] = useState<ProductOption[]>([]);
+  const [productPickerOpen, setProductPickerOpen] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<string>("__all__");
+  const [showInactive, setShowInactive] = useState(false);
   const [draft, setDraft] = useState<{
     name: string;
     description: string;
