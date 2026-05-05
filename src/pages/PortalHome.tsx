@@ -214,14 +214,18 @@ const PortalHome = () => {
         setExposedDefs(defs);
         // Initialize override defaults from API current value if not yet set
         setConfigOverrides((prev) => {
+          let changed = false;
           const next = { ...prev };
+
           apiPrompts.forEach((p: any) => {
             const id = String(p.id);
             if (exposedSet.has(id) && next[id] === undefined) {
               next[id] = p.currentValue ?? "";
+              changed = true;
             }
           });
-          return next;
+
+          return changed ? next : prev;
         });
       }
     } catch (e: any) {
