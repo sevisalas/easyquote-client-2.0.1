@@ -3660,6 +3660,13 @@ export type Database = {
           sequential_number: number
         }[]
       }
+      next_document_number_internal: {
+        Args: { p_document_type: string; p_organization_id: string }
+        Returns: {
+          document_number: string
+          sequential_number: number
+        }[]
+      }
       search_customers: {
         Args: {
           page_limit?: number

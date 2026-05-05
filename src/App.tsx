@@ -67,7 +67,6 @@ import PortalLogin from "./pages/PortalLogin";
 import PortalSetPassword from "./pages/PortalSetPassword";
 import PortalHome from "./pages/PortalHome";
 import B2bCatalog from "./pages/B2bCatalog";
-import B2bRequests from "./pages/B2bRequests";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { useSessionMonitor } from "./hooks/useSessionMonitor";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -606,16 +605,6 @@ const AppContent = () => {
           <ProtectedRoute>
             <AppLayout>
               <B2bCatalog />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/portal-b2b/solicitudes"
-        element={
-          <ProtectedRoute>
-            <AppLayout>
-              <B2bRequests />
             </AppLayout>
           </ProtectedRoute>
         }

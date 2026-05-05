@@ -1,0 +1,169 @@
+// Shared helpers for B2B portal autoservice (pricing + quote creation)
+import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+
+export interface PortalContext {
+  admin: SupabaseClient;
+  portalUserId: string;
+  customer: {
+    id: string;
+    name: string;
+    organization_id: string;
+    user_id: string;
+    tariff_id: string | null;
+  };
+}
+
+export async function authenticatePortalUser(
+  authHeader: string | null,
+): Promise<PortalContext | { error: string; status: number }> {
+  if (!authHeader?.startsWith("Bearer ")) {
+    return { error: "Unauthorized", status: 401 };
+  }
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+  const userClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const jwt = authHeader.replace("Bearer ", "");
+  const { data: claims, error: claimsErr } = await userClient.auth.getClaims(jwt);
+  if (claimsErr || !claims?.claims?.sub) {
+    return { error: "Invalid session", status: 401 };
+  }
+  const portalUserId = claims.claims.sub as string;
+
+  const admin = createClient(supabaseUrl, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const { data: customer } = await admin
+    .from("customers")
+    .select("id, name, organization_id, user_id, tariff_id, portal_user_id, portal_enabled")
+    .eq("portal_user_id", portalUserId)
+    .maybeSingle();
+
+  if (!customer || !customer.portal_enabled) {
+    return { error: "Portal access disabled", status: 403 };
+  }
+
+  return {
+    admin,
+    portalUserId,
+    customer: {
+      id: customer.id,
+      name: customer.name,
+      organization_id: customer.organization_id,
+      user_id: customer.user_id,
+      tariff_id: customer.tariff_id,
+    },
+  };
+}
+
+/**
+ * Get a fresh EasyQuote API token for the organization owner.
+ */
+export async function getEasyQuoteTokenForOrg(
+  admin: SupabaseClient,
+  organizationId: string,
+): Promise<string | null> {
+  const { data: org } = await admin
+    .from("organizations")
+    .select("api_user_id")
+    .eq("id", organizationId)
+    .maybeSingle();
+  if (!org?.api_user_id) return null;
+
+  const { data: creds } = await admin.rpc("get_organization_easyquote_credentials", {
+    p_user_id: org.api_user_id,
+  });
+  const cred = creds?.[0];
+  if (!cred?.api_username || !cred?.api_password) return null;
+
+  const loginRes = await fetch("https://api.easyquote.cloud/api/v1/users/authenticate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email: cred.api_username, password: cred.api_password }),
+  });
+  if (!loginRes.ok) return null;
+  const data = await loginRes.json();
+  return data?.token ?? null;
+}
+
+/**
+ * Call EasyQuote pricing API directly (bypasses easyquote-pricing function for less overhead).
+ * Returns full pricing response.
+ */
+export async function callEasyQuotePricing(
+  token: string,
+  productId: string,
+  inputs: Array<{ id: string; value: any }>,
+): Promise<{ ok: boolean; status: number; data: any }> {
+  // Sanitize inputs (mirror easyquote-pricing logic minimally)
+  const formatted = inputs
+    .filter((i) => i.value !== null && i.value !== undefined && i.value !== "")
+    .map((i) => {
+      let v: any = i.value;
+      if (typeof v === "boolean") v = v ? "Sí" : "No";
+      if (typeof v === "number" && !Number.isInteger(v)) v = v.toString().replace(".", ",");
+      return { id: String(i.id), value: v };
+    });
+
+  const url = `https://api.easyquote.cloud/api/v1/pricing/${productId}?_t=${Date.now()}`;
+  const method = formatted.length > 0 ? "PATCH" : "GET";
+  const res = await fetch(url, {
+    method,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+      ...(method === "PATCH" ? { "Content-Type": "application/json" } : {}),
+      "Cache-Control": "no-cache",
+    },
+    ...(method === "PATCH" ? { body: JSON.stringify(formatted) } : {}),
+  });
+  const text = await res.text();
+  let data: any = {};
+  try { data = text ? JSON.parse(text) : {}; } catch { /* ignore */ }
+  return { ok: res.ok, status: res.status, data };
+}
+
+/**
+ * Apply customer tariff (single percentage discount/surcharge) to a base price.
+ */
+export async function applyCustomerTariff(
+  admin: SupabaseClient,
+  tariffId: string | null,
+  basePrice: number,
+): Promise<number> {
+  if (!tariffId) return basePrice;
+  const { data: tariff } = await admin
+    .from("tariffs")
+    .select("percentage, is_discount, is_active")
+    .eq("id", tariffId)
+    .maybeSingle();
+  if (!tariff || !tariff.is_active) return basePrice;
+  const adj = (basePrice * Number(tariff.percentage)) / 100;
+  return tariff.is_discount ? basePrice - adj : basePrice + adj;
+}
+
+/**
+ * Extract a numeric price from a pricing API response.
+ */
+export function extractPrice(pricingData: any): number {
+  if (typeof pricingData?.price === "number") return pricingData.price;
+  if (typeof pricingData?.price === "string") {
+    const n = parseFloat(pricingData.price.replace(",", "."));
+    if (!isNaN(n)) return n;
+  }
+  // Try priceOutputs
+  const priceOuts = pricingData?.priceOutputs;
+  if (Array.isArray(priceOuts) && priceOuts.length > 0) {
+    const v = priceOuts[0]?.value ?? priceOuts[0]?.calculatedValue;
+    if (typeof v === "number") return v;
+    if (typeof v === "string") {
+      const n = parseFloat(v.replace(",", "."));
+      if (!isNaN(n)) return n;
+    }
+  }
+  return 0;
+}
