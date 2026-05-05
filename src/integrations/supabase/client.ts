@@ -13,5 +13,11 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
+    // Important: the portal uses its own client (storageKey 'sb-portal-auth')
+    // and is the one that should consume recovery/magiclink hash tokens.
+    // If this main client also detects them, it swallows the hash before the
+    // portal client can react, leaving /portal/set-password stuck on
+    // "Validando enlace...".
+    detectSessionInUrl: false,
   }
 });
