@@ -38,6 +38,8 @@ interface PortalQuoteData {
       outputs: any;
       multi?: any;
       item_additionals?: any;
+      accepted?: boolean | null;
+      accepted_quantity?: number | string | null;
     }>;
     additionals: Array<{
       id: string;
