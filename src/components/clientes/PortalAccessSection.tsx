@@ -22,6 +22,7 @@ export const PortalAccessSection = ({ customerId, customerEmail }: PortalAccessS
   const [state, setState] = useState<PortalState | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -88,6 +89,33 @@ export const PortalAccessSection = ({ customerId, customerEmail }: PortalAccessS
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const sendInvite = async () => {
+    setSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("portal-customer-invite", {
+        body: { customerId, appUrl: window.location.origin },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setState((prev) => prev ? { ...prev, portal_invited_at: new Date().toISOString() } : prev);
+      toast({
+        title: "Email enviado",
+        description: (data as any)?.isNew
+          ? "Se ha enviado al cliente un email para crear su contraseña."
+          : "Se ha reenviado el enlace para restablecer la contraseña.",
+      });
+    } catch (e: any) {
+      console.error("[PortalAccessSection] sendInvite error", e);
+      toast({
+        title: "No se pudo enviar el email",
+        description: e?.message || "Revisa el SMTP de la organización y vuelve a intentarlo.",
+        variant: "destructive",
+      });
+    } finally {
+      setSending(false);
     }
   };
 
