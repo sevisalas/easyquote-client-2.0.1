@@ -598,7 +598,10 @@ const AppContent = () => {
           </ProtectedRoute>
         }
       />
-      {/* Public portal route — no auth required */}
+      {/* Public portal routes — no auth required */}
+      <Route path="/portal/login" element={<PortalLogin />} />
+      <Route path="/portal/set-password" element={<PortalSetPassword />} />
+      <Route path="/portal" element={<PortalHome />} />
       <Route path="/portal/:token" element={<PortalQuote />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
