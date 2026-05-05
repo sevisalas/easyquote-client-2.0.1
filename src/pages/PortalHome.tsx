@@ -59,6 +59,7 @@ const PortalHome = () => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [orgName, setOrgName] = useState("");
   const [primary, setPrimary] = useState<string>("#1B1B3A");
+  const [logoUrl, setLogoUrl] = useState<string>("");
   const [openingId, setOpeningId] = useState<string | null>(null);
   const [b2bEnabled, setB2bEnabled] = useState(false);
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
@@ -114,6 +115,14 @@ const PortalHome = () => {
         .eq("is_active", true)
         .maybeSingle();
       if (theme?.primary_color) setPrimary(theme.primary_color);
+
+      // Org logo from PDF configuration
+      const { data: pdfCfg } = await portalSupabase
+        .from("pdf_configurations")
+        .select("logo_url")
+        .eq("organization_id", cust.organization_id)
+        .maybeSingle();
+      if (pdfCfg?.logo_url) setLogoUrl(pdfCfg.logo_url);
 
       const { data: qs } = await portalSupabase
         .from("quotes")
@@ -345,9 +354,20 @@ const PortalHome = () => {
     <div className="min-h-screen bg-muted/30">
       <header className="border-b bg-background">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold" style={{ color: primary }}>{orgName || "Portal"}</h1>
-            <p className="text-sm text-muted-foreground">
+          <div className="flex items-center gap-3 min-w-0">
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt={orgName || "Logo"}
+                className="h-10 w-auto max-w-[160px] object-contain"
+                onError={(e) => { e.currentTarget.style.display = "none"; }}
+              />
+            ) : (
+              <h1 className="text-xl font-bold truncate" style={{ color: primary }}>
+                {orgName || "Portal"}
+              </h1>
+            )}
+            <p className="text-sm text-muted-foreground truncate">
               {customer?.trade_name || customer?.name}
             </p>
           </div>
