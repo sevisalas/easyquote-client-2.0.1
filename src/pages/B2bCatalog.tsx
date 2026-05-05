@@ -115,10 +115,11 @@ const B2bCatalog = () => {
       if (error || !data) return;
       const list = Array.isArray(data) ? data : ((data as any)?.items || (data as any)?.data || []);
       const opts: ProductOption[] = (list as any[])
-        .filter((p: any) => p.isActive !== false)
         .map((p: any) => ({
           id: String(p.id ?? p.productId ?? p.product_id ?? ""),
-          name: p.name ?? p.title ?? p.displayName ?? "Producto",
+          name: p.productName ?? p.name ?? p.title ?? p.displayName ?? `Producto ${p.id ?? ""}`.trim(),
+          category: p.category ?? p.categoryName ?? "",
+          isActive: p.isActive !== false,
         }))
         .filter((p) => p.id);
       setProducts(opts);
