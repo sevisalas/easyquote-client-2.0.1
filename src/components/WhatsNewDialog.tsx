@@ -37,24 +37,6 @@ const RELEASE_NOTES: ReleaseNote[] = [
     description:
       "Crea presupuestos agrupados desde varios borradores en /presupuestos/agrupado/nuevo. Los borradores quedan en estado 'agrupado' y la trazabilidad es interna: el cliente solo ve el presupuesto agrupado final.",
   },
-  {
-    icon: <Mail className="h-5 w-5 text-primary" />,
-    title: "Envío de email controlado",
-    description:
-      "Los presupuestos en borrador ya no se pueden enviar por email. Primero hay que marcarlos como 'Listo para enviar' para evitar envíos por error.",
-  },
-  {
-    icon: <Link2 className="h-5 w-5 text-primary" />,
-    title: "Listado limpio en el portal",
-    description:
-      "El listado del portal del cliente solo muestra presupuestos enviados, aprobados o rechazados. Los borradores quedan ocultos hasta que estén listos.",
-  },
-  {
-    icon: <Sparkles className="h-5 w-5 text-primary" />,
-    title: "Definiciones de prompts más estables",
-    description:
-      "Corregido el error 400 al cargar definiciones de prompts en presupuestos nuevos y en edición, garantizando que las visibilidades y etiquetas se resuelvan siempre correctamente.",
-  },
 ];
 
 export function WhatsNewDialog() {
