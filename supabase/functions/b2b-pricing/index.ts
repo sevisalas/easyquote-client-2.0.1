@@ -5,12 +5,19 @@ import {
   callEasyQuotePricing,
   applyCustomerTariff,
   extractPrice,
+  getHiddenPromptKeysForProduct,
+  normalizePromptKey,
 } from "../_shared/b2b-pricing-core.ts";
 
 /**
  * Public-facing pricing endpoint for the B2B portal.
- * The customer chooses values for "exposed" prompts; we merge them with the
- * admin's "default_prompts" and return the customer-facing price (after tariff).
+ *
+ * Source of truth for product configuration is the SAME definition the main app uses:
+ *   - prompts come from EasyQuote pricing API
+ *   - visibility comes from product_prompt_settings (shared by api_user_id)
+ *
+ * The catalog item only acts as a publication wrapper (which product, name, image,
+ * description). It no longer carries its own "default_prompts" or "exposed_prompt_ids".
  */
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -38,7 +45,7 @@ Deno.serve(async (req) => {
 
     const { data: item } = await ctx.admin
       .from("b2b_catalog_items")
-      .select("id, organization_id, name, product_id, default_prompts, exposed_prompt_ids, is_active")
+      .select("id, organization_id, name, product_id, is_active")
       .eq("id", catalog_item_id)
       .maybeSingle();
 
@@ -63,15 +70,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Merge defaults + overrides (only for exposed prompt ids)
-    const defaults = (item.default_prompts as Record<string, any>) || {};
-    const exposed = new Set((item.exposed_prompt_ids as string[]) || []);
-    const merged: Record<string, any> = { ...defaults };
-    for (const [k, v] of Object.entries(overrides || {})) {
-      if (exposed.has(k)) merged[k] = v;
-    }
+    // Visibility config from the main app
+    const { hidden } = await getHiddenPromptKeysForProduct(
+      ctx.admin,
+      item.organization_id,
+      item.product_id,
+    );
 
-    const inputs = Object.entries(merged).map(([id, value]) => ({ id, value }));
+    // Forward only customer-supplied overrides; the API merges with its own defaults.
+    const inputs = Object.entries(overrides || {})
+      .filter(([, v]) => v !== undefined && v !== null && v !== "")
+      .map(([id, value]) => ({ id, value }));
+
     const pricing = await callEasyQuotePricing(token, item.product_id, inputs);
 
     if (!pricing.ok) {
@@ -88,11 +98,18 @@ Deno.serve(async (req) => {
     const basePrice = extractPrice(pricing.data);
     const finalPrice = await applyCustomerTariff(ctx.admin, ctx.customer.tariff_id, basePrice);
 
+    // Filter out prompts marked as hidden / admin_only in the main app.
+    const apiPrompts: any[] = pricing.data?.prompts ?? [];
+    const visiblePrompts = apiPrompts.filter((p: any) => {
+      const keys = [p.id, p.promptText, p.label].map(normalizePromptKey);
+      return !keys.some((k) => k && hidden.has(k));
+    });
+
     return new Response(JSON.stringify({
       base_price: basePrice,
       final_price: finalPrice,
       description: pricing.data?.description ?? null,
-      prompts: pricing.data?.prompts ?? [],
+      prompts: visiblePrompts,
       outputs: pricing.data?.outputs ?? [],
     }), {
       status: 200,
