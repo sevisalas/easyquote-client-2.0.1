@@ -102,7 +102,7 @@ export const PortalAccessSection = ({ customerId, customerEmail }: PortalAccessS
     setSending(true);
     try {
       const { data, error } = await supabase.functions.invoke("portal-customer-invite", {
-        body: { customerId, appUrl: window.location.origin },
+        body: { customerId, appUrl: "https://app.easyquote.cloud" },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
