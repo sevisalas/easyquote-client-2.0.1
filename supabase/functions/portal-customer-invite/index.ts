@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { customerId, appUrl: appUrlFromClient } = await req.json();
+    const { customerId } = await req.json();
     if (!customerId) {
       return new Response(JSON.stringify({ error: "customerId obligatorio" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -88,9 +88,7 @@ Deno.serve(async (req) => {
     }
 
     const email = customer.email.trim().toLowerCase();
-    const appUrl = (appUrlFromClient && /^https?:\/\//.test(appUrlFromClient))
-      ? appUrlFromClient.replace(/\/$/, "")
-      : (req.headers.get("origin") || req.headers.get("referer") || "").replace(/\/$/, "");
+    const appUrl = "https://app.easyquote.cloud";
     const redirectTo = `${appUrl}/portal/set-password`;
 
     // Find or create the auth user
