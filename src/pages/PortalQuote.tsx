@@ -408,7 +408,7 @@ const PortalQuote = () => {
                                      </div>
                                    );
                                  }
-                                 const prompts = Array.isArray(item.prompts) ? item.prompts : [];
+                                  const prompts = approvedState?.resolvedPromptsArray || (Array.isArray(item.prompts) ? item.prompts : []);
                                  const specs = prompts
                                    .filter((p: any) => p && p.label && p.value !== undefined && p.value !== null && String(p.value).trim() !== "")
                                    .map((p: any) => {
