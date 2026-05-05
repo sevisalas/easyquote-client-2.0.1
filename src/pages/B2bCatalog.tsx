@@ -353,6 +353,7 @@ const B2bCatalog = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__all__">Todas las categorías</SelectItem>
+                    <SelectItem value="__uncat__">Sin categoría</SelectItem>
                     {categories.map((c) => (
                       <SelectItem key={c} value={c}>{c}</SelectItem>
                     ))}
