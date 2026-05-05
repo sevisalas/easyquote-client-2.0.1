@@ -370,52 +370,89 @@ const PortalHome = () => {
             </TabsList>
             <TabsContent value="quotes">{QuotesPanel}</TabsContent>
             <TabsContent value="catalog">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Catálogo — pide tu presupuesto al instante</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {catalog.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No hay productos publicados.</p>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {catalog.map((it) => (
-                        <div key={it.id} className="border rounded-lg p-4 flex flex-col">
-                          {(() => {
-                            const src = apiImages[it.id] || it.image_url;
-                            return src ? (
+              <div className="space-y-4">
+                <div className="flex items-end justify-between gap-4 flex-wrap">
+                  <div>
+                    <h2 className="text-2xl font-bold tracking-tight">Catálogo</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Configura tu producto y obtén el precio al instante.
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="text-xs">
+                    {catalog.length} {catalog.length === 1 ? "producto" : "productos"}
+                  </Badge>
+                </div>
+
+                {catalog.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-12 text-center text-sm text-muted-foreground">
+                      No hay productos publicados.
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                    {catalog.map((it) => {
+                      const src = apiImages[it.id] || it.image_url;
+                      const disabled = !it.product_id;
+                      return (
+                        <button
+                          key={it.id}
+                          type="button"
+                          onClick={() => !disabled && openConfig(it)}
+                          disabled={disabled}
+                          className="group text-left bg-card border rounded-xl overflow-hidden flex flex-col transition-all hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none focus:outline-none focus:ring-2 focus:ring-offset-2"
+                          style={{ ['--tw-ring-color' as any]: primary }}
+                        >
+                          <div className="relative aspect-square bg-muted overflow-hidden">
+                            {src ? (
                               <img
                                 src={src}
                                 alt={it.name}
-                                className="w-full h-32 object-cover rounded mb-3"
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                 loading="lazy"
-                                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                                }}
                               />
                             ) : (
-                              <div className="w-full h-32 bg-muted rounded mb-3 flex items-center justify-center text-xs text-muted-foreground">
+                              <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
                                 Sin imagen
                               </div>
-                            );
-                          })()}
-                          <div className="font-medium">{it.name}</div>
-                          {it.description && (
-                            <p className="text-xs text-muted-foreground mt-1 flex-1">{it.description}</p>
-                          )}
-                          <Button
-                            size="sm"
-                            className="mt-3"
-                            style={{ backgroundColor: primary }}
-                            onClick={() => openConfig(it)}
-                            disabled={!it.product_id}
-                          >
-                            <Settings2 className="w-4 h-4 mr-1" /> Configurar y ver precio
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                            )}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end justify-center pb-4">
+                              <span
+                                className="inline-flex items-center text-xs font-medium text-white px-3 py-1.5 rounded-full shadow-md"
+                                style={{ backgroundColor: primary }}
+                              >
+                                <Settings2 className="w-3.5 h-3.5 mr-1.5" /> Configurar
+                              </span>
+                            </div>
+                          </div>
+                          <div className="p-4 flex flex-col flex-1">
+                            <div className="font-semibold leading-tight line-clamp-2">{it.name}</div>
+                            {it.description && (
+                              <p className="text-xs text-muted-foreground mt-1.5 line-clamp-2 flex-1">
+                                {it.description}
+                              </p>
+                            )}
+                            <div className="mt-3 pt-3 border-t flex items-center justify-between">
+                              <span className="text-[11px] uppercase tracking-wider text-muted-foreground">
+                                Precio a medida
+                              </span>
+                              <span
+                                className="text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity"
+                                style={{ color: primary }}
+                              >
+                                Ver precio →
+                              </span>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         ) : (
