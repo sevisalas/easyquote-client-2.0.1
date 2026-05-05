@@ -150,21 +150,46 @@ export async function applyCustomerTariff(
  * Extract a numeric price from a pricing API response.
  */
 export function extractPrice(pricingData: any): number {
-  if (typeof pricingData?.price === "number") return pricingData.price;
-  if (typeof pricingData?.price === "string") {
-    const n = parseFloat(pricingData.price.replace(",", "."));
-    if (!isNaN(n)) return n;
+  const parseEs = (val: any): number => {
+    if (typeof val === "number") return val;
+    if (val == null) return NaN;
+    const n = parseFloat(String(val).replace(/\./g, "").replace(",", "."));
+    return Number.isFinite(n) ? n : NaN;
+  };
+
+  // Source of truth: outputs with type === "Price" (matches main app QuoteItem logic).
+  const outputs: any[] = Array.isArray(pricingData?.outputs)
+    ? pricingData.outputs
+    : Array.isArray(pricingData?.outputValues)
+      ? pricingData.outputValues
+      : [];
+
+  let prices = outputs.filter((o) => String(o?.type || "").toLowerCase() === "price");
+  if (prices.length === 0) {
+    prices = outputs.filter((o) => {
+      const name = String(o?.name || o?.label || "").toLowerCase();
+      return name.includes("precio") || name.includes("price");
+    });
   }
-  // Try priceOutputs
-  const priceOuts = pricingData?.priceOutputs;
-  if (Array.isArray(priceOuts) && priceOuts.length > 0) {
-    const v = priceOuts[0]?.value ?? priceOuts[0]?.calculatedValue;
-    if (typeof v === "number") return v;
-    if (typeof v === "string") {
-      const n = parseFloat(v.replace(",", "."));
-      if (!isNaN(n)) return n;
+
+  if (prices.length > 0) {
+    // Prefer "total" if any
+    const totalLike = prices.find((o) => /total/i.test(String(o?.name ?? o?.label ?? "")));
+    if (totalLike) {
+      const n = parseEs(totalLike.value ?? totalLike.calculatedValue);
+      if (Number.isFinite(n)) return n;
     }
+    // Otherwise pick the largest numeric (mirrors main app)
+    const nums = prices
+      .map((o) => parseEs(o.value ?? o.calculatedValue))
+      .filter((n) => Number.isFinite(n));
+    if (nums.length > 0) return Math.max(...nums);
   }
+
+  // Last-resort fallbacks (rare)
+  const direct = parseEs(pricingData?.price);
+  if (Number.isFinite(direct)) return direct;
+
   return 0;
 }
 
