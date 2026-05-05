@@ -252,7 +252,7 @@ const PortalQuote = () => {
 
   if (!data) return null;
 
-  const { quote, organization, customer_name } = data;
+  const { quote, organization, customer_name, customer_portal_enabled } = data;
   const canRespond = !actionDone && quote.status === "sent";
   const isPending = canRespond && approvalMode;
   const isApprovedQuote = quote.status === "approved" || actionDone === "approved";
@@ -360,6 +360,17 @@ const PortalQuote = () => {
               </Badge>
             </div>
             {customer_name && <p className="text-muted-foreground mt-1">Cliente: {customer_name}</p>}
+          {customer_portal_enabled && (
+            <div className="mt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open("/portal", "_blank")}
+              >
+                Entrar en mi portal
+              </Button>
+            </div>
+          )}
           </CardHeader>
 
           <CardContent className="space-y-4">
