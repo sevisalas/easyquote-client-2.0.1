@@ -12,6 +12,7 @@ import { toast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useTariffs } from "@/hooks/useTariffs";
+import PortalAccessSection from "@/components/clientes/PortalAccessSection";
 
 interface ClienteData {
   name: string;
@@ -412,6 +413,10 @@ const ClienteForm = () => {
             </form>
           </CardContent>
         </Card>
+
+        {isEditing && id && (
+          <PortalAccessSection customerId={id} customerEmail={formData.email} />
+        )}
       </div>
     </div>
   );

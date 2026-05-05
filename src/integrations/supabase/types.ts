@@ -538,6 +538,9 @@ export type Database = {
           notes: string | null
           organization_id: string | null
           phone: string | null
+          portal_enabled: boolean
+          portal_enabled_at: string | null
+          portal_enabled_by: string | null
           province: string | null
           source: string
           tariff_id: string | null
@@ -558,6 +561,9 @@ export type Database = {
           notes?: string | null
           organization_id?: string | null
           phone?: string | null
+          portal_enabled?: boolean
+          portal_enabled_at?: string | null
+          portal_enabled_by?: string | null
           province?: string | null
           source?: string
           tariff_id?: string | null
@@ -578,6 +584,9 @@ export type Database = {
           notes?: string | null
           organization_id?: string | null
           phone?: string | null
+          portal_enabled?: boolean
+          portal_enabled_at?: string | null
+          portal_enabled_by?: string | null
           province?: string | null
           source?: string
           tariff_id?: string | null
