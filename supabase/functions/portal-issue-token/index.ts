@@ -65,6 +65,7 @@ Deno.serve(async (req) => {
       .from("quote_portal_tokens")
       .select("token, expires_at")
       .eq("quote_id", quote_id)
+      .eq("is_active", true)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
