@@ -24,7 +24,6 @@ interface ReleaseNote {
 
 const RELEASE_NOTES: ReleaseNote[] = [
   {
-  {
     icon: <UserCheck className="h-5 w-5 text-primary" />,
     title: "Portal del cliente",
     badge: "Destacado",
