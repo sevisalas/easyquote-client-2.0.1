@@ -63,6 +63,7 @@ const PortalHome = () => {
   const [openingId, setOpeningId] = useState<string | null>(null);
   const [b2bEnabled, setB2bEnabled] = useState(false);
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const [apiImages, setApiImages] = useState<Record<string, string>>({});
 
   // Configurator state
   const [configItem, setConfigItem] = useState<CatalogItem | null>(null);
@@ -130,11 +131,31 @@ const PortalHome = () => {
           .eq("organization_id", cust.organization_id)
           .eq("is_active", true)
           .order("display_order", { ascending: true });
-        setCatalog(((cat as any[]) || []).map((c: any) => ({
+        const items = ((cat as any[]) || []).map((c: any) => ({
           ...c,
           exposed_prompt_ids: c.exposed_prompt_ids || [],
           default_prompts: c.default_prompts || {},
-        })));
+        }));
+        setCatalog(items);
+        // Fetch image outputs from API in parallel for each item
+        items.forEach(async (it: CatalogItem) => {
+          try {
+            const { data } = await portalSupabase.functions.invoke("b2b-pricing", {
+              body: { catalog_item_id: it.id, overrides: {} },
+            });
+            const outputs: any[] = (data as any)?.outputs || [];
+            const imgOut = outputs.find((o) => {
+              const t = String(o?.type || o?.outputType || "").toLowerCase();
+              return t === "image";
+            });
+            const url = imgOut?.value || imgOut?.url || imgOut?.imageUrl;
+            if (url && typeof url === "string") {
+              setApiImages((prev) => ({ ...prev, [it.id]: url }));
+            }
+          } catch {
+            // ignore
+          }
+        });
       }
 
       setLoading(false);
@@ -382,14 +403,22 @@ const PortalHome = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {catalog.map((it) => (
                         <div key={it.id} className="border rounded-lg p-4 flex flex-col">
-                          {it.image_url && (
-                            <img
-                              src={it.image_url}
-                              alt={it.name}
-                              className="w-full h-32 object-cover rounded mb-3"
-                              loading="lazy"
-                            />
-                          )}
+                          {(() => {
+                            const src = apiImages[it.id] || it.image_url;
+                            return src ? (
+                              <img
+                                src={src}
+                                alt={it.name}
+                                className="w-full h-32 object-cover rounded mb-3"
+                                loading="lazy"
+                                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                              />
+                            ) : (
+                              <div className="w-full h-32 bg-muted rounded mb-3 flex items-center justify-center text-xs text-muted-foreground">
+                                Sin imagen
+                              </div>
+                            );
+                          })()}
                           <div className="font-medium">{it.name}</div>
                           {it.description && (
                             <p className="text-xs text-muted-foreground mt-1 flex-1">{it.description}</p>
