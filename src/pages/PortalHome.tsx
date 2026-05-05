@@ -88,6 +88,7 @@ const PortalHome = () => {
         .from("quotes")
         .select("id, quote_number, status, final_price, created_at")
         .eq("customer_id", cust.id)
+        .neq("status", "draft")
         .order("created_at", { ascending: false });
       setQuotes((qs as Quote[]) || []);
       setLoading(false);
