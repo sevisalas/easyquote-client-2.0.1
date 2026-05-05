@@ -150,6 +150,137 @@ export type Database = {
           },
         ]
       }
+      b2b_catalog_items: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          display_order: number
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          organization_id: string
+          product_ref: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          organization_id: string
+          product_ref?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          organization_id?: string
+          product_ref?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_catalog_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "b2b_catalog_items_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      b2b_quote_requests: {
+        Row: {
+          converted_at: string | null
+          converted_by: string | null
+          converted_quote_id: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          items: Json
+          notes: string | null
+          organization_id: string
+          portal_user_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          converted_at?: string | null
+          converted_by?: string | null
+          converted_quote_id?: string | null
+          created_at?: string
+          customer_id: string
+          id?: string
+          items?: Json
+          notes?: string | null
+          organization_id: string
+          portal_user_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          converted_at?: string | null
+          converted_by?: string | null
+          converted_quote_id?: string | null
+          created_at?: string
+          customer_id?: string
+          id?: string
+          items?: Json
+          notes?: string | null
+          organization_id?: string
+          portal_user_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_quote_requests_converted_quote_id_fkey"
+            columns: ["converted_quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "b2b_quote_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "b2b_quote_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "b2b_quote_requests_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       components: {
         Row: {
           component_type: string
@@ -1713,6 +1844,7 @@ export type Database = {
       organizations: {
         Row: {
           api_user_id: string
+          b2b_portal_enabled: boolean
           client_portal: boolean
           client_user_extra: number
           client_user_limit: number
@@ -1733,6 +1865,7 @@ export type Database = {
         }
         Insert: {
           api_user_id: string
+          b2b_portal_enabled?: boolean
           client_portal?: boolean
           client_user_extra?: number
           client_user_limit?: number
@@ -1753,6 +1886,7 @@ export type Database = {
         }
         Update: {
           api_user_id?: string
+          b2b_portal_enabled?: boolean
           client_portal?: boolean
           client_user_extra?: number
           client_user_limit?: number

@@ -16,6 +16,7 @@ export interface Organization {
   api_user_id: string;
   holded_external_customers?: boolean;
   max_daily_orders?: number;
+  b2b_portal_enabled?: boolean;
 }
 
 interface OrganizationMember {
@@ -82,7 +83,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
       .from('organization_members')
       .select(`
         organization_id,
-        organization:organizations(id, name, subscription_plan, excel_limit, excel_extra, client_user_limit, client_user_extra, api_user_id, holded_external_customers, max_daily_orders)
+        organization:organizations(id, name, subscription_plan, excel_limit, excel_extra, client_user_limit, client_user_extra, api_user_id, holded_external_customers, max_daily_orders, b2b_portal_enabled)
       `)
       .eq('user_id', userId);
 

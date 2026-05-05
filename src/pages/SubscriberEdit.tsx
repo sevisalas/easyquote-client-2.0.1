@@ -22,6 +22,7 @@ interface Suscriptor {
   holded_external_customers?: boolean;
   generate_pdfs?: boolean;
   client_portal?: boolean;
+  b2b_portal_enabled?: boolean;
   hide_all_prompts_in_documents?: boolean;
 }
 
@@ -85,6 +86,7 @@ const EditarSuscriptor = () => {
         subscription_plan: suscriptor.subscription_plan,
         generate_pdfs: suscriptor.generate_pdfs || false,
         client_portal: suscriptor.client_portal || false,
+        b2b_portal_enabled: suscriptor.b2b_portal_enabled || false,
         hide_all_prompts_in_documents: suscriptor.hide_all_prompts_in_documents || false,
       };
       
@@ -267,6 +269,16 @@ const EditarSuscriptor = () => {
                   id="client_portal"
                   checked={suscriptor.client_portal || false}
                   onCheckedChange={(checked) => setSuscriptor({ ...suscriptor, client_portal: !!checked })}
+                />
+              </div>
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <Label htmlFor="b2b_portal_enabled" className="cursor-pointer">
+                  Portal B2B (add-on)
+                </Label>
+                <Checkbox
+                  id="b2b_portal_enabled"
+                  checked={suscriptor.b2b_portal_enabled || false}
+                  onCheckedChange={(checked) => setSuscriptor({ ...suscriptor, b2b_portal_enabled: !!checked })}
                 />
               </div>
               <div className="flex items-center justify-between p-3 border rounded-lg">
