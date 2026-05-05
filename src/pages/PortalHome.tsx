@@ -349,11 +349,11 @@ const PortalHome = () => {
           <div className="divide-y">
             {quotes.map((q) => (
               <div key={q.id} className="py-3 flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="font-medium">{q.quote_number}</div>
-                  <div className="text-xs text-muted-foreground">
+                <div className="min-w-0 flex items-center gap-3 flex-wrap">
+                  <span className="font-medium">{q.quote_number}</span>
+                  <span className="text-xs text-muted-foreground">
                     {new Date(q.created_at).toLocaleDateString("es-ES", { day: "2-digit", month: "long", year: "numeric" })}
-                  </div>
+                  </span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Badge variant={statusVariant(q.status)}>{statusLabel[q.status] || q.status}</Badge>
