@@ -3652,6 +3652,10 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      is_portal_customer_of_org: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_superadmin: { Args: never; Returns: boolean }
       next_document_number: {
         Args: { p_document_type: string; p_organization_id: string }
