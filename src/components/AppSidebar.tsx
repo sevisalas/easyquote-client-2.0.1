@@ -395,6 +395,27 @@ export function AppSidebar() {
                                   </SidebarMenuSubButton>
                                 </SidebarMenuSubItem>
                               </>}
+                            {/* Portal B2B (add-on) */}
+                            {b2bEnabled && (isSuperAdmin || isOrgAdmin) && (
+                              <>
+                                <SidebarMenuSubItem>
+                                  <SidebarMenuSubButton asChild isActive={currentPath === "/configuracion/portal-b2b"} className="h-6 px-2">
+                                    <NavLink to="/configuracion/portal-b2b" end className={getNavCls}>
+                                      <Store className="mr-2 h-4 w-4" />
+                                      {!isCollapsed && <span>Catálogo B2B</span>}
+                                    </NavLink>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                                <SidebarMenuSubItem>
+                                  <SidebarMenuSubButton asChild isActive={currentPath === "/portal-b2b/solicitudes"} className="h-6 px-2">
+                                    <NavLink to="/portal-b2b/solicitudes" end className={getNavCls}>
+                                      <Inbox className="mr-2 h-4 w-4" />
+                                      {!isCollapsed && <span>Solicitudes B2B</span>}
+                                    </NavLink>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              </>
+                            )}
                            
                            {/* Archivos Excel - Solo API suscriptions o Client admins */}
                            {canAccessExcel() && <SidebarMenuSubItem>
