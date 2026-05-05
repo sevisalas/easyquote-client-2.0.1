@@ -1,98 +1,57 @@
-## Objetivo
+## Problema
 
-Convertir el Portal B2B en un **autoservicio real** para el cliente:
-elige producto → configura cantidad/opciones → **ve precio al instante** (motor EasyQuote con su tarifa) → acepta → **se genera el presupuesto automáticamente** sin intervención del comercial.
+En `/configuracion/portal-b2b`, al añadir un producto al catálogo B2B aparece un desplegable con cientos de entradas y **todas se llaman "Producto"**.
 
----
+## Causa
 
-## Lo que se ELIMINA
+En `src/pages/B2bCatalog.tsx` (líneas 110-116) el mapeo de la respuesta de la edge function `easyquote-products` usa los campos equivocados:
 
-- Tabla `b2b_quote_requests` (formulario de petición manual — no aporta nada).
-- Página admin `/b2b/solicitudes` y su navegación.
-- Pestaña "Solicitar presupuesto" del portal cliente.
-- Cualquier flujo que dependa de que el comercial haga el presupuesto a mano.
-
----
-
-## Lo que se AÑADE / CAMBIA
-
-### 1. Catálogo B2B (admin) — ampliar `b2b_catalog_items`
-
-Nuevas columnas:
-- `product_id` (uuid → producto real de EasyQuote, obligatorio)
-- `default_prompts` (jsonb): valores prefijados que el cliente NO puede tocar (acabados, sustrato, etc.)
-- `exposed_prompt_ids` (text[]): los prompts que el cliente SÍ ve y puede modificar (típicamente: cantidad, y opcionalmente medida o 1-2 acabados)
-- `min_quantity`, `max_quantity` (opcionales, para limitar el rango)
-
-Editor admin (`/b2b/catalogo`):
-- Selector de producto EasyQuote
-- Tras elegir producto, carga sus prompts vía `easyquote-master-files`
-- Para cada prompt: marcar "Fijo" (con valor predefinido) o "Visible al cliente"
-- Guardar en `b2b_catalog_items`
-
-### 2. Portal cliente — pestaña "Catálogo" (rediseño)
-
-Tarjetas de producto → al pulsar **"Configurar"** se abre un panel con:
-- Solo los `exposed_prompt_ids` (típicamente cantidad)
-- **Precio calculado en vivo** llamando a `easyquote-pricing` (PATCH) con la combinación: `default_prompts` + valores que elige el cliente
-- Aplicar **tarifa del cliente** (sistema de tariffs ya existente) sobre el precio devuelto
-- Botón **"Pedir este presupuesto"** → llama a una nueva edge function
-
-### 3. Edge function `b2b-create-quote`
-
-Recibe: `{ catalog_item_id, prompts_overrides, customer_id (del portal user) }`
-
-Flujo:
-1. Carga `b2b_catalog_items` → obtiene `product_id`, `default_prompts`, `organization_id`
-2. Funde `default_prompts` + `prompts_overrides`
-3. Llama `easyquote-pricing` para precio final autoritativo
-4. Aplica tariff del cliente
-5. Crea `quotes` + `quote_items` con todos los datos (igual que lo haría el comercial)
-6. `status = 'sent'` (o `'pending_review'` si el admin lo marca opcional)
-7. Devuelve `quote_id` → el cliente lo ve en "Mis presupuestos" listo para aprobar
-
-### 4. Flag de seguridad por organización
-
-`organizations.b2b_self_service_enabled` (bool, default false). Si está apagado, el botón crea una solicitud "pendiente revisión" en lugar del presupuesto definitivo. Así el comercial mantiene control si quiere.
-
----
-
-## Esquema técnico (resumen)
-
-```
-b2b_catalog_items (ALTER):
-  + product_id uuid
-  + default_prompts jsonb default '{}'
-  + exposed_prompt_ids text[] default '{}'
-  + min_quantity int, max_quantity int
-
-DROP: b2b_quote_requests (+ políticas)
-
-organizations:
-  + b2b_self_service_enabled boolean default true
-
-Edge function: b2b-create-quote (verify_jwt=false, valida portal token)
+```ts
+name: p.name ?? p.title ?? p.displayName ?? "Producto"
 ```
 
----
+Pero la API de EasyQuote devuelve **`productName`** (así está tipado en `ProductManagement.tsx` y `ProductConfigPage.tsx`). Como ninguno de los campos buscados existe, todos caen al fallback `"Producto"`. Además se cargan todos de golpe (cientos), sin búsqueda ni categoría.
 
-## Resultado para el cliente
+## Solución
 
-1. Entra al portal.
-2. Catálogo → "Tarjetas visita" → configurar → 500 uds.
-3. Ve **"427,30 €"** al instante.
-4. Pulsa "Pedir presupuesto".
-5. En 2 segundos lo tiene en "Mis presupuestos", listo para aprobar y descargar PDF.
+Reescribir el selector de producto del diálogo "Añadir producto" en `B2bCatalog.tsx` para que sea utilizable:
 
-Eso sí es un add-on de pago. Sin esperas, sin emails, sin llamadas.
+### 1. Mapeo correcto de campos
+Leer `productName` (con fallbacks a `name`/`title` por seguridad) y también capturar `category` y `isActive`.
 
----
+```ts
+{
+  id: String(p.id ?? p.productId ?? ""),
+  name: p.productName ?? p.name ?? p.title ?? `Producto ${p.id}`,
+  category: p.category ?? "",
+  isActive: p.isActive !== false,
+}
+```
 
-## Pasos de implementación
+### 2. Reemplazar el `<Select>` plano por un `Combobox` con búsqueda
+Usar el patrón ya existente en el proyecto (`Command` + `Popover` de shadcn, igual que en `QuoteItem.tsx` para elegir producto en presupuestos):
+- Input de búsqueda por nombre o categoría.
+- Lista virtualizada/limitada (mostrar primeros 50 + filtrar al teclear).
+- Mostrar `productName` como texto principal y `category` como subtítulo gris.
+- Badge "Inactivo" si `isActive === false` (y opción de ocultarlos por defecto).
 
-1. Migración: alter `b2b_catalog_items`, drop `b2b_quote_requests`, add flag a `organizations`.
-2. Rehacer editor admin `/b2b/catalogo` con selector de producto + configurador de prompts.
-3. Eliminar `/b2b/solicitudes` y rutas/menús asociados.
-4. Crear edge function `b2b-create-quote`.
-5. Rehacer pestaña "Catálogo" del portal cliente con configurador + pricing en vivo + botón "Pedir presupuesto".
-6. Quitar pestaña "Solicitar presupuesto" del portal.
+### 3. Filtros rápidos arriba del combobox
+- Filtro por categoría (dropdown con las categorías únicas detectadas).
+- Toggle "Mostrar inactivos" (oculto por defecto).
+- Ocultar productos ya añadidos al catálogo B2B (evita duplicados accidentales).
+
+### 4. Auto-rellenar el nombre público
+Cuando el admin selecciona un producto, autocompletar `draft.name` con el `productName` real (hoy ya lo intenta pero recibe `"Producto"`). Sigue siendo editable porque el nombre del catálogo B2B es el que verá el cliente final.
+
+### 5. En la lista de items ya guardados
+El badge `productNameById[it.product_id]` también muestra mal el nombre por la misma razón → queda arreglado automáticamente con el fix del mapeo.
+
+## Archivos a tocar
+
+- `src/pages/B2bCatalog.tsx` — único archivo afectado (mapeo + UI del selector).
+
+## Fuera de alcance
+
+- No se toca la edge function `easyquote-products` (devuelve bien los datos).
+- No se toca la base de datos.
+- El diálogo "Configurar" (default_prompts / exposed_prompt_ids) sigue igual.
