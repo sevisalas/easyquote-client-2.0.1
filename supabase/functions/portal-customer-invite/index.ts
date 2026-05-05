@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
     }
 
     const email = customer.email.trim().toLowerCase();
-    const appUrl = "https://app.easyquote.cloud";
+    const appUrl = "https://easyquote-client.lovable.app";
     const redirectTo = `${appUrl}/portal/set-password`;
 
     // Find or create the auth user
