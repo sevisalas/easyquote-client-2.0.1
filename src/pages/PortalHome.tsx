@@ -461,48 +461,84 @@ const PortalHome = () => {
       </main>
 
       <Dialog open={!!configItem} onOpenChange={(o) => !o && setConfigItem(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{configItem?.name}</DialogTitle>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden gap-0">
+          <DialogHeader className="px-6 pt-6 pb-2">
+            <DialogTitle className="text-2xl">{configItem?.name}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            {configItem?.description && (
-              <p className="text-sm text-muted-foreground">{configItem.description}</p>
-            )}
-            {rawPrompts.length === 0 && !pricingLoading && !pricingError && (
-              <p className="text-sm text-muted-foreground">
-                Producto preconfigurado por el comercial. Revisa el precio y solicita.
-              </p>
-            )}
-            <PromptsFormLite
-              prompts={rawPrompts}
-              values={configOverrides}
-              onChange={(id, value) =>
-                setConfigOverrides((prev) => ({ ...prev, [id]: value }))
-              }
-            />
 
-            <div className="border rounded-lg p-4 bg-muted/40 flex items-center justify-between">
-              <div>
-                <div className="text-xs text-muted-foreground">Precio total</div>
-                <div className="text-2xl font-bold tabular-nums" style={{ color: primary }}>
-                  {pricingLoading ? (
-                    <Loader2 className="w-5 h-5 animate-spin inline" />
-                  ) : livePrice != null ? (
-                    livePrice.toLocaleString("es-ES", { style: "currency", currency: "EUR" })
-                  ) : (
-                    "—"
-                  )}
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-6 pt-2">
+            {/* Imagen izquierda */}
+            <div className="space-y-4">
+              <div className="aspect-square w-full bg-muted rounded-xl overflow-hidden border">
+                {configItem && (apiImages[configItem.id] || configItem.image_url) ? (
+                  <img
+                    src={apiImages[configItem.id] || configItem.image_url || ""}
+                    alt={configItem.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">
+                    Sin imagen
+                  </div>
+                )}
               </div>
-              {pricingError && (
-                <div className="text-xs text-destructive max-w-[200px] text-right">
-                  {pricingError}
-                </div>
+            </div>
+
+            {/* Configurador derecha */}
+            <div className="space-y-4">
+              {rawPrompts.length === 0 && !pricingLoading && !pricingError && (
+                <p className="text-sm text-muted-foreground">
+                  Producto preconfigurado por el comercial. Revisa el precio y solicita.
+                </p>
               )}
+              <div className="max-h-[45vh] overflow-y-auto pr-1">
+                <PromptsFormLite
+                  prompts={rawPrompts}
+                  values={configOverrides}
+                  onChange={(id, value) =>
+                    setConfigOverrides((prev) => ({ ...prev, [id]: value }))
+                  }
+                />
+              </div>
+
+              <div className="border rounded-lg p-4 bg-muted/40 flex items-center justify-between">
+                <div>
+                  <div className="text-xs text-muted-foreground">Precio total</div>
+                  <div className="text-2xl font-bold tabular-nums" style={{ color: primary }}>
+                    {pricingLoading ? (
+                      <Loader2 className="w-5 h-5 animate-spin inline" />
+                    ) : livePrice != null ? (
+                      livePrice.toLocaleString("es-ES", { style: "currency", currency: "EUR" })
+                    ) : (
+                      "—"
+                    )}
+                  </div>
+                </div>
+                {pricingError && (
+                  <div className="text-xs text-destructive max-w-[200px] text-right">
+                    {pricingError}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-          <DialogFooter>
+
+          {/* Descripción debajo, ancho completo */}
+          {configItem?.description && (
+            <div className="px-6 pt-6 pb-2">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                Descripción
+              </h3>
+              <p className="text-sm text-foreground/80 leading-relaxed whitespace-pre-line">
+                {configItem.description}
+              </p>
+            </div>
+          )}
+
+          <DialogFooter className="px-6 py-4 mt-4 border-t bg-muted/30">
             <Button variant="outline" onClick={() => setConfigItem(null)}>Cancelar</Button>
             <Button
               onClick={submitQuote}
