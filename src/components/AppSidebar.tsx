@@ -1,4 +1,4 @@
-import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronRight, Sparkles, Monitor, ListChecks, TrendingUp, Building2, Kanban, Check, HelpCircle, MessageSquare, Wrench, Percent, Mail } from "lucide-react";
+import { Home, LayoutDashboard, Users, PlusCircle, LogOut, FileText, Palette, UserCog, Settings, Plus, Plug, FileSpreadsheet, Package, Tags, Menu, Key, Image, Building, Shield, Hash, ChevronRight, Sparkles, Monitor, ListChecks, TrendingUp, Building2, Kanban, Check, HelpCircle, MessageSquare, Wrench, Percent, Mail, Store, Inbox } from "lucide-react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarMenuSub, SidebarMenuSubItem, SidebarMenuSubButton, SidebarRail, useSidebar, SidebarTrigger } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -55,6 +55,7 @@ export function AppSidebar() {
     loading: pdfAccessLoading
   } = usePdfAccess();
   const isComercial = membership?.role === 'comercial';
+  const b2bEnabled = !!(organization as any)?.b2b_portal_enabled;
   const handleSignOut = async () => {
     try {
       // Limpiar todos los tokens y datos de organización
