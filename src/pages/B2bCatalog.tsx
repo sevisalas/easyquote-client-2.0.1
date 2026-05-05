@@ -15,6 +15,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, AlertTriangle, Settings2, Loader2, Check, ChevronsUpDown } from "lucide-react";
 import { invokeEasyQuoteFunction, getEasyQuoteToken } from "@/lib/easyquoteApi";
+import { useProductCategoryMappings } from "@/hooks/useProductCategoryMappings";
 
 interface CatalogItem {
   id: string;
@@ -47,6 +48,7 @@ interface PromptDef {
 const B2bCatalog = () => {
   const { organization } = useSubscription();
   const { toast } = useToast();
+  const { mappings: categoryMappings } = useProductCategoryMappings();
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [b2bEnabled, setB2bEnabled] = useState<boolean | null>(null);
   const [selfService, setSelfService] = useState<boolean>(true);
@@ -131,11 +133,23 @@ const B2bCatalog = () => {
     [products],
   );
 
+  // Resolve category per product: local mapping (controlled) > API category (raw)
+  const productCategoryById = useMemo(() => {
+    const map: Record<string, string> = {};
+    const localByProductId = new Map(
+      categoryMappings.map((m) => [m.easyquote_product_id, m.product_categories?.name || ""]),
+    );
+    products.forEach((p) => {
+      map[p.id] = localByProductId.get(p.id) || p.category || "";
+    });
+    return map;
+  }, [products, categoryMappings]);
+
   const categories = useMemo(() => {
     const set = new Set<string>();
-    products.forEach((p) => { if (p.category) set.add(p.category); });
+    Object.values(productCategoryById).forEach((c) => { if (c) set.add(c); });
     return Array.from(set).sort();
-  }, [products]);
+  }, [productCategoryById]);
 
   const usedProductIds = useMemo(
     () => new Set(items.map((it) => it.product_id).filter(Boolean) as string[]),
@@ -145,10 +159,14 @@ const B2bCatalog = () => {
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
       if (!showInactive && !p.isActive) return false;
-      if (categoryFilter !== "__all__" && p.category !== categoryFilter) return false;
+      if (categoryFilter === "__uncat__") {
+        if (productCategoryById[p.id]) return false;
+      } else if (categoryFilter !== "__all__") {
+        if (productCategoryById[p.id] !== categoryFilter) return false;
+      }
       return true;
     });
-  }, [products, categoryFilter, showInactive]);
+  }, [products, categoryFilter, showInactive, productCategoryById]);
 
   const toggleSelfService = async (v: boolean) => {
     if (!orgId) return;
@@ -335,6 +353,7 @@ const B2bCatalog = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__all__">Todas las categorías</SelectItem>
+                    <SelectItem value="__uncat__">Sin categoría</SelectItem>
                     {categories.map((c) => (
                       <SelectItem key={c} value={c}>{c}</SelectItem>
                     ))}
