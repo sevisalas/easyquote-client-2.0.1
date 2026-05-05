@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Fragment } from "react";
-import { CheckCircle, XCircle, Loader2, FileText, Clock, AlertTriangle } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, FileText, Clock, AlertTriangle, Download } from "lucide-react";
 import { buildAutoDescriptionFromPrompts, resolveApprovedQuoteItemState, syncPromptsWithQuantity, type QuantityPromptResolver } from "@/utils/approvedMultiQuantity";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
@@ -150,6 +150,15 @@ const PortalQuote = () => {
     setSelectedItems(sel);
     setItemQuantities(qty);
   }, [data?.quote?.items]);
+
+  // Auto-trigger print dialog when ?print=1 (used by portal "Descargar PDF")
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    if (loading || !data) return;
+    if (searchParams.get("print") !== "1") return;
+    const t = setTimeout(() => window.print(), 600);
+    return () => clearTimeout(t);
+  }, [loading, data, searchParams]);
 
   const fetchQuoteData = async () => {
     try {
@@ -360,8 +369,8 @@ const PortalQuote = () => {
               </Badge>
             </div>
             {customer_name && <p className="text-muted-foreground mt-1">Cliente: {customer_name}</p>}
-          {customer_portal_enabled && (
-            <div className="mt-3">
+          <div className="mt-3 flex flex-wrap gap-2 print:hidden">
+            {customer_portal_enabled && (
               <Button
                 variant="outline"
                 size="sm"
@@ -369,8 +378,15 @@ const PortalQuote = () => {
               >
                 Entrar en mi portal
               </Button>
-            </div>
-          )}
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.print()}
+            >
+              <Download className="h-4 w-4 mr-1" /> Descargar PDF
+            </Button>
+          </div>
           </CardHeader>
 
           <CardContent className="space-y-4">
