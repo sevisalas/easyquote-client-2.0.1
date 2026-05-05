@@ -521,11 +521,7 @@ const QuotesList = () => {
                       <CustomerName customerId={q.customer_id} />
                     </TableCell>
                     <TableCell className="py-1.5 px-3 text-sm text-muted-foreground truncate">
-                      {isPortalQuote(q) ? (
-                        <Badge variant="secondary" className="text-[10px] font-medium">Portal B2B</Badge>
-                      ) : (
-                        getUserName(q.user_id)
-                      )}
+                      {isPortalQuote(q) ? "Portal B2B" : getUserName(q.user_id)}
                     </TableCell>
                     <TableCell className="py-1.5 px-3 text-sm truncate">{q.description || ""}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm text-right font-medium whitespace-nowrap">{fmtEUR(q.final_price)}</TableCell>
