@@ -9,10 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Search } from "lucide-react";
+import { Sparkles, UserCheck, Layers, Mail, Link2 } from "lucide-react";
 
-const CURRENT_VERSION = "2.7.29";
-const SILENT_UPDATE = true;
+const CURRENT_VERSION = "2.8.1";
+const SILENT_UPDATE = false;
 const LS_KEY = "whats_new_seen_version";
 
 interface ReleaseNote {
@@ -24,34 +24,36 @@ interface ReleaseNote {
 
 const RELEASE_NOTES: ReleaseNote[] = [
   {
-    icon: <Sparkles className="h-5 w-5 text-primary" />,
-    title: "Separadores de componentes en PDF",
+    icon: <UserCheck className="h-5 w-5 text-primary" />,
+    title: "Portal del cliente",
+    badge: "Destacado",
     description:
-      "Los marcadores de componentes (Interior, Cubierta, etc.) ahora se renderizan correctamente como \"-- Interior --\" en todos los PDFs, sustituyendo los símbolos \"%%\" que aparecían con ciertas fuentes.",
+      "Tus clientes pueden acceder a su propio portal para revisar todos sus presupuestos enviados, aprobarlos o rechazarlos y descargar PDFs. Si reciben un enlace de aprobación, ahora ven también un acceso directo a su portal personal.",
+  },
+  {
+    icon: <Layers className="h-5 w-5 text-primary" />,
+    title: "Agrupación de presupuestos",
+    badge: "Nuevo",
+    description:
+      "Crea presupuestos agrupados desde varios borradores en /presupuestos/agrupado/nuevo. Los borradores quedan en estado 'agrupado' y la trazabilidad es interna: el cliente solo ve el presupuesto agrupado final.",
+  },
+  {
+    icon: <Mail className="h-5 w-5 text-primary" />,
+    title: "Envío de email controlado",
+    description:
+      "Los presupuestos en borrador ya no se pueden enviar por email. Primero hay que marcarlos como 'Listo para enviar' para evitar envíos por error.",
+  },
+  {
+    icon: <Link2 className="h-5 w-5 text-primary" />,
+    title: "Listado limpio en el portal",
+    description:
+      "El listado del portal del cliente solo muestra presupuestos enviados, aprobados o rechazados. Los borradores quedan ocultos hasta que estén listos.",
   },
   {
     icon: <Sparkles className="h-5 w-5 text-primary" />,
-    title: "Artículos personalizados sin precio base",
+    title: "Definiciones de prompts más estables",
     description:
-      "Cuando un artículo personalizado solo tiene ajustes (sin precio unitario), el PDF ya no muestra la línea engañosa de \"1 × 0,00 €\" y el total se calcula a partir de los ajustes.",
-  },
-  {
-    icon: <Sparkles className="h-5 w-5 text-primary" />,
-    title: "PDF con descripción completa",
-    description:
-      "Los PDFs de Campillo y Anebri ya respetan la descripción manual completa del artículo sin recortarla al procesar líneas que terminan en dos puntos.",
-  },
-  {
-    icon: <Search className="h-5 w-5 text-primary" />,
-    title: "Filtro por texto en presupuestos y pedidos",
-    description:
-      "Ahora puedes buscar presupuestos y pedidos de venta por texto libre, filtrando por número, cliente o cualquier dato visible en el listado.",
-  },
-  {
-    icon: <Sparkles className="h-5 w-5 text-primary" />,
-    title: "Textos largos controlados en configuración de producto",
-    description:
-      "Los encabezados con nombres largos dentro de la configuración de producto ya no se agrandan de forma desproporcionada y mantienen un tamaño estable en pantalla.",
+      "Corregido el error 400 al cargar definiciones de prompts en presupuestos nuevos y en edición, garantizando que las visibilidades y etiquetas se resuelvan siempre correctamente.",
   },
 ];
 
