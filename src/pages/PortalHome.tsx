@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, LogOut, FileText } from "lucide-react";
+import { Loader2, LogOut, FileText, ExternalLink } from "lucide-react";
 import { portalSupabase } from "./PortalLogin";
 
 interface Quote {
@@ -44,6 +44,7 @@ const PortalHome = () => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [orgName, setOrgName] = useState("");
   const [primary, setPrimary] = useState<string>("#1B1B3A");
+  const [openingId, setOpeningId] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -101,6 +102,28 @@ const PortalHome = () => {
     navigate("/portal/login", { replace: true });
   };
 
+  const openQuote = async (quoteId: string) => {
+    try {
+      setOpeningId(quoteId);
+      const { data: sess } = await portalSupabase.auth.getSession();
+      const jwt = sess.session?.access_token;
+      if (!jwt) {
+        navigate("/portal/login", { replace: true });
+        return;
+      }
+      const { data, error } = await portalSupabase.functions.invoke("portal-issue-token", {
+        body: { quote_id: quoteId },
+      });
+      if (error || !data?.token) {
+        console.error("portal-issue-token failed", error);
+        return;
+      }
+      window.open(`/portal/${data.token}`, "_blank", "noopener");
+    } finally {
+      setOpeningId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -152,6 +175,20 @@ const PortalHome = () => {
                           ? Number(q.final_price).toLocaleString("es-ES", { style: "currency", currency: "EUR" })
                           : "—"}
                       </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openQuote(q.id)}
+                        disabled={openingId === q.id}
+                      >
+                        {openingId === q.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <ExternalLink className="w-4 h-4 mr-1" /> Abrir
+                          </>
+                        )}
+                      </Button>
                     </div>
                   </div>
                 ))}
