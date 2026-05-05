@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { Button } from "@/components/ui/button";
@@ -7,8 +7,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Save, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Settings2, Loader2 } from "lucide-react";
+import { invokeEasyQuoteFunction, getEasyQuoteToken } from "@/lib/easyquoteApi";
 
 interface CatalogItem {
   id: string;
@@ -18,6 +22,22 @@ interface CatalogItem {
   image_url: string | null;
   display_order: number;
   is_active: boolean;
+  product_id: string | null;
+  default_prompts: Record<string, any>;
+  exposed_prompt_ids: string[];
+}
+
+interface ProductOption {
+  id: string;
+  name: string;
+}
+
+interface PromptDef {
+  id: string;
+  label: string;
+  type: string;
+  options: { value: any; label: string }[] | null;
+  defaultValue: any;
 }
 
 const B2bCatalog = () => {
@@ -25,13 +45,23 @@ const B2bCatalog = () => {
   const { toast } = useToast();
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [b2bEnabled, setB2bEnabled] = useState<boolean | null>(null);
+  const [selfService, setSelfService] = useState<boolean>(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [draft, setDraft] = useState<{ name: string; description: string; image_url: string }>({
-    name: "",
-    description: "",
-    image_url: "",
-  });
+  const [products, setProducts] = useState<ProductOption[]>([]);
+  const [draft, setDraft] = useState<{
+    name: string;
+    description: string;
+    image_url: string;
+    product_id: string;
+  }>({ name: "", description: "", image_url: "", product_id: "" });
+
+  // Configurator dialog
+  const [configItem, setConfigItem] = useState<CatalogItem | null>(null);
+  const [promptDefs, setPromptDefs] = useState<PromptDef[]>([]);
+  const [loadingPrompts, setLoadingPrompts] = useState(false);
+  const [draftDefaults, setDraftDefaults] = useState<Record<string, any>>({});
+  const [draftExposed, setDraftExposed] = useState<Set<string>>(new Set());
 
   const orgId = organization?.id;
 
@@ -40,10 +70,11 @@ const B2bCatalog = () => {
     setLoading(true);
     const { data: org } = await supabase
       .from("organizations")
-      .select("b2b_portal_enabled")
+      .select("b2b_portal_enabled, b2b_self_service_enabled")
       .eq("id", orgId)
       .maybeSingle();
     setB2bEnabled(!!(org as any)?.b2b_portal_enabled);
+    setSelfService((org as any)?.b2b_self_service_enabled !== false);
 
     const { data, error } = await supabase
       .from("b2b_catalog_items")
@@ -54,7 +85,11 @@ const B2bCatalog = () => {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      setItems((data as CatalogItem[]) || []);
+      setItems(((data as any[]) || []).map((d: any) => ({
+        ...d,
+        default_prompts: d.default_prompts || {},
+        exposed_prompt_ids: d.exposed_prompt_ids || [],
+      })));
     }
     setLoading(false);
   };
@@ -64,8 +99,48 @@ const B2bCatalog = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orgId]);
 
+  // Load EasyQuote products list once
+  useEffect(() => {
+    (async () => {
+      const token = await getEasyQuoteToken();
+      if (!token) return;
+      const { data, error } = await invokeEasyQuoteFunction("easyquote-products", { token });
+      if (error || !data) return;
+      const list = Array.isArray(data) ? data : ((data as any)?.items || (data as any)?.data || []);
+      const opts: ProductOption[] = (list as any[])
+        .filter((p: any) => p.isActive !== false)
+        .map((p: any) => ({
+          id: String(p.id ?? p.productId ?? p.product_id ?? ""),
+          name: p.name ?? p.title ?? p.displayName ?? "Producto",
+        }))
+        .filter((p) => p.id);
+      setProducts(opts);
+    })();
+  }, []);
+
+  const productNameById = useMemo(
+    () => Object.fromEntries(products.map((p) => [p.id, p.name])),
+    [products],
+  );
+
+  const toggleSelfService = async (v: boolean) => {
+    if (!orgId) return;
+    setSelfService(v);
+    const { error } = await supabase
+      .from("organizations")
+      .update({ b2b_self_service_enabled: v } as any)
+      .eq("id", orgId);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      setSelfService(!v);
+    }
+  };
+
   const addItem = async () => {
-    if (!orgId || !draft.name.trim()) return;
+    if (!orgId || !draft.name.trim() || !draft.product_id) {
+      toast({ title: "Faltan datos", description: "Selecciona un producto y un nombre" });
+      return;
+    }
     setSaving(true);
     const { error } = await supabase.from("b2b_catalog_items").insert({
       organization_id: orgId,
@@ -74,18 +149,21 @@ const B2bCatalog = () => {
       image_url: draft.image_url.trim() || null,
       display_order: items.length,
       is_active: true,
-    });
+      product_id: draft.product_id,
+      default_prompts: {},
+      exposed_prompt_ids: [],
+    } as any);
     setSaving(false);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
       return;
     }
-    setDraft({ name: "", description: "", image_url: "" });
+    setDraft({ name: "", description: "", image_url: "", product_id: "" });
     load();
   };
 
   const updateItem = async (id: string, patch: Partial<CatalogItem>) => {
-    const { error } = await supabase.from("b2b_catalog_items").update(patch).eq("id", id);
+    const { error } = await supabase.from("b2b_catalog_items").update(patch as any).eq("id", id);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
       return;
@@ -101,6 +179,73 @@ const B2bCatalog = () => {
       return;
     }
     setItems((prev) => prev.filter((i) => i.id !== id));
+  };
+
+  const openConfigurator = async (item: CatalogItem) => {
+    if (!item.product_id) {
+      toast({ title: "Falta producto", description: "Asigna primero un producto EasyQuote" });
+      return;
+    }
+    setConfigItem(item);
+    setDraftDefaults(item.default_prompts || {});
+    setDraftExposed(new Set(item.exposed_prompt_ids || []));
+    setLoadingPrompts(true);
+    setPromptDefs([]);
+    try {
+      const token = await getEasyQuoteToken();
+      if (!token) throw new Error("Sin token EasyQuote");
+      // Get prompt definitions and current values via pricing GET (no inputs)
+      const { data, error } = await invokeEasyQuoteFunction("easyquote-pricing", {
+        token,
+        productId: item.product_id,
+      });
+      if (error || !data) throw error || new Error("Sin datos");
+      const apiPrompts: any[] = (data as any).prompts || [];
+      const defs: PromptDef[] = apiPrompts.map((p: any) => {
+        const opts = p.valueOptions || p.options || p.values;
+        const optionList = Array.isArray(opts) && opts.length > 0
+          ? opts.map((o: any) => ({
+              value: o?.value ?? o?.id ?? o?.name ?? o,
+              label: String(o?.label ?? o?.name ?? o?.value ?? o),
+            }))
+          : null;
+        return {
+          id: String(p.id),
+          label: p.promptText || p.label || p.id,
+          type: String(p.promptType || p.type || "Text"),
+          options: optionList,
+          defaultValue: p.currentValue ?? p.defaultValue ?? "",
+        };
+      });
+      setPromptDefs(defs);
+      // Pre-fill defaults with API current values for prompts not yet configured
+      setDraftDefaults((prev) => {
+        const next = { ...prev };
+        defs.forEach((d) => {
+          if (next[d.id] === undefined) next[d.id] = d.defaultValue;
+        });
+        return next;
+      });
+    } catch (e: any) {
+      toast({ title: "Error cargando prompts", description: e?.message || "", variant: "destructive" });
+    } finally {
+      setLoadingPrompts(false);
+    }
+  };
+
+  const saveConfig = async () => {
+    if (!configItem) return;
+    // Only persist defaults for prompts that are NOT exposed (exposed = customer chooses)
+    const filteredDefaults: Record<string, any> = {};
+    for (const [k, v] of Object.entries(draftDefaults)) {
+      filteredDefaults[k] = v;
+    }
+    await updateItem(configItem.id, {
+      default_prompts: filteredDefaults,
+      exposed_prompt_ids: Array.from(draftExposed),
+    });
+    toast({ title: "Configuración guardada" });
+    setConfigItem(null);
   };
 
   if (loading) return <div className="p-8 text-muted-foreground">Cargando…</div>;
@@ -128,9 +273,25 @@ const B2bCatalog = () => {
       <div>
         <h1 className="text-3xl font-bold">Catálogo Portal B2B</h1>
         <p className="text-muted-foreground">
-          Productos visibles para tus clientes en el portal. Pueden solicitar presupuesto sobre ellos.
+          Tus clientes podrán configurar estos productos, ver el precio en vivo y generar el presupuesto solos.
         </p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Modo de funcionamiento</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-between gap-4">
+          <div>
+            <div className="font-medium">Autoservicio</div>
+            <p className="text-sm text-muted-foreground">
+              Si está activo, el presupuesto se crea como <strong>"Enviado"</strong> listo para que el cliente lo apruebe.
+              Si está desactivado, queda como <strong>borrador</strong> para revisión del comercial antes de enviarlo.
+            </p>
+          </div>
+          <Switch checked={selfService} onCheckedChange={toggleSelfService} />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -138,12 +299,28 @@ const B2bCatalog = () => {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="md:col-span-2">
+              <Label>Producto EasyQuote</Label>
+              <Select
+                value={draft.product_id}
+                onValueChange={(v) => setDraft({ ...draft, product_id: v, name: draft.name || (productNameById[v] || "") })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona el producto a publicar" />
+                </SelectTrigger>
+                <SelectContent>
+                  {products.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div>
-              <Label>Nombre</Label>
+              <Label>Nombre visible al cliente</Label>
               <Input
                 value={draft.name}
                 onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                placeholder="Ej: Catálogo offset A4"
+                placeholder="Ej: Tarjetas de visita"
               />
             </div>
             <div>
@@ -163,7 +340,7 @@ const B2bCatalog = () => {
               rows={2}
             />
           </div>
-          <Button onClick={addItem} disabled={saving || !draft.name.trim()}>
+          <Button onClick={addItem} disabled={saving || !draft.name.trim() || !draft.product_id}>
             <Plus className="w-4 h-4 mr-2" /> Añadir al catálogo
           </Button>
         </CardContent>
@@ -186,6 +363,17 @@ const B2bCatalog = () => {
                       onChange={(e) => setItems((p) => p.map((x) => x.id === it.id ? { ...x, name: e.target.value } : x))}
                       onBlur={(e) => updateItem(it.id, { name: e.target.value })}
                     />
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>Producto:</span>
+                      {it.product_id ? (
+                        <Badge variant="outline">{productNameById[it.product_id] || it.product_id}</Badge>
+                      ) : (
+                        <Badge variant="destructive">Sin producto asignado</Badge>
+                      )}
+                      {it.exposed_prompt_ids?.length > 0 && (
+                        <Badge variant="secondary">{it.exposed_prompt_ids.length} variable(s) cliente</Badge>
+                      )}
+                    </div>
                     <Textarea
                       value={it.description ?? ""}
                       rows={1}
@@ -202,6 +390,9 @@ const B2bCatalog = () => {
                       />
                       <span className="text-xs text-muted-foreground">{it.is_active ? "Activo" : "Oculto"}</span>
                     </div>
+                    <Button variant="outline" size="sm" onClick={() => openConfigurator(it)}>
+                      <Settings2 className="w-4 h-4 mr-1" /> Configurar
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => removeItem(it.id)}>
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
@@ -212,6 +403,80 @@ const B2bCatalog = () => {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!configItem} onOpenChange={(o) => !o && setConfigItem(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Configurar: {configItem?.name}</DialogTitle>
+          </DialogHeader>
+          {loadingPrompts ? (
+            <div className="py-8 flex items-center justify-center">
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Marca qué variables ve el cliente. El resto quedan fijadas con el valor que pongas aquí.
+              </p>
+              {promptDefs.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Sin variables configurables.</p>
+              ) : promptDefs.map((p) => {
+                const exposed = draftExposed.has(p.id);
+                const value = draftDefaults[p.id];
+                return (
+                  <div key={p.id} className="border rounded p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="font-medium text-sm">{p.label}</div>
+                      <div className="flex items-center gap-2">
+                        <Label className="text-xs">Visible al cliente</Label>
+                        <Switch
+                          checked={exposed}
+                          onCheckedChange={(v) => {
+                            setDraftExposed((prev) => {
+                              const n = new Set(prev);
+                              v ? n.add(p.id) : n.delete(p.id);
+                              return n;
+                            });
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">
+                        {exposed ? "Valor inicial sugerido" : "Valor fijo"}
+                      </Label>
+                      {p.options ? (
+                        <Select
+                          value={String(value ?? "")}
+                          onValueChange={(v) => setDraftDefaults((prev) => ({ ...prev, [p.id]: v }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {p.options.map((o, i) => (
+                              <SelectItem key={i} value={String(o.value)}>{o.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          value={value ?? ""}
+                          onChange={(e) => setDraftDefaults((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                        />
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfigItem(null)}>Cancelar</Button>
+            <Button onClick={saveConfig} disabled={loadingPrompts}>Guardar configuración</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
