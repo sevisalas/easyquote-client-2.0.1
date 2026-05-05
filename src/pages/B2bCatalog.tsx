@@ -10,8 +10,10 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, AlertTriangle, Settings2, Loader2 } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Settings2, Loader2, Check, ChevronsUpDown } from "lucide-react";
 import { invokeEasyQuoteFunction, getEasyQuoteToken } from "@/lib/easyquoteApi";
 
 interface CatalogItem {
@@ -30,6 +32,8 @@ interface CatalogItem {
 interface ProductOption {
   id: string;
   name: string;
+  category: string;
+  isActive: boolean;
 }
 
 interface PromptDef {
@@ -49,6 +53,9 @@ const B2bCatalog = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [products, setProducts] = useState<ProductOption[]>([]);
+  const [productPickerOpen, setProductPickerOpen] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<string>("__all__");
+  const [showInactive, setShowInactive] = useState(false);
   const [draft, setDraft] = useState<{
     name: string;
     description: string;
@@ -108,10 +115,11 @@ const B2bCatalog = () => {
       if (error || !data) return;
       const list = Array.isArray(data) ? data : ((data as any)?.items || (data as any)?.data || []);
       const opts: ProductOption[] = (list as any[])
-        .filter((p: any) => p.isActive !== false)
         .map((p: any) => ({
           id: String(p.id ?? p.productId ?? p.product_id ?? ""),
-          name: p.name ?? p.title ?? p.displayName ?? "Producto",
+          name: p.productName ?? p.name ?? p.title ?? p.displayName ?? `Producto ${p.id ?? ""}`.trim(),
+          category: p.category ?? p.categoryName ?? "",
+          isActive: p.isActive !== false,
         }))
         .filter((p) => p.id);
       setProducts(opts);
@@ -122,6 +130,25 @@ const B2bCatalog = () => {
     () => Object.fromEntries(products.map((p) => [p.id, p.name])),
     [products],
   );
+
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    products.forEach((p) => { if (p.category) set.add(p.category); });
+    return Array.from(set).sort();
+  }, [products]);
+
+  const usedProductIds = useMemo(
+    () => new Set(items.map((it) => it.product_id).filter(Boolean) as string[]),
+    [items],
+  );
+
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      if (!showInactive && !p.isActive) return false;
+      if (categoryFilter !== "__all__" && p.category !== categoryFilter) return false;
+      return true;
+    });
+  }, [products, categoryFilter, showInactive]);
 
   const toggleSelfService = async (v: boolean) => {
     if (!orgId) return;
@@ -299,21 +326,95 @@ const B2bCatalog = () => {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="md:col-span-2">
+            <div className="md:col-span-2 space-y-2">
               <Label>Producto EasyQuote</Label>
-              <Select
-                value={draft.product_id}
-                onValueChange={(v) => setDraft({ ...draft, product_id: v, name: draft.name || (productNameById[v] || "") })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona el producto a publicar" />
-                </SelectTrigger>
-                <SelectContent>
-                  {products.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex flex-wrap gap-2">
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-[220px]">
+                    <SelectValue placeholder="Todas las categorías" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Todas las categorías</SelectItem>
+                    {categories.map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Switch checked={showInactive} onCheckedChange={setShowInactive} />
+                  Mostrar inactivos
+                </label>
+              </div>
+              <Popover open={productPickerOpen} onOpenChange={setProductPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={productPickerOpen}
+                    className="w-full justify-between font-normal"
+                  >
+                    <span className="truncate">
+                      {draft.product_id
+                        ? productNameById[draft.product_id] || draft.product_id
+                        : products.length === 0
+                          ? "Cargando productos…"
+                          : "Selecciona el producto a publicar"}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command
+                    filter={(value, search) => {
+                      // value = `${id}|${name}|${category}` (lowercased below)
+                      return value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0;
+                    }}
+                  >
+                    <CommandInput placeholder="Buscar por nombre o categoría…" />
+                    <CommandList>
+                      <CommandEmpty>Sin resultados.</CommandEmpty>
+                      <CommandGroup>
+                        {filteredProducts.map((p) => {
+                          const already = usedProductIds.has(p.id) && p.id !== draft.product_id;
+                          return (
+                            <CommandItem
+                              key={p.id}
+                              value={`${p.id}|${p.name}|${p.category}`.toLowerCase()}
+                              onSelect={() => {
+                                setDraft({
+                                  ...draft,
+                                  product_id: p.id,
+                                  name: draft.name || p.name,
+                                });
+                                setProductPickerOpen(false);
+                              }}
+                              disabled={already}
+                            >
+                              <Check
+                                className={`mr-2 h-4 w-4 ${draft.product_id === p.id ? "opacity-100" : "opacity-0"}`}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="truncate font-medium">{p.name}</div>
+                                {(p.category || already || !p.isActive) && (
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                    {p.category && <span className="truncate">{p.category}</span>}
+                                    {!p.isActive && <Badge variant="outline" className="text-[10px]">Inactivo</Badge>}
+                                    {already && <Badge variant="secondary" className="text-[10px]">Ya añadido</Badge>}
+                                  </div>
+                                )}
+                              </div>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <p className="text-xs text-muted-foreground">
+                {filteredProducts.length} producto(s) disponibles
+                {categoryFilter !== "__all__" && ` en "${categoryFilter}"`}
+              </p>
             </div>
             <div>
               <Label>Nombre visible al cliente</Label>
