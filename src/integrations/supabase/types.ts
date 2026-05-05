@@ -541,6 +541,9 @@ export type Database = {
           portal_enabled: boolean
           portal_enabled_at: string | null
           portal_enabled_by: string | null
+          portal_invited_at: string | null
+          portal_last_login_at: string | null
+          portal_user_id: string | null
           province: string | null
           source: string
           tariff_id: string | null
@@ -564,6 +567,9 @@ export type Database = {
           portal_enabled?: boolean
           portal_enabled_at?: string | null
           portal_enabled_by?: string | null
+          portal_invited_at?: string | null
+          portal_last_login_at?: string | null
+          portal_user_id?: string | null
           province?: string | null
           source?: string
           tariff_id?: string | null
@@ -587,6 +593,9 @@ export type Database = {
           portal_enabled?: boolean
           portal_enabled_at?: string | null
           portal_enabled_by?: string | null
+          portal_invited_at?: string | null
+          portal_last_login_at?: string | null
+          portal_user_id?: string | null
           province?: string | null
           source?: string
           tariff_id?: string | null
