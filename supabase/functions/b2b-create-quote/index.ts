@@ -116,12 +116,38 @@ Deno.serve(async (req) => {
         };
       });
 
+      // Build auto-description from prompts using same criteria as the app
+      // (skip "No", empty, and known internal labels). One line per prompt.
+      const EXCLUDED_LABELS = new Set([
+        "tarifa",
+        "forzar máquina",
+        "forzar maquina",
+        "tira y retira",
+        "forzar poses",
+        "forzar poses/pags.",
+        "modelos",
+      ]);
+      const autoDescLines = Object.values(promptsMap)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        .filter((p) => {
+          const lbl = String(p.label || "").trim().toLowerCase();
+          if (EXCLUDED_LABELS.has(lbl)) return false;
+          const v = p.value;
+          if (v === undefined || v === null || v === "") return false;
+          if (String(v).trim().toLowerCase() === "no") return false;
+          return true;
+        })
+        .map((p) => `${p.label}: ${p.value}`);
+      const apiDesc = pricing.data?.description ?? null;
+      const itemDescription =
+        (apiDesc && String(apiDesc).trim()) || autoDescLines.join("\n") || null;
+
       computedItems.push({
         name: def.name,
         product_id: def.product_id,
         prompts: promptsMap,
         price: finalLine,
-        description: pricing.data?.description ?? null,
+        description: itemDescription,
       });
     }
 
@@ -149,6 +175,15 @@ Deno.serve(async (req) => {
     const status = selfService ? "sent" : "draft";
     const finalPrice = subtotal;
 
+    // Aggregate quote-level description from items (label items with name when multiple)
+    const quoteDescription = computedItems
+      .map((c) => {
+        const head = computedItems.length > 1 ? `▸ ${c.name}\n` : "";
+        return `${head}${c.description || ""}`.trim();
+      })
+      .filter(Boolean)
+      .join("\n\n");
+
     // Insert quote
     const { data: insertedQuote, error: qErr } = await ctx.admin
       .from("quotes")
@@ -163,6 +198,7 @@ Deno.serve(async (req) => {
         final_price: finalPrice,
         tax_amount: 0,
         discount_amount: 0,
+        description: quoteDescription || null,
         notes: "Generado automáticamente desde el portal B2B",
       })
       .select("id, quote_number")
