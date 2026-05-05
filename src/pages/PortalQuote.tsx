@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Fragment } from "react";
 import { CheckCircle, XCircle, Loader2, FileText, Clock, AlertTriangle } from "lucide-react";
-import { buildAutoDescriptionFromPrompts, syncPromptsWithQuantity, type QuantityPromptResolver } from "@/utils/approvedMultiQuantity";
+import { buildAutoDescriptionFromPrompts, resolveApprovedQuoteItemState, syncPromptsWithQuantity, type QuantityPromptResolver } from "@/utils/approvedMultiQuantity";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -38,6 +38,8 @@ interface PortalQuoteData {
       outputs: any;
       multi?: any;
       item_additionals?: any;
+      accepted?: boolean | null;
+      accepted_quantity?: number | string | null;
     }>;
     additionals: Array<{
       id: string;
@@ -250,13 +252,18 @@ const PortalQuote = () => {
   if (!data) return null;
 
   const { quote, organization, customer_name } = data;
-  const canRespond = !actionDone && (quote.status === "sent" || quote.status === "draft");
+  const canRespond = !actionDone && quote.status === "sent";
   const isPending = canRespond && approvalMode;
-  // After approval, hide items that were not accepted
-  const visibleItems = actionDone === "approved"
-    ? quote.items.filter((it: any) => it.accepted !== false)
+  const isApprovedQuote = quote.status === "approved" || actionDone === "approved";
+  const visibleItems = isApprovedQuote
+    ? quote.items.filter((it: any) => it.accepted === true)
     : quote.items;
   const getItemPriceForSelection = (item: any) => {
+    if (isApprovedQuote && item.accepted) {
+      const approvedState = resolveApprovedQuoteItemState(item);
+      return { qty: approvedState.resolvedQuantity, price: approvedState.resolvedPrice };
+    }
+
     const rows = item.multi?.rows;
     if (Array.isArray(rows) && rows.length > 0) {
       const sel = itemQuantities[item.id];
@@ -275,6 +282,10 @@ const PortalQuote = () => {
   };
 
   const getItemDescriptionForSelection = (item: any, selectedQty: number | null) => {
+    if (isApprovedQuote && item.accepted) {
+      return resolveApprovedQuoteItemState(item).resolvedDescription || null;
+    }
+
     const description = (item.description || "").trim();
     const productName = (item.name || item.product_name || "").trim();
     const quantityResolver = item.product_id ? data?.quote?.quantity_prompt_settings?.[String(item.product_id)] : undefined;
@@ -362,12 +373,15 @@ const PortalQuote = () => {
                 </thead>
                 <tbody>
                   {visibleItems.map((item, itemIndex) => {
+                    const approvedState = isApprovedQuote && item.accepted
+                      ? resolveApprovedQuoteItemState(item)
+                      : null;
                     const rows = (item.multi as any)?.rows;
                     const hasMulti = Array.isArray(rows) && rows.length > 1;
                     const { qty, price } = getItemPriceForSelection(item);
-                     const checked = selectedItems[item.id] ?? true;
+                    const checked = selectedItems[item.id] ?? true;
                     const dimmed = isPending && !checked;
-                     const selectedDescription = getItemDescriptionForSelection(item, qty);
+                    const selectedDescription = getItemDescriptionForSelection(item, qty);
                     return (
                       <Fragment key={item.id}>
                       <tr className={`border-b last:border-0 ${dimmed ? "opacity-40" : ""} ${hasMulti ? "border-b-0" : ""}`}>
@@ -394,7 +408,7 @@ const PortalQuote = () => {
                                      </div>
                                    );
                                  }
-                                 const prompts = Array.isArray(item.prompts) ? item.prompts : [];
+                                  const prompts = approvedState?.resolvedPromptsArray || (Array.isArray(item.prompts) ? item.prompts : []);
                                  const specs = prompts
                                    .filter((p: any) => p && p.label && p.value !== undefined && p.value !== null && String(p.value).trim() !== "")
                                    .map((p: any) => {
@@ -423,21 +437,26 @@ const PortalQuote = () => {
                           )}
                         </td>
                       </tr>
-                      {hasMulti && rows.map((r: any, i: number) => {
+                       {hasMulti && rows.map((r: any, i: number) => {
                         const rowQty = parsePortalQuantity(r.qty ?? r.quantity);
                         if (rowQty === null) return null;
                         const rowPrice = parsePortalNumber(
                           r?.outs?.find((o: any) => o.type === "Price")?.value ?? r?.price ?? 0
                         );
-                        const isSelected = Number(itemQuantities[item.id]) === rowQty;
-                        const rowDimmed = isPending && (!checked || (checked && !isSelected));
+                         const approvedQty = approvedState?.resolvedQuantity ?? null;
+                         const isSelected = isApprovedQuote
+                           ? approvedQty === rowQty
+                           : Number(itemQuantities[item.id]) === rowQty;
+                         const rowDimmed = isApprovedQuote
+                           ? !isSelected
+                           : isPending && (!checked || (checked && !isSelected));
                         return (
                           <tr
                             key={`${item.id}-r${i}`}
-                            className={`border-b last:border-0 ${rowDimmed ? "opacity-50" : ""} ${isPending && checked && isSelected ? "bg-muted/40" : ""}`}
+                             className={`border-b last:border-0 ${rowDimmed ? "opacity-50 line-through" : ""} ${(isPending && checked && isSelected) || (isApprovedQuote && isSelected) ? "bg-muted/40" : ""}`}
                           >
                             <td className="py-2 pl-8 pr-2">
-                              {isPending && checked ? (
+                               {isPending && checked ? (
                                 <Label className="flex items-center gap-2 cursor-pointer text-sm font-normal">
                                   <input
                                     type="radio"
@@ -451,6 +470,10 @@ const PortalQuote = () => {
                                   />
                                   <span>Opción {i + 1} · {formatPortalQuantity(rowQty)} ud</span>
                                 </Label>
+                               ) : isApprovedQuote ? (
+                                 <span className="text-xs text-muted-foreground pl-1">
+                                   Opción {i + 1} · {formatPortalQuantity(rowQty)} ud {isSelected ? "· Aprobada" : "· No aprobada"}
+                                 </span>
                               ) : (
                                 <span className="text-xs text-muted-foreground pl-1">Opción {i + 1} · {formatPortalQuantity(rowQty)} ud</span>
                               )}
@@ -525,10 +548,10 @@ const PortalQuote = () => {
         </Card>
 
         {/* Action section */}
-        {actionDone ? (
+        {(actionDone || quote.status === "approved" || quote.status === "rejected") ? (
           <Card className="shadow-lg">
             <CardContent className="pt-6 text-center space-y-3">
-              {actionDone === "approved" ? (
+              {(actionDone === "approved" || quote.status === "approved") ? (
                 <>
                   <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
                   <h2 className="text-xl font-semibold text-green-700">Presupuesto aprobado</h2>
