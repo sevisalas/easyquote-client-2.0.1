@@ -501,6 +501,12 @@ const B2bCatalog = () => {
                       onBlur={(e) => updateItem(it.id, { description: e.target.value || null })}
                       placeholder="Descripción"
                     />
+                    <Input
+                      value={it.image_url ?? ""}
+                      onChange={(e) => setItems((p) => p.map((x) => x.id === it.id ? { ...x, image_url: e.target.value } : x))}
+                      onBlur={(e) => updateItem(it.id, { image_url: e.target.value.trim() || null })}
+                      placeholder="URL imagen (https://…)"
+                    />
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="flex items-center gap-2">
