@@ -174,11 +174,14 @@ const PortalHome = () => {
   };
 
   const openQuote = async (quoteId: string) => {
+    // Open the tab synchronously to avoid popup blockers
+    const win = window.open("about:blank", "_blank", "noopener");
     try {
       setOpeningId(quoteId);
       const { data: sess } = await portalSupabase.auth.getSession();
       const jwt = sess.session?.access_token;
       if (!jwt) {
+        if (win) win.close();
         navigate("/portal/login", { replace: true });
         return;
       }
@@ -187,26 +190,40 @@ const PortalHome = () => {
       });
       if (error || !data?.token) {
         console.error("portal-issue-token failed", error);
+        if (win) win.close();
+        toast({ title: "No se pudo abrir el presupuesto", variant: "destructive" });
         return;
       }
-      window.open(`/portal/${data.token}`, "_blank", "noopener");
+      const url = `/portal/${data.token}`;
+      if (win) {
+        win.location.href = url;
+      } else {
+        // popup blocked — fallback to same-tab navigation
+        window.location.href = url;
+      }
     } finally {
       setOpeningId(null);
     }
   };
 
   const downloadPdf = async (quoteId: string) => {
+    const win = window.open("about:blank", "_blank", "noopener");
     try {
       setDownloadingId(quoteId);
       const { data, error } = await portalSupabase.functions.invoke("portal-issue-token", {
         body: { quote_id: quoteId },
       });
       if (error || !data?.token) {
+        if (win) win.close();
         toast({ title: "No se pudo generar el enlace", variant: "destructive" });
         return;
       }
-      // Open the public quote view with auto-print flag — user gets a "Save as PDF" dialog
-      window.open(`/portal/${data.token}?print=1`, "_blank", "noopener");
+      const url = `/portal/${data.token}?print=1`;
+      if (win) {
+        win.location.href = url;
+      } else {
+        window.location.href = url;
+      }
     } finally {
       setDownloadingId(null);
     }
@@ -361,10 +378,11 @@ const PortalHome = () => {
                   </Button>
                   <Button
                     size="sm"
-                    variant="outline"
+                    variant="default"
                     onClick={() => downloadPdf(q.id)}
                     disabled={downloadingId === q.id}
                     title="Descargar PDF"
+                    style={{ backgroundColor: primary, color: "#fff" }}
                   >
                     {downloadingId === q.id ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
