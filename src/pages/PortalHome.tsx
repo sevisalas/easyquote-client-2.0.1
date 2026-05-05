@@ -63,6 +63,7 @@ const PortalHome = () => {
   const [openingId, setOpeningId] = useState<string | null>(null);
   const [b2bEnabled, setB2bEnabled] = useState(false);
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
+  const [apiImages, setApiImages] = useState<Record<string, string>>({});
 
   // Configurator state
   const [configItem, setConfigItem] = useState<CatalogItem | null>(null);
@@ -130,11 +131,31 @@ const PortalHome = () => {
           .eq("organization_id", cust.organization_id)
           .eq("is_active", true)
           .order("display_order", { ascending: true });
-        setCatalog(((cat as any[]) || []).map((c: any) => ({
+        const items = ((cat as any[]) || []).map((c: any) => ({
           ...c,
           exposed_prompt_ids: c.exposed_prompt_ids || [],
           default_prompts: c.default_prompts || {},
-        })));
+        }));
+        setCatalog(items);
+        // Fetch image outputs from API in parallel for each item
+        items.forEach(async (it: CatalogItem) => {
+          try {
+            const { data } = await portalSupabase.functions.invoke("b2b-pricing", {
+              body: { catalog_item_id: it.id, overrides: {} },
+            });
+            const outputs: any[] = (data as any)?.outputs || [];
+            const imgOut = outputs.find((o) => {
+              const t = String(o?.type || o?.outputType || "").toLowerCase();
+              return t === "image";
+            });
+            const url = imgOut?.value || imgOut?.url || imgOut?.imageUrl;
+            if (url && typeof url === "string") {
+              setApiImages((prev) => ({ ...prev, [it.id]: url }));
+            }
+          } catch {
+            // ignore
+          }
+        });
       }
 
       setLoading(false);
