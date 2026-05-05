@@ -1,93 +1,37 @@
-## Fase 1 — Auditoría + Quick Wins (≈150 créditos)
+## Paso 1 — Marca de "acceso al portal" en la ficha del cliente
 
-Orden de ejecución (de menor riesgo → mayor visibilidad). Te aviso antes de cada bloque y te enseño qué se va a tocar.
+Objetivo: que el tenant pueda activar/desactivar el acceso al portal **por cliente**, sin crear todavía la cuenta de login. Solo la marca + el botón en la ficha.
 
----
+### Qué se hace
 
-### Bloque 1 — Investigación previa (sin cambios) — ~5 créditos
-Antes de tocar nada, identifico los 2 puntos críticos que no sabemos qué son:
-1. Qué política RLS tiene `USING(true)` y en qué tabla.
-2. Qué bucket es público y qué contiene.
-3. Listado exacto de las ~25 funciones sin `search_path`.
+1. **DB — añadir flag al cliente**
+   - Migración sobre `customers`:
+     - `portal_enabled boolean NOT NULL DEFAULT false`
+     - `portal_enabled_at timestamptz NULL`
+     - `portal_enabled_by uuid NULL` (usuario que lo activó, sin FK a `auth.users`)
+   - No se crean tablas nuevas todavía. La cuenta de login va en el siguiente paso.
+   - RLS: las políticas existentes de `customers` ya cubren el update del propio tenant, no se tocan.
 
-**Entregable**: te paso un resumen con los nombres y te confirmo si alguno es intencional (ej. bucket `logos` probablemente sí debe ser público).
+2. **UI — ficha del cliente (`ClienteForm`, ruta `/clientes/:id/editar`)**
+   - Nueva sección "Portal del cliente", visible **solo si** `usePortalAccess().hasPortalAccess === true` (el flag de la organización ya existe, `organizations.client_portal`).
+   - Si el cliente NO tiene email → la sección se ve pero el botón está deshabilitado con aviso "Añade un email para poder activar el acceso".
+   - Si `portal_enabled = false`: botón **"Activar acceso al portal"**.
+   - Si `portal_enabled = true`: badge verde "Acceso activo desde {fecha}" + botón **"Revocar acceso"** (secundario).
+   - Activar/revocar = simple `update` sobre `customers` (`portal_enabled`, `portal_enabled_at`, `portal_enabled_by = auth.uid()`).
+   - En esta fase **no se envía email ni se crea usuario**. Solo es la marca.
 
----
+3. **Listado de clientes**
+   - En `ClientCard` (cuando `hasPortalAccess`): pequeño icono/badge si `portal_enabled = true`, para identificar de un vistazo qué clientes ya tienen el acceso marcado.
 
-### Bloque 2 — Hardening de funciones SECURITY DEFINER — ~25 créditos
-**Cambio**: 1 migración SQL que añade `SET search_path = public` a todas las funciones que no lo tengan.
+### Lo que NO se hace en este paso
+- No se crea cuenta en `auth.users` para el cliente.
+- No se envía email de bienvenida/contraseña.
+- No se crean rutas `/portal/login` ni `/portal` (home con lista de presupuestos).
+- No se toca el flujo actual del enlace por token de un presupuesto concreto (sigue funcionando igual).
 
-**Riesgo**: muy bajo. Es una buena práctica de Supabase, no cambia comportamiento, solo evita ataques de search_path hijacking.
+Esos puntos van en el **Paso 2** (cuenta + email) y **Paso 3** (login + home con todos los presupuestos), una vez confirmes este.
 
-**Antes de aplicar** te enseño la lista completa de funciones afectadas.
-
----
-
-### Bloque 3 — Revocar EXECUTE a `anon` en funciones internas — ~20 créditos
-**Cambio**: 1 migración que revoca `EXECUTE` a roles `anon`/`public` en funciones SECURITY DEFINER que NO deben ser llamadas sin autenticación (ej. `get_user_credentials`, `set_user_credentials`, `create_organization_api_credential`, etc.).
-
-**Riesgo**: bajo, pero requiere identificar bien cuáles SÍ deben quedar accesibles (ej. `validate_api_key` para webhooks externos).
-
-**Antes de aplicar** te paso la lista marcando cuáles revoco y cuáles dejo abiertas, para que confirmes.
-
----
-
-### Bloque 4 — Índices de BD faltantes — ~30 créditos
-**Cambio**: 1 migración con índices en columnas de filtro frecuente:
-- `sales_orders(organization_id, status)`, `sales_orders(customer_id)`
-- `customers(organization_id, holded_id)`
-- `product_prompt_settings(product_id, organization_id)`
-- `quote_items(quote_id)` si no existe ya
-- `api_performance_metrics(created_at)` para purga rápida
-
-**Riesgo**: bajo (los índices solo aceleran). Antes de crear, verifico con `pg_indexes` cuáles ya existen para no duplicar.
-
-**Beneficio esperado**: queries de listados de pedidos/clientes 3-10× más rápidas en tenants grandes.
-
----
-
-### Bloque 5 — Política de retención `api_performance_metrics` — ~15 créditos
-**Cambio**: 
-- Migración que crea función `cleanup_old_api_metrics()` que borra registros >30 días.
-- Programar ejecución (cron pg_cron si está disponible, o edge function diaria).
-
-**Riesgo**: bajo. La tabla solo sirve para diagnóstico, no para histórico.
-
-**Antes de aplicar** te confirmo el periodo de retención (30/60/90 días).
-
----
-
-### Bloque 6 — Quick win UX visible: skeletons en listados — ~40 créditos
-**Cambio (solo frontend, sin BD)**: añadir loading skeletons en:
-- Listado de presupuestos (`/presupuestos`)
-- Listado de pedidos (`/pedidos`)
-- Listado de clientes (`/clientes`)
-- Detalle de presupuesto/pedido durante carga inicial
-
-Sustituye los spinners genéricos por skeletons que respetan el layout final → percepción de velocidad +30-50% sin tocar performance real.
-
-**Riesgo**: muy bajo (solo UI).
-
----
-
-### Resumen de créditos Fase 1
-| Bloque | Créditos | Tipo |
-|--------|----------|------|
-| 1. Investigación | 5 | Lectura |
-| 2. search_path | 25 | Migración |
-| 3. Revocar EXECUTE | 20 | Migración |
-| 4. Índices | 30 | Migración |
-| 5. Retención métricas | 15 | Migración + edge fn |
-| 6. Skeletons UX | 40 | Frontend |
-| **Total** | **~135** | |
-
-Quedan ~365 créditos para Fase 2 (CRM/recordatorios) y Fase 3 (pulido final).
-
----
-
-### Cómo procedo
-1. Ejecuto **Bloque 1** ya (solo lectura, sin cambios) y te paso el informe.
-2. Tras tu OK, voy bloque a bloque, mostrándote SQL/diff antes de aplicar.
-3. Si algún bloque no te convence, lo saltamos y reasignamos créditos.
-
-¿Apruebo el plan y arranco con el Bloque 1 (investigación)?
+### Detalles técnicos
+- Migración: `ALTER TABLE public.customers ADD COLUMN portal_enabled boolean NOT NULL DEFAULT false, ADD COLUMN portal_enabled_at timestamptz, ADD COLUMN portal_enabled_by uuid;`
+- Tras la migración, `src/integrations/supabase/types.ts` se regenera solo.
+- El update se hace desde el cliente con el SDK de Supabase, protegido por las RLS ya existentes de `customers`.
