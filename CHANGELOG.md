@@ -5,7 +5,18 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
-## [2.7.18] - 2026-04-22
+ ## [2.8.1] - 2026-05-05
+ 
+ ### Añadido
+ - **Portal del cliente mejorado**: los clientes con portal habilitado ahora ven un botón de acceso directo a su portal personal desde el enlace público de aprobación de presupuestos
+ - **Control de envíos**: bloqueada la posibilidad de enviar presupuestos en estado borrador por email, requiriendo marcarlos como "Listos para enviar" primero para asegurar la revisión
+ 
+ ### Corregido
+ - **Sincronización de prompts en definiciones**: corregido error 400 en la obtención de definiciones de prompts al faltar el token de autenticación en las llamadas desde edición y creación de documentos
+ 
+ ---
+ 
+ ## [2.7.18] - 2026-04-22
 
 ## [7.2.23] - 2026-04-24
 
