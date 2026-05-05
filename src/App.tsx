@@ -63,6 +63,9 @@ import ApiHome from "./pages/ApiHome";
 import CustomerDiscountsPage from "./pages/CustomerDiscountsPage";
 import HelpPage from "./pages/HelpPage";
 import PortalQuote from "./pages/PortalQuote";
+import PortalLogin from "./pages/PortalLogin";
+import PortalSetPassword from "./pages/PortalSetPassword";
+import PortalHome from "./pages/PortalHome";
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { useSessionMonitor } from "./hooks/useSessionMonitor";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -595,7 +598,10 @@ const AppContent = () => {
           </ProtectedRoute>
         }
       />
-      {/* Public portal route — no auth required */}
+      {/* Public portal routes — no auth required */}
+      <Route path="/portal/login" element={<PortalLogin />} />
+      <Route path="/portal/set-password" element={<PortalSetPassword />} />
+      <Route path="/portal" element={<PortalHome />} />
       <Route path="/portal/:token" element={<PortalQuote />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />

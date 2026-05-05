@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShieldCheck, ShieldOff, Loader2 } from "lucide-react";
+import { ShieldCheck, ShieldOff, Loader2, Mail } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { usePortalAccess } from "@/hooks/usePortalAccess";
 
@@ -15,6 +15,8 @@ interface PortalAccessSectionProps {
 interface PortalState {
   portal_enabled: boolean;
   portal_enabled_at: string | null;
+  portal_invited_at: string | null;
+  portal_user_id: string | null;
 }
 
 export const PortalAccessSection = ({ customerId, customerEmail }: PortalAccessSectionProps) => {
@@ -22,6 +24,7 @@ export const PortalAccessSection = ({ customerId, customerEmail }: PortalAccessS
   const [state, setState] = useState<PortalState | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -29,7 +32,7 @@ export const PortalAccessSection = ({ customerId, customerEmail }: PortalAccessS
       setLoading(true);
       const { data, error } = await supabase
         .from("customers")
-        .select("portal_enabled, portal_enabled_at")
+        .select("portal_enabled, portal_enabled_at, portal_invited_at, portal_user_id")
         .eq("id", customerId)
         .maybeSingle();
       if (!cancelled) {
@@ -39,6 +42,8 @@ export const PortalAccessSection = ({ customerId, customerEmail }: PortalAccessS
           setState({
             portal_enabled: (data as any).portal_enabled ?? false,
             portal_enabled_at: (data as any).portal_enabled_at ?? null,
+            portal_invited_at: (data as any).portal_invited_at ?? null,
+            portal_user_id: (data as any).portal_user_id ?? null,
           });
         }
         setLoading(false);
@@ -69,10 +74,12 @@ export const PortalAccessSection = ({ customerId, customerEmail }: PortalAccessS
         .update(payload)
         .eq("id", customerId);
       if (error) throw error;
-      setState({
+      setState((prev) => ({
         portal_enabled: next,
         portal_enabled_at: payload.portal_enabled_at,
-      });
+        portal_invited_at: prev?.portal_invited_at ?? null,
+        portal_user_id: prev?.portal_user_id ?? null,
+      }));
       toast({
         title: next ? "Acceso activado" : "Acceso revocado",
         description: next
@@ -88,6 +95,33 @@ export const PortalAccessSection = ({ customerId, customerEmail }: PortalAccessS
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const sendInvite = async () => {
+    setSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("portal-customer-invite", {
+        body: { customerId, appUrl: window.location.origin },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setState((prev) => prev ? { ...prev, portal_invited_at: new Date().toISOString() } : prev);
+      toast({
+        title: "Email enviado",
+        description: (data as any)?.isNew
+          ? "Se ha enviado al cliente un email para crear su contraseña."
+          : "Se ha reenviado el enlace para restablecer la contraseña.",
+      });
+    } catch (e: any) {
+      console.error("[PortalAccessSection] sendInvite error", e);
+      toast({
+        title: "No se pudo enviar el email",
+        description: e?.message || "Revisa el SMTP de la organización y vuelve a intentarlo.",
+        variant: "destructive",
+      });
+    } finally {
+      setSending(false);
     }
   };
 
@@ -126,15 +160,27 @@ export const PortalAccessSection = ({ customerId, customerEmail }: PortalAccessS
 
             <div className="flex gap-2">
               {enabled ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => toggle(false)}
-                  disabled={saving}
-                >
-                  <ShieldOff className="w-4 h-4 mr-2" />
-                  {saving ? "Revocando..." : "Revocar acceso"}
-                </Button>
+                <>
+                  <Button
+                    type="button"
+                    onClick={sendInvite}
+                    disabled={sending || !hasEmail}
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    {sending
+                      ? "Enviando..."
+                      : state?.portal_invited_at ? "Reenviar acceso por email" : "Enviar acceso por email"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => toggle(false)}
+                    disabled={saving}
+                  >
+                    <ShieldOff className="w-4 h-4 mr-2" />
+                    {saving ? "Revocando..." : "Revocar acceso"}
+                  </Button>
+                </>
               ) : (
                 <Button
                   type="button"
@@ -146,6 +192,12 @@ export const PortalAccessSection = ({ customerId, customerEmail }: PortalAccessS
                 </Button>
               )}
             </div>
+
+            {enabled && state?.portal_invited_at && (
+              <p className="text-xs text-muted-foreground">
+                Último envío: {new Date(state.portal_invited_at).toLocaleString("es-ES")}
+              </p>
+            )}
           </>
         )}
       </CardContent>
