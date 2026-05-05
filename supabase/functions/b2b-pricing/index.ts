@@ -93,6 +93,7 @@ Deno.serve(async (req) => {
       final_price: finalPrice,
       description: pricing.data?.description ?? null,
       prompts: pricing.data?.prompts ?? [],
+      outputs: pricing.data?.outputs ?? [],
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
