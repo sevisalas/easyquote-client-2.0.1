@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { portalSupabase } from "./PortalLogin";
+import PromptsFormLite from "@/components/portal/PromptsFormLite";
 
 interface Quote {
   id: string;
@@ -70,8 +71,8 @@ const PortalHome = () => {
   const [livePrice, setLivePrice] = useState<number | null>(null);
   const [pricingError, setPricingError] = useState<string | null>(null);
   const [submittingQuote, setSubmittingQuote] = useState(false);
-  // All visible prompt definitions for the current product (filtered server-side).
-  const [promptDefs, setPromptDefs] = useState<Array<{ id: string; label: string; options: { value: any; label: string }[] | null }>>([]);
+  // Raw prompts (already filtered server-side by visibility) — passed as-is to PromptsFormLite.
+  const [rawPrompts, setRawPrompts] = useState<any[]>([]);
 
   useEffect(() => {
     const load = async () => {
@@ -189,7 +190,7 @@ const PortalHome = () => {
     setConfigOverrides({});
     setLivePrice(null);
     setPricingError(null);
-    setPromptDefs([]);
+    setRawPrompts([]);
     await fetchPrice(item, {});
   };
 
@@ -207,23 +208,9 @@ const PortalHome = () => {
         setLivePrice(null);
       } else {
         setLivePrice(typeof d.final_price === "number" ? d.final_price : null);
-        // Hydrate prompt defs from API (already filtered server-side by visibility config)
+        // Raw prompts (filtered server-side by visibility) → PromptsFormLite respects type.
         const apiPrompts: any[] = d?.prompts || [];
-        const defs = apiPrompts.map((p: any) => {
-            const opts = p.valueOptions || p.options || p.values;
-            const optionList = Array.isArray(opts) && opts.length > 0
-              ? opts.map((o: any) => ({
-                  value: o?.value ?? o?.id ?? o?.name ?? o,
-                  label: String(o?.label ?? o?.name ?? o?.value ?? o),
-                }))
-              : null;
-            return {
-              id: String(p.id),
-              label: p.promptText || p.label || p.id,
-              options: optionList,
-            };
-          });
-        setPromptDefs(defs);
+        setRawPrompts(apiPrompts);
         // Seed override values from the API current value if the customer hasn't touched them
         setConfigOverrides((prev) => {
           let changed = false;
@@ -445,38 +432,18 @@ const PortalHome = () => {
             {configItem?.description && (
               <p className="text-sm text-muted-foreground">{configItem.description}</p>
             )}
-            {promptDefs.length === 0 && !pricingLoading && !pricingError && (
+            {rawPrompts.length === 0 && !pricingLoading && !pricingError && (
               <p className="text-sm text-muted-foreground">
                 Producto preconfigurado por el comercial. Revisa el precio y solicita.
               </p>
             )}
-            {promptDefs.map((p) => (
-              <div key={p.id}>
-                <Label>{p.label}</Label>
-                {p.options ? (
-                  <Select
-                    value={String(configOverrides[p.id] ?? "")}
-                    onValueChange={(v) =>
-                      setConfigOverrides((prev) => ({ ...prev, [p.id]: v }))
-                    }
-                  >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {p.options.map((o, i) => (
-                        <SelectItem key={i} value={String(o.value)}>{o.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Input
-                    value={configOverrides[p.id] ?? ""}
-                    onChange={(e) =>
-                      setConfigOverrides((prev) => ({ ...prev, [p.id]: e.target.value }))
-                    }
-                  />
-                )}
-              </div>
-            ))}
+            <PromptsFormLite
+              prompts={rawPrompts}
+              values={configOverrides}
+              onChange={(id, value) =>
+                setConfigOverrides((prev) => ({ ...prev, [id]: value }))
+              }
+            />
 
             <div className="border rounded-lg p-4 bg-muted/40 flex items-center justify-between">
               <div>
