@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Fragment } from "react";
 import { CheckCircle, XCircle, Loader2, FileText, Clock, AlertTriangle, Download } from "lucide-react";
 import { buildAutoDescriptionFromPrompts, resolveApprovedQuoteItemState, syncPromptsWithQuantity, type QuantityPromptResolver } from "@/utils/approvedMultiQuantity";
+import { generatePortalQuotePDF } from "@/utils/portalPdfGenerator";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -121,6 +122,7 @@ const PortalQuote = () => {
   const [selectedItems, setSelectedItems] = useState<Record<string, boolean>>({});
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
   const [approvalMode, setApprovalMode] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const primaryColor = useMemo(() => {
     if (!data?.organization?.primary_color) return "#c83077";
@@ -151,14 +153,18 @@ const PortalQuote = () => {
     setItemQuantities(qty);
   }, [data?.quote?.items]);
 
-  // Auto-trigger print dialog when ?print=1 (used by portal "Descargar PDF")
-  const [searchParams] = useSearchParams();
-  useEffect(() => {
-    if (loading || !data) return;
-    if (searchParams.get("print") !== "1") return;
-    const t = setTimeout(() => window.print(), 600);
-    return () => clearTimeout(t);
-  }, [loading, data, searchParams]);
+  const handleDownloadPdf = async () => {
+    if (!token || !data) return;
+    try {
+      setPdfLoading(true);
+      const filename = `${data.quote.quote_number || "presupuesto"}.pdf`;
+      await generatePortalQuotePDF(token, filename);
+    } catch (e: any) {
+      setError(e?.message || "No se pudo descargar el PDF");
+    } finally {
+      setPdfLoading(false);
+    }
+  };
 
   const fetchQuoteData = async () => {
     try {
@@ -382,9 +388,15 @@ const PortalQuote = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.print()}
+              onClick={handleDownloadPdf}
+              disabled={pdfLoading}
             >
-              <Download className="h-4 w-4 mr-1" /> Descargar PDF
+              {pdfLoading ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4 mr-1" />
+              )}
+              Descargar PDF
             </Button>
           </div>
           </CardHeader>
