@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { toast } from "@/hooks/use-toast";
 import { portalSupabase } from "./PortalLogin";
 import PromptsFormLite from "@/components/portal/PromptsFormLite";
+import { generatePortalQuotePDF } from "@/utils/portalPdfGenerator";
 
 interface Quote {
   id: string;
@@ -207,23 +208,24 @@ const PortalHome = () => {
   };
 
   const downloadPdf = async (quoteId: string) => {
-    const win = window.open("about:blank", "_blank", "noopener");
     try {
       setDownloadingId(quoteId);
       const { data, error } = await portalSupabase.functions.invoke("portal-issue-token", {
         body: { quote_id: quoteId },
       });
       if (error || !data?.token) {
-        if (win) win.close();
         toast({ title: "No se pudo generar el enlace", variant: "destructive" });
         return;
       }
-      const url = `/portal/${data.token}?print=1`;
-      if (win) {
-        win.location.href = url;
-      } else {
-        window.location.href = url;
-      }
+      const quote = quotes.find((q) => q.id === quoteId);
+      const filename = `${quote?.quote_number || "presupuesto"}.pdf`;
+      await generatePortalQuotePDF(data.token, filename);
+    } catch (e: any) {
+      toast({
+        title: "No se pudo descargar el PDF",
+        description: e?.message || "Error",
+        variant: "destructive",
+      });
     } finally {
       setDownloadingId(null);
     }

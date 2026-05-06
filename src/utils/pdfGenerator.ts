@@ -1209,6 +1209,69 @@ export const generateQuotePDF = async (
       }
     }
 
+    return await renderQuotePdfFromRawData(
+      { quote, customer, config, hiddenPromptSettings, hideAllPromptsInDocs, quantityPromptMap },
+      { filename, quality, returnBase64 }
+    );
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    throw new Error('Failed to generate PDF');
+  }
+};
+
+export interface RawPdfPayload {
+  quote: any;
+  customer: any;
+  config: {
+    selectedTemplate: number;
+    companyName: string;
+    logoUrl: string;
+    brandColor: string;
+    footerText: string;
+    termsPageText: string;
+  };
+  /** Map of productId -> Set of normalized hidden prompt keys */
+  hiddenPromptSettings: Map<string, Set<string>> | Record<string, string[]>;
+  hideAllPromptsInDocs: boolean;
+  /** Map of productId -> prompt_name marked as is_quantity */
+  quantityPromptMap: Map<string, string> | Record<string, string>;
+}
+
+const toMapOfSets = (input: Map<string, Set<string>> | Record<string, string[]>): Map<string, Set<string>> => {
+  if (input instanceof Map) return input;
+  const m = new Map<string, Set<string>>();
+  Object.entries(input || {}).forEach(([k, v]) => m.set(k, new Set(v)));
+  return m;
+};
+
+const toMap = (input: Map<string, string> | Record<string, string>): Map<string, string> => {
+  if (input instanceof Map) return input;
+  const m = new Map<string, string>();
+  Object.entries(input || {}).forEach(([k, v]) => m.set(k, v));
+  return m;
+};
+
+/**
+ * Render a PDF from already-fetched raw data. Used by both the in-app generator
+ * (which fetches via authenticated supabase client) and the public portal
+ * (which fetches via the `portal-quote-pdf-data` edge function with service role).
+ */
+export const renderQuotePdfFromRawData = async (
+  payload: RawPdfPayload,
+  options: PDFGeneratorOptions = {}
+): Promise<string | void> => {
+  const {
+    filename = 'presupuesto.pdf',
+    quality = 2,
+    returnBase64 = false,
+  } = options;
+
+  const { quote, customer, config, hideAllPromptsInDocs } = payload;
+  const hiddenPromptSettings = toMapOfSets(payload.hiddenPromptSettings);
+  const quantityPromptMap = toMap(payload.quantityPromptMap);
+
+  try {
+
     // Format items - filter to only accepted items when quote is approved
     const itemsToRender = quote.status === 'approved'
       ? (quote.items || []).filter((item: any) => item.accepted === true)
