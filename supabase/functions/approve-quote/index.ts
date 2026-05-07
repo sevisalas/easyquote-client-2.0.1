@@ -605,13 +605,23 @@ async function approveQuoteCore(
 
   // Holded exports — best effort
   try {
-    const { data: holdedConfig } = await supabase
-      .from("holded_integration_settings")
-      .select("export_quotes_mode, is_active")
-      .eq("organization_id", organizationId)
+    const { data: holdedIntegration } = await supabase
+      .from("integrations")
+      .select("id")
+      .eq("name", "Holded")
       .maybeSingle();
-    const active = holdedConfig?.is_active === true;
-    const mode = holdedConfig?.export_quotes_mode || "all";
+    let active = false;
+    let mode: string = "all";
+    if (holdedIntegration?.id) {
+      const { data: access } = await supabase
+        .from("organization_integration_access")
+        .select("is_active, access_token_encrypted, configuration")
+        .eq("organization_id", organizationId)
+        .eq("integration_id", holdedIntegration.id)
+        .maybeSingle();
+      active = !!(access?.is_active && access?.access_token_encrypted);
+      mode = (access?.configuration as any)?.export_mode || "all";
+    }
     if (active && (mode === "estimates_on_approval")) {
       await supabase.functions.invoke("holded-export-estimate", {
         body: { quoteId, approvedItemIds: approvedIds },
