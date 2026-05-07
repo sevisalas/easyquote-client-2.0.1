@@ -803,7 +803,7 @@ Deno.serve(async (req) => {
         }
         
         // Heuristic fallback: if is_quantity is not configured OR configured but unresolved in saved prompts
-        if (units === 1) {
+        if (units === null || units === 1) {
           const qtyPrompt = promptsArray.find((p: any) => {
             const label = String(p?.label || '').toUpperCase();
             return label.includes('UNIDADES') || label.includes('CANTIDAD') || label.includes('EJEMPLAR') || label.includes('QTY');
