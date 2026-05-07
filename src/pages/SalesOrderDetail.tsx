@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Trash2, Download, ChevronDown, Edit, FileText, LayoutGrid, Wrench, ShieldAlert, RefreshCw, StickyNote } from "lucide-react";
+import { ArrowLeft, Trash2, Download, ChevronDown, Edit, FileText, LayoutGrid, Wrench, ShieldAlert, RefreshCw, StickyNote, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -1042,6 +1042,17 @@ const SalesOrderDetail = () => {
                 >
                   <RefreshCw className={`h-4 w-4 ${isUpdatingHolded ? 'animate-spin' : ''}`} />
                   {!isMobile && "Actualizar en Holded"}
+                </Button>
+              )}
+              {!order.holded_document_id && isHoldedActive && viewMode === 'administrative' && (userRole === 'admin' || userRole === 'gestor') && (
+                <Button 
+                  onClick={handleExportToHolded}
+                  size={isMobile ? "default" : "sm"}
+                  variant="outline"
+                  className={`gap-2 ${isMobile ? 'h-10 flex-1' : ''}`}
+                >
+                  <Upload className="h-4 w-4" />
+                  {!isMobile && "Enviar a Holded"}
                 </Button>
               )}
               {viewMode === 'production' && (
