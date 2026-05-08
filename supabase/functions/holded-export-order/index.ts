@@ -15,6 +15,25 @@ const parseLocaleNumber = (value: unknown): number => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const getBearerToken = (authHeader: string | null) =>
+  authHeader?.replace(/^Bearer\s+/i, '').trim() || null;
+
+const validatePortalTokenForQuote = async (supabase: any, portalToken: string, quoteId: string | null) => {
+  if (!quoteId) throw new Error('El pedido no está vinculado a un presupuesto');
+
+  const { data: tokenData, error } = await supabase
+    .from('quote_portal_tokens')
+    .select('id, quote_id, is_active, expires_at')
+    .eq('token', portalToken)
+    .maybeSingle();
+
+  if (error || !tokenData) throw new Error('Token de portal inválido o expirado');
+  if (tokenData.quote_id !== quoteId) throw new Error('El token de portal no corresponde a este pedido');
+  if (new Date(tokenData.expires_at) < new Date()) throw new Error('Este enlace ha expirado');
+
+  return tokenData;
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -27,16 +46,16 @@ Deno.serve(async (req) => {
 
     // Authenticate user
     const authHeader = req.headers.get('authorization');
-    if (!authHeader) {
+    const portalToken = req.headers.get('x-portal-token');
+    const bearerToken = getBearerToken(authHeader);
+    let user: any = null;
+
+    if (bearerToken) {
+      const { data, error: authError } = await supabase.auth.getUser(bearerToken);
+      if (authError || !data?.user) throw new Error('Unauthorized');
+      user = data.user;
+    } else if (!portalToken) {
       throw new Error('No authorization header');
-    }
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
-
-    if (authError || !user) {
-      throw new Error('Unauthorized');
     }
 
     const { orderId } = await req.json();
@@ -61,8 +80,9 @@ Deno.serve(async (req) => {
     // Extract quote data if exists
     const quoteData = order.quotes as { holded_estimate_id: string | null; holded_estimate_number: string | null } | null;
 
-    // Verify user has access to this order
-    if (order.user_id !== user.id) {
+    if (portalToken) {
+      await validatePortalTokenForQuote(supabase, portalToken, order.quote_id ?? null);
+    } else if (order.user_id !== user.id) {
       // Check if user belongs to the same organization as the order
       const orderOrgId = order.organization_id;
       let hasAccess = false;
@@ -223,8 +243,10 @@ Deno.serve(async (req) => {
     };
 
     // --- EasyQuote prompt definitions (for dynamic visibility) ---
-    const { data: easyquoteCredsData } = await supabase
-      .rpc('get_organization_easyquote_credentials', { p_user_id: user.id });
+    const easyquoteCredentialsUserId = user?.id || orgData?.api_user_id;
+    const { data: easyquoteCredsData } = easyquoteCredentialsUserId
+      ? await supabase.rpc('get_organization_easyquote_credentials', { p_user_id: easyquoteCredentialsUserId })
+      : { data: null };
 
     const easyquoteCreds = easyquoteCredsData?.[0];
     let easyquoteToken: string | null = null;
