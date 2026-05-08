@@ -737,8 +737,30 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     const actorAuthHeader = req.headers.get("authorization");
+    const portalToken = req.headers.get("x-portal-token");
+    const bearerToken = getBearerToken(actorAuthHeader);
+    let actorUserId: string | null = null;
+
+    if (bearerToken) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser(bearerToken);
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      actorUserId = user.id;
+    }
+
+    if (!actorUserId && !portalToken) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const result = await approveQuoteCore(supabase, {
-      quoteId, selectedItemIds, itemQuantities, bypassRoleCheck: true, actorAuthHeader,
+      quoteId, selectedItemIds, itemQuantities, actorUserId, actorAuthHeader, portalToken,
     });
     return new Response(JSON.stringify({ success: true, ...result }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } });
