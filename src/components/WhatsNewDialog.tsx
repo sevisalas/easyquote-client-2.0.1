@@ -22,22 +22,7 @@ interface ReleaseNote {
   badge?: string;
 }
 
-const RELEASE_NOTES: ReleaseNote[] = [
-  {
-    icon: <UserCheck className="h-5 w-5 text-primary" />,
-    title: "Portal del cliente",
-    badge: "Destacado",
-    description:
-      "Tus clientes pueden acceder a su propio portal para revisar todos sus presupuestos enviados, aprobarlos o rechazarlos y descargar PDFs. Si reciben un enlace de aprobación, ahora ven también un acceso directo a su portal personal.",
-  },
-  {
-    icon: <Layers className="h-5 w-5 text-primary" />,
-    title: "Agrupación de presupuestos",
-    badge: "Nuevo",
-    description:
-      "Crea presupuestos agrupados desde varios borradores en /presupuestos/agrupado/nuevo. Los borradores quedan en estado 'agrupado' y la trazabilidad es interna: el cliente solo ve el presupuesto agrupado final.",
-  },
-];
+const RELEASE_NOTES: ReleaseNote[] = [];
 
 export function WhatsNewDialog() {
   const [open, setOpen] = useState(false);
