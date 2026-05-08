@@ -255,6 +255,35 @@ const getNextOrderNumberFallback = async (supabase: any, organizationId: string)
   return orderNumber;
 };
 
+const getBearerToken = (authHeader: string | null) =>
+  authHeader?.replace(/^Bearer\s+/i, "").trim() || null;
+
+const validatePortalTokenForQuote = async (supabase: any, portalToken: string, quoteId: string) => {
+  const { data: tokenData, error: tokenError } = await supabase
+    .from("quote_portal_tokens")
+    .select("id, quote_id, is_active, expires_at")
+    .eq("token", portalToken)
+    .maybeSingle();
+
+  if (tokenError || !tokenData) {
+    throw new Error("Token de portal inválido o expirado");
+  }
+
+  if (tokenData.quote_id !== quoteId) {
+    throw new Error("El token de portal no corresponde a este presupuesto");
+  }
+
+  if (new Date(tokenData.expires_at) < new Date()) {
+    throw new Error("Este enlace ha expirado");
+  }
+
+  if (!tokenData.is_active) {
+    throw new Error("Este presupuesto ya ha sido respondido");
+  }
+
+  return tokenData;
+};
+
 // ---------- main approval logic (port of useQuoteApproval) ----------
 async function approveQuoteCore(
   supabase: any,
@@ -263,11 +292,11 @@ async function approveQuoteCore(
     selectedItemIds?: string[];
     itemQuantities?: Record<string, number>;
     actorUserId?: string | null;
-    bypassRoleCheck?: boolean;
     actorAuthHeader?: string | null;
+    portalToken?: string | null;
   },
 ) {
-  const { quoteId, selectedItemIds, itemQuantities, actorUserId, bypassRoleCheck, actorAuthHeader } = params;
+  const { quoteId, selectedItemIds, itemQuantities, actorUserId, actorAuthHeader, portalToken } = params;
 
   const { data: quote, error: quoteError } = await supabase
     .from("quotes")
@@ -276,6 +305,42 @@ async function approveQuoteCore(
     .single();
   if (quoteError) throw quoteError;
   if (!quote) throw new Error("Presupuesto no encontrado");
+
+  const isPortalApproval = !!portalToken;
+  if (isPortalApproval) {
+    await validatePortalTokenForQuote(supabase, portalToken, quoteId);
+  } else {
+    if (!actorUserId) throw new Error("Unauthorized");
+
+    const isOwnQuote = quote.user_id === actorUserId;
+    const organizationId = quote.organization_id;
+
+    const [{ data: membership }, { data: ownedOrg }] = await Promise.all([
+      organizationId
+        ? supabase
+            .from("organization_members")
+            .select("role")
+            .eq("organization_id", organizationId)
+            .eq("user_id", actorUserId)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      organizationId
+        ? supabase
+            .from("organizations")
+            .select("id")
+            .eq("id", organizationId)
+            .eq("api_user_id", actorUserId)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+
+    const role = String(membership?.role || "").toLowerCase();
+    const canApprove = !!ownedOrg || role === "admin" || role === "gestor" || (role === "comercial" && isOwnQuote);
+
+    if (!canApprove) {
+      throw new Error("No tienes permiso para aprobar este presupuesto");
+    }
+  }
 
   // Block duplicate
   const { data: existingOrder } = await supabase
@@ -628,9 +693,12 @@ async function approveQuoteCore(
     // from the app, we must forward the caller's Authorization header so the
     // invoke is treated as an authenticated request — otherwise both exports
     // silently 401 and the Holded sync never happens.
+    const invokeHeaders: Record<string, string> = {};
+    if (actorAuthHeader) invokeHeaders.Authorization = actorAuthHeader;
+    if (portalToken) invokeHeaders["x-portal-token"] = portalToken;
     const invokeOpts = (body: any) => ({
       body,
-      headers: actorAuthHeader ? { Authorization: actorAuthHeader } : undefined,
+      headers: Object.keys(invokeHeaders).length > 0 ? invokeHeaders : undefined,
     });
     if (active && (mode === "estimates_on_approval")) {
       const { error: estErr } = await supabase.functions.invoke(
