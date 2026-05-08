@@ -1,0 +1,5 @@
+{
+  "version": "2.8.3",
+  "buildTime": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+  "hash": "$(date +%s | sha256sum | head -c 16)"
+}
