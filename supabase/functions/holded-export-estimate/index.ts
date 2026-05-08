@@ -15,6 +15,23 @@ const parseLocaleNumber = (value: unknown): number => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const getBearerToken = (authHeader: string | null) =>
+  authHeader?.replace(/^Bearer\s+/i, '').trim() || null;
+
+const validatePortalTokenForQuote = async (supabase: any, portalToken: string, quoteId: string) => {
+  const { data: tokenData, error } = await supabase
+    .from('quote_portal_tokens')
+    .select('id, quote_id, is_active, expires_at')
+    .eq('token', portalToken)
+    .maybeSingle();
+
+  if (error || !tokenData) throw new Error('Token de portal inválido o expirado');
+  if (tokenData.quote_id !== quoteId) throw new Error('El token de portal no corresponde a este presupuesto');
+  if (new Date(tokenData.expires_at) < new Date()) throw new Error('Este enlace ha expirado');
+
+  return tokenData;
+};
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -27,16 +44,16 @@ Deno.serve(async (req) => {
 
     // Authenticate user
     const authHeader = req.headers.get('authorization');
-    if (!authHeader) {
+    const portalToken = req.headers.get('x-portal-token');
+    const bearerToken = getBearerToken(authHeader);
+    let user: any = null;
+
+    if (bearerToken) {
+      const { data, error: authError } = await supabase.auth.getUser(bearerToken);
+      if (authError || !data?.user) throw new Error('Unauthorized');
+      user = data.user;
+    } else if (!portalToken) {
       throw new Error('No authorization header');
-    }
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser(
-      authHeader.replace('Bearer ', '')
-    );
-
-    if (authError || !user) {
-      throw new Error('Unauthorized');
     }
 
     const { quoteId, approvedItemIds } = await req.json();
@@ -58,8 +75,9 @@ Deno.serve(async (req) => {
       throw new Error('Quote not found');
     }
 
-    // Verify user has access to this quote (either owns it or is in the same organization)
-    if (quote.user_id !== user.id) {
+    if (portalToken) {
+      await validatePortalTokenForQuote(supabase, portalToken, quoteId);
+    } else if (quote.user_id !== user.id) {
       const quoteOrgId = quote.organization_id;
       if (!quoteOrgId) {
         throw new Error('No tienes permiso para exportar este presupuesto');
@@ -196,8 +214,10 @@ Deno.serve(async (req) => {
     console.log('Using Holded API key for organization:', organizationId);
 
     // Get EasyQuote credentials to fetch product definitions
-    const { data: easyquoteCredsData } = await supabase
-      .rpc('get_organization_easyquote_credentials', { p_user_id: user.id });
+    const easyquoteCredentialsUserId = user?.id || orgData?.api_user_id;
+    const { data: easyquoteCredsData } = easyquoteCredentialsUserId
+      ? await supabase.rpc('get_organization_easyquote_credentials', { p_user_id: easyquoteCredentialsUserId })
+      : { data: null };
     
     const easyquoteCreds = easyquoteCredsData?.[0];
     if (!easyquoteCreds) {

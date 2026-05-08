@@ -343,6 +343,9 @@ Deno.serve(async (req) => {
         if (action === "approved") {
           try {
             const { error: approveErr } = await supabase.functions.invoke("approve-quote", {
+              headers: {
+                "x-portal-token": token,
+              },
               body: {
                 quoteId: tokenData.quote_id,
                 selectedItemIds: Array.isArray(selectedItemIds) && selectedItemIds.length > 0 ? selectedItemIds : undefined,
