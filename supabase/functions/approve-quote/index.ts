@@ -264,9 +264,10 @@ async function approveQuoteCore(
     itemQuantities?: Record<string, number>;
     actorUserId?: string | null;
     bypassRoleCheck?: boolean;
+    actorAuthHeader?: string | null;
   },
 ) {
-  const { quoteId, selectedItemIds, itemQuantities, actorUserId, bypassRoleCheck } = params;
+  const { quoteId, selectedItemIds, itemQuantities, actorUserId, bypassRoleCheck, actorAuthHeader } = params;
 
   const { data: quote, error: quoteError } = await supabase
     .from("quotes")
@@ -622,13 +623,30 @@ async function approveQuoteCore(
       active = !!(access?.is_active && access?.access_token_encrypted);
       mode = (access?.configuration as any)?.export_mode || "all";
     }
+    // The downstream Holded exporters require a USER auth header (they use
+    // supabase.auth.getUser to validate access). When approve-quote is called
+    // from the app, we must forward the caller's Authorization header so the
+    // invoke is treated as an authenticated request — otherwise both exports
+    // silently 401 and the Holded sync never happens.
+    const invokeOpts = (body: any) => ({
+      body,
+      headers: actorAuthHeader ? { Authorization: actorAuthHeader } : undefined,
+    });
     if (active && (mode === "estimates_on_approval")) {
-      await supabase.functions.invoke("holded-export-estimate", {
-        body: { quoteId, approvedItemIds: approvedIds },
-      });
+      const { error: estErr } = await supabase.functions.invoke(
+        "holded-export-estimate",
+        invokeOpts({ quoteId, approvedItemIds: approvedIds }),
+      );
+      if (estErr) console.error("Holded estimate export failed:", estErr);
+      else console.log("Holded estimate export OK for quote", quoteId);
     }
     if (active && (mode === "all" || mode === "orders_only" || mode === "estimates_on_approval")) {
-      await supabase.functions.invoke("holded-export-order", { body: { orderId: salesOrder.id } });
+      const { error: ordErr } = await supabase.functions.invoke(
+        "holded-export-order",
+        invokeOpts({ orderId: salesOrder.id }),
+      );
+      if (ordErr) console.error("Holded order export failed:", ordErr);
+      else console.log("Holded order export OK for order", salesOrder.id);
     }
   } catch (e) { console.error("Holded export failed (non-fatal):", e); }
 
@@ -650,8 +668,9 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "quoteId requerido" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+    const actorAuthHeader = req.headers.get("authorization");
     const result = await approveQuoteCore(supabase, {
-      quoteId, selectedItemIds, itemQuantities, bypassRoleCheck: true,
+      quoteId, selectedItemIds, itemQuantities, bypassRoleCheck: true, actorAuthHeader,
     });
     return new Response(JSON.stringify({ success: true, ...result }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } });
