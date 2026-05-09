@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React from 'react';
 import { paginateTemplate7Items } from './template7Pagination';
+import { sanitizeHtml, sanitizeDescriptionHtml } from '@/utils/sanitizeHtml';
 
 interface Template7Props {
   data: any;
@@ -205,7 +206,7 @@ export default function Template7({ data }: Template7Props) {
                 {(!item.prompts || item.prompts.length === 0) && item.description && (
                   <tr style={{ borderBottom: 'none' }}>
                     <td colSpan={3} style={{ padding: '3px 8px 3px 20px' }}>
-                      <div style={{ fontSize: '11px', color: '#555', lineHeight: '1.4', whiteSpace: 'pre-line' }} dangerouslySetInnerHTML={{ __html: item.description.replace(/\n/g, '<br/>') }} />
+                      <div style={{ fontSize: '11px', color: '#555', lineHeight: '1.4', whiteSpace: 'pre-line' }} dangerouslySetInnerHTML={{ __html: sanitizeDescriptionHtml(item.description) }} />
                     </td>
                   </tr>
                 )}
@@ -384,7 +385,7 @@ export default function Template7({ data }: Template7Props) {
             textAlign: 'left',
             zIndex: 1,
           }}
-          dangerouslySetInnerHTML={{ __html: data.config.footerText }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(data.config.footerText) }}
         />
       )}
 

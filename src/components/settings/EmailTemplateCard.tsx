@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useEmailTemplates, EMAIL_TEMPLATE_VARIABLES } from "@/hooks/useEmailTemplates";
 import { Save, Eye, Copy, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { sanitizeHtml } from "@/utils/sanitizeHtml";
 import {
   Dialog,
   DialogContent,
@@ -143,7 +144,7 @@ export default function EmailTemplateCard() {
                   .replace(/\{\{empresa\}\}/g, "Mi Empresa S.L.")}
               </p>
             </div>
-            <div dangerouslySetInnerHTML={{ __html: renderPreview() }} />
+            <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderPreview()) }} />
           </div>
         </DialogContent>
       </Dialog>
