@@ -46,15 +46,18 @@ serve(async (req) => {
 
     const isSuperAdmin = roles?.role === 'superadmin';
 
+    // Collect organizations where caller is admin (used for cross-org check)
+    let callerAdminOrgIds: string[] = [];
     if (!isSuperAdmin) {
-      // Verificar si es admin de la organización
-      const { data: membership } = await supabaseAdmin
+      const { data: memberships } = await supabaseAdmin
         .from('organization_members')
         .select('role, organization_id')
         .eq('user_id', authUser.id)
-        .single();
+        .eq('role', 'admin');
 
-      if (!membership || membership.role !== 'admin') {
+      callerAdminOrgIds = (memberships || []).map((m: any) => m.organization_id);
+
+      if (callerAdminOrgIds.length === 0) {
         return new Response(
           JSON.stringify({ error: 'Unauthorized. Only admins can update user emails.' }),
           { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -78,6 +81,37 @@ serve(async (req) => {
         JSON.stringify({ error: 'Invalid email format' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Cross-org protection: non-superadmins may only edit users that belong
+    // to one of their admin organizations. This blocks an org admin from
+    // hijacking a superadmin or a user in another tenant.
+    if (!isSuperAdmin) {
+      const { data: targetMembership } = await supabaseAdmin
+        .from('organization_members')
+        .select('id')
+        .eq('user_id', userId)
+        .in('organization_id', callerAdminOrgIds)
+        .maybeSingle();
+
+      if (!targetMembership) {
+        return new Response(
+          JSON.stringify({ error: 'Forbidden: target user is not a member of your organization' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Extra safety: block editing users that hold elevated platform roles.
+      const { data: targetRoles } = await supabaseAdmin
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
+      if ((targetRoles || []).some((r: any) => r.role === 'superadmin')) {
+        return new Response(
+          JSON.stringify({ error: 'Forbidden: cannot modify superadmin accounts' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     // Verificar si el email ya existe
