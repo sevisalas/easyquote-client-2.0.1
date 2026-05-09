@@ -12,12 +12,63 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    // ---- Authentication & authorization ----
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user: caller }, error: authError } = await supabaseClient.auth.getUser(token)
+    if (authError || !caller) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
+
     const { organizationId } = await req.json()
 
     if (!organizationId) {
       return new Response(
         JSON.stringify({ error: 'Organization ID is required' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
+    }
+
+    // Allow: superadmin, organization owner (organizations.api_user_id),
+    // or a member of the requested organization.
+    const { data: roles } = await supabaseClient
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', caller.id)
+    const isSuperAdmin = (roles || []).some((r: any) => r.role === 'superadmin')
+
+    let allowed = isSuperAdmin
+    if (!allowed) {
+      const { data: ownerOrg } = await supabaseClient
+        .from('organizations')
+        .select('id')
+        .eq('id', organizationId)
+        .eq('api_user_id', caller.id)
+        .maybeSingle()
+      if (ownerOrg) allowed = true
+    }
+    if (!allowed) {
+      const { data: membership } = await supabaseClient
+        .from('organization_members')
+        .select('id')
+        .eq('user_id', caller.id)
+        .eq('organization_id', organizationId)
+        .maybeSingle()
+      if (membership) allowed = true
+    }
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: 'Forbidden' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
       )
     }
 
