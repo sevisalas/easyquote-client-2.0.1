@@ -2,6 +2,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React from 'react';
 import { paginateTemplate7Items } from './template7Pagination';
+import { sanitizeHtml } from '@/utils/sanitizeHtml';
 
 const formatPdfDescription = (value?: string) => {
   const container = document.createElement('div');
@@ -236,7 +237,7 @@ export default function Template9({ data }: Template9Props) {
                         {(!item.prompts || item.prompts.length === 0) && item.description && (
                           <tr>
                             <td colSpan={3} style={{ padding: '2px 10px 2px 22px' }}>
-                              <div style={{ fontSize: '10.5px', color: '#555', lineHeight: '1.45', whiteSpace: 'pre-line' }} dangerouslySetInnerHTML={{ __html: formatPdfDescription(item.description).replace(/\n/g, '<br/>') }} />
+                              <div style={{ fontSize: '10.5px', color: '#555', lineHeight: '1.45', whiteSpace: 'pre-line' }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(formatPdfDescription(item.description).replace(/\n/g, '<br/>')) }} />
                             </td>
                           </tr>
                         )}
@@ -395,7 +396,7 @@ export default function Template9({ data }: Template9Props) {
               {isLastPage && data.config?.footerText && (
                 <div
                   style={{ marginTop: '20px', fontSize: '10.5px', color: '#3a3a3a', lineHeight: '1.5' }}
-                  dangerouslySetInnerHTML={{ __html: data.config.footerText }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(data.config.footerText) }}
                 />
               )}
             </div>
