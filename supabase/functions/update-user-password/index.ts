@@ -38,28 +38,25 @@ Deno.serve(async (req) => {
     
     const isSuperAdmin = roles?.some(r => r.role === 'superadmin') || false
     let isOrgAdmin = false
+    const callerAdminOrgIds: string[] = []
 
     if (!isSuperAdmin) {
-      const { data: orgData } = await supabaseAdmin
+      const { data: ownedOrgs } = await supabaseAdmin
         .from('organizations')
         .select('id')
         .eq('api_user_id', user.id)
-        .maybeSingle()
 
-      if (orgData) {
-        isOrgAdmin = true
-      } else {
-        const { data: memberData } = await supabaseAdmin
-          .from('organization_members')
-          .select('role')
-          .eq('user_id', user.id)
-          .eq('role', 'admin')
-          .maybeSingle()
+      for (const o of ownedOrgs || []) callerAdminOrgIds.push(o.id)
 
-        if (memberData) {
-          isOrgAdmin = true
-        }
-      }
+      const { data: adminMemberships } = await supabaseAdmin
+        .from('organization_members')
+        .select('organization_id')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+
+      for (const m of adminMemberships || []) callerAdminOrgIds.push(m.organization_id)
+
+      if (callerAdminOrgIds.length > 0) isOrgAdmin = true
     }
 
     if (!isSuperAdmin && !isOrgAdmin) {
@@ -94,6 +91,36 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: `User with email ${email} not found` }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
+    }
+
+    // Cross-org protection: non-superadmins may only reset passwords for
+    // users that belong to one of their admin organizations, and may never
+    // reset a superadmin's password.
+    if (!isSuperAdmin) {
+      const { data: targetRoles } = await supabaseAdmin
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', targetUser.id)
+      if ((targetRoles || []).some(r => r.role === 'superadmin')) {
+        return new Response(
+          JSON.stringify({ error: 'Forbidden: cannot modify superadmin accounts' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      const { data: targetMembership } = await supabaseAdmin
+        .from('organization_members')
+        .select('id')
+        .eq('user_id', targetUser.id)
+        .in('organization_id', callerAdminOrgIds)
+        .maybeSingle()
+
+      if (!targetMembership) {
+        return new Response(
+          JSON.stringify({ error: 'Forbidden: target user is not a member of your organization' }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
     }
 
     // Update password
