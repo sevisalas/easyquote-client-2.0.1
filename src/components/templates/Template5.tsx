@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React from 'react';
+import { sanitizeDescriptionHtml } from '@/utils/sanitizeHtml';
 
 interface Template5Props {
   data: any;
@@ -136,7 +137,7 @@ export default function Template5({ data }: Template5Props) {
                   {(!item.prompts || item.prompts.length === 0) && item.description && (
                     <tr className="bg-gray-50/50">
                       <td colSpan={4} className="pl-4 py-1">
-                        <div className="text-[10px] text-gray-700 leading-tight whitespace-pre-line" dangerouslySetInnerHTML={{ __html: item.description.replace(/\n/g, '<br/>') }} />
+                        <div className="text-[10px] text-gray-700 leading-tight whitespace-pre-line" dangerouslySetInnerHTML={{ __html: sanitizeDescriptionHtml(item.description) }} />
                       </td>
                     </tr>
                   )}
