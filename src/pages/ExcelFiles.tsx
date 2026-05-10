@@ -35,6 +35,12 @@ interface EasyQuoteExcelFile {
   subscriberId?: string;
   excelfilesSheets: any[];
   products: any[];
+  metaId?: string | null;
+  isMaster?: boolean;
+  localReferenceName?: string | null;
+  associatedMasterFileId?: string | null;
+  associatedMasterName?: string | null;
+  associatedMasterReferenceName?: string | null;
 }
 export default function ExcelFiles() {
   // All hooks must be declared at the top, before any conditional logic
