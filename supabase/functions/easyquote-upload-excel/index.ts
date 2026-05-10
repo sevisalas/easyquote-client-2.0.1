@@ -342,6 +342,7 @@ serve(async (req: Request): Promise<Response> => {
     // Look up master files from Supabase to build replacement mappings
     let finalFileContent = fileContent;
     let masterReplacements: string[] = [];
+    let detectedMasterFileId: string | null = null;
 
     try {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -380,6 +381,7 @@ serve(async (req: Request): Promise<Response> => {
             const mappings = masters
               .filter((m) => m.local_reference_name)
               .map((m) => ({
+                fileId: m.file_id,
                 localName: m.local_reference_name!,
                 publicUrl: `https://sheets.easyquote.cloud/${encodeURIComponent(subscriberId)}/${encodeURIComponent(m.file_id)}/${encodeURIComponent(m.filename)}`,
               }));
@@ -396,6 +398,7 @@ serve(async (req: Request): Promise<Response> => {
               );
               finalFileContent = result.base64;
               masterReplacements = result.replacements;
+              detectedMasterFileId = associatedMasterFileId || result.detectedMasterFileIds[0] || null;
 
               if (result.replacements.length) {
                 console.log(
@@ -495,6 +498,9 @@ serve(async (req: Request): Promise<Response> => {
     // Include master replacement info in response
     if (masterReplacements.length) {
       data.masterReplacements = masterReplacements;
+    }
+    if (detectedMasterFileId) {
+      data.detectedMasterFileId = detectedMasterFileId;
     }
 
     console.log("easyquote-upload-excel: Upload successful");
