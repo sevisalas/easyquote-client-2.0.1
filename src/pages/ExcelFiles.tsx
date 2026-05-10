@@ -35,6 +35,12 @@ interface EasyQuoteExcelFile {
   subscriberId?: string;
   excelfilesSheets: any[];
   products: any[];
+  metaId?: string | null;
+  isMaster?: boolean;
+  localReferenceName?: string | null;
+  associatedMasterFileId?: string | null;
+  associatedMasterName?: string | null;
+  associatedMasterReferenceName?: string | null;
 }
 export default function ExcelFiles() {
   // All hooks must be declared at the top, before any conditional logic
@@ -143,7 +149,9 @@ export default function ExcelFiles() {
   });
 
   // Get products associated with the selected file
-  const associatedProducts = selectedFileForProducts ? allProducts.filter((product: any) => product.excelfileId === selectedFileForProducts.id && (includeInactive || product.isActive)) : [];
+  const associatedProducts = selectedFileForProducts
+    ? allProducts.filter((product: any) => product.excelfileId === selectedFileForProducts.id && (includeInactive || product.isActive))
+    : [];
 
   // Fetch Excel file metadata from Supabase
   const {
@@ -234,17 +242,26 @@ export default function ExcelFiles() {
     });
   };
 
+  const excelFilesMetaByApiId = new Map((excelFilesMeta || []).map((meta: any) => [meta.file_id, meta]));
+  const excelFilesMetaByRowOrApiId = new Map(
+    (excelFilesMeta || []).flatMap((meta: any) => [[meta.id, meta], [meta.file_id, meta]])
+  );
+
   // Combine API files with Supabase metadata and filter by active status
   const filesWithMeta = files.map(file => {
-    const meta = excelFilesMeta?.find(m => m.file_id === file.id);
+    const meta = excelFilesMetaByApiId.get(file.id);
     const isMaster = meta?.is_master || false;
     const localReferenceName = (meta as any)?.local_reference_name || null;
     const associatedMasterFileId = (meta as any)?.associated_master_file_id || null;
+    const associatedMasterMeta = associatedMasterFileId ? excelFilesMetaByRowOrApiId.get(associatedMasterFileId) : null;
     return {
       ...file,
+      metaId: meta?.id || null,
       isMaster,
       localReferenceName,
       associatedMasterFileId,
+      associatedMasterName: associatedMasterMeta?.filename || null,
+      associatedMasterReferenceName: associatedMasterMeta?.local_reference_name || null,
       fileUrl: null
     };
   });
@@ -322,9 +339,35 @@ export default function ExcelFiles() {
         const { data: { user } } = await supabase.auth.getUser();
         const newFileId = data?.fileId || data?.id || data?.FileId;
         if (user && newFileId) {
-          await supabase.from("excel_files").update({
-            associated_master_file_id: data.masterFileId
-          }).eq("file_id", newFileId).eq("user_id", user.id);
+          const metadataPayload = {
+            filename: data.fileName,
+            original_filename: data.fileName,
+            file_size: selectedFile ? Math.round(selectedFile.size / 1024) : 0,
+            associated_master_file_id: data.masterFileId,
+          };
+
+          const { data: existingRow } = await supabase
+            .from("excel_files")
+            .select("id")
+            .eq("file_id", newFileId)
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (existingRow?.id) {
+            await supabase
+              .from("excel_files")
+              .update(metadataPayload)
+              .eq("id", existingRow.id);
+          } else {
+            await supabase
+              .from("excel_files")
+              .insert({
+                user_id: user.id,
+                file_id: newFileId,
+                is_master: false,
+                ...metadataPayload,
+              });
+          }
         }
       } catch (e) {
         console.warn("Could not persist master association on upload", e);
@@ -338,6 +381,9 @@ export default function ExcelFiles() {
       });
       queryClient.invalidateQueries({
         queryKey: ["easyquote-excel-files"]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["excel-files-meta"]
       });
       setIsUploadDialogOpen(false);
       setSelectedFile(null);
@@ -1097,11 +1143,19 @@ export default function ExcelFiles() {
                 <p className="text-muted-foreground">
                   No hay productos asociados a este archivo Excel
                 </p>
+                {selectedFileForProducts?.associatedMasterName && <p className="text-sm text-muted-foreground mt-2">
+                    Maestro asociado: {selectedFileForProducts.associatedMasterName}
+                  </p>}
               </div> : <div className="space-y-2">
                 {associatedProducts.map((product: any) => <Card key={product.id}>
                     <CardContent className="py-3">
                       <div className="flex items-center justify-between gap-4">
-                        <p className="font-medium flex-1">{product.productName}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{product.productName}</p>
+                          {selectedFileForProducts?.associatedMasterName && <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                              Motor con maestro asociado: {selectedFileForProducts.associatedMasterName}
+                            </p>}
+                        </div>
                         <Badge variant={product.isActive ? "default" : "secondary"}>
                           {product.isActive ? "Activo" : "Inactivo"}
                         </Badge>
@@ -1222,22 +1276,48 @@ export default function ExcelFiles() {
                         <TableCell className="py-1.5 px-3 text-sm font-medium">
                           <div className="flex items-center gap-2">
                             <FileSpreadsheet className="h-3.5 w-3.5 flex-shrink-0" />
-                            <span className="truncate">{file.fileName}</span>
-                            {file.isMaster && (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Badge variant="outline" className="text-xs px-1.5 py-0 h-5 gap-1 border-amber-500/50 text-amber-600">
-                                      <Crown className="h-3 w-3" />
-                                      Maestro
-                                    </Badge>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    {file.localReferenceName ? `Ref: ${file.localReferenceName}` : 'Archivo maestro'}
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="truncate">{file.fileName}</span>
+                                {file.isMaster && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Badge variant="outline" className="text-xs px-1.5 py-0 h-5 gap-1 border-amber-500/50 text-amber-600">
+                                          <Crown className="h-3 w-3" />
+                                          Maestro
+                                        </Badge>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        {file.localReferenceName ? `Ref: ${file.localReferenceName}` : 'Archivo maestro'}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                                {!file.isMaster && file.associatedMasterName && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Badge variant="secondary" className="text-xs px-1.5 py-0 h-5 gap-1">
+                                          <Crown className="h-3 w-3" />
+                                          Usa maestro
+                                        </Badge>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        {file.associatedMasterReferenceName
+                                          ? `${file.associatedMasterName} · Ref: ${file.associatedMasterReferenceName}`
+                                          : file.associatedMasterName}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                              </div>
+                              {!file.isMaster && file.associatedMasterName && (
+                                <div className="text-xs text-muted-foreground truncate mt-0.5">
+                                  Maestro asociado: {file.associatedMasterName}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell className="py-1.5 px-3 text-sm">{formatFileSize(file.fileSizeKb)}</TableCell>
@@ -1429,6 +1509,12 @@ export default function ExcelFiles() {
                     ))}
                   </SelectContent>
                 </Select>
+                {selectedExcelFile?.associatedMasterName && (
+                  <p className="text-xs text-muted-foreground">
+                    Maestro actual: {selectedExcelFile.associatedMasterName}
+                    {selectedExcelFile.associatedMasterReferenceName ? ` (${selectedExcelFile.associatedMasterReferenceName})` : ""}
+                  </p>
+                )}
               </div>
             )}
           </div>
