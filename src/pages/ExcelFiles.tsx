@@ -340,7 +340,7 @@ export default function ExcelFiles() {
       if (data?.error) {
         throw new Error(data.message || data.error);
       }
-      return { ...data, masterFileId };
+      return { ...data, masterFileId: data?.detectedMasterFileId || masterFileId };
     },
     onSuccess: async data => {
       // Persist master association onto the newly created excel_files row
@@ -642,7 +642,7 @@ export default function ExcelFiles() {
       return {
         fileId,
         fileName: file.name,
-        masterFileId,
+        masterFileId: data?.detectedMasterFileId || masterFileId,
         masterReplacements: data?.masterReplacements || []
       };
     },
@@ -1123,7 +1123,7 @@ export default function ExcelFiles() {
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
-                      Si este archivo referencia un maestro, selecciónalo para vincular automáticamente las fórmulas.
+                      Si el Excel ya referencia un maestro conocido, se detectará y quedará preasociado automáticamente. Aquí solo puedes corregirlo o cambiarlo.
                     </p>
                   </div>
                 )}
@@ -1555,6 +1555,9 @@ export default function ExcelFiles() {
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  Si el archivo ya tiene una referencia válida a un maestro, la asociación se detecta sola; este selector solo sirve para forzar o cambiar el vínculo.
+                </p>
                 {selectedExcelFile?.associatedMasterName && (
                   <p className="text-xs text-muted-foreground">
                     Maestro actual: {selectedExcelFile.associatedMasterName}
