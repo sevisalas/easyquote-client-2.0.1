@@ -1260,22 +1260,48 @@ export default function ExcelFiles() {
                         <TableCell className="py-1.5 px-3 text-sm font-medium">
                           <div className="flex items-center gap-2">
                             <FileSpreadsheet className="h-3.5 w-3.5 flex-shrink-0" />
-                            <span className="truncate">{file.fileName}</span>
-                            {file.isMaster && (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Badge variant="outline" className="text-xs px-1.5 py-0 h-5 gap-1 border-amber-500/50 text-amber-600">
-                                      <Crown className="h-3 w-3" />
-                                      Maestro
-                                    </Badge>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    {file.localReferenceName ? `Ref: ${file.localReferenceName}` : 'Archivo maestro'}
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="truncate">{file.fileName}</span>
+                                {file.isMaster && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Badge variant="outline" className="text-xs px-1.5 py-0 h-5 gap-1 border-amber-500/50 text-amber-600">
+                                          <Crown className="h-3 w-3" />
+                                          Maestro
+                                        </Badge>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        {file.localReferenceName ? `Ref: ${file.localReferenceName}` : 'Archivo maestro'}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                                {!file.isMaster && file.associatedMasterName && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Badge variant="secondary" className="text-xs px-1.5 py-0 h-5 gap-1">
+                                          <Crown className="h-3 w-3" />
+                                          Usa maestro
+                                        </Badge>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        {file.associatedMasterReferenceName
+                                          ? `${file.associatedMasterName} · Ref: ${file.associatedMasterReferenceName}`
+                                          : file.associatedMasterName}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                              </div>
+                              {!file.isMaster && file.associatedMasterName && (
+                                <div className="text-xs text-muted-foreground truncate mt-0.5">
+                                  Maestro asociado: {file.associatedMasterName}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell className="py-1.5 px-3 text-sm">{formatFileSize(file.fileSizeKb)}</TableCell>
