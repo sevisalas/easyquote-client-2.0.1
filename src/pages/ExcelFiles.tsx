@@ -762,7 +762,7 @@ export default function ExcelFiles() {
         const file = acceptedFiles[0];
         setSelectedFile(file);
         void detectMasterFromWorkbook(file).then((detected) => {
-          if (detected) setUploadMasterFileId(detected);
+          setUploadMasterFileId(detected);
         });
       }
     }
@@ -784,7 +784,7 @@ export default function ExcelFiles() {
         const file = acceptedFiles[0];
         setSelectedFileForUpdate(file);
         void detectMasterFromWorkbook(file).then((detected) => {
-          if (detected) setUpdateMasterFileId(detected);
+          setUpdateMasterFileId(detected);
         });
       }
     }
