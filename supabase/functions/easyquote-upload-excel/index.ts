@@ -58,17 +58,22 @@ function safeDecodeURIComponent(value: string): string {
 async function replaceMasterReferences(
   base64Content: string,
   masterMappings: Array<{
+    fileId: string;
     localName: string; // e.g. "maestro EQ01.xlsx"
     publicUrl: string; // e.g. "https://sheets.easyquote.cloud/sub/id/file.xlsx"
   }>,
-): Promise<{ base64: string; replacements: string[] }> {
+): Promise<{ base64: string; replacements: string[]; detectedMasterFileIds: string[] }> {
   if (!masterMappings.length) {
-    return { base64: base64Content, replacements: [] };
+    return { base64: base64Content, replacements: [], detectedMasterFileIds: [] };
   }
 
   const replacements: string[] = [];
+  const detectedMasterFileIds: string[] = [];
   const addReplacement = (value: string) => {
     if (!replacements.includes(value)) replacements.push(value);
+  };
+  const addDetectedMaster = (fileId: string) => {
+    if (!detectedMasterFileIds.includes(fileId)) detectedMasterFileIds.push(fileId);
   };
 
   // Decode base64 → binary
@@ -97,7 +102,7 @@ async function replaceMasterReferences(
 
   if (!relsEntries.length && !worksheetEntries.length) {
     await zipReader.close();
-    return { base64: base64Content, replacements: [] };
+    return { base64: base64Content, replacements: [], detectedMasterFileIds: [] };
   }
 
   const normalizedMappings = masterMappings.map((m) => {
@@ -105,10 +110,13 @@ async function replaceMasterReferences(
     const publicFolderUrl =
       m.publicUrl.slice(0, m.publicUrl.lastIndexOf("/") + 1) || m.publicUrl;
     return {
+      fileId: m.fileId,
       localName: decodedName,
       normalizedLocalName: decodedName.toLowerCase(),
       publicUrl: m.publicUrl,
       publicFolderUrl,
+      normalizedPublicUrl: m.publicUrl.toLowerCase(),
+      normalizedPublicFolderUrl: publicFolderUrl.toLowerCase(),
     };
   });
 
@@ -158,13 +166,27 @@ async function replaceMasterReferences(
       let match;
       while ((match = targetRegex.exec(content)) !== null) {
         const target = match[1];
+        const normalizedTarget = safeDecodeURIComponent(target).trim().toLowerCase();
+
+        const existingUrlMapping = normalizedMappings.find((m) =>
+          normalizedTarget === m.normalizedPublicUrl || normalizedTarget.startsWith(m.normalizedPublicFolderUrl)
+        );
+        if (existingUrlMapping) {
+          addDetectedMaster(existingUrlMapping.fileId);
+          continue;
+        }
+
         if (/^https?:\/\//i.test(target)) continue;
 
         const decoded = safeDecodeURIComponent(target);
         const fileName = decoded.split("/").pop()?.trim() ?? decoded.trim();
+        const matchedMapping = normalizedMappings.find(
+          (m) => m.normalizedLocalName === fileName.toLowerCase(),
+        );
         const publicUrl = relsLookup.get(fileName.toLowerCase());
 
         if (publicUrl) {
+          if (matchedMapping) addDetectedMaster(matchedMapping.fileId);
           modified = modified.replace(
             `Target="${target}"`,
             `Target="${publicUrl}"`,
@@ -208,6 +230,7 @@ async function replaceMasterReferences(
           return fullMatch;
         }
 
+        addDetectedMaster(mapping.fileId);
         wsReplacementsCount += 1;
         addReplacement(`formula [${mapping.localName}] → ${mapping.publicFolderUrl}`);
         return `${quoteMark}${mapping.publicFolderUrl}[${mapping.localName}]`;
@@ -225,7 +248,7 @@ async function replaceMasterReferences(
   await zipReader.close();
 
   if (!modifiedContents.size) {
-    return { base64: base64Content, replacements: [] };
+    return { base64: base64Content, replacements: [], detectedMasterFileIds };
   }
 
   // Rebuild ZIP with modified entries
@@ -269,7 +292,7 @@ async function replaceMasterReferences(
   }
   const outputBase64 = btoa(chunks.join(""));
 
-  return { base64: outputBase64, replacements };
+  return { base64: outputBase64, replacements, detectedMasterFileIds };
 }
 
 serve(async (req: Request): Promise<Response> => {
@@ -319,6 +342,7 @@ serve(async (req: Request): Promise<Response> => {
     // Look up master files from Supabase to build replacement mappings
     let finalFileContent = fileContent;
     let masterReplacements: string[] = [];
+    let detectedMasterFileId: string | null = null;
 
     try {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -357,6 +381,7 @@ serve(async (req: Request): Promise<Response> => {
             const mappings = masters
               .filter((m) => m.local_reference_name)
               .map((m) => ({
+                fileId: m.file_id,
                 localName: m.local_reference_name!,
                 publicUrl: `https://sheets.easyquote.cloud/${encodeURIComponent(subscriberId)}/${encodeURIComponent(m.file_id)}/${encodeURIComponent(m.filename)}`,
               }));
@@ -373,6 +398,7 @@ serve(async (req: Request): Promise<Response> => {
               );
               finalFileContent = result.base64;
               masterReplacements = result.replacements;
+              detectedMasterFileId = associatedMasterFileId || result.detectedMasterFileIds[0] || null;
 
               if (result.replacements.length) {
                 console.log(
@@ -472,6 +498,9 @@ serve(async (req: Request): Promise<Response> => {
     // Include master replacement info in response
     if (masterReplacements.length) {
       data.masterReplacements = masterReplacements;
+    }
+    if (detectedMasterFileId) {
+      data.detectedMasterFileId = detectedMasterFileId;
     }
 
     console.log("easyquote-upload-excel: Upload successful");

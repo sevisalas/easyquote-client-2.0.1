@@ -24,6 +24,7 @@ import { useNavigate } from "react-router-dom";
 import { EasyQuoteConnectivityTest } from "@/components/diagnostics/EasyQuoteConnectivityTest";
 import { ExcelErrorScannerDialog } from "@/components/diagnostics/ExcelErrorScannerDialog";
 import { invokeEasyQuoteFunction, getEasyQuoteToken } from "@/lib/easyquoteApi";
+import * as XLSX from "xlsx";
 interface EasyQuoteExcelFile {
   id: string;
   fileName: string;
@@ -254,6 +255,35 @@ export default function ExcelFiles() {
     if (!rowOrApiId) return null;
     return excelFilesMetaByRowOrApiId.get(rowOrApiId)?.file_id || rowOrApiId;
   };
+  const detectMasterFromWorkbook = async (file: File) => {
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, {
+        type: "array",
+        cellFormula: true,
+        cellText: false,
+      });
+
+      const formulas = Object.values(workbook.Sheets || {}).flatMap((sheet: any) =>
+        Object.entries(sheet || {})
+          .filter(([addr]) => !addr.startsWith("!"))
+          .map(([, cell]) => String((cell as any)?.f || ""))
+          .filter(Boolean)
+      ).join("\n").toLowerCase();
+
+      const matchedMaster = masterFiles.find((master) => {
+        const refName = master.localReferenceName?.trim().toLowerCase();
+        if (!refName) return false;
+        const encodedRefName = encodeURIComponent(refName).toLowerCase();
+        return formulas.includes(`[${refName}]`) || formulas.includes(`[${encodedRefName}]`);
+      });
+
+      return matchedMaster?.metaId || null;
+    } catch (error) {
+      console.warn("No se pudo detectar el maestro desde el archivo local", error);
+      return null;
+    }
+  };
 
   // Combine API files with Supabase metadata and filter by active status
   const filesWithMeta = files.map(file => {
@@ -340,7 +370,7 @@ export default function ExcelFiles() {
       if (data?.error) {
         throw new Error(data.message || data.error);
       }
-      return { ...data, masterFileId };
+      return { ...data, masterFileId: data?.detectedMasterFileId || masterFileId };
     },
     onSuccess: async data => {
       // Persist master association onto the newly created excel_files row
@@ -642,7 +672,7 @@ export default function ExcelFiles() {
       return {
         fileId,
         fileName: file.name,
-        masterFileId,
+        masterFileId: data?.detectedMasterFileId || masterFileId,
         masterReplacements: data?.masterReplacements || []
       };
     },
@@ -729,7 +759,11 @@ export default function ExcelFiles() {
     maxFiles: 1,
     onDrop: acceptedFiles => {
       if (acceptedFiles.length > 0) {
-        setSelectedFile(acceptedFiles[0]);
+        const file = acceptedFiles[0];
+        setSelectedFile(file);
+        void detectMasterFromWorkbook(file).then((detected) => {
+          setUploadMasterFileId(detected);
+        });
       }
     }
   });
@@ -747,7 +781,11 @@ export default function ExcelFiles() {
     maxFiles: 1,
     onDrop: acceptedFiles => {
       if (acceptedFiles.length > 0) {
-        setSelectedFileForUpdate(acceptedFiles[0]);
+        const file = acceptedFiles[0];
+        setSelectedFileForUpdate(file);
+        void detectMasterFromWorkbook(file).then((detected) => {
+          setUpdateMasterFileId(detected);
+        });
       }
     }
   });
@@ -1123,7 +1161,7 @@ export default function ExcelFiles() {
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
-                      Si este archivo referencia un maestro, selecciónalo para vincular automáticamente las fórmulas.
+                      Si el Excel ya referencia un maestro conocido, se detectará y quedará preasociado automáticamente. Aquí solo puedes corregirlo o cambiarlo.
                     </p>
                   </div>
                 )}
@@ -1555,6 +1593,9 @@ export default function ExcelFiles() {
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">
+                  Si el archivo ya tiene una referencia válida a un maestro, la asociación se detecta sola; este selector solo sirve para forzar o cambiar el vínculo.
+                </p>
                 {selectedExcelFile?.associatedMasterName && (
                   <p className="text-xs text-muted-foreground">
                     Maestro actual: {selectedExcelFile.associatedMasterName}
