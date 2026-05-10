@@ -246,6 +246,14 @@ export default function ExcelFiles() {
   const excelFilesMetaByRowOrApiId = new Map(
     (excelFilesMeta || []).flatMap((meta: any) => [[meta.id, meta], [meta.file_id, meta]])
   );
+  const getMasterMetaRowId = (rowOrApiId: string | null | undefined) => {
+    if (!rowOrApiId) return null;
+    return excelFilesMetaByRowOrApiId.get(rowOrApiId)?.id || null;
+  };
+  const getMasterApiFileId = (rowOrApiId: string | null | undefined) => {
+    if (!rowOrApiId) return null;
+    return excelFilesMetaByRowOrApiId.get(rowOrApiId)?.file_id || rowOrApiId;
+  };
 
   // Combine API files with Supabase metadata and filter by active status
   const filesWithMeta = files.map(file => {
@@ -300,6 +308,7 @@ export default function ExcelFiles() {
       if (!token) {
         throw new Error("No hay token de EasyQuote disponible");
       }
+      const masterApiFileId = getMasterApiFileId(masterFileId);
 
       // Convert file to base64
       const base64 = await new Promise<string>((resolve, reject) => {
@@ -322,7 +331,7 @@ export default function ExcelFiles() {
           token,
           fileName: file.name,
           fileContent: base64,
-          associatedMasterFileId: masterFileId || undefined
+          associatedMasterFileId: masterApiFileId || undefined
         }
       });
       if (error) {
@@ -343,7 +352,7 @@ export default function ExcelFiles() {
             filename: data.fileName,
             original_filename: data.fileName,
             file_size: selectedFile ? Math.round(selectedFile.size / 1024) : 0,
-            associated_master_file_id: data.masterFileId,
+            associated_master_file_id: getMasterMetaRowId(data.masterFileId),
           };
 
           const { data: existingRow } = await supabase
@@ -598,6 +607,7 @@ export default function ExcelFiles() {
       }
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No hay token de autenticación");
+      const masterApiFileId = getMasterApiFileId(masterFileId);
 
       // Convert file to base64
       const base64 = await new Promise<string>((resolve, reject) => {
@@ -618,7 +628,7 @@ export default function ExcelFiles() {
           fileName: file.name,
           fileContent: base64,
           updateFileId: fileId,
-          associatedMasterFileId: masterFileId || undefined
+          associatedMasterFileId: masterApiFileId || undefined
         }
       });
 
@@ -647,7 +657,7 @@ export default function ExcelFiles() {
         await supabase.from("excel_files").update({
           original_filename: data.fileName,
           filename: data.fileName,
-          associated_master_file_id: data.masterFileId
+          associated_master_file_id: getMasterMetaRowId(data.masterFileId)
         }).eq("file_id", data.fileId).eq("user_id", user.id);
       }
       const replacementMsg = data.masterReplacements.length
