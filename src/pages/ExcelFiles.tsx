@@ -246,6 +246,14 @@ export default function ExcelFiles() {
   const excelFilesMetaByRowOrApiId = new Map(
     (excelFilesMeta || []).flatMap((meta: any) => [[meta.id, meta], [meta.file_id, meta]])
   );
+  const getMasterMetaRowId = (rowOrApiId: string | null | undefined) => {
+    if (!rowOrApiId) return null;
+    return excelFilesMetaByRowOrApiId.get(rowOrApiId)?.id || null;
+  };
+  const getMasterApiFileId = (rowOrApiId: string | null | undefined) => {
+    if (!rowOrApiId) return null;
+    return excelFilesMetaByRowOrApiId.get(rowOrApiId)?.file_id || rowOrApiId;
+  };
 
   // Combine API files with Supabase metadata and filter by active status
   const filesWithMeta = files.map(file => {
@@ -300,6 +308,7 @@ export default function ExcelFiles() {
       if (!token) {
         throw new Error("No hay token de EasyQuote disponible");
       }
+      const masterApiFileId = getMasterApiFileId(masterFileId);
 
       // Convert file to base64
       const base64 = await new Promise<string>((resolve, reject) => {
@@ -322,7 +331,7 @@ export default function ExcelFiles() {
           token,
           fileName: file.name,
           fileContent: base64,
-          associatedMasterFileId: masterFileId || undefined
+          associatedMasterFileId: masterApiFileId || undefined
         }
       });
       if (error) {
@@ -343,7 +352,7 @@ export default function ExcelFiles() {
             filename: data.fileName,
             original_filename: data.fileName,
             file_size: selectedFile ? Math.round(selectedFile.size / 1024) : 0,
-            associated_master_file_id: data.masterFileId,
+            associated_master_file_id: getMasterMetaRowId(data.masterFileId),
           };
 
           const { data: existingRow } = await supabase
@@ -598,6 +607,7 @@ export default function ExcelFiles() {
       }
       const token = sessionStorage.getItem("easyquote_token");
       if (!token) throw new Error("No hay token de autenticación");
+      const masterApiFileId = getMasterApiFileId(masterFileId);
 
       // Convert file to base64
       const base64 = await new Promise<string>((resolve, reject) => {
@@ -618,7 +628,7 @@ export default function ExcelFiles() {
           fileName: file.name,
           fileContent: base64,
           updateFileId: fileId,
-          associatedMasterFileId: masterFileId || undefined
+          associatedMasterFileId: masterApiFileId || undefined
         }
       });
 
@@ -647,7 +657,7 @@ export default function ExcelFiles() {
         await supabase.from("excel_files").update({
           original_filename: data.fileName,
           filename: data.fileName,
-          associated_master_file_id: data.masterFileId
+          associated_master_file_id: getMasterMetaRowId(data.masterFileId)
         }).eq("file_id", data.fileId).eq("user_id", user.id);
       }
       const replacementMsg = data.masterReplacements.length
@@ -1106,7 +1116,7 @@ export default function ExcelFiles() {
                       <SelectContent>
                         <SelectItem value="none">Sin maestro asociado</SelectItem>
                         {masterFiles.map((mf) => (
-                          <SelectItem key={mf.id} value={mf.id}>
+                          <SelectItem key={mf.id} value={mf.metaId || mf.id}>
                             {mf.fileName} {mf.localReferenceName ? `(ref: ${mf.localReferenceName})` : ''}
                           </SelectItem>
                         ))}
@@ -1143,7 +1153,7 @@ export default function ExcelFiles() {
           </DialogHeader>
           <div className="max-h-[50vh] overflow-y-auto">
             {selectedFileForProducts?.isMaster ? (() => {
-              const childFiles = files.filter((f: any) => f.associatedMasterFileId === selectedFileForProducts.id);
+              const childFiles = filesWithMeta.filter((f: any) => f.associatedMasterFileId === selectedFileForProducts.metaId);
               if (childFiles.length === 0) {
                 return <div className="text-center py-8">
                   <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -1406,7 +1416,7 @@ export default function ExcelFiles() {
                               <Package className="h-3.5 w-3.5" />
                               {(() => {
                           const count = file.isMaster
-                            ? files.filter((f: any) => f.associatedMasterFileId === file.id).length
+                            ? filesWithMeta.filter((f: any) => f.associatedMasterFileId === file.metaId).length
                             : allProducts.filter((p: any) => p.excelfileId === file.id && (includeInactive || p.isActive)).length;
                           return count > 0 && <Badge variant="default" className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 flex items-center justify-center text-xs rounded-full">
                                     {count}
@@ -1535,7 +1545,7 @@ export default function ExcelFiles() {
                   <SelectContent>
                     <SelectItem value="none">Sin maestro</SelectItem>
                     {masterFiles.map(m => (
-                      <SelectItem key={m.id} value={m.id}>
+                      <SelectItem key={m.id} value={m.metaId || m.id}>
                         <span className="flex items-center gap-1">
                           <Crown className="h-3 w-3 text-amber-600" />
                           {m.fileName}
