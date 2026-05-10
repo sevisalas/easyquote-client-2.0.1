@@ -239,10 +239,12 @@ export default function ExcelFiles() {
     const meta = excelFilesMeta?.find(m => m.file_id === file.id);
     const isMaster = meta?.is_master || false;
     const localReferenceName = (meta as any)?.local_reference_name || null;
+    const associatedMasterFileId = (meta as any)?.associated_master_file_id || null;
     return {
       ...file,
       isMaster,
       localReferenceName,
+      associatedMasterFileId,
       fileUrl: null
     };
   });
@@ -312,9 +314,21 @@ export default function ExcelFiles() {
       if (data?.error) {
         throw new Error(data.message || data.error);
       }
-      return data;
+      return { ...data, masterFileId };
     },
-    onSuccess: data => {
+    onSuccess: async data => {
+      // Persist master association onto the newly created excel_files row
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const newFileId = data?.fileId || data?.id || data?.FileId;
+        if (user && newFileId) {
+          await supabase.from("excel_files").update({
+            associated_master_file_id: data.masterFileId
+          }).eq("file_id", newFileId).eq("user_id", user.id);
+        }
+      } catch (e) {
+        console.warn("Could not persist master association on upload", e);
+      }
       const replacementMsg = data?.masterReplacements?.length
         ? ` Se vincularon ${data.masterReplacements.length} referencia(s) al maestro.`
         : '';
@@ -572,6 +586,7 @@ export default function ExcelFiles() {
       return {
         fileId,
         fileName: file.name,
+        masterFileId,
         masterReplacements: data?.masterReplacements || []
       };
     },
@@ -585,7 +600,8 @@ export default function ExcelFiles() {
       if (user) {
         await supabase.from("excel_files").update({
           original_filename: data.fileName,
-          filename: data.fileName
+          filename: data.fileName,
+          associated_master_file_id: data.masterFileId
         }).eq("file_id", data.fileId).eq("user_id", user.id);
       }
       const replacementMsg = data.masterReplacements.length
@@ -1286,6 +1302,7 @@ export default function ExcelFiles() {
                             </Button>
                             <Button variant="ghost" size="sm" onClick={() => {
                         setSelectedExcelFile(file);
+                        setUpdateMasterFileId(file.associatedMasterFileId || null);
                         setIsUpdateExcelDialogOpen(true);
                       }} title="Actualizar Excel" className="h-7 w-7 p-0">
                               <Edit className="h-3.5 w-3.5" />

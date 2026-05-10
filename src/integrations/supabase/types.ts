@@ -1038,6 +1038,7 @@ export type Database = {
       }
       excel_files: {
         Row: {
+          associated_master_file_id: string | null
           created_at: string
           error_message: string | null
           file_id: string
@@ -1054,6 +1055,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          associated_master_file_id?: string | null
           created_at?: string
           error_message?: string | null
           file_id: string
@@ -1070,6 +1072,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          associated_master_file_id?: string | null
           created_at?: string
           error_message?: string | null
           file_id?: string
@@ -1085,7 +1088,15 @@ export type Database = {
           upload_date?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "excel_files_associated_master_file_id_fkey"
+            columns: ["associated_master_file_id"]
+            isOneToOne: false
+            referencedRelation: "excel_files"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       holded_sales_accounts: {
         Row: {
