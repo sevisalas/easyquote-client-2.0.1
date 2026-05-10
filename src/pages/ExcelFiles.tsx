@@ -239,10 +239,12 @@ export default function ExcelFiles() {
     const meta = excelFilesMeta?.find(m => m.file_id === file.id);
     const isMaster = meta?.is_master || false;
     const localReferenceName = (meta as any)?.local_reference_name || null;
+    const associatedMasterFileId = (meta as any)?.associated_master_file_id || null;
     return {
       ...file,
       isMaster,
       localReferenceName,
+      associatedMasterFileId,
       fileUrl: null
     };
   });
