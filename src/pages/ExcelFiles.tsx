@@ -1116,7 +1116,7 @@ export default function ExcelFiles() {
                       <SelectContent>
                         <SelectItem value="none">Sin maestro asociado</SelectItem>
                         {masterFiles.map((mf) => (
-                          <SelectItem key={mf.id} value={mf.id}>
+                          <SelectItem key={mf.id} value={mf.metaId || mf.id}>
                             {mf.fileName} {mf.localReferenceName ? `(ref: ${mf.localReferenceName})` : ''}
                           </SelectItem>
                         ))}
@@ -1153,7 +1153,7 @@ export default function ExcelFiles() {
           </DialogHeader>
           <div className="max-h-[50vh] overflow-y-auto">
             {selectedFileForProducts?.isMaster ? (() => {
-              const childFiles = files.filter((f: any) => f.associatedMasterFileId === selectedFileForProducts.id);
+              const childFiles = filesWithMeta.filter((f: any) => f.associatedMasterFileId === selectedFileForProducts.metaId);
               if (childFiles.length === 0) {
                 return <div className="text-center py-8">
                   <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -1416,7 +1416,7 @@ export default function ExcelFiles() {
                               <Package className="h-3.5 w-3.5" />
                               {(() => {
                           const count = file.isMaster
-                            ? files.filter((f: any) => f.associatedMasterFileId === file.id).length
+                            ? filesWithMeta.filter((f: any) => f.associatedMasterFileId === file.metaId).length
                             : allProducts.filter((p: any) => p.excelfileId === file.id && (includeInactive || p.isActive)).length;
                           return count > 0 && <Badge variant="default" className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 flex items-center justify-center text-xs rounded-full">
                                     {count}
@@ -1545,7 +1545,7 @@ export default function ExcelFiles() {
                   <SelectContent>
                     <SelectItem value="none">Sin maestro</SelectItem>
                     {masterFiles.map(m => (
-                      <SelectItem key={m.id} value={m.id}>
+                      <SelectItem key={m.id} value={m.metaId || m.id}>
                         <span className="flex items-center gap-1">
                           <Crown className="h-3 w-3 text-amber-600" />
                           {m.fileName}
