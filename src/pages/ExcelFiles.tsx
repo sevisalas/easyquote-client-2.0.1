@@ -1132,13 +1132,47 @@ export default function ExcelFiles() {
       <Dialog open={isProductsDialogOpen} onOpenChange={setIsProductsDialogOpen}>
         <DialogContent className="sm:max-w-3xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle>Productos asociados</DialogTitle>
+            <DialogTitle>
+              {selectedFileForProducts?.isMaster ? "Excels asociados" : "Productos asociados"}
+            </DialogTitle>
             <DialogDescription>
-              Productos que utilizan el archivo: {selectedFileForProducts?.fileName}
+              {selectedFileForProducts?.isMaster
+                ? `Archivos Excel que referencian al maestro: ${selectedFileForProducts?.fileName}`
+                : `Productos que utilizan el archivo: ${selectedFileForProducts?.fileName}`}
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[50vh] overflow-y-auto">
-            {associatedProducts.length === 0 ? <div className="text-center py-8">
+            {selectedFileForProducts?.isMaster ? (() => {
+              const childFiles = files.filter((f: any) => f.associatedMasterFileId === selectedFileForProducts.id);
+              if (childFiles.length === 0) {
+                return <div className="text-center py-8">
+                  <FileSpreadsheet className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground">
+                    No hay archivos Excel asociados a este maestro
+                  </p>
+                </div>;
+              }
+              return <div className="space-y-2">
+                {childFiles.map((child: any) => {
+                  const productCount = allProducts.filter((p: any) => p.excelfileId === child.id && (includeInactive || p.isActive)).length;
+                  return <Card key={child.id}>
+                    <CardContent className="py-3">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{child.fileName}</p>
+                          {child.localReferenceName && <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                            Ref: {child.localReferenceName}
+                          </p>}
+                        </div>
+                        <Badge variant="secondary">
+                          {productCount} producto{productCount === 1 ? '' : 's'}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>;
+                })}
+              </div>;
+            })() : associatedProducts.length === 0 ? <div className="text-center py-8">
                 <Package className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                 <p className="text-muted-foreground">
                   No hay productos asociados a este archivo Excel
@@ -1368,10 +1402,12 @@ export default function ExcelFiles() {
                             <Button variant="ghost" size="sm" onClick={() => {
                         setSelectedFileForProducts(file);
                         setIsProductsDialogOpen(true);
-                      }} title="Ver productos asociados" className="relative h-7 w-7 p-0">
+                            }} title={file.isMaster ? "Ver Excels asociados" : "Ver productos asociados"} className="relative h-7 w-7 p-0">
                               <Package className="h-3.5 w-3.5" />
                               {(() => {
-                          const count = allProducts.filter((p: any) => p.excelfileId === file.id && (includeInactive || p.isActive)).length;
+                          const count = file.isMaster
+                            ? files.filter((f: any) => f.associatedMasterFileId === file.id).length
+                            : allProducts.filter((p: any) => p.excelfileId === file.id && (includeInactive || p.isActive)).length;
                           return count > 0 && <Badge variant="default" className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 flex items-center justify-center text-xs rounded-full">
                                     {count}
                                   </Badge>;
