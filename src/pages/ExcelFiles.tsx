@@ -574,6 +574,7 @@ export default function ExcelFiles() {
       return {
         fileId,
         fileName: file.name,
+        masterFileId,
         masterReplacements: data?.masterReplacements || []
       };
     },
@@ -587,7 +588,8 @@ export default function ExcelFiles() {
       if (user) {
         await supabase.from("excel_files").update({
           original_filename: data.fileName,
-          filename: data.fileName
+          filename: data.fileName,
+          associated_master_file_id: data.masterFileId
         }).eq("file_id", data.fileId).eq("user_id", user.id);
       }
       const replacementMsg = data.masterReplacements.length
