@@ -234,17 +234,26 @@ export default function ExcelFiles() {
     });
   };
 
+  const excelFilesMetaByApiId = new Map((excelFilesMeta || []).map((meta: any) => [meta.file_id, meta]));
+  const excelFilesMetaByRowOrApiId = new Map(
+    (excelFilesMeta || []).flatMap((meta: any) => [[meta.id, meta], [meta.file_id, meta]])
+  );
+
   // Combine API files with Supabase metadata and filter by active status
   const filesWithMeta = files.map(file => {
-    const meta = excelFilesMeta?.find(m => m.file_id === file.id);
+    const meta = excelFilesMetaByApiId.get(file.id);
     const isMaster = meta?.is_master || false;
     const localReferenceName = (meta as any)?.local_reference_name || null;
     const associatedMasterFileId = (meta as any)?.associated_master_file_id || null;
+    const associatedMasterMeta = associatedMasterFileId ? excelFilesMetaByRowOrApiId.get(associatedMasterFileId) : null;
     return {
       ...file,
+      metaId: meta?.id || null,
       isMaster,
       localReferenceName,
       associatedMasterFileId,
+      associatedMasterName: associatedMasterMeta?.filename || null,
+      associatedMasterReferenceName: associatedMasterMeta?.local_reference_name || null,
       fileUrl: null
     };
   });
@@ -322,9 +331,35 @@ export default function ExcelFiles() {
         const { data: { user } } = await supabase.auth.getUser();
         const newFileId = data?.fileId || data?.id || data?.FileId;
         if (user && newFileId) {
-          await supabase.from("excel_files").update({
-            associated_master_file_id: data.masterFileId
-          }).eq("file_id", newFileId).eq("user_id", user.id);
+          const metadataPayload = {
+            filename: data.fileName,
+            original_filename: data.fileName,
+            file_size: selectedFile ? Math.round(selectedFile.size / 1024) : 0,
+            associated_master_file_id: data.masterFileId,
+          };
+
+          const { data: existingRow } = await supabase
+            .from("excel_files")
+            .select("id")
+            .eq("file_id", newFileId)
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (existingRow?.id) {
+            await supabase
+              .from("excel_files")
+              .update(metadataPayload)
+              .eq("id", existingRow.id);
+          } else {
+            await supabase
+              .from("excel_files")
+              .insert({
+                user_id: user.id,
+                file_id: newFileId,
+                is_master: false,
+                ...metadataPayload,
+              });
+          }
         }
       } catch (e) {
         console.warn("Could not persist master association on upload", e);
@@ -338,6 +373,9 @@ export default function ExcelFiles() {
       });
       queryClient.invalidateQueries({
         queryKey: ["easyquote-excel-files"]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["excel-files-meta"]
       });
       setIsUploadDialogOpen(false);
       setSelectedFile(null);
