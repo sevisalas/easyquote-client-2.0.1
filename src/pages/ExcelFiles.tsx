@@ -143,7 +143,9 @@ export default function ExcelFiles() {
   });
 
   // Get products associated with the selected file
-  const associatedProducts = selectedFileForProducts ? allProducts.filter((product: any) => product.excelfileId === selectedFileForProducts.id && (includeInactive || product.isActive)) : [];
+  const associatedProducts = selectedFileForProducts
+    ? allProducts.filter((product: any) => product.excelfileId === selectedFileForProducts.id && (includeInactive || product.isActive))
+    : [];
 
   // Fetch Excel file metadata from Supabase
   const {
@@ -1135,11 +1137,19 @@ export default function ExcelFiles() {
                 <p className="text-muted-foreground">
                   No hay productos asociados a este archivo Excel
                 </p>
+                {selectedFileForProducts?.associatedMasterName && <p className="text-sm text-muted-foreground mt-2">
+                    Maestro asociado: {selectedFileForProducts.associatedMasterName}
+                  </p>}
               </div> : <div className="space-y-2">
                 {associatedProducts.map((product: any) => <Card key={product.id}>
                     <CardContent className="py-3">
                       <div className="flex items-center justify-between gap-4">
-                        <p className="font-medium flex-1">{product.productName}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{product.productName}</p>
+                          {selectedFileForProducts?.associatedMasterName && <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                              Motor con maestro asociado: {selectedFileForProducts.associatedMasterName}
+                            </p>}
+                        </div>
                         <Badge variant={product.isActive ? "default" : "secondary"}>
                           {product.isActive ? "Activo" : "Inactivo"}
                         </Badge>
@@ -1493,6 +1503,12 @@ export default function ExcelFiles() {
                     ))}
                   </SelectContent>
                 </Select>
+                {selectedExcelFile?.associatedMasterName && (
+                  <p className="text-xs text-muted-foreground">
+                    Maestro actual: {selectedExcelFile.associatedMasterName}
+                    {selectedExcelFile.associatedMasterReferenceName ? ` (${selectedExcelFile.associatedMasterReferenceName})` : ""}
+                  </p>
+                )}
               </div>
             )}
           </div>
