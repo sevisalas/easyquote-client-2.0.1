@@ -314,9 +314,21 @@ export default function ExcelFiles() {
       if (data?.error) {
         throw new Error(data.message || data.error);
       }
-      return data;
+      return { ...data, masterFileId };
     },
-    onSuccess: data => {
+    onSuccess: async data => {
+      // Persist master association onto the newly created excel_files row
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        const newFileId = data?.fileId || data?.id || data?.FileId;
+        if (user && newFileId) {
+          await supabase.from("excel_files").update({
+            associated_master_file_id: data.masterFileId
+          }).eq("file_id", newFileId).eq("user_id", user.id);
+        }
+      } catch (e) {
+        console.warn("Could not persist master association on upload", e);
+      }
       const replacementMsg = data?.masterReplacements?.length
         ? ` Se vincularon ${data.masterReplacements.length} referencia(s) al maestro.`
         : '';
