@@ -1302,6 +1302,7 @@ export default function ExcelFiles() {
                             </Button>
                             <Button variant="ghost" size="sm" onClick={() => {
                         setSelectedExcelFile(file);
+                        setUpdateMasterFileId(file.associatedMasterFileId || null);
                         setIsUpdateExcelDialogOpen(true);
                       }} title="Actualizar Excel" className="h-7 w-7 p-0">
                               <Edit className="h-3.5 w-3.5" />
