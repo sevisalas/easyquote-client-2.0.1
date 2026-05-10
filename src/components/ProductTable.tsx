@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { Edit, TestTube, ShoppingCart, ExternalLink, Copy, Trash2 } from "lucide-react";
+import { Edit, TestTube, ShoppingCart, ExternalLink, Copy, Trash2, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useWooCommerceLink } from "@/hooks/useWooCommerceLink";
 import { useWooCommerceIntegration } from "@/hooks/useWooCommerceIntegration";
@@ -71,6 +71,11 @@ export function ProductTable({ products, getProductMapping, onEditProduct, onDup
     return excelFileMap[excelfileId] || "Archivo no encontrado";
   };
 
+  const getExcelFileMeta = (excelfileId?: string) => {
+    if (!excelfileId) return null;
+    return excelFiles.find((file) => file.id === excelfileId) || null;
+  };
+
   console.log("ProductTable Debug:", {
     isWooCommerceActive,
     wooIntegrationLoading,
@@ -121,9 +126,17 @@ export function ProductTable({ products, getProductMapping, onEditProduct, onDup
                   </TableCell>
                   <TableCell className="py-1.5 px-3 max-w-[220px]">
                     {getExcelFileName(product.excelfileId) && (
-                      <span className="font-mono text-xs text-muted-foreground break-words block">
-                        {getExcelFileName(product.excelfileId)}
-                      </span>
+                      <div className="space-y-1">
+                        <span className="font-mono text-xs text-muted-foreground break-words block">
+                          {getExcelFileName(product.excelfileId)}
+                        </span>
+                        {getExcelFileMeta(product.excelfileId)?.associatedMasterName && (
+                          <div className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                            <Crown className="h-3 w-3" />
+                            <span className="truncate">Maestro: {getExcelFileMeta(product.excelfileId)?.associatedMasterName}</span>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </TableCell>
                   <TableCell className="py-1.5 px-3">
@@ -314,6 +327,12 @@ export function ProductTable({ products, getProductMapping, onEditProduct, onDup
                 <span className="font-mono text-xs">
                   {getExcelFileName(product.excelfileId)}
                 </span>
+                {getExcelFileMeta(product.excelfileId)?.associatedMasterName && (
+                  <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                    <Crown className="h-3 w-3" />
+                    <span>Maestro: {getExcelFileMeta(product.excelfileId)?.associatedMasterName}</span>
+                  </div>
+                )}
               </div>
 
               <div className="text-sm">
