@@ -2542,11 +2542,15 @@ export default function ProductManagement() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>{viewMode === 'productos' ? 'Productos' : 'Componentes'}</CardTitle>
+              <CardTitle>
+                {viewMode === 'productos' ? 'Productos' : viewMode === 'componentes' ? 'Componentes' : 'Subproductos'}
+              </CardTitle>
               <CardDescription>
-                {viewMode === 'productos' 
-                  ? 'Lista de productos para presupuestos y pedidos' 
-                  : 'Componentes para usar dentro de productos compuestos'}
+                {viewMode === 'productos'
+                  ? 'Lista de productos para presupuestos y pedidos'
+                  : viewMode === 'componentes'
+                  ? 'Componentes para usar dentro de productos compuestos'
+                  : 'Productos cuya configuración depende de un subproducto seleccionable'}
               </CardDescription>
             </div>
           </div>
