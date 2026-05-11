@@ -163,6 +163,13 @@ export default function ProductTestPage({
     }
     return set;
   }, [subproductPromptSettings]);
+
+  // Debug log para verificar si se identifica el prompt selector en modo subproducto
+  useEffect(() => {
+    if (!isSubproductMode || !productId) return;
+    console.log("[Subproducto] selector keys:", Array.from(subproductSelectorKeys));
+    console.log("[Subproducto] prompt settings count:", (subproductPromptSettings as any[])?.length ?? 0);
+  }, [isSubproductMode, productId, subproductSelectorKeys, subproductPromptSettings]);
   
   // Fetch composite product components configuration
   const { 
