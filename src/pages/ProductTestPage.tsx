@@ -28,7 +28,7 @@ import CompositeComponentsSelector, {
 import CompositeComponentTabs, { type ComponentsDataMap } from "@/components/quotes/CompositeComponentTabs";
 import { useProductComponentSettings } from "@/hooks/useProductComponentSettings";
 import { useCompositeProductConfig } from "@/hooks/useCompositeProductConfig";
-import { ArrowLeft, AlertCircle, Package, Boxes } from "lucide-react";
+import { ArrowLeft, AlertCircle, Package, Boxes, GitBranch } from "lucide-react";
 import { Link } from "react-router-dom";
 import { normalizeApiUserId } from "@/utils/normalizeApiUserId";
 
@@ -87,8 +87,13 @@ export default function ProductTestPage({
   
   // Ref para el timeout del debounce de commit de prompts
   const commitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const initialView = searchParams.get('view') === 'componentes' ? 'componentes' : 'productos';
-  const [viewMode, setViewMode] = useState<'productos' | 'componentes'>(initialView);
+  const initialViewParam = searchParams.get('view');
+  const initialView: 'productos' | 'componentes' | 'subproductos' =
+    initialViewParam === 'componentes' ? 'componentes'
+      : initialViewParam === 'subproductos' ? 'subproductos'
+      : 'productos';
+  const [viewMode, setViewMode] = useState<'productos' | 'componentes' | 'subproductos'>(initialView);
+  const isSubproductMode = viewMode === 'subproductos' || searchParams.get('subproductMode') === '1';
   const {
     isSuperAdmin,
     isOrgAdmin,
@@ -163,6 +168,26 @@ export default function ProductTestPage({
         .eq("is_component", true);
       if (error) {
         console.error("Error fetching component products:", error);
+        return new Set<string>();
+      }
+      return new Set((data || []).map((d) => d.easyquote_product_id));
+    },
+    enabled: isApiUserIdReady && !!effectiveApiUserId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Fetch subproduct-enabled product IDs
+  const { data: subproductProductIds = new Set<string>(), isLoading: isLoadingSubproductIds } = useQuery({
+    queryKey: ["subproduct-product-ids", effectiveApiUserId],
+    queryFn: async () => {
+      if (!effectiveApiUserId) return new Set<string>();
+      const { data, error } = await supabase
+        .from("product_component_settings")
+        .select("easyquote_product_id")
+        .eq("api_user_id", effectiveApiUserId)
+        .eq("has_subproducts", true);
+      if (error) {
+        console.error("Error fetching subproduct products:", error);
         return new Set<string>();
       }
       return new Set((data || []).map((d) => d.easyquote_product_id));
@@ -455,32 +480,36 @@ export default function ProductTestPage({
   // IMPORTANTE: Para la vista "componentes", debemos esperar a que componentProductIds esté listo
   // antes de aplicar el filtro, de lo contrario mostraría lista vacía.
   const isComponentIdsReady = !isLoadingComponentIds && isApiUserIdReady;
-  
+  const isSubproductIdsReady = !isLoadingSubproductIds && isApiUserIdReady;
+
   const products = useMemo(() => {
-    // Si estamos en vista componentes pero los IDs aún no están listos, devolver array vacío
-    // (el loading spinner se mostrará mientras tanto)
-    if (viewMode === 'componentes' && !isComponentIdsReady) {
-      return [];
-    }
-    
+    if (viewMode === 'componentes' && !isComponentIdsReady) return [];
+    if (viewMode === 'subproductos' && !isSubproductIdsReady) return [];
+
     return allProducts.filter((p: any) => {
       const isProductComponent = componentProductIds.has(p.id);
+      const hasSubs = subproductProductIds.has(p.id);
+      if (viewMode === 'subproductos') return hasSubs;
       if (viewMode === 'productos') return !isProductComponent;
-      return isProductComponent;
+      return isProductComponent; // componentes
     });
-  }, [allProducts, componentProductIds, viewMode, isComponentIdsReady]);
+  }, [allProducts, componentProductIds, subproductProductIds, viewMode, isComponentIdsReady, isSubproductIdsReady]);
 
   // Reset productId when switching viewMode if current product doesn't match the new filter
   useEffect(() => {
     if (productId) {
       const isProductComponent = componentProductIds.has(productId);
-      const matchesCurrentView = viewMode === 'productos' ? !isProductComponent : isProductComponent;
+      const hasSubs = subproductProductIds.has(productId);
+      const matchesCurrentView =
+        viewMode === 'productos' ? !isProductComponent
+        : viewMode === 'subproductos' ? hasSubs
+        : isProductComponent;
       if (!matchesCurrentView) {
         setProductId("");
         setProductDetail(null);
       }
     }
-  }, [viewMode, componentProductIds, productId]);
+  }, [viewMode, componentProductIds, subproductProductIds, productId]);
 
   // Fetch product detail when productId changes - with retries for transient errors
   // Note: We only depend on productId, not products, to avoid re-fetching on every products array change
