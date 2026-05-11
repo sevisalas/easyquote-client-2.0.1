@@ -1469,10 +1469,12 @@ export default function ProductManagement() {
 
   // Filtrar productos localmente
   const filteredProducts = allProducts.filter(product => {
-    // Filtrar por vista: productos vs componentes (nunca se mezclan)
+    // Filtrar por vista: productos / componentes / subproductos (nunca se mezclan)
     const isProductComponent = componentProductIds.has(product.id);
+    const hasSubproducts = subproductProductIds.has(product.id);
     if (viewMode === 'productos' && isProductComponent) return false;
     if (viewMode === 'componentes' && !isProductComponent) return false;
+    if (viewMode === 'subproductos' && !hasSubproducts) return false;
 
     const matchesSearch = !searchTerm || product.productName?.toLowerCase().includes(searchTerm.toLowerCase()) || product.description?.toLowerCase().includes(searchTerm.toLowerCase()) || product.id?.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -1514,7 +1516,8 @@ export default function ProductManagement() {
   const statsProducts = allProductsForStats.filter(p => {
     const isProductComponent = componentProductIds.has(p.id);
     if (viewMode === 'productos') return !isProductComponent;
-    return isProductComponent;
+    if (viewMode === 'componentes') return isProductComponent;
+    return subproductProductIds.has(p.id);
   });
   const activeProducts = statsProducts.filter(p => p.isActive);
   const inactiveProducts = statsProducts.filter(p => !p.isActive);
