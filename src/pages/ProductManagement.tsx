@@ -552,6 +552,26 @@ export default function ProductManagement() {
     select: (data) => data instanceof Set ? data : new Set<string>()
   });
 
+  // Query para obtener IDs de productos con subproductos (por api_user_id)
+  const { data: subproductProductIds = new Set<string>() } = useQuery({
+    queryKey: ['subproduct-product-ids', apiUserId],
+    queryFn: async () => {
+      if (!apiUserId) return new Set<string>();
+      const { data, error } = await supabase
+        .from('product_component_settings')
+        .select('easyquote_product_id')
+        .eq('api_user_id', apiUserId)
+        .eq('has_subproducts', true);
+      if (error) {
+        console.error("Error fetching subproduct IDs:", error);
+        return new Set<string>();
+      }
+      return new Set((data || []).map(d => d.easyquote_product_id));
+    },
+    enabled: !!apiUserId,
+    select: (data) => data instanceof Set ? data : new Set<string>()
+  });
+
   // Ya no necesitamos query para productos compuestos locales (comp_*)
   // Todos los productos compuestos ahora vienen de EasyQuote con Excel
 
