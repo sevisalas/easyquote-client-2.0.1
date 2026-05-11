@@ -27,7 +27,9 @@ import CompositeComponentsSelector, {
 } from "@/components/quotes/CompositeComponentsSelector";
 import CompositeComponentTabs, { type ComponentsDataMap } from "@/components/quotes/CompositeComponentTabs";
 import { useProductComponentSettings } from "@/hooks/useProductComponentSettings";
+import { useProductPromptSettings } from "@/hooks/useProductPromptSettings";
 import { useCompositeProductConfig } from "@/hooks/useCompositeProductConfig";
+import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, AlertCircle, Package, Boxes, GitBranch } from "lucide-react";
 import { Link } from "react-router-dom";
 import { normalizeApiUserId } from "@/utils/normalizeApiUserId";
@@ -94,6 +96,8 @@ export default function ProductTestPage({
       : 'productos';
   const [viewMode, setViewMode] = useState<'productos' | 'componentes' | 'subproductos'>(initialView);
   const isSubproductMode = viewMode === 'subproductos' || searchParams.get('subproductMode') === '1';
+  // Reload trigger to refetch initial GET (used by "Cambiar subproducto")
+  const [productReloadKey, setProductReloadKey] = useState(0);
   const {
     isSuperAdmin,
     isOrgAdmin,
@@ -146,6 +150,19 @@ export default function ProductTestPage({
     productId || undefined, 
     effectiveApiUserId
   );
+
+  // Prompt settings: needed to find the prompt marked as subproduct selector
+  const { promptSettings: subproductPromptSettings } = useProductPromptSettings(productId || undefined);
+  const subproductSelectorKeys = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of (subproductPromptSettings as any[])) {
+      if (s?.is_subproduct_selector) {
+        if (s.prompt_name) set.add(String(s.prompt_name).trim().toUpperCase());
+        if (s.label) set.add(String(s.label).trim().toUpperCase());
+      }
+    }
+    return set;
+  }, [subproductPromptSettings]);
   
   // Fetch composite product components configuration
   const { 
@@ -644,7 +661,7 @@ export default function ProductTestPage({
     };
     fetchProductDetail();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productId]);
+  }, [productId, productReloadKey]);
 
   // Fetch pricing data ONLY when user modifies prompts (not on initial load)
   const {
@@ -1265,6 +1282,45 @@ export default function ProductTestPage({
 
   const selectedProduct = products.find((p: any) => p.id === productId);
 
+  // Compute current subproduct selector info (for badge + "Cambiar" button)
+  const subproductSelectorInfo = useMemo(() => {
+    if (!isSubproductMode || !productId || subproductSelectorKeys.size === 0) {
+      return null;
+    }
+    const currentPrompts = (pricing?.prompts ?? productDetail?.prompts ?? []) as any[];
+    if (!Array.isArray(currentPrompts) || currentPrompts.length === 0) return null;
+
+    const norm = (v: any) => String(v ?? "").trim().toUpperCase();
+    const selector = currentPrompts.find((p: any) => {
+      const id = norm(p?.id);
+      const label = norm(p?.label ?? p?.promptText ?? p?.name);
+      const cell = norm(p?.promptCell ?? p?.cell);
+      return subproductSelectorKeys.has(id) || subproductSelectorKeys.has(label) || subproductSelectorKeys.has(cell);
+    });
+    if (!selector) return null;
+
+    const value = promptValues[selector.id] ?? selector.currentValue ?? "";
+    const labelText = selector.label || selector.promptText || selector.name || "Subproducto";
+    return {
+      promptId: selector.id as string,
+      label: labelText as string,
+      value: String(value ?? "").trim(),
+    };
+  }, [isSubproductMode, productId, subproductSelectorKeys, pricing?.prompts, productDetail?.prompts, promptValues]);
+
+  const handleResetSubproduct = () => {
+    if (commitTimeoutRef.current) {
+      clearTimeout(commitTimeoutRef.current);
+      commitTimeoutRef.current = null;
+    }
+    setPromptValues({});
+    setDebouncedPromptValues({});
+    setClearedPromptIds({});
+    setHasUserModifiedPrompts(false);
+    setProductDetail(null);
+    setProductReloadKey((k) => k + 1);
+  };
+
   // Check permissions - AFTER all hooks are called
   if (!isSuperAdmin && !isOrgAdmin) {
     return <div className="container mx-auto py-10">
@@ -1365,6 +1421,22 @@ export default function ProductTestPage({
           <h1 className="text-3xl font-bold">
             {selectedProduct ? getProductLabel(selectedProduct) : `Prueba de ${viewMode}`}
           </h1>
+          {isSubproductMode && subproductSelectorInfo && subproductSelectorInfo.value && (
+            <div className="flex items-center gap-2 pt-1">
+              <Badge variant="default" className="flex items-center gap-1">
+                <GitBranch className="h-3 w-3" />
+                Subproducto: {subproductSelectorInfo.value}
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleResetSubproduct}
+                className="h-7 text-xs"
+              >
+                Cambiar subproducto
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
