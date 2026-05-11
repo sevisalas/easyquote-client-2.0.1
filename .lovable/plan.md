@@ -1,98 +1,71 @@
-## Objetivo
-Hacer que el portal B2B use exactamente los mismos productos y la misma configuración que ya existen en la app, en lugar de inventarse una segunda configuración en `b2b_catalog_items`.
+## Fase 1 — Identificación de Subproductos
 
-## Qué está mal ahora
-He revisado el código y el problema es real:
+Objetivo: marcar qué productos tienen subproducto y qué prompt actúa como selector. Sin tocar portal ni cálculo todavía.
 
-- `src/pages/B2bCatalog.tsx` sigue teniendo una capa propia de configuración del portal:
-  - `image_url`
-  - `default_prompts`
-  - `exposed_prompt_ids`
-  - botón `Configurar`
-- `src/pages/PortalHome.tsx` todavía construye el diálogo del portal a partir de `exposed_prompt_ids` y `default_prompts` del catálogo.
-- `supabase/functions/b2b-pricing/index.ts` y `supabase/functions/b2b-create-quote/index.ts` recalculan usando esa configuración duplicada del catálogo.
+### 1. Esquema de BD (migración)
 
-Eso contradice justo lo que dices: el producto ya está definido en la app y el portal debería usar ese mismo producto, no una versión paralela.
+`product_component_settings`
+- `has_subproducts` boolean default false
 
-## Plan de corrección
+`product_prompt_settings`
+- `is_subproduct_selector` boolean default false
 
-### 1) Quitar la configuración duplicada del catálogo B2B
-Voy a dejar `b2b_catalog_items` solo como publicación de catálogo:
-- producto enlazado
-- nombre visible
-- descripción visible
-- orden
-- activo/inactivo
+Compartidos por `api_user_id` (igual que el resto de flags).
 
-Y dejaré de usar desde frontend y backend:
-- `default_prompts`
-- `exposed_prompt_ids`
-como fuente de comportamiento del portal.
+### 2. Detección automática (sugerencia)
 
-También quitaré del UI de catálogo lo que induce a error:
-- el botón `Configurar`
-- la lógica de “variables cliente”
-- la idea de que el portal tenga prompts propios distintos del producto real
+Al abrir la ficha de un producto en `/admin/productos/:id`:
+- Si el GET inicial de EasyQuote devuelve **exactamente 1 prompt** y aún no hay flags marcados → mostrar banner sugerencia:
+  > "Este producto parece tener subproductos. El campo **'<nombre del prompt>'** sería el selector. ¿Activar?" [Activar] [Ignorar]
+- Al pulsar Activar: marca `has_subproducts=true` en el producto + `is_subproduct_selector=true` en ese prompt.
+- Si GET devuelve >1 prompt → no se sugiere nada (producto normal).
 
-### 2) Hacer que el portal lea la configuración real del producto
-El portal debe basarse en la misma definición que usa la app principal:
-- prompts que vienen de `easyquote-pricing`
-- reglas guardadas en `product_prompt_settings`
-- visibilidad real (`is_hidden`, `admin_only`, etc.)
+El admin también puede activar/desactivar manualmente desde:
+- Switch "Tiene subproductos" en la cabecera del producto.
+- En la lista de prompts, badge clicable "Selector de subproducto" en el prompt elegido (solo uno a la vez).
 
-La idea es:
-- cargar prompts del producto real enlazado
-- aplicar las reglas existentes de `product_prompt_settings`
-- ocultar en portal lo que ya está marcado como oculto o solo admin
-- usar los labels/configuración ya existentes del producto
+### 3. UI — nueva pestaña "Subproductos"
 
-Así el portal no “redefine” el producto, solo lo presenta.
+En `/admin/productos` (ProductManagement), añadir 3ª pestaña junto a Productos y Componentes:
 
-### 3) Ajustar el cálculo B2B para que no dependa del catálogo como configurador
-Actualizaré ambas edge functions:
+```text
+[ Productos ] [ Componentes ] [ Subproductos ]
+```
 
-- `b2b-pricing`
-- `b2b-create-quote`
+"Subproductos" lista los productos con `has_subproducts=true`, mostrando:
+- Nombre del producto
+- Nombre del prompt selector (badge)
+- Nº de opciones del selector (si está cacheado en última GET)
 
-para que:
-- usen el `product_id` del catálogo solo como enlace al producto real
-- acepten los valores que el cliente cambie en el portal
-- dejen de mezclar `default_prompts` + `exposed_prompt_ids`
-- calculen sobre los prompts reales del producto
+Misma card / acciones que las otras pestañas (editar, duplicar, etc.).
 
-Con esto, el presupuesto del portal saldrá del mismo producto real, no de una configuración paralela montada encima.
+En la ficha del producto, el prompt marcado como selector lleva un badge visible "Selector de subproducto".
 
-### 4) Mantener la imagen desde outputs del API con fallback
-Esto sí encaja con lo que pediste:
-- si el API devuelve un output de imagen, usarlo como imagen del producto
-- si no existe, usar la imagen de respaldo
+### 4. Página de pruebas — modo específico
 
-Pero dejaré esa parte desacoplada de la falsa “configuración del portal”, para que la imagen no dependa de duplicar datos del producto.
+`/admin/productos/test` (ProductTestPage):
+- Mantener intacto el modo actual ("Prueba genérica").
+- Añadir toggle/segmented control en la cabecera: **Genérica · Subproducto**.
+- Pestaña "Subproducto" solo activa si el producto seleccionado tiene `has_subproducts=true`. Flujo:
+  1. GET inicial → renderiza solo el selector destacado.
+  2. Al elegir opción → PATCH → renderiza el resto del formulario filtrado.
+  3. Visualizar prompts/outputs/precio igual que el modo genérico, pero claramente etiquetado como "filtrado por subproducto = X".
 
-### 5) Revisar el texto y la UX para que no vuelva a confundir
-Cambiaré los textos para que quede claro que:
-- el catálogo solo publica productos al portal
-- la configuración del producto se hace en la app principal
-- el portal usa esa misma configuración
+Sin lógica de portal, sin guardar nada en `b2b_catalog_items`, solo identificación + visualización.
 
-## Resultado esperado
-Después del cambio:
-- no habrá una segunda configuración del producto en el portal
-- el portal usará los mismos productos que ya están definidos en la app
-- no se pedirá reconfigurar prompts allí
-- la imagen vendrá del output image del API si existe
-- el catálogo B2B quedará como un publicador, no como otro configurador
+### Detalles técnicos
 
-## Detalle técnico
-Archivos a tocar:
-- `src/pages/B2bCatalog.tsx`
-- `src/pages/PortalHome.tsx`
-- `supabase/functions/b2b-pricing/index.ts`
-- `supabase/functions/b2b-create-quote/index.ts`
+- Migración SQL: 2 columnas booleanas + índice parcial opcional sobre `is_subproduct_selector` para queries rápidas.
+- Hooks afectados: `useProductComponentSettings` (añadir `hasSubproducts` + setter), `useProductPromptSettings` (añadir `isSubproductSelector` + setter).
+- Tipos regenerados desde Supabase (automático, no tocar `types.ts`).
+- Detección: hacerla en el componente de detalle de producto al recibir respuesta del GET (`prompts.length === 1 && !hasSubproducts && !ignoredHint`). Estado "ignorado" puede vivir en localStorage por producto, no en BD (es solo UX).
+- Restricción: solo un prompt por producto puede tener `is_subproduct_selector=true` (validar en mutation, mostrar warning si el admin intenta marcar otro).
 
-Dirección del cambio:
-- eliminar dependencia funcional de `default_prompts` y `exposed_prompt_ids`
-- reutilizar `product_prompt_settings` como fuente de visibilidad/configuración del producto
-- mantener `image_url` solo como fallback, no como verdad principal
+### Fuera de alcance (Fase 2+)
 
-Si apruebas este plan, lo implemento así.
+- Cambios en `b2b-pricing` edge function.
+- Cambios en el portal cliente (PromptsFormLite, PortalQuote).
+- Cambios en `b2b_catalog_items` (subproducto fijado por catálogo).
+- Cualquier lógica de PATCH automático en producción.
+
+Cuando pruebes esta fase y confirmes la identificación, pasamos a Fase 2 (selector en B2B catalog + portal).
