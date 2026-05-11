@@ -2139,6 +2139,7 @@ export type Database = {
           easyquote_product_id: string
           enabled_components: string[]
           has_imposition: boolean
+          has_subproducts: boolean
           id: string
           is_component: boolean
           is_composite: boolean
@@ -2152,6 +2153,7 @@ export type Database = {
           easyquote_product_id: string
           enabled_components?: string[]
           has_imposition?: boolean
+          has_subproducts?: boolean
           id?: string
           is_component?: boolean
           is_composite?: boolean
@@ -2165,6 +2167,7 @@ export type Database = {
           easyquote_product_id?: string
           enabled_components?: string[]
           has_imposition?: boolean
+          has_subproducts?: boolean
           id?: string
           is_component?: boolean
           is_composite?: boolean
@@ -2353,6 +2356,7 @@ export type Database = {
           id: string
           is_hidden: boolean
           is_quantity: boolean
+          is_subproduct_selector: boolean
           label: string | null
           organization_id: string
           ot_section: string | null
@@ -2373,6 +2377,7 @@ export type Database = {
           id?: string
           is_hidden?: boolean
           is_quantity?: boolean
+          is_subproduct_selector?: boolean
           label?: string | null
           organization_id: string
           ot_section?: string | null
@@ -2393,6 +2398,7 @@ export type Database = {
           id?: string
           is_hidden?: boolean
           is_quantity?: boolean
+          is_subproduct_selector?: boolean
           label?: string | null
           organization_id?: string
           ot_section?: string | null
