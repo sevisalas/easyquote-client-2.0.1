@@ -28,7 +28,7 @@ import CompositeComponentsSelector, {
 import CompositeComponentTabs, { type ComponentsDataMap } from "@/components/quotes/CompositeComponentTabs";
 import { useProductComponentSettings } from "@/hooks/useProductComponentSettings";
 import { useCompositeProductConfig } from "@/hooks/useCompositeProductConfig";
-import { ArrowLeft, AlertCircle, Package, Boxes } from "lucide-react";
+import { ArrowLeft, AlertCircle, Package, Boxes, GitBranch } from "lucide-react";
 import { Link } from "react-router-dom";
 import { normalizeApiUserId } from "@/utils/normalizeApiUserId";
 
@@ -87,8 +87,13 @@ export default function ProductTestPage({
   
   // Ref para el timeout del debounce de commit de prompts
   const commitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const initialView = searchParams.get('view') === 'componentes' ? 'componentes' : 'productos';
-  const [viewMode, setViewMode] = useState<'productos' | 'componentes'>(initialView);
+  const initialViewParam = searchParams.get('view');
+  const initialView: 'productos' | 'componentes' | 'subproductos' =
+    initialViewParam === 'componentes' ? 'componentes'
+      : initialViewParam === 'subproductos' ? 'subproductos'
+      : 'productos';
+  const [viewMode, setViewMode] = useState<'productos' | 'componentes' | 'subproductos'>(initialView);
+  const isSubproductMode = viewMode === 'subproductos' || searchParams.get('subproductMode') === '1';
   const {
     isSuperAdmin,
     isOrgAdmin,
@@ -163,6 +168,26 @@ export default function ProductTestPage({
         .eq("is_component", true);
       if (error) {
         console.error("Error fetching component products:", error);
+        return new Set<string>();
+      }
+      return new Set((data || []).map((d) => d.easyquote_product_id));
+    },
+    enabled: isApiUserIdReady && !!effectiveApiUserId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Fetch subproduct-enabled product IDs
+  const { data: subproductProductIds = new Set<string>(), isLoading: isLoadingSubproductIds } = useQuery({
+    queryKey: ["subproduct-product-ids", effectiveApiUserId],
+    queryFn: async () => {
+      if (!effectiveApiUserId) return new Set<string>();
+      const { data, error } = await supabase
+        .from("product_component_settings")
+        .select("easyquote_product_id")
+        .eq("api_user_id", effectiveApiUserId)
+        .eq("has_subproducts", true);
+      if (error) {
+        console.error("Error fetching subproduct products:", error);
         return new Set<string>();
       }
       return new Set((data || []).map((d) => d.easyquote_product_id));
@@ -455,32 +480,36 @@ export default function ProductTestPage({
   // IMPORTANTE: Para la vista "componentes", debemos esperar a que componentProductIds esté listo
   // antes de aplicar el filtro, de lo contrario mostraría lista vacía.
   const isComponentIdsReady = !isLoadingComponentIds && isApiUserIdReady;
-  
+  const isSubproductIdsReady = !isLoadingSubproductIds && isApiUserIdReady;
+
   const products = useMemo(() => {
-    // Si estamos en vista componentes pero los IDs aún no están listos, devolver array vacío
-    // (el loading spinner se mostrará mientras tanto)
-    if (viewMode === 'componentes' && !isComponentIdsReady) {
-      return [];
-    }
-    
+    if (viewMode === 'componentes' && !isComponentIdsReady) return [];
+    if (viewMode === 'subproductos' && !isSubproductIdsReady) return [];
+
     return allProducts.filter((p: any) => {
       const isProductComponent = componentProductIds.has(p.id);
+      const hasSubs = subproductProductIds.has(p.id);
+      if (viewMode === 'subproductos') return hasSubs;
       if (viewMode === 'productos') return !isProductComponent;
-      return isProductComponent;
+      return isProductComponent; // componentes
     });
-  }, [allProducts, componentProductIds, viewMode, isComponentIdsReady]);
+  }, [allProducts, componentProductIds, subproductProductIds, viewMode, isComponentIdsReady, isSubproductIdsReady]);
 
   // Reset productId when switching viewMode if current product doesn't match the new filter
   useEffect(() => {
     if (productId) {
       const isProductComponent = componentProductIds.has(productId);
-      const matchesCurrentView = viewMode === 'productos' ? !isProductComponent : isProductComponent;
+      const hasSubs = subproductProductIds.has(productId);
+      const matchesCurrentView =
+        viewMode === 'productos' ? !isProductComponent
+        : viewMode === 'subproductos' ? hasSubs
+        : isProductComponent;
       if (!matchesCurrentView) {
         setProductId("");
         setProductDetail(null);
       }
     }
-  }, [viewMode, componentProductIds, productId]);
+  }, [viewMode, componentProductIds, subproductProductIds, productId]);
 
   // Fetch product detail when productId changes - with retries for transient errors
   // Note: We only depend on productId, not products, to avoid re-fetching on every products array change
@@ -1329,7 +1358,7 @@ export default function ProductTestPage({
             <Button variant="ghost" size="sm" asChild>
               <Link to={`/admin/productos?view=${viewMode}`} className="flex items-center gap-1">
                 <ArrowLeft className="h-4 w-4" />
-                Volver a {viewMode === 'productos' ? 'Productos' : 'Componentes'}
+                Volver a {viewMode === 'productos' ? 'Productos' : viewMode === 'componentes' ? 'Componentes' : 'Subproductos'}
               </Link>
             </Button>
           </div>
@@ -1339,10 +1368,10 @@ export default function ProductTestPage({
         </div>
       </div>
 
-      {/* Tabs: Productos / Componentes */}
+      {/* Tabs: Productos / Componentes / Subproductos */}
       <div className="flex items-center gap-2">
-        <Button 
-          variant={viewMode === 'productos' ? 'default' : 'outline'} 
+        <Button
+          variant={viewMode === 'productos' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setViewMode('productos')}
           className="flex items-center gap-2"
@@ -1350,8 +1379,8 @@ export default function ProductTestPage({
           <Package className="h-4 w-4" />
           Productos
         </Button>
-        <Button 
-          variant={viewMode === 'componentes' ? 'default' : 'outline'} 
+        <Button
+          variant={viewMode === 'componentes' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setViewMode('componentes')}
           className="flex items-center gap-2"
@@ -1359,9 +1388,30 @@ export default function ProductTestPage({
           <Boxes className="h-4 w-4" />
           Componentes
         </Button>
+        <Button
+          variant={viewMode === 'subproductos' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setViewMode('subproductos')}
+          className="flex items-center gap-2"
+        >
+          <GitBranch className="h-4 w-4" />
+          Subproductos
+        </Button>
       </div>
 
-      {(isLoading || (viewMode === 'componentes' && !isComponentIdsReady)) ? (
+      {isSubproductMode && productId && (
+        <Alert>
+          <GitBranch className="h-4 w-4" />
+          <AlertTitle>Modo subproducto</AlertTitle>
+          <AlertDescription>
+            Este producto tiene subproductos. El primer campo que aparece es el selector: elige una opción y el resto del formulario se cargará filtrado por ese subproducto.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {(isLoading
+        || (viewMode === 'componentes' && !isComponentIdsReady)
+        || (viewMode === 'subproductos' && !isSubproductIdsReady)) ? (
         <div className="text-center py-8">
           <p>Cargando {viewMode}...</p>
         </div>
@@ -1370,16 +1420,16 @@ export default function ProductTestPage({
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>Selección de {viewMode === 'productos' ? 'producto' : 'componente'}</CardTitle>
+                <CardTitle>Selección de {viewMode === 'productos' ? 'producto' : viewMode === 'componentes' ? 'componente' : 'subproducto'}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Product Selection */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">{viewMode === 'productos' ? 'Producto' : 'Componente'}</label>
+                  <label className="text-sm font-medium">{viewMode === 'productos' ? 'Producto' : viewMode === 'componentes' ? 'Componente' : 'Producto con subproductos'}</label>
                   <div className="flex gap-2">
                     <Select value={productId} onValueChange={setProductId}>
                       <SelectTrigger className="flex-1">
-                        <SelectValue placeholder={`Selecciona un ${viewMode === 'productos' ? 'producto' : 'componente'}...`} />
+                        <SelectValue placeholder={`Selecciona un ${viewMode === 'productos' ? 'producto' : viewMode === 'componentes' ? 'componente' : 'producto con subproductos'}...`} />
                       </SelectTrigger>
                       <SelectContent>
                         {products.map((product: any) => <SelectItem key={product.id} value={product.id}>
