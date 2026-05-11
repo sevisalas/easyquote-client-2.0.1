@@ -781,6 +781,59 @@ export default function ProductConfigPage() {
     },
   });
 
+  // Marcar/desmarcar un prompt como selector de subproducto.
+  // Solo un prompt por (api_user_id, easyquote_product_id) puede ser selector
+  // (constraint a nivel BD). Esta mutación primero limpia cualquier otro y
+  // luego upserta el flag para el prompt indicado.
+  const setSubproductSelectorMutation = useMutation({
+    mutationFn: async ({ promptKey, value }: { promptKey: string; value: boolean }) => {
+      if (!apiUserId || !organizationId || !productId) throw new Error("Missing context");
+      const cleanKey = String(promptKey).replace(/\$/g, "").trim();
+
+      // 1) Limpiar cualquier otro selector existente para este producto
+      if (value) {
+        await supabase
+          .from("product_prompt_settings")
+          .update({ is_subproduct_selector: false, updated_at: new Date().toISOString() })
+          .eq("api_user_id", apiUserId)
+          .eq("easyquote_product_id", productId)
+          .eq("is_subproduct_selector", true);
+      }
+
+      // 2) Buscar setting existente para este prompt
+      const existing = (promptSettings as any[])?.find(
+        (s) => s.api_user_id === apiUserId && s.easyquote_product_id === productId && String(s.prompt_name).replace(/\$/g, "").trim() === cleanKey
+      );
+
+      if (existing) {
+        const { error } = await supabase
+          .from("product_prompt_settings")
+          .update({ is_subproduct_selector: value, updated_at: new Date().toISOString() })
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("product_prompt_settings").insert({
+          api_user_id: apiUserId,
+          organization_id: organizationId,
+          easyquote_product_id: productId,
+          prompt_name: cleanKey,
+          is_subproduct_selector: value,
+        });
+        if (error) throw error;
+      }
+      return { promptKey: cleanKey, value };
+    },
+    onSuccess: async (res) => {
+      await refetchPromptSettings();
+      toast({
+        title: res.value ? "Selector de subproducto activado" : "Selector de subproducto desactivado",
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
   const updateProductMutation = useMutation({
     mutationFn: async ({ product, action }: { product: EasyQuoteProduct; action?: 'delete' | 'update' }) => {
       const token = sessionStorage.getItem("easyquote_token");
