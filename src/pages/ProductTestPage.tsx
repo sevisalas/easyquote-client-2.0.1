@@ -661,7 +661,7 @@ export default function ProductTestPage({
     };
     fetchProductDetail();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productId]);
+  }, [productId, productReloadKey]);
 
   // Fetch pricing data ONLY when user modifies prompts (not on initial load)
   const {
