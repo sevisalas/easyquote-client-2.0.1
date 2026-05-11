@@ -2403,7 +2403,7 @@ export default function ProductManagement() {
         </div>
       </div>
 
-      {/* Tabs: Productos / Componentes */}
+      {/* Tabs: Productos / Componentes / Subproductos */}
       <div className="flex items-center gap-2">
         <Button 
           variant={viewMode === 'productos' ? 'default' : 'outline'} 
@@ -2422,6 +2422,15 @@ export default function ProductManagement() {
         >
           <Boxes className="h-4 w-4" />
           Componentes
+        </Button>
+        <Button
+          variant={viewMode === 'subproductos' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setViewMode('subproductos')}
+          className="flex items-center gap-2"
+        >
+          <GitBranch className="h-4 w-4" />
+          Subproductos
         </Button>
       </div>
 
