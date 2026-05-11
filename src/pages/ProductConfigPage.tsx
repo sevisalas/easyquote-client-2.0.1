@@ -1188,6 +1188,23 @@ export default function ProductConfigPage() {
                   }} />
                   <Label htmlFor="hasImposition">Imposición automática</Label>
                 </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="hasSubproducts"
+                    checked={hasSubproducts}
+                    onCheckedChange={async (checked) => {
+                      if (!selectedProduct) return;
+                      try {
+                        await upsertComponentSettings({ easyquote_product_id: selectedProduct.id, has_subproducts: checked });
+                        toast({ title: checked ? "Subproductos activados" : "Subproductos desactivados" });
+                      } catch {}
+                    }}
+                  />
+                  <Label htmlFor="hasSubproducts" className="flex items-center gap-1.5">
+                    <GitBranch className="h-3.5 w-3.5" />
+                    Tiene subproductos
+                  </Label>
+                </div>
               </div>
 
               {selectedCategoryId && (
