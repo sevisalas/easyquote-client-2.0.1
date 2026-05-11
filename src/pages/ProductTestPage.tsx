@@ -904,17 +904,34 @@ export default function ProductTestPage({
 
   const productForPrompts = useMemo(() => {
     if (!productDetail) return null;
+    const basePrompts = (pricing?.prompts && Array.isArray(pricing.prompts))
+      ? pricing.prompts
+      : (productDetail?.prompts ?? []);
+
+    // En modo subproducto, hasta que el usuario interactúe, dejamos solo el prompt selector visible.
+    let visiblePrompts = basePrompts;
+    if (isSubproductMode && !hasUserModifiedPrompts && subproductSelectorKeys.size > 0) {
+      const norm = (v: any) => String(v ?? "").trim().toUpperCase();
+      const filtered = basePrompts.filter((p: any) => {
+        const id = norm(p?.id);
+        const label = norm(p?.label ?? p?.promptText ?? p?.name);
+        const cell = norm(p?.promptCell ?? p?.cell);
+        return subproductSelectorKeys.has(id) || subproductSelectorKeys.has(label) || subproductSelectorKeys.has(cell);
+      });
+      if (filtered.length > 0) visiblePrompts = filtered;
+    }
+
     if (pricing?.prompts && Array.isArray(pricing.prompts)) {
       return {
         ...productDetail,
         ...pricing,
-        prompts: pricing.prompts,
+        prompts: visiblePrompts,
         outputValues: pricing.outputValues ?? pricing.outputs ?? productDetail.outputValues,
         outputs: pricing.outputs ?? pricing.outputValues ?? productDetail.outputs,
       };
     }
-    return productDetail;
-  }, [productDetail, pricing]);
+    return { ...productDetail, prompts: visiblePrompts };
+  }, [productDetail, pricing, isSubproductMode, hasUserModifiedPrompts, subproductSelectorKeys]);
 
   // Derive outputs from pricing data - based on real API response structure
   const outputs = useMemo(() => {
