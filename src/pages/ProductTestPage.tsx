@@ -27,7 +27,9 @@ import CompositeComponentsSelector, {
 } from "@/components/quotes/CompositeComponentsSelector";
 import CompositeComponentTabs, { type ComponentsDataMap } from "@/components/quotes/CompositeComponentTabs";
 import { useProductComponentSettings } from "@/hooks/useProductComponentSettings";
+import { useProductPromptSettings } from "@/hooks/useProductPromptSettings";
 import { useCompositeProductConfig } from "@/hooks/useCompositeProductConfig";
+import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, AlertCircle, Package, Boxes, GitBranch } from "lucide-react";
 import { Link } from "react-router-dom";
 import { normalizeApiUserId } from "@/utils/normalizeApiUserId";
@@ -94,6 +96,8 @@ export default function ProductTestPage({
       : 'productos';
   const [viewMode, setViewMode] = useState<'productos' | 'componentes' | 'subproductos'>(initialView);
   const isSubproductMode = viewMode === 'subproductos' || searchParams.get('subproductMode') === '1';
+  // Reload trigger to refetch initial GET (used by "Cambiar subproducto")
+  const [productReloadKey, setProductReloadKey] = useState(0);
   const {
     isSuperAdmin,
     isOrgAdmin,
@@ -146,6 +150,19 @@ export default function ProductTestPage({
     productId || undefined, 
     effectiveApiUserId
   );
+
+  // Prompt settings: needed to find the prompt marked as subproduct selector
+  const { promptSettings: subproductPromptSettings } = useProductPromptSettings(productId || undefined);
+  const subproductSelectorKeys = useMemo(() => {
+    const set = new Set<string>();
+    for (const s of (subproductPromptSettings as any[])) {
+      if (s?.is_subproduct_selector) {
+        if (s.prompt_name) set.add(String(s.prompt_name).trim().toUpperCase());
+        if (s.label) set.add(String(s.label).trim().toUpperCase());
+      }
+    }
+    return set;
+  }, [subproductPromptSettings]);
   
   // Fetch composite product components configuration
   const { 
