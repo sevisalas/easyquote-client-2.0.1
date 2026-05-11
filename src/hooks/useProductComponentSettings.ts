@@ -12,6 +12,7 @@ export interface ProductComponentSettings {
   enabled_components: string[];
   product_type: 'sencillo' | 'compuesto' | 'kit';
   has_imposition: boolean;
+  has_subproducts: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -160,6 +161,7 @@ export function useProductComponentSettings(
       enabled_components?: string[];
       product_type?: 'sencillo' | 'compuesto' | 'kit';
       has_imposition?: boolean;
+      has_subproducts?: boolean;
     }) => {
       if (!apiUserId) throw new Error('No api_user_id found');
       if (!organizationId) throw new Error('No organization found');
@@ -175,6 +177,7 @@ export function useProductComponentSettings(
           enabled_components: settings.enabled_components,
           product_type: settings.product_type,
           has_imposition: settings.has_imposition,
+          has_subproducts: settings.has_subproducts,
           updated_at: new Date().toISOString(),
         }, {
           onConflict: 'api_user_id,easyquote_product_id',
@@ -191,6 +194,9 @@ export function useProductComponentSettings(
       });
       queryClient.invalidateQueries({
         queryKey: ['component-product-ids'],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['subproduct-product-ids'],
       });
     },
   });
@@ -269,6 +275,9 @@ export function useProductComponentSettings(
   // Helper: verificar si tiene imposición activada
   const hasImposition = componentSettings?.has_imposition ?? false;
 
+  // Helper: verificar si tiene subproductos
+  const hasSubproducts = componentSettings?.has_subproducts ?? false;
+
   const normalizePromptName = (v: string) => String(v ?? "").replace(/\$/g, "").trim().toUpperCase();
 
   const componentByPromptName = useMemo(() => {
@@ -293,6 +302,7 @@ export function useProductComponentSettings(
     enabledComponents,
     productType,
     hasImposition,
+    hasSubproducts,
     apiUserId,
     organizationId,
     
