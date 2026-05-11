@@ -1420,16 +1420,16 @@ export default function ProductTestPage({
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>Selección de {viewMode === 'productos' ? 'producto' : 'componente'}</CardTitle>
+                <CardTitle>Selección de {viewMode === 'productos' ? 'producto' : viewMode === 'componentes' ? 'componente' : 'subproducto'}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Product Selection */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">{viewMode === 'productos' ? 'Producto' : 'Componente'}</label>
+                  <label className="text-sm font-medium">{viewMode === 'productos' ? 'Producto' : viewMode === 'componentes' ? 'Componente' : 'Producto con subproductos'}</label>
                   <div className="flex gap-2">
                     <Select value={productId} onValueChange={setProductId}>
                       <SelectTrigger className="flex-1">
-                        <SelectValue placeholder={`Selecciona un ${viewMode === 'productos' ? 'producto' : 'componente'}...`} />
+                        <SelectValue placeholder={`Selecciona un ${viewMode === 'productos' ? 'producto' : viewMode === 'componentes' ? 'componente' : 'producto con subproductos'}...`} />
                       </SelectTrigger>
                       <SelectContent>
                         {products.map((product: any) => <SelectItem key={product.id} value={product.id}>
