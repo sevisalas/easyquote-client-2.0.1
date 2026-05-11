@@ -163,6 +163,13 @@ export default function ProductTestPage({
     }
     return set;
   }, [subproductPromptSettings]);
+
+  // Debug log para verificar si se identifica el prompt selector en modo subproducto
+  useEffect(() => {
+    if (!isSubproductMode || !productId) return;
+    console.log("[Subproducto] selector keys:", Array.from(subproductSelectorKeys));
+    console.log("[Subproducto] prompt settings count:", (subproductPromptSettings as any[])?.length ?? 0);
+  }, [isSubproductMode, productId, subproductSelectorKeys, subproductPromptSettings]);
   
   // Fetch composite product components configuration
   const { 
@@ -904,17 +911,34 @@ export default function ProductTestPage({
 
   const productForPrompts = useMemo(() => {
     if (!productDetail) return null;
+    const basePrompts = (pricing?.prompts && Array.isArray(pricing.prompts))
+      ? pricing.prompts
+      : (productDetail?.prompts ?? []);
+
+    // En modo subproducto, hasta que el usuario interactúe, dejamos solo el prompt selector visible.
+    let visiblePrompts = basePrompts;
+    if (isSubproductMode && !hasUserModifiedPrompts && subproductSelectorKeys.size > 0) {
+      const norm = (v: any) => String(v ?? "").trim().toUpperCase();
+      const filtered = basePrompts.filter((p: any) => {
+        const id = norm(p?.id);
+        const label = norm(p?.label ?? p?.promptText ?? p?.name);
+        const cell = norm(p?.promptCell ?? p?.cell);
+        return subproductSelectorKeys.has(id) || subproductSelectorKeys.has(label) || subproductSelectorKeys.has(cell);
+      });
+      if (filtered.length > 0) visiblePrompts = filtered;
+    }
+
     if (pricing?.prompts && Array.isArray(pricing.prompts)) {
       return {
         ...productDetail,
         ...pricing,
-        prompts: pricing.prompts,
+        prompts: visiblePrompts,
         outputValues: pricing.outputValues ?? pricing.outputs ?? productDetail.outputValues,
         outputs: pricing.outputs ?? pricing.outputValues ?? productDetail.outputs,
       };
     }
-    return productDetail;
-  }, [productDetail, pricing]);
+    return { ...productDetail, prompts: visiblePrompts };
+  }, [productDetail, pricing, isSubproductMode, hasUserModifiedPrompts, subproductSelectorKeys]);
 
   // Derive outputs from pricing data - based on real API response structure
   const outputs = useMemo(() => {
@@ -1477,6 +1501,16 @@ export default function ProductTestPage({
           <AlertTitle>Modo subproducto</AlertTitle>
           <AlertDescription>
             Este producto tiene subproductos. El primer campo que aparece es el selector: elige una opción y el resto del formulario se cargará filtrado por ese subproducto.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {isSubproductMode && productId && subproductSelectorKeys.size === 0 && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Selector de subproducto no configurado</AlertTitle>
+          <AlertDescription>
+            Este producto tiene la opción "Tiene subproductos" activada pero no se ha marcado ningún prompt como selector. Ve a la configuración del producto y pulsa "Marcar selector" en el campo que actúa como selector (p. ej. "Producto").
           </AlertDescription>
         </Alert>
       )}
