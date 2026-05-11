@@ -1421,6 +1421,22 @@ export default function ProductTestPage({
           <h1 className="text-3xl font-bold">
             {selectedProduct ? getProductLabel(selectedProduct) : `Prueba de ${viewMode}`}
           </h1>
+          {isSubproductMode && subproductSelectorInfo && subproductSelectorInfo.value && (
+            <div className="flex items-center gap-2 pt-1">
+              <Badge variant="default" className="flex items-center gap-1">
+                <GitBranch className="h-3 w-3" />
+                Subproducto: {subproductSelectorInfo.value}
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleResetSubproduct}
+                className="h-7 text-xs"
+              >
+                Cambiar subproducto
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
