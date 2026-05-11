@@ -44,7 +44,7 @@ interface ProductTableProps {
   onToggleComponent?: (productId: string, isComponent: boolean) => void;
   isTogglingComponent?: boolean;
   /** Vista actual: 'productos' o 'componentes' */
-  viewMode?: 'productos' | 'componentes';
+  viewMode?: 'productos' | 'componentes' | 'subproductos';
 }
 
 export function ProductTable({ products, getProductMapping, onEditProduct, onDuplicateProduct, componentProductIds, compositeProductIds, onToggleComponent, isTogglingComponent, viewMode = 'productos' }: ProductTableProps) {

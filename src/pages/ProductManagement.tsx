@@ -21,7 +21,7 @@ import { useProductCategoryMappings } from "@/hooks/useProductCategoryMappings";
 import { useProductionVariables } from "@/hooks/useProductionVariables";
 import { useProductVariableMappings } from "@/hooks/useProductVariableMappings";
 import { ProductTable } from "@/components/ProductTable";
-import { Package, Search, AlertCircle, AlertTriangle, CheckCircle2, XCircle, Loader2, Edit, Settings, Plus, Trash2, Save, TestTube, Layers, GripVertical } from "lucide-react";
+import { Package, Search, AlertCircle, AlertTriangle, CheckCircle2, XCircle, Loader2, Edit, Settings, Plus, Trash2, Save, TestTube, Layers, GripVertical, GitBranch } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -369,8 +369,13 @@ export default function ProductManagement() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [subcategoryFilter, setSubcategoryFilter] = useState<string>("all");
   const [includeInactive, setIncludeInactive] = useState(false);
-  const initialViewMode = searchParams.get('view') === 'componentes' ? 'componentes' : 'productos';
-  const [viewMode, setViewMode] = useState<'productos' | 'componentes'>(initialViewMode);
+  const initialViewMode = (() => {
+    const v = searchParams.get('view');
+    if (v === 'componentes') return 'componentes' as const;
+    if (v === 'subproductos') return 'subproductos' as const;
+    return 'productos' as const;
+  })();
+  const [viewMode, setViewMode] = useState<'productos' | 'componentes' | 'subproductos'>(initialViewMode);
   const [selectedProduct, setSelectedProduct] = useState<EasyQuoteProduct | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [hasToken, setHasToken] = useState<boolean | null>(null);
@@ -539,6 +544,26 @@ export default function ProductManagement() {
         .eq('is_composite', true);
       if (error) {
         console.error("Error fetching composite IDs:", error);
+        return new Set<string>();
+      }
+      return new Set((data || []).map(d => d.easyquote_product_id));
+    },
+    enabled: !!apiUserId,
+    select: (data) => data instanceof Set ? data : new Set<string>()
+  });
+
+  // Query para obtener IDs de productos con subproductos (por api_user_id)
+  const { data: subproductProductIds = new Set<string>() } = useQuery({
+    queryKey: ['subproduct-product-ids', apiUserId],
+    queryFn: async () => {
+      if (!apiUserId) return new Set<string>();
+      const { data, error } = await supabase
+        .from('product_component_settings')
+        .select('easyquote_product_id')
+        .eq('api_user_id', apiUserId)
+        .eq('has_subproducts', true);
+      if (error) {
+        console.error("Error fetching subproduct IDs:", error);
         return new Set<string>();
       }
       return new Set((data || []).map(d => d.easyquote_product_id));
@@ -1444,10 +1469,12 @@ export default function ProductManagement() {
 
   // Filtrar productos localmente
   const filteredProducts = allProducts.filter(product => {
-    // Filtrar por vista: productos vs componentes (nunca se mezclan)
+    // Filtrar por vista: productos / componentes / subproductos (nunca se mezclan)
     const isProductComponent = componentProductIds.has(product.id);
+    const hasSubproducts = subproductProductIds.has(product.id);
     if (viewMode === 'productos' && isProductComponent) return false;
     if (viewMode === 'componentes' && !isProductComponent) return false;
+    if (viewMode === 'subproductos' && !hasSubproducts) return false;
 
     const matchesSearch = !searchTerm || product.productName?.toLowerCase().includes(searchTerm.toLowerCase()) || product.description?.toLowerCase().includes(searchTerm.toLowerCase()) || product.id?.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -1489,7 +1516,8 @@ export default function ProductManagement() {
   const statsProducts = allProductsForStats.filter(p => {
     const isProductComponent = componentProductIds.has(p.id);
     if (viewMode === 'productos') return !isProductComponent;
-    return isProductComponent;
+    if (viewMode === 'componentes') return isProductComponent;
+    return subproductProductIds.has(p.id);
   });
   const activeProducts = statsProducts.filter(p => p.isActive);
   const inactiveProducts = statsProducts.filter(p => !p.isActive);
@@ -2375,7 +2403,7 @@ export default function ProductManagement() {
         </div>
       </div>
 
-      {/* Tabs: Productos / Componentes */}
+      {/* Tabs: Productos / Componentes / Subproductos */}
       <div className="flex items-center gap-2">
         <Button 
           variant={viewMode === 'productos' ? 'default' : 'outline'} 
@@ -2394,6 +2422,15 @@ export default function ProductManagement() {
         >
           <Boxes className="h-4 w-4" />
           Componentes
+        </Button>
+        <Button
+          variant={viewMode === 'subproductos' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setViewMode('subproductos')}
+          className="flex items-center gap-2"
+        >
+          <GitBranch className="h-4 w-4" />
+          Subproductos
         </Button>
       </div>
 
@@ -2505,11 +2542,15 @@ export default function ProductManagement() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>{viewMode === 'productos' ? 'Productos' : 'Componentes'}</CardTitle>
+              <CardTitle>
+                {viewMode === 'productos' ? 'Productos' : viewMode === 'componentes' ? 'Componentes' : 'Subproductos'}
+              </CardTitle>
               <CardDescription>
-                {viewMode === 'productos' 
-                  ? 'Lista de productos para presupuestos y pedidos' 
-                  : 'Componentes para usar dentro de productos compuestos'}
+                {viewMode === 'productos'
+                  ? 'Lista de productos para presupuestos y pedidos'
+                  : viewMode === 'componentes'
+                  ? 'Componentes para usar dentro de productos compuestos'
+                  : 'Productos cuya configuración depende de un subproducto seleccionable'}
               </CardDescription>
             </div>
           </div>

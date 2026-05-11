@@ -18,7 +18,7 @@ import { useProductCategories } from "@/hooks/useProductCategories";
 import { useProductCategoryMappings } from "@/hooks/useProductCategoryMappings";
 import { useProductionVariables } from "@/hooks/useProductionVariables";
 import { useProductVariableMappings } from "@/hooks/useProductVariableMappings";
-import { Package, AlertCircle, AlertTriangle, Loader2, Save, Plus, Trash2, Layers, GripVertical, ArrowLeft, ChevronRight, Lock, EyeOff, FileText, ShieldCheck, Hash, ClipboardList, ChevronsUpDown } from "lucide-react";
+import { Package, AlertCircle, AlertTriangle, Loader2, Save, Plus, Trash2, Layers, GripVertical, ArrowLeft, ChevronRight, Lock, EyeOff, FileText, ShieldCheck, Hash, ClipboardList, ChevronsUpDown, GitBranch, Lightbulb, X as XIcon } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -337,6 +337,7 @@ export default function ProductConfigPage() {
     productType: savedProductType, upsertSettings: upsertComponentSettings,
     assignPromptToComponent, getPromptComponent,
     isUpserting: isUpsertingComponents,
+    hasSubproducts,
   } = useProductComponentSettings(productId, apiUserId, organizationId);
 
   const {
@@ -529,6 +530,7 @@ export default function ProductConfigPage() {
   const isPromptForceResult = (...k: Array<string | null | undefined>) => getPromptSettingByKeys(...k)?.force_result || false;
   const isPromptHidden = (...k: Array<string | null | undefined>) => getPromptSettingByKeys(...k)?.is_hidden || false;
   const isPromptQuantity = (...k: Array<string | null | undefined>) => getPromptSettingByKeys(...k)?.is_quantity || false;
+  const isPromptSubproductSelector = (...k: Array<string | null | undefined>) => (getPromptSettingByKeys(...k) as any)?.is_subproduct_selector || false;
   const getPromptHideWhenValue = (...k: Array<string | null | undefined>) => ((getPromptSettingByKeys(...k) as any)?.hide_when_value as string | null | undefined) ?? '';
   const isPromptInOt = (...k: Array<string | null | undefined>) => getPromptSettingByKeys(...k)?.show_in_ot || false;
   const getPromptOtSection = (...k: Array<string | null | undefined>) => getPromptSettingByKeys(...k)?.ot_section || null;
@@ -779,6 +781,59 @@ export default function ProductConfigPage() {
     },
   });
 
+  // Marcar/desmarcar un prompt como selector de subproducto.
+  // Solo un prompt por (api_user_id, easyquote_product_id) puede ser selector
+  // (constraint a nivel BD). Esta mutación primero limpia cualquier otro y
+  // luego upserta el flag para el prompt indicado.
+  const setSubproductSelectorMutation = useMutation({
+    mutationFn: async ({ promptKey, value }: { promptKey: string; value: boolean }) => {
+      if (!apiUserId || !organizationId || !productId) throw new Error("Missing context");
+      const cleanKey = String(promptKey).replace(/\$/g, "").trim();
+
+      // 1) Limpiar cualquier otro selector existente para este producto
+      if (value) {
+        await supabase
+          .from("product_prompt_settings")
+          .update({ is_subproduct_selector: false, updated_at: new Date().toISOString() })
+          .eq("api_user_id", apiUserId)
+          .eq("easyquote_product_id", productId)
+          .eq("is_subproduct_selector", true);
+      }
+
+      // 2) Buscar setting existente para este prompt
+      const existing = (promptSettings as any[])?.find(
+        (s) => s.api_user_id === apiUserId && s.easyquote_product_id === productId && String(s.prompt_name).replace(/\$/g, "").trim() === cleanKey
+      );
+
+      if (existing) {
+        const { error } = await supabase
+          .from("product_prompt_settings")
+          .update({ is_subproduct_selector: value, updated_at: new Date().toISOString() })
+          .eq("id", existing.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("product_prompt_settings").insert({
+          api_user_id: apiUserId,
+          organization_id: organizationId,
+          easyquote_product_id: productId,
+          prompt_name: cleanKey,
+          is_subproduct_selector: value,
+        });
+        if (error) throw error;
+      }
+      return { promptKey: cleanKey, value };
+    },
+    onSuccess: async (res) => {
+      await refetchPromptSettings();
+      toast({
+        title: res.value ? "Selector de subproducto activado" : "Selector de subproducto desactivado",
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
   const updateProductMutation = useMutation({
     mutationFn: async ({ product, action }: { product: EasyQuoteProduct; action?: 'delete' | 'update' }) => {
       const token = sessionStorage.getItem("easyquote_token");
@@ -1024,6 +1079,63 @@ export default function ProductConfigPage() {
 
       <Separator />
 
+      {/* Sugerencia: producto candidato a tener subproductos */}
+      {selectedProduct && !hasSubproducts && productPrompts.length === 1 && !sessionStorage.getItem(`subproduct-hint-dismissed-${selectedProduct.id}`) && (() => {
+        const onlyPrompt: any = productPrompts[0];
+        const labelGuess = (onlyPrompt?.promptText || onlyPrompt?.promptCell || onlyPrompt?.id || 'el único prompt') as string;
+        const promptKey = (onlyPrompt?.promptCell || onlyPrompt?.id) as string;
+        return (
+          <Alert className="border-primary/40 bg-primary/5">
+            <Lightbulb className="h-4 w-4 text-primary" />
+            <AlertTitle className="flex items-center gap-2">
+              Posible producto con subproductos
+              <button
+                aria-label="Ignorar sugerencia"
+                className="ml-auto text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  sessionStorage.setItem(`subproduct-hint-dismissed-${selectedProduct.id}`, '1');
+                  // Re-render
+                  setExpandedPrompts(new Set(expandedPrompts));
+                }}
+              >
+                <XIcon className="h-4 w-4" />
+              </button>
+            </AlertTitle>
+            <AlertDescription className="space-y-3">
+              <p>
+                Este producto solo devuelve <strong>1 dato de entrada</strong> (<code className="text-xs">{labelGuess}</code>).
+                Suele indicar que la API filtra el resto de prompts según ese campo (subproducto).
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    if (!selectedProduct) return;
+                    try {
+                      await upsertComponentSettings({ easyquote_product_id: selectedProduct.id, has_subproducts: true });
+                      await setSubproductSelectorMutation.mutateAsync({ promptKey, value: true });
+                    } catch {}
+                  }}
+                  disabled={isUpsertingComponents || setSubproductSelectorMutation.isPending}
+                >
+                  Activar y marcar selector
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    sessionStorage.setItem(`subproduct-hint-dismissed-${selectedProduct.id}`, '1');
+                    setExpandedPrompts(new Set(expandedPrompts));
+                  }}
+                >
+                  Ignorar
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        );
+      })()}
+
       {/* Tabs */}
       <Tabs defaultValue="general" className="w-full">
         <TabsList className={`grid w-full ${productType === 'sencillo' ? 'grid-cols-3' : 'grid-cols-4'}`}>
@@ -1133,6 +1245,23 @@ export default function ProductConfigPage() {
                   }} />
                   <Label htmlFor="hasImposition">Imposición automática</Label>
                 </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="hasSubproducts"
+                    checked={hasSubproducts}
+                    onCheckedChange={async (checked) => {
+                      if (!selectedProduct) return;
+                      try {
+                        await upsertComponentSettings({ easyquote_product_id: selectedProduct.id, has_subproducts: checked });
+                        toast({ title: checked ? "Subproductos activados" : "Subproductos desactivados" });
+                      } catch {}
+                    }}
+                  />
+                  <Label htmlFor="hasSubproducts" className="flex items-center gap-1.5">
+                    <GitBranch className="h-3.5 w-3.5" />
+                    Tiene subproductos
+                  </Label>
+                </div>
               </div>
 
               {selectedCategoryId && (
@@ -1209,6 +1338,8 @@ export default function ProductConfigPage() {
                 if (isPromptHidden(...promptAliases)) activeFlags.push({ icon: <EyeOff className="h-3 w-3" />, label: "Oculto" });
                 if (isPromptQuantity(...promptAliases)) activeFlags.push({ icon: <Hash className="h-3 w-3" />, label: "Cantidad" });
                 if (isPromptInOt(...promptAliases)) activeFlags.push({ icon: <ClipboardList className="h-3 w-3" />, label: "OT" });
+                const isSelector = isPromptSubproductSelector(...promptAliases);
+                if (isSelector) activeFlags.push({ icon: <GitBranch className="h-3 w-3" />, label: "Selector subproducto" });
 
                 return (
                   <Collapsible
@@ -1245,6 +1376,19 @@ export default function ProductConfigPage() {
                           </button>
                         </CollapsibleTrigger>
                         <div className="flex items-center gap-1 shrink-0">
+                          {hasSubproducts && (
+                            <Button
+                              variant={isSelector ? "default" : "ghost"}
+                              size="sm"
+                              className="h-8 gap-1.5"
+                              onClick={() => setSubproductSelectorMutation.mutate({ promptKey: promptSettingKey, value: !isSelector })}
+                              disabled={setSubproductSelectorMutation.isPending}
+                              title={isSelector ? "Quitar como selector de subproducto" : "Marcar como selector de subproducto"}
+                            >
+                              <GitBranch className="h-3.5 w-3.5" />
+                              <span className="hidden md:inline text-xs">{isSelector ? "Selector" : "Marcar selector"}</span>
+                            </Button>
+                          )}
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { updatePromptMutation.mutate({ ...prompt, valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals ?? 0 : null, valueQuantityMin: isNumericType ? prompt.valueQuantityMin ?? 0 : null, valueQuantityMax: isNumericType ? prompt.valueQuantityMax ?? 9999 : null }); }}>
                             <Save className="h-4 w-4" />
                           </Button>
