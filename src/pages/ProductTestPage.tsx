@@ -1282,6 +1282,45 @@ export default function ProductTestPage({
 
   const selectedProduct = products.find((p: any) => p.id === productId);
 
+  // Compute current subproduct selector info (for badge + "Cambiar" button)
+  const subproductSelectorInfo = useMemo(() => {
+    if (!isSubproductMode || !productId || subproductSelectorKeys.size === 0) {
+      return null;
+    }
+    const currentPrompts = (pricing?.prompts ?? productDetail?.prompts ?? []) as any[];
+    if (!Array.isArray(currentPrompts) || currentPrompts.length === 0) return null;
+
+    const norm = (v: any) => String(v ?? "").trim().toUpperCase();
+    const selector = currentPrompts.find((p: any) => {
+      const id = norm(p?.id);
+      const label = norm(p?.label ?? p?.promptText ?? p?.name);
+      const cell = norm(p?.promptCell ?? p?.cell);
+      return subproductSelectorKeys.has(id) || subproductSelectorKeys.has(label) || subproductSelectorKeys.has(cell);
+    });
+    if (!selector) return null;
+
+    const value = promptValues[selector.id] ?? selector.currentValue ?? "";
+    const labelText = selector.label || selector.promptText || selector.name || "Subproducto";
+    return {
+      promptId: selector.id as string,
+      label: labelText as string,
+      value: String(value ?? "").trim(),
+    };
+  }, [isSubproductMode, productId, subproductSelectorKeys, pricing?.prompts, productDetail?.prompts, promptValues]);
+
+  const handleResetSubproduct = () => {
+    if (commitTimeoutRef.current) {
+      clearTimeout(commitTimeoutRef.current);
+      commitTimeoutRef.current = null;
+    }
+    setPromptValues({});
+    setDebouncedPromptValues({});
+    setClearedPromptIds({});
+    setHasUserModifiedPrompts(false);
+    setProductDetail(null);
+    setProductReloadKey((k) => k + 1);
+  };
+
   // Check permissions - AFTER all hooks are called
   if (!isSuperAdmin && !isOrgAdmin) {
     return <div className="container mx-auto py-10">
