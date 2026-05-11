@@ -337,6 +337,7 @@ export default function ProductConfigPage() {
     productType: savedProductType, upsertSettings: upsertComponentSettings,
     assignPromptToComponent, getPromptComponent,
     isUpserting: isUpsertingComponents,
+    hasSubproducts,
   } = useProductComponentSettings(productId, apiUserId, organizationId);
 
   const {
