@@ -1505,6 +1505,16 @@ export default function ProductTestPage({
         </Alert>
       )}
 
+      {isSubproductMode && productId && subproductSelectorKeys.size === 0 && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Selector de subproducto no configurado</AlertTitle>
+          <AlertDescription>
+            Este producto tiene la opción "Tiene subproductos" activada pero no se ha marcado ningún prompt como selector. Ve a la configuración del producto y pulsa "Marcar selector" en el campo que actúa como selector (p. ej. "Producto").
+          </AlertDescription>
+        </Alert>
+      )}
+
       {(isLoading
         || (viewMode === 'componentes' && !isComponentIdsReady)
         || (viewMode === 'subproductos' && !isSubproductIdsReady)) ? (
