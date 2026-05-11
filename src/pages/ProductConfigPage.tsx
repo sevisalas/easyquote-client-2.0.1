@@ -1338,6 +1338,8 @@ export default function ProductConfigPage() {
                 if (isPromptHidden(...promptAliases)) activeFlags.push({ icon: <EyeOff className="h-3 w-3" />, label: "Oculto" });
                 if (isPromptQuantity(...promptAliases)) activeFlags.push({ icon: <Hash className="h-3 w-3" />, label: "Cantidad" });
                 if (isPromptInOt(...promptAliases)) activeFlags.push({ icon: <ClipboardList className="h-3 w-3" />, label: "OT" });
+                const isSelector = isPromptSubproductSelector(...promptAliases);
+                if (isSelector) activeFlags.push({ icon: <GitBranch className="h-3 w-3" />, label: "Selector subproducto" });
 
                 return (
                   <Collapsible
@@ -1374,6 +1376,19 @@ export default function ProductConfigPage() {
                           </button>
                         </CollapsibleTrigger>
                         <div className="flex items-center gap-1 shrink-0">
+                          {hasSubproducts && (
+                            <Button
+                              variant={isSelector ? "default" : "ghost"}
+                              size="sm"
+                              className="h-8 gap-1.5"
+                              onClick={() => setSubproductSelectorMutation.mutate({ promptKey: promptSettingKey, value: !isSelector })}
+                              disabled={setSubproductSelectorMutation.isPending}
+                              title={isSelector ? "Quitar como selector de subproducto" : "Marcar como selector de subproducto"}
+                            >
+                              <GitBranch className="h-3.5 w-3.5" />
+                              <span className="hidden md:inline text-xs">{isSelector ? "Selector" : "Marcar selector"}</span>
+                            </Button>
+                          )}
                           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { updatePromptMutation.mutate({ ...prompt, valueQuantityAllowedDecimals: isNumericType ? prompt.valueQuantityAllowedDecimals ?? 0 : null, valueQuantityMin: isNumericType ? prompt.valueQuantityMin ?? 0 : null, valueQuantityMax: isNumericType ? prompt.valueQuantityMax ?? 9999 : null }); }}>
                             <Save className="h-4 w-4" />
                           </Button>
