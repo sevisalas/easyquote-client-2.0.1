@@ -1358,7 +1358,7 @@ export default function ProductTestPage({
             <Button variant="ghost" size="sm" asChild>
               <Link to={`/admin/productos?view=${viewMode}`} className="flex items-center gap-1">
                 <ArrowLeft className="h-4 w-4" />
-                Volver a {viewMode === 'productos' ? 'Productos' : 'Componentes'}
+                Volver a {viewMode === 'productos' ? 'Productos' : viewMode === 'componentes' ? 'Componentes' : 'Subproductos'}
               </Link>
             </Button>
           </div>
@@ -1368,10 +1368,10 @@ export default function ProductTestPage({
         </div>
       </div>
 
-      {/* Tabs: Productos / Componentes */}
+      {/* Tabs: Productos / Componentes / Subproductos */}
       <div className="flex items-center gap-2">
-        <Button 
-          variant={viewMode === 'productos' ? 'default' : 'outline'} 
+        <Button
+          variant={viewMode === 'productos' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setViewMode('productos')}
           className="flex items-center gap-2"
@@ -1379,8 +1379,8 @@ export default function ProductTestPage({
           <Package className="h-4 w-4" />
           Productos
         </Button>
-        <Button 
-          variant={viewMode === 'componentes' ? 'default' : 'outline'} 
+        <Button
+          variant={viewMode === 'componentes' ? 'default' : 'outline'}
           size="sm"
           onClick={() => setViewMode('componentes')}
           className="flex items-center gap-2"
@@ -1388,9 +1388,30 @@ export default function ProductTestPage({
           <Boxes className="h-4 w-4" />
           Componentes
         </Button>
+        <Button
+          variant={viewMode === 'subproductos' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => setViewMode('subproductos')}
+          className="flex items-center gap-2"
+        >
+          <GitBranch className="h-4 w-4" />
+          Subproductos
+        </Button>
       </div>
 
-      {(isLoading || (viewMode === 'componentes' && !isComponentIdsReady)) ? (
+      {isSubproductMode && productId && (
+        <Alert>
+          <GitBranch className="h-4 w-4" />
+          <AlertTitle>Modo subproducto</AlertTitle>
+          <AlertDescription>
+            Este producto tiene subproductos. El primer campo que aparece es el selector: elige una opción y el resto del formulario se cargará filtrado por ese subproducto.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {(isLoading
+        || (viewMode === 'componentes' && !isComponentIdsReady)
+        || (viewMode === 'subproductos' && !isSubproductIdsReady)) ? (
         <div className="text-center py-8">
           <p>Cargando {viewMode}...</p>
         </div>
