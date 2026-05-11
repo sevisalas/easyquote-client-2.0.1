@@ -253,8 +253,11 @@ export function ProductTable({ products, getProductMapping, onEditProduct, onDup
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => navigate(`/admin/productos/test?productId=${product.id}&view=${viewMode}`)}
-                        title="Test"
+                        onClick={() => {
+                          const subParam = viewMode === 'subproductos' ? '&subproductMode=1' : '';
+                          navigate(`/admin/productos/test?productId=${product.id}&view=${viewMode}${subParam}`);
+                        }}
+                        title={viewMode === 'subproductos' ? 'Probar (modo subproducto)' : 'Test'}
                         className="h-7 w-7 p-0"
                       >
                         <TestTube className="h-3.5 w-3.5" />
