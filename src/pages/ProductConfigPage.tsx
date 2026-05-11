@@ -530,6 +530,7 @@ export default function ProductConfigPage() {
   const isPromptForceResult = (...k: Array<string | null | undefined>) => getPromptSettingByKeys(...k)?.force_result || false;
   const isPromptHidden = (...k: Array<string | null | undefined>) => getPromptSettingByKeys(...k)?.is_hidden || false;
   const isPromptQuantity = (...k: Array<string | null | undefined>) => getPromptSettingByKeys(...k)?.is_quantity || false;
+  const isPromptSubproductSelector = (...k: Array<string | null | undefined>) => (getPromptSettingByKeys(...k) as any)?.is_subproduct_selector || false;
   const getPromptHideWhenValue = (...k: Array<string | null | undefined>) => ((getPromptSettingByKeys(...k) as any)?.hide_when_value as string | null | undefined) ?? '';
   const isPromptInOt = (...k: Array<string | null | undefined>) => getPromptSettingByKeys(...k)?.show_in_ot || false;
   const getPromptOtSection = (...k: Array<string | null | undefined>) => getPromptSettingByKeys(...k)?.ot_section || null;
