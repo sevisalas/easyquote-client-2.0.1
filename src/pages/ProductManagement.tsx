@@ -21,7 +21,7 @@ import { useProductCategoryMappings } from "@/hooks/useProductCategoryMappings";
 import { useProductionVariables } from "@/hooks/useProductionVariables";
 import { useProductVariableMappings } from "@/hooks/useProductVariableMappings";
 import { ProductTable } from "@/components/ProductTable";
-import { Package, Search, AlertCircle, AlertTriangle, CheckCircle2, XCircle, Loader2, Edit, Settings, Plus, Trash2, Save, TestTube, Layers, GripVertical } from "lucide-react";
+import { Package, Search, AlertCircle, AlertTriangle, CheckCircle2, XCircle, Loader2, Edit, Settings, Plus, Trash2, Save, TestTube, Layers, GripVertical, GitBranch } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -369,8 +369,13 @@ export default function ProductManagement() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [subcategoryFilter, setSubcategoryFilter] = useState<string>("all");
   const [includeInactive, setIncludeInactive] = useState(false);
-  const initialViewMode = searchParams.get('view') === 'componentes' ? 'componentes' : 'productos';
-  const [viewMode, setViewMode] = useState<'productos' | 'componentes'>(initialViewMode);
+  const initialViewMode = (() => {
+    const v = searchParams.get('view');
+    if (v === 'componentes') return 'componentes' as const;
+    if (v === 'subproductos') return 'subproductos' as const;
+    return 'productos' as const;
+  })();
+  const [viewMode, setViewMode] = useState<'productos' | 'componentes' | 'subproductos'>(initialViewMode);
   const [selectedProduct, setSelectedProduct] = useState<EasyQuoteProduct | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [hasToken, setHasToken] = useState<boolean | null>(null);
