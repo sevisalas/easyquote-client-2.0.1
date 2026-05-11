@@ -18,7 +18,7 @@ import { useProductCategories } from "@/hooks/useProductCategories";
 import { useProductCategoryMappings } from "@/hooks/useProductCategoryMappings";
 import { useProductionVariables } from "@/hooks/useProductionVariables";
 import { useProductVariableMappings } from "@/hooks/useProductVariableMappings";
-import { Package, AlertCircle, AlertTriangle, Loader2, Save, Plus, Trash2, Layers, GripVertical, ArrowLeft, ChevronRight, Lock, EyeOff, FileText, ShieldCheck, Hash, ClipboardList, ChevronsUpDown } from "lucide-react";
+import { Package, AlertCircle, AlertTriangle, Loader2, Save, Plus, Trash2, Layers, GripVertical, ArrowLeft, ChevronRight, Lock, EyeOff, FileText, ShieldCheck, Hash, ClipboardList, ChevronsUpDown, GitBranch, Lightbulb, X as XIcon } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
