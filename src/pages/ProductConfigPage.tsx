@@ -1079,6 +1079,63 @@ export default function ProductConfigPage() {
 
       <Separator />
 
+      {/* Sugerencia: producto candidato a tener subproductos */}
+      {selectedProduct && !hasSubproducts && productPrompts.length === 1 && !sessionStorage.getItem(`subproduct-hint-dismissed-${selectedProduct.id}`) && (() => {
+        const onlyPrompt: any = productPrompts[0];
+        const labelGuess = (onlyPrompt?.promptText || onlyPrompt?.promptCell || onlyPrompt?.id || 'el único prompt') as string;
+        const promptKey = (onlyPrompt?.promptCell || onlyPrompt?.id) as string;
+        return (
+          <Alert className="border-primary/40 bg-primary/5">
+            <Lightbulb className="h-4 w-4 text-primary" />
+            <AlertTitle className="flex items-center gap-2">
+              Posible producto con subproductos
+              <button
+                aria-label="Ignorar sugerencia"
+                className="ml-auto text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  sessionStorage.setItem(`subproduct-hint-dismissed-${selectedProduct.id}`, '1');
+                  // Re-render
+                  setExpandedPrompts(new Set(expandedPrompts));
+                }}
+              >
+                <XIcon className="h-4 w-4" />
+              </button>
+            </AlertTitle>
+            <AlertDescription className="space-y-3">
+              <p>
+                Este producto solo devuelve <strong>1 dato de entrada</strong> (<code className="text-xs">{labelGuess}</code>).
+                Suele indicar que la API filtra el resto de prompts según ese campo (subproducto).
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={async () => {
+                    if (!selectedProduct) return;
+                    try {
+                      await upsertComponentSettings({ easyquote_product_id: selectedProduct.id, has_subproducts: true });
+                      await setSubproductSelectorMutation.mutateAsync({ promptKey, value: true });
+                    } catch {}
+                  }}
+                  disabled={isUpsertingComponents || setSubproductSelectorMutation.isPending}
+                >
+                  Activar y marcar selector
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    sessionStorage.setItem(`subproduct-hint-dismissed-${selectedProduct.id}`, '1');
+                    setExpandedPrompts(new Set(expandedPrompts));
+                  }}
+                >
+                  Ignorar
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        );
+      })()}
+
       {/* Tabs */}
       <Tabs defaultValue="general" className="w-full">
         <TabsList className={`grid w-full ${productType === 'sencillo' ? 'grid-cols-3' : 'grid-cols-4'}`}>
