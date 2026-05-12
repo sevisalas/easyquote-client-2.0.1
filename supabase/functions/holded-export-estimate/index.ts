@@ -18,6 +18,88 @@ const parseLocaleNumber = (value: unknown): number => {
 const getBearerToken = (authHeader: string | null) =>
   authHeader?.replace(/^Bearer\s+/i, '').trim() || null;
 
+const parseHoldedJson = (rawText: string) => {
+  try {
+    return JSON.parse(rawText);
+  } catch {
+    return rawText;
+  }
+};
+
+const getHoldedErrorMessage = (payload: any): string | null => {
+  if (!payload) return null;
+  if (typeof payload === 'string') return payload.trim() || null;
+  if (Array.isArray(payload)) return null;
+  return payload.info || payload.error || payload.message || null;
+};
+
+const isHoldedApplicationError = (payload: any): boolean => {
+  if (!payload || Array.isArray(payload) || typeof payload === 'string') return false;
+  if (payload.status === 0 && !payload.id) return true;
+  const message = getHoldedErrorMessage(payload)?.toLowerCase() || '';
+  return message.includes('id not found') || message.includes('not found');
+};
+
+const isHoldedIdNotFoundError = (payload: any): boolean => {
+  const message = getHoldedErrorMessage(payload)?.toLowerCase() || '';
+  return message.includes('id not found');
+};
+
+const normalizeHoldedDocNumber = (value: unknown): string =>
+  String(value ?? '').trim().toUpperCase();
+
+const findHoldedEstimateIdByNumber = async (apiKey: string, estimateNumber: string): Promise<string | null> => {
+  const targetNumber = normalizeHoldedDocNumber(estimateNumber);
+  if (!targetNumber) return null;
+
+  const response = await fetch(HOLDED_API_URL, {
+    headers: {
+      accept: 'application/json',
+      key: apiKey,
+    },
+  });
+
+  const rawText = await response.text();
+  const data = parseHoldedJson(rawText);
+
+  if (!response.ok || !Array.isArray(data)) {
+    console.warn('⚠️ Unable to search Holded estimate by number:', response.status, rawText);
+    return null;
+  }
+
+  const match = data.find((doc: any) => {
+    const candidates = [doc?.invoiceNum, doc?.docNumber, doc?.number, doc?.id];
+    return candidates.some((candidate) => normalizeHoldedDocNumber(candidate) === targetNumber);
+  });
+
+  return match?.id ? String(match.id) : null;
+};
+
+const sendHoldedEstimate = async (apiKey: string, url: string, method: 'POST' | 'PUT', payload: any) => {
+  const response = await fetch(url, {
+    method,
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      key: apiKey,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const rawText = await response.text();
+  const data = parseHoldedJson(rawText);
+
+  console.log(`Holded ${method} response status:`, response.status);
+  console.log(`Holded ${method} response:`, rawText);
+
+  return {
+    ok: response.ok && !isHoldedApplicationError(data),
+    status: response.status,
+    rawText,
+    data,
+  };
+};
+
 const validatePortalTokenForQuote = async (supabase: any, portalToken: string, quoteId: string) => {
   const { data: tokenData, error } = await supabase
     .from('quote_portal_tokens')
@@ -1246,34 +1328,63 @@ Deno.serve(async (req) => {
     console.log('=========================');
 
     const existingEstimateId = quote.holded_estimate_id || quote.holded_id || null;
-    const holdedUrl = existingEstimateId ? `${HOLDED_API_URL}/${existingEstimateId}` : HOLDED_API_URL;
-    const holdedMethod = existingEstimateId ? 'PUT' : 'POST';
+    const existingEstimateNumber = quote.holded_estimate_number || null;
+    let effectiveEstimateId = existingEstimateId;
+    let holdedResult;
 
-    console.log(existingEstimateId
-      ? `♻️ Updating existing Holded estimate: ${existingEstimateId}`
-      : '🆕 Creating new Holded estimate');
+    if (effectiveEstimateId) {
+      console.log(`♻️ Updating existing Holded estimate: ${effectiveEstimateId}`);
+      holdedResult = await sendHoldedEstimate(
+        apiKey,
+        `${HOLDED_API_URL}/${effectiveEstimateId}`,
+        'PUT',
+        estimatePayload,
+      );
 
-    // Send to Holded
-    const holdedResponse = await fetch(holdedUrl, {
-      method: holdedMethod,
-      headers: {
-        'accept': 'application/json',
-        'content-type': 'application/json',
-        'key': apiKey
-      },
-      body: JSON.stringify(estimatePayload)
-    });
+      if (!holdedResult.ok && isHoldedIdNotFoundError(holdedResult.data)) {
+        console.warn('⚠️ Stored Holded estimate id is stale, trying recovery by estimate number:', {
+          staleId: effectiveEstimateId,
+          estimateNumber: existingEstimateNumber,
+        });
 
-    const holdedResponseText = await holdedResponse.text();
-    console.log('Holded response status:', holdedResponse.status);
-    console.log('Holded response:', holdedResponseText);
+        const recoveredEstimateId = existingEstimateNumber
+          ? await findHoldedEstimateIdByNumber(apiKey, existingEstimateNumber)
+          : null;
 
-    if (!holdedResponse.ok) {
-      throw new Error(`Holded API error: ${holdedResponse.status} - ${holdedResponseText}`);
+        if (recoveredEstimateId) {
+          effectiveEstimateId = recoveredEstimateId;
+          console.log(`🔁 Recovered Holded estimate id from number ${existingEstimateNumber}: ${effectiveEstimateId}`);
+          holdedResult = await sendHoldedEstimate(
+            apiKey,
+            `${HOLDED_API_URL}/${effectiveEstimateId}`,
+            'PUT',
+            estimatePayload,
+          );
+        } else {
+          console.warn('🆕 Existing estimate number not found in Holded, creating a new estimate');
+          effectiveEstimateId = null;
+          holdedResult = await sendHoldedEstimate(apiKey, HOLDED_API_URL, 'POST', estimatePayload);
+        }
+      }
+    } else {
+      console.log('🆕 Creating new Holded estimate');
+      holdedResult = await sendHoldedEstimate(apiKey, HOLDED_API_URL, 'POST', estimatePayload);
     }
 
-    const parsedHoldedData = JSON.parse(holdedResponseText);
+    if (!holdedResult.ok) {
+      const errorMessage = getHoldedErrorMessage(holdedResult.data)
+        || `Holded API error: ${holdedResult.status} - ${holdedResult.rawText}`;
+      throw new Error(errorMessage);
+    }
+
+    const parsedHoldedData = holdedResult.data;
     const holdedData = Array.isArray(parsedHoldedData) ? parsedHoldedData[0] : parsedHoldedData;
+    if (!holdedData?.id && effectiveEstimateId) {
+      holdedData.id = effectiveEstimateId;
+    }
+    if (!holdedData?.invoiceNum && existingEstimateNumber) {
+      holdedData.invoiceNum = existingEstimateNumber;
+    }
 
     // Update quote with Holded estimate ID (do NOT override status - let the caller manage it)
     if (holdedData.id) {
