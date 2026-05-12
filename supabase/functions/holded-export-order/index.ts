@@ -1008,9 +1008,17 @@ Deno.serve(async (req) => {
 
     console.log('📤 Sending to Holded:', JSON.stringify(payload, null, 2));
 
+    const existingOrderId = order.holded_document_id || null;
+    const holdedUrl = existingOrderId ? `${HOLDED_API_URL}/${existingOrderId}` : HOLDED_API_URL;
+    const holdedMethod = existingOrderId ? 'PUT' : 'POST';
+
+    console.log(existingOrderId
+      ? `♻️ Updating existing Holded sales order: ${existingOrderId}`
+      : '🆕 Creating new Holded sales order');
+
     // Send to Holded API
-    const holdedResponse = await fetch(HOLDED_API_URL, {
-      method: 'POST',
+    const holdedResponse = await fetch(holdedUrl, {
+      method: holdedMethod,
       headers: {
         'Key': apiKey,
         'Content-Type': 'application/json',
