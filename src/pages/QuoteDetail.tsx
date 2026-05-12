@@ -1526,9 +1526,9 @@ export default function QuoteDetail() {
                             </CollapsibleContent>
                           </div>
                           <div className="text-right shrink-0">
-                            <p className="text-base font-semibold text-primary whitespace-nowrap">{fmtEUR(displayedItemPrice * (resolvedQuantity || 1))}</p>
-                            {resolvedQuantity > 1 && (
-                              <p className="text-[10px] text-muted-foreground whitespace-nowrap">{fmtEUR(displayedItemPrice)} × {resolvedQuantity}</p>
+                            <p className="text-base font-semibold text-primary whitespace-nowrap">{fmtEUR(displayedItemPrice)}</p>
+                            {resolvedQuantity > 0 && (
+                              <p className="text-[10px] text-muted-foreground whitespace-nowrap">{resolvedQuantity} uds.</p>
                             )}
                           </div>
                         </div>
