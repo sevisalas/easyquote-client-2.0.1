@@ -1245,9 +1245,17 @@ Deno.serve(async (req) => {
     console.log('API Key (first 10):', apiKey.substring(0, 10) + '...');
     console.log('=========================');
 
+    const existingEstimateId = quote.holded_estimate_id || quote.holded_id || null;
+    const holdedUrl = existingEstimateId ? `${HOLDED_API_URL}/${existingEstimateId}` : HOLDED_API_URL;
+    const holdedMethod = existingEstimateId ? 'PUT' : 'POST';
+
+    console.log(existingEstimateId
+      ? `♻️ Updating existing Holded estimate: ${existingEstimateId}`
+      : '🆕 Creating new Holded estimate');
+
     // Send to Holded
-    const holdedResponse = await fetch(HOLDED_API_URL, {
-      method: 'POST',
+    const holdedResponse = await fetch(holdedUrl, {
+      method: holdedMethod,
       headers: {
         'accept': 'application/json',
         'content-type': 'application/json',
@@ -1264,7 +1272,8 @@ Deno.serve(async (req) => {
       throw new Error(`Holded API error: ${holdedResponse.status} - ${holdedResponseText}`);
     }
 
-    const holdedData = JSON.parse(holdedResponseText);
+    const parsedHoldedData = JSON.parse(holdedResponseText);
+    const holdedData = Array.isArray(parsedHoldedData) ? parsedHoldedData[0] : parsedHoldedData;
 
     // Update quote with Holded estimate ID (do NOT override status - let the caller manage it)
     if (holdedData.id) {
