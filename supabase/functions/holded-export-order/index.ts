@@ -729,46 +729,28 @@ Deno.serve(async (req) => {
         }
       }
       
-      // Get price ONLY from outputs type "Price" (sin IVA)
+      // PRICE INTEGRITY: item.price (stored & approved) is the source of truth.
+      // The quote was approved by the customer with this exact price — NEVER recalculate.
+      // Only fall back to output Price when item.price is missing/zero.
       let totalPrice = 0;
       let units: number | null = null;
-      // When true, totalPrice already includes item_additionals (came from item.price),
-      // so we MUST NOT re-apply additionals to avoid double-charging in Holded.
       let priceIncludesAdditionals = false;
-      
-      console.log('🔍 Item outputs:', JSON.stringify(item.outputs, null, 2));
-      
-      // MUST find Price output (the real calculated price from EasyQuote, sin IVA)
-      if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
-        const priceOutput = item.outputs.find((o: any) => 
+
+      const storedItemPrice = parseLocaleNumber(item.price);
+      if (storedItemPrice > 0) {
+        totalPrice = storedItemPrice;
+        priceIncludesAdditionals = true;
+        console.log('💰 Using stored item.price (source of truth, no recalculation):', totalPrice);
+      } else if (item.outputs && Array.isArray(item.outputs) && item.outputs.length > 0) {
+        const priceOutput = item.outputs.find((o: any) =>
           String(o?.type || '').toLowerCase() === 'price'
         );
-        
         if (priceOutput) {
           const priceValue = priceOutput.value;
-          totalPrice = typeof priceValue === "number" 
-            ? priceValue 
-            : parseLocaleNumber(priceValue);
-          console.log('💰 Price from output type=Price (sin IVA):', { totalPrice, outputName: priceOutput.name, outputType: priceOutput.type });
-          
-          // Fallback: if output Price is 0 but item.price has a real value, use item.price
-          // This happens with composite products where the price is stored directly on the item
-          if (totalPrice === 0 && parseLocaleNumber(item.price) > 0) {
-            totalPrice = parseLocaleNumber(item.price);
-            priceIncludesAdditionals = true;
-            console.log('💰 Output Price was 0, using item.price fallback:', totalPrice);
-          }
-        } else {
-          console.log('⚠️ No output with type=Price found! Available types:', item.outputs.map((o: any) => ({ type: o.type, name: o.name })));
-          // Fallback: use item.price but it might include IVA
-          totalPrice = parseLocaleNumber(item.price);
-          priceIncludesAdditionals = true;
-          console.log('⚠️ Using item.price as fallback (may include IVA):', totalPrice);
+          totalPrice = typeof priceValue === "number" ? priceValue : parseLocaleNumber(priceValue);
+          priceIncludesAdditionals = false;
+          console.log('⚠️ item.price empty — fallback to output Price (will apply additionals):', totalPrice);
         }
-      } else {
-        console.log('⚠️ No outputs available, using item.price fallback');
-        totalPrice = parseLocaleNumber(item.price);
-        priceIncludesAdditionals = true;
       }
 
       // For custom products: use base price (qty × unit_price) instead of item.price
