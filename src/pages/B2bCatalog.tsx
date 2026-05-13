@@ -384,7 +384,7 @@ const B2bCatalog = () => {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6 max-w-5xl">
+    <div className="container mx-auto py-6 space-y-6 max-w-7xl">
       <div>
         <h1 className="text-3xl font-bold">Catálogo Portal B2B</h1>
         <p className="text-muted-foreground">
@@ -394,19 +394,21 @@ const B2bCatalog = () => {
         </p>
       </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <div className="lg:col-span-1 space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Modo de funcionamiento</CardTitle>
         </CardHeader>
-        <CardContent className="flex items-center justify-between gap-4">
-          <div>
+        <CardContent className="space-y-3">
+          <div className="flex items-start justify-between gap-3">
             <div className="font-medium">Autoservicio</div>
-            <p className="text-sm text-muted-foreground">
+            <Switch checked={selfService} onCheckedChange={toggleSelfService} />
+          </div>
+          <p className="text-sm text-muted-foreground">
               Si está activo, el presupuesto se crea como <strong>"Enviado"</strong> listo para que el cliente lo apruebe.
               Si está desactivado, queda como <strong>borrador</strong> para revisión del comercial antes de enviarlo.
-            </p>
-          </div>
-          <Switch checked={selfService} onCheckedChange={toggleSelfService} />
+          </p>
         </CardContent>
       </Card>
 
@@ -492,7 +494,9 @@ const B2bCatalog = () => {
           )}
         </CardContent>
       </Card>
+        </div>
 
+        <div className="lg:col-span-2">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
           <div>
@@ -525,9 +529,9 @@ const B2bCatalog = () => {
                       · {group.items.length}
                     </span>
                   </div>
-                  <div className="divide-y border rounded-md">
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
                     {group.items.map((it) => (
-                      <div key={it.id} className="py-3 px-3 flex items-center gap-3">
+                      <div key={it.id} className="border rounded-md py-3 px-3 flex items-center gap-3">
                         <div className="w-12 h-12 rounded-md bg-muted overflow-hidden flex items-center justify-center shrink-0">
                           {it.image_url ? (
                             <img src={it.image_url} alt={it.name} className="w-full h-full object-cover" />
@@ -574,6 +578,8 @@ const B2bCatalog = () => {
           )}
         </CardContent>
       </Card>
+        </div>
+      </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl">
