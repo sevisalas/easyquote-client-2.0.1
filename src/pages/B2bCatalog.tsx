@@ -274,6 +274,14 @@ const B2bCatalog = () => {
       toast({ title: "Faltan datos", description: "Selecciona un producto y un nombre" });
       return;
     }
+    // Si el calculador es un subproducto, exigir resolución del selector
+    if (subSelector && subSelector.options.length > 0) {
+      const v = (draft.default_prompts || {})[subSelector.promptId]?.value;
+      if (!v) {
+        toast({ title: "Falta el subproducto", description: `Resuelve el campo "${subSelector.label}" para que quede asignado automáticamente al cliente.`, variant: "destructive" });
+        return;
+      }
+    }
     setSaving(true);
     let error: any = null;
     if (editingId) {
@@ -285,6 +293,7 @@ const B2bCatalog = () => {
           image_url: draft.image_url.trim() || null,
           product_id: draft.product_id,
           category_id: draft.category_id || null,
+          default_prompts: draft.default_prompts || {},
         } as any)
         .eq("id", editingId);
       error = res.error;
@@ -298,7 +307,7 @@ const B2bCatalog = () => {
         is_active: true,
         product_id: draft.product_id,
         category_id: draft.category_id || null,
-        default_prompts: {},
+        default_prompts: draft.default_prompts || {},
         exposed_prompt_ids: [],
       } as any);
       error = res.error;
