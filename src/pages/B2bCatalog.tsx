@@ -86,6 +86,7 @@ const B2bCatalog = () => {
   const [b2bCategories, setB2bCategories] = useState<B2bCategory[]>([]);
   const [newCatName, setNewCatName] = useState("");
   const [newCatParent, setNewCatParent] = useState<string>("__root__");
+  const [showAddCategoryForm, setShowAddCategoryForm] = useState(false);
 
   // Clasificación de los artículos de EasyQuote para el portal (producto, componente, subproducto)
   // según product_component_settings (compartida por api_user_id).
