@@ -570,7 +570,7 @@ const PortalHome = () => {
               )}
               <div className="max-h-[45vh] overflow-y-auto pr-1">
                 <PromptsFormLite
-                  prompts={rawPrompts}
+                  prompts={rawPrompts.filter((p) => !((configItem?.default_prompts || {}) as any)[String(p.id)])}
                   values={configOverrides}
                   onChange={(id, value) =>
                     setConfigOverrides((prev) => ({ ...prev, [id]: value }))
