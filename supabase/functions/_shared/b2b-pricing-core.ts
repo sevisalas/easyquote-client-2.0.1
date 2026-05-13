@@ -124,6 +124,15 @@ export async function callEasyQuotePricing(
   const text = await res.text();
   let data: any = {};
   try { data = text ? JSON.parse(text) : {}; } catch { /* ignore */ }
+  console.log("[b2b-pricing-core] EasyQuote response", {
+    productId,
+    method,
+    status: res.status,
+    ok: res.ok,
+    inputsCount: formatted.length,
+    textLength: text.length,
+    preview: text.slice(0, 500),
+  });
   return { ok: res.ok, status: res.status, data };
 }
 
