@@ -604,32 +604,33 @@ const B2bCatalog = () => {
           ) : (
             <div className="border rounded-md divide-y">
               {rootCategories.map((root) => (
-                <div key={root.id} className="p-3">
+                <div key={root.id} className="p-2">
                   <div className="flex items-center gap-2">
                     <Input
                       defaultValue={root.name}
                       onBlur={(e) =>
                         e.target.value !== root.name && renameB2bCategory(root.id, e.target.value)
                       }
-                      className="font-medium"
+                      className="font-medium h-8 text-sm"
                     />
-                    <Button variant="ghost" size="icon" onClick={() => removeB2bCategory(root.id)} title="Eliminar">
+                    <Button variant="ghost" size="icon" onClick={() => removeB2bCategory(root.id)} title="Eliminar" className="h-8 w-8">
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
                   </div>
                   {(subCategoriesByParent[root.id] || []).length > 0 && (
-                    <div className="mt-2 ml-4 space-y-2 border-l pl-3">
+                    <div className="mt-1 ml-3 space-y-0.5 border-l pl-2">
                       {subCategoriesByParent[root.id].map((sub) => (
-                        <div key={sub.id} className="flex items-center gap-2">
+                        <div key={sub.id} className="flex items-center gap-1.5 py-0.5">
                           <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
                           <Input
                             defaultValue={sub.name}
                             onBlur={(e) =>
                               e.target.value !== sub.name && renameB2bCategory(sub.id, e.target.value)
                             }
+                            className="h-7 text-sm"
                           />
-                          <Button variant="ghost" size="icon" onClick={() => removeB2bCategory(sub.id)} title="Eliminar">
-                            <Trash2 className="w-4 h-4 text-destructive" />
+                          <Button variant="ghost" size="icon" onClick={() => removeB2bCategory(sub.id)} title="Eliminar" className="h-7 w-7">
+                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
                           </Button>
                         </div>
                       ))}
