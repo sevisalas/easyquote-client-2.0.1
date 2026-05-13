@@ -234,11 +234,17 @@ const PortalHome = () => {
 
   const openConfig = async (item: CatalogItem) => {
     setConfigItem(item);
-    setConfigOverrides({});
+    // Pre-aplicar los valores por defecto definidos por el admin (p.ej. selector de subproducto).
+    // Estos prompts no se mostrarán al cliente y se enviarán siempre como override al motor.
+    const seeded: Record<string, any> = {};
+    Object.entries((item.default_prompts || {}) as Record<string, any>).forEach(([id, v]) => {
+      seeded[id] = (v && typeof v === "object" && "value" in v) ? (v as any).value : v;
+    });
+    setConfigOverrides(seeded);
     setLivePrice(null);
     setPricingError(null);
     setRawPrompts([]);
-    await fetchPrice(item, {});
+    await fetchPrice(item, seeded);
   };
 
   const fetchPrice = async (item: CatalogItem, overrides: Record<string, any>) => {
