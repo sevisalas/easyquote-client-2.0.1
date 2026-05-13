@@ -738,7 +738,7 @@ const B2bCatalog = () => {
                 <Calculator className="w-4 h-4" /> 3. Calculador asignado
               </Label>
               <p className="text-xs text-muted-foreground -mt-1">
-                Elige qué elemento del motor calculará el precio: un <strong>producto</strong>, un <strong>compuesto</strong>, un <strong>componente</strong> o un <strong>subproducto (kit)</strong>.
+                Elige qué elemento del motor calculará el precio: un <strong>producto</strong>, un <strong>componente</strong> o un <strong>subproducto (kit)</strong>.
               </p>
               <div className="flex flex-wrap gap-2">
                 <Select value={kindFilter} onValueChange={(v) => setKindFilter(v as any)}>
