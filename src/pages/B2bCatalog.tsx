@@ -36,7 +36,7 @@ interface ProductOption {
   isActive: boolean;
 }
 
-type CalcKind = "producto" | "compuesto" | "componente" | "kit";
+type CalcKind = "producto" | "componente" | "kit";
 
 interface B2bCategory {
   id: string;
@@ -83,14 +83,12 @@ const B2bCatalog = () => {
 
   const kindLabel: Record<CalcKind, string> = {
     producto: "Producto",
-    compuesto: "Compuesto",
     componente: "Componente",
     kit: "Subproducto",
   };
   const kindBadgeVariant: Record<CalcKind, "default" | "secondary" | "outline"> = {
     producto: "default",
-    compuesto: "secondary",
-    componente: "outline",
+    componente: "secondary",
     kit: "outline",
   };
 
@@ -175,7 +173,6 @@ const B2bCatalog = () => {
         let kind: CalcKind = "producto";
         if (r.is_component) kind = "componente";
         else if (r.product_type === "kit") kind = "kit";
-        else if (r.product_type === "compuesto") kind = "compuesto";
         map[String(r.easyquote_product_id)] = kind;
       });
       setCalcKindById(map);
@@ -751,7 +748,6 @@ const B2bCatalog = () => {
                   <SelectContent>
                     <SelectItem value="__all__">Todos los tipos</SelectItem>
                     <SelectItem value="producto">Producto</SelectItem>
-                    <SelectItem value="compuesto">Compuesto</SelectItem>
                     <SelectItem value="componente">Componente</SelectItem>
                     <SelectItem value="kit">Subproducto (kit)</SelectItem>
                   </SelectContent>
