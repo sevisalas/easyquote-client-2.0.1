@@ -136,6 +136,66 @@ export async function callEasyQuotePricing(
   return { ok: res.ok, status: res.status, data };
 }
 
+export function extractPromptOverrideValues(
+  promptMap?: Record<string, any> | null,
+): Record<string, any> {
+  const values: Record<string, any> = {};
+  for (const [id, raw] of Object.entries(promptMap || {})) {
+    values[String(id)] = raw && typeof raw === "object" && "value" in raw
+      ? raw.value
+      : raw;
+  }
+  return values;
+}
+
+export function buildResolvedPricingInputs(
+  pricingData: any,
+  overrides?: Record<string, any> | null,
+): Array<{ id: string; value: any }> {
+  const resolvedOverrides = extractPromptOverrideValues(overrides);
+  const prompts = Array.isArray(pricingData?.prompts) ? pricingData.prompts : [];
+  const inputs: Array<{ id: string; value: any }> = [];
+  const seen = new Set<string>();
+
+  for (const prompt of prompts) {
+    const id = String(prompt?.id ?? "").trim();
+    if (!id) continue;
+    seen.add(id);
+
+    const value = resolvedOverrides[id] !== undefined
+      ? resolvedOverrides[id]
+      : (prompt?.currentValue ?? prompt?.defaultValue ?? prompt?.selectedValue);
+
+    if (value === undefined || value === null || value === "") continue;
+    inputs.push({ id, value });
+  }
+
+  for (const [id, value] of Object.entries(resolvedOverrides)) {
+    const normalizedId = String(id).trim();
+    if (!normalizedId || seen.has(normalizedId)) continue;
+    if (value === undefined || value === null || value === "") continue;
+    inputs.push({ id: normalizedId, value });
+  }
+
+  return inputs;
+}
+
+export async function resolveEasyQuotePricing(
+  token: string,
+  productId: string,
+  overrides?: Record<string, any> | null,
+): Promise<{ ok: boolean; status: number; data: any }> {
+  const initial = await callEasyQuotePricing(token, productId, []);
+  if (!initial.ok) return initial;
+
+  const resolvedInputs = buildResolvedPricingInputs(initial.data, overrides);
+  if (resolvedInputs.length === 0) {
+    return initial;
+  }
+
+  return await callEasyQuotePricing(token, productId, resolvedInputs);
+}
+
 /**
  * Apply customer tariff (single percentage discount/surcharge) to a base price.
  */
