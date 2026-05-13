@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, AlertTriangle, Check, ChevronsUpDown, Pencil, Package, FolderTree, ChevronRight } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Check, ChevronsUpDown, Pencil, Package, FolderTree, ChevronRight, Upload, Calculator, Tag, Image as ImageIcon, Type } from "lucide-react";
 import { invokeEasyQuoteFunction, getEasyQuoteToken } from "@/lib/easyquoteApi";
 import { useProductCategoryMappings } from "@/hooks/useProductCategoryMappings";
 
@@ -62,6 +62,7 @@ const B2bCatalog = () => {
   const [showInactive, setShowInactive] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [draft, setDraft] = useState<{
     name: string;
     description: string;
@@ -79,6 +80,19 @@ const B2bCatalog = () => {
   // según product_component_settings (compartida por api_user_id).
   const [calcKindById, setCalcKindById] = useState<Record<string, CalcKind>>({});
   const [kindFilter, setKindFilter] = useState<"__all__" | CalcKind>("__all__");
+
+  const kindLabel: Record<CalcKind, string> = {
+    producto: "Producto",
+    compuesto: "Compuesto",
+    componente: "Componente",
+    kit: "Subproducto",
+  };
+  const kindBadgeVariant: Record<CalcKind, "default" | "secondary" | "outline"> = {
+    producto: "default",
+    compuesto: "secondary",
+    componente: "outline",
+    kit: "outline",
+  };
 
   const openCreate = () => {
     setEditingId(null);
@@ -305,6 +319,39 @@ const B2bCatalog = () => {
       return;
     }
     setItems((prev) => prev.filter((i) => i.id !== id));
+  };
+
+  const uploadDraftImage = async (file: File) => {
+    if (!orgId || !file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Archivo no válido", description: "Sube una imagen (PNG, JPG, WebP…)", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Imagen demasiado grande", description: "Máximo 5 MB", variant: "destructive" });
+      return;
+    }
+    setUploadingImage(true);
+    const ext = file.name.split(".").pop() || "png";
+    const path = `${orgId}/b2b/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("product-images").upload(path, file, {
+      cacheControl: "3600",
+      upsert: false,
+    });
+    if (upErr) {
+      setUploadingImage(false);
+      toast({ title: "Error al subir", description: upErr.message, variant: "destructive" });
+      return;
+    }
+    const { data: signed } = await supabase.storage
+      .from("product-images")
+      .createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
+    const url = signed?.signedUrl || "";
+    setUploadingImage(false);
+    if (url) {
+      setDraft((d) => ({ ...d, image_url: url }));
+      toast({ title: "Imagen subida" });
+    }
   };
 
   // ===== Categorías B2B: helpers + CRUD =====
@@ -581,8 +628,19 @@ const B2bCatalog = () => {
                         <div className="min-w-0">
                           <div className="font-medium text-sm truncate" title={it.name}>{it.name}</div>
                           {it.product_id ? (
-                            <div className="text-[10px] text-muted-foreground truncate" title={productNameById[it.product_id] || it.product_id}>
-                              calc: {productNameById[it.product_id] || it.product_id}
+                            <div className="flex items-center gap-1 mt-0.5 min-w-0">
+                              <Badge
+                                variant={kindBadgeVariant[calcKindById[it.product_id] || "producto"]}
+                                className="text-[9px] px-1 py-0 shrink-0"
+                              >
+                                {kindLabel[calcKindById[it.product_id] || "producto"]}
+                              </Badge>
+                              <span
+                                className="text-[10px] text-muted-foreground truncate"
+                                title={productNameById[it.product_id] || it.product_id}
+                              >
+                                {productNameById[it.product_id] || it.product_id}
+                              </span>
                             </div>
                           ) : (
                             <Badge variant="destructive" className="text-[10px] mt-0.5">Sin calculador</Badge>
@@ -624,101 +682,33 @@ const B2bCatalog = () => {
           <DialogHeader>
             <DialogTitle>{editingId ? "Editar artículo del catálogo" : "Añadir artículo al catálogo"}</DialogTitle>
             <DialogDescription>
-              Define el artículo que verá el cliente y elige qué <strong>calculador</strong> (producto, componente o subproducto) usará para el precio.
+              Un artículo del portal se compone de 4 cosas: un <strong>nombre</strong>, una <strong>categoría del portal</strong>, un <strong>calculador asignado</strong> (producto, componente o subproducto del motor) y una <strong>imagen</strong> que lo represente.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-2">
-              <Label>Producto</Label>
-              <div className="flex flex-wrap gap-2">
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="w-[220px]">
-                    <SelectValue placeholder="Todas las categorías" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__all__">Todas las categorías</SelectItem>
-                    <SelectItem value="__uncat__">Sin categoría</SelectItem>
-                    {categories.map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <label className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Switch checked={showInactive} onCheckedChange={setShowInactive} />
-                  Mostrar inactivos
-                </label>
-              </div>
-              <Popover open={productPickerOpen} onOpenChange={setProductPickerOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={productPickerOpen}
-                    className="w-full justify-between font-normal"
-                  >
-                    <span className="truncate">
-                      {draft.product_id
-                        ? productNameById[draft.product_id] || draft.product_id
-                        : products.length === 0
-                          ? "Cargando productos…"
-                          : "Selecciona el producto a publicar"}
-                    </span>
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                  <Command
-                    filter={(value, search) =>
-                      value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
-                    }
-                  >
-                    <CommandInput placeholder="Buscar por nombre o categoría…" />
-                    <CommandList>
-                      <CommandEmpty>Sin resultados.</CommandEmpty>
-                      <CommandGroup>
-                        {filteredProducts.map((p) => {
-                          const already =
-                            usedProductIds.has(p.id) &&
-                            p.id !== draft.product_id &&
-                            !(editingId && items.find((i) => i.id === editingId)?.product_id === p.id);
-                          return (
-                            <CommandItem
-                              key={p.id}
-                              value={`${p.id}|${p.name}|${p.category}`.toLowerCase()}
-                              onSelect={() => {
-                                setDraft({
-                                  ...draft,
-                                  product_id: p.id,
-                                  name: draft.name || p.name,
-                                });
-                                setProductPickerOpen(false);
-                              }}
-                              disabled={already}
-                            >
-                              <Check
-                                className={`mr-2 h-4 w-4 ${draft.product_id === p.id ? "opacity-100" : "opacity-0"}`}
-                              />
-                              <div className="flex-1 min-w-0">
-                                <div className="truncate font-medium">{p.name}</div>
-                                {(p.category || already || !p.isActive) && (
-                                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                    {p.category && <span className="truncate">{p.category}</span>}
-                                    {!p.isActive && <Badge variant="outline" className="text-[10px]">Inactivo</Badge>}
-                                    {already && <Badge variant="secondary" className="text-[10px]">Ya añadido</Badge>}
-                                  </div>
-                                )}
-                              </div>
-                            </CommandItem>
-                          );
-                        })}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div>
-              <Label>Categoría del portal</Label>
+          <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-1">
+            {/* 1. Nombre */}
+            <section className="space-y-2">
+              <Label className="flex items-center gap-2 text-sm font-semibold">
+                <Type className="w-4 h-4" /> 1. Nombre del artículo
+              </Label>
+              <Input
+                value={draft.name}
+                onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+                placeholder="Ej: Tarjetas de visita"
+              />
+              <Textarea
+                value={draft.description}
+                onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                rows={2}
+                placeholder="Descripción corta visible al cliente (opcional)"
+              />
+            </section>
+
+            {/* 2. Categoría del portal */}
+            <section className="space-y-2">
+              <Label className="flex items-center gap-2 text-sm font-semibold">
+                <FolderTree className="w-4 h-4" /> 2. Categoría del artículo en el portal
+              </Label>
               <Select
                 value={draft.category_id || "__none__"}
                 onValueChange={(v) => setDraft({ ...draft, category_id: v === "__none__" ? "" : v })}
@@ -738,34 +728,188 @@ const B2bCatalog = () => {
                   ])}
                 </SelectContent>
               </Select>
-            </div>
-            <div>
-              <Label>Nombre visible al cliente</Label>
-              <Input
-                value={draft.name}
-                onChange={(e) => setDraft({ ...draft, name: e.target.value })}
-                placeholder="Ej: Tarjetas de visita"
-              />
-            </div>
-            <div>
-              <Label>Descripción</Label>
-              <Textarea
-                value={draft.description}
-                onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-                rows={2}
-              />
-            </div>
-            <div>
-              <Label>URL imagen de respaldo (opcional)</Label>
-              <Input
-                value={draft.image_url}
-                onChange={(e) => setDraft({ ...draft, image_url: e.target.value })}
-                placeholder="https://…"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Solo se usa si el producto no devuelve una imagen propia desde el motor de cálculo.
+              {b2bCategories.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Aún no has creado categorías del portal. Puedes crearlas en el panel de la izquierda.
+                </p>
+              )}
+            </section>
+
+            {/* 3. Calculador asignado */}
+            <section className="space-y-2">
+              <Label className="flex items-center gap-2 text-sm font-semibold">
+                <Calculator className="w-4 h-4" /> 3. Calculador asignado
+              </Label>
+              <p className="text-xs text-muted-foreground -mt-1">
+                Elige qué elemento del motor calculará el precio: un <strong>producto</strong>, un <strong>compuesto</strong>, un <strong>componente</strong> o un <strong>subproducto (kit)</strong>.
               </p>
-            </div>
+              <div className="flex flex-wrap gap-2">
+                <Select value={kindFilter} onValueChange={(v) => setKindFilter(v as any)}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Todos los tipos</SelectItem>
+                    <SelectItem value="producto">Producto</SelectItem>
+                    <SelectItem value="compuesto">Compuesto</SelectItem>
+                    <SelectItem value="componente">Componente</SelectItem>
+                    <SelectItem value="kit">Subproducto (kit)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue placeholder="Categoría motor" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">Todas las categorías</SelectItem>
+                    <SelectItem value="__uncat__">Sin categoría</SelectItem>
+                    {categories.map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Switch checked={showInactive} onCheckedChange={setShowInactive} />
+                  Mostrar inactivos
+                </label>
+              </div>
+              <Popover open={productPickerOpen} onOpenChange={setProductPickerOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={productPickerOpen}
+                    className="w-full justify-between font-normal"
+                  >
+                    <span className="truncate flex items-center gap-2">
+                      {draft.product_id ? (
+                        <>
+                          <Badge variant={kindBadgeVariant[calcKindById[draft.product_id] || "producto"]} className="text-[10px]">
+                            {kindLabel[calcKindById[draft.product_id] || "producto"]}
+                          </Badge>
+                          <span className="truncate">{productNameById[draft.product_id] || draft.product_id}</span>
+                        </>
+                      ) : products.length === 0 ? (
+                        "Cargando elementos del motor…"
+                      ) : (
+                        "Selecciona el calculador"
+                      )}
+                    </span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                  <Command
+                    filter={(value, search) =>
+                      value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
+                    }
+                  >
+                    <CommandInput placeholder="Buscar por nombre, categoría o tipo…" />
+                    <CommandList>
+                      <CommandEmpty>Sin resultados.</CommandEmpty>
+                      <CommandGroup>
+                        {filteredProducts.map((p) => {
+                          const already =
+                            usedProductIds.has(p.id) &&
+                            p.id !== draft.product_id &&
+                            !(editingId && items.find((i) => i.id === editingId)?.product_id === p.id);
+                          const kind = calcKindById[p.id] || "producto";
+                          return (
+                            <CommandItem
+                              key={p.id}
+                              value={`${p.id}|${p.name}|${p.category}|${kindLabel[kind]}`.toLowerCase()}
+                              onSelect={() => {
+                                setDraft({
+                                  ...draft,
+                                  product_id: p.id,
+                                  name: draft.name || p.name,
+                                });
+                                setProductPickerOpen(false);
+                              }}
+                              disabled={already}
+                            >
+                              <Check
+                                className={`mr-2 h-4 w-4 ${draft.product_id === p.id ? "opacity-100" : "opacity-0"}`}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="truncate font-medium flex items-center gap-2">
+                                  <Badge variant={kindBadgeVariant[kind]} className="text-[10px] shrink-0">
+                                    {kindLabel[kind]}
+                                  </Badge>
+                                  <span className="truncate">{p.name}</span>
+                                </div>
+                                {(p.category || already || !p.isActive) && (
+                                  <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                                    {p.category && <span className="truncate">{p.category}</span>}
+                                    {!p.isActive && <Badge variant="outline" className="text-[10px]">Inactivo</Badge>}
+                                    {already && <Badge variant="secondary" className="text-[10px]">Ya añadido</Badge>}
+                                  </div>
+                                )}
+                              </div>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </section>
+
+            {/* 4. Imagen */}
+            <section className="space-y-2">
+              <Label className="flex items-center gap-2 text-sm font-semibold">
+                <ImageIcon className="w-4 h-4" /> 4. Imagen que lo representa
+              </Label>
+              <div className="flex items-start gap-3">
+                <div className="w-24 h-24 rounded-md border bg-muted overflow-hidden flex items-center justify-center shrink-0">
+                  {draft.image_url ? (
+                    <img src={draft.image_url} alt="Vista previa" className="w-full h-full object-cover" />
+                  ) : (
+                    <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) uploadDraftImage(f);
+                          e.target.value = "";
+                        }}
+                      />
+                      <Button asChild variant="outline" size="sm" disabled={uploadingImage}>
+                        <span className="cursor-pointer">
+                          <Upload className="w-4 h-4 mr-2" />
+                          {uploadingImage ? "Subiendo…" : "Subir imagen"}
+                        </span>
+                      </Button>
+                    </label>
+                    {draft.image_url && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDraft({ ...draft, image_url: "" })}
+                      >
+                        Quitar
+                      </Button>
+                    )}
+                  </div>
+                  <Input
+                    value={draft.image_url}
+                    onChange={(e) => setDraft({ ...draft, image_url: e.target.value })}
+                    placeholder="…o pega una URL https://…"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Si no se define, se usará la imagen que devuelva el calculador (si existe).
+                  </p>
+                </div>
+              </div>
+            </section>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>
