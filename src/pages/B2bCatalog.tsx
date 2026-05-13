@@ -36,7 +36,7 @@ interface ProductOption {
   isActive: boolean;
 }
 
-type CalcKind = "producto" | "componente" | "kit";
+type CalcKind = "producto" | "componente" | "subproducto";
 
 interface B2bCategory {
   id: string;
@@ -76,7 +76,7 @@ const B2bCatalog = () => {
   const [newCatName, setNewCatName] = useState("");
   const [newCatParent, setNewCatParent] = useState<string>("__root__");
 
-  // Clasificación de los productos de EasyQuote (producto, compuesto, componente, kit)
+  // Clasificación de los artículos de EasyQuote para el portal (producto, componente, subproducto)
   // según product_component_settings (compartida por api_user_id).
   const [calcKindById, setCalcKindById] = useState<Record<string, CalcKind>>({});
   const [kindFilter, setKindFilter] = useState<"__all__" | CalcKind>("__all__");
@@ -84,12 +84,12 @@ const B2bCatalog = () => {
   const kindLabel: Record<CalcKind, string> = {
     producto: "Producto",
     componente: "Componente",
-    kit: "Subproducto",
+    subproducto: "Subproducto",
   };
   const kindBadgeVariant: Record<CalcKind, "default" | "secondary" | "outline"> = {
     producto: "default",
     componente: "secondary",
-    kit: "outline",
+    subproducto: "outline",
   };
 
   const openCreate = () => {
@@ -151,7 +151,7 @@ const B2bCatalog = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orgId]);
 
-  // Cargar la clasificación (producto / compuesto / componente / kit) para los
+  // Cargar la clasificación (producto / componente / subproducto) para los
   // productos de la org actual usando product_component_settings (api_user_id).
   useEffect(() => {
     (async () => {
@@ -172,7 +172,7 @@ const B2bCatalog = () => {
       (data as any[]).forEach((r) => {
         let kind: CalcKind = "producto";
         if (r.is_component) kind = "componente";
-        else if (r.product_type === "kit") kind = "kit";
+        else if (r.product_type === "kit") kind = "subproducto";
         map[String(r.easyquote_product_id)] = kind;
       });
       setCalcKindById(map);
