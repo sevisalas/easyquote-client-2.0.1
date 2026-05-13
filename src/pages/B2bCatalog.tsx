@@ -364,10 +364,15 @@ const B2bCatalog = () => {
           return keys.has(id) || keys.has(label) || keys.has(cell);
         });
         if (!selector) { if (!cancelled) setSubSelector(null); return; }
-        const options = (selector.valueOptions || []).map((o: any) => ({
-          value: String(o?.value ?? o?.id ?? o?.displayText ?? ""),
-          displayText: String(o?.displayText ?? o?.label ?? o?.value ?? ""),
-        })).filter((o: any) => o.value);
+        const rawOpts = selector.valueOptions ?? selector.options ?? selector.choices ?? selector.values ?? selector.items ?? selector.optionsList ?? [];
+        const options = (Array.isArray(rawOpts) ? rawOpts : []).map((o: any) => {
+          if (typeof o === "string" || typeof o === "number") {
+            return { value: String(o), displayText: String(o) };
+          }
+          const value = String(o?.value ?? o?.id ?? o?.key ?? o?.displayText ?? o?.label ?? "");
+          const displayText = String(o?.displayText ?? o?.label ?? o?.text ?? o?.name ?? o?.value ?? "");
+          return { value, displayText };
+        }).filter((o: any) => o.value);
         if (!cancelled) {
           setSubSelector({
             promptId: String(selector.id),
