@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, AlertTriangle, Check, ChevronsUpDown, Pencil, Package, FolderTree, ChevronRight } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Check, ChevronsUpDown, Pencil, Package, FolderTree, ChevronRight, Upload, Calculator, Tag, Image as ImageIcon, Type } from "lucide-react";
 import { invokeEasyQuoteFunction, getEasyQuoteToken } from "@/lib/easyquoteApi";
 import { useProductCategoryMappings } from "@/hooks/useProductCategoryMappings";
 
@@ -62,6 +62,7 @@ const B2bCatalog = () => {
   const [showInactive, setShowInactive] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [draft, setDraft] = useState<{
     name: string;
     description: string;
@@ -79,6 +80,19 @@ const B2bCatalog = () => {
   // según product_component_settings (compartida por api_user_id).
   const [calcKindById, setCalcKindById] = useState<Record<string, CalcKind>>({});
   const [kindFilter, setKindFilter] = useState<"__all__" | CalcKind>("__all__");
+
+  const kindLabel: Record<CalcKind, string> = {
+    producto: "Producto",
+    compuesto: "Compuesto",
+    componente: "Componente",
+    kit: "Subproducto",
+  };
+  const kindBadgeVariant: Record<CalcKind, "default" | "secondary" | "outline"> = {
+    producto: "default",
+    compuesto: "secondary",
+    componente: "outline",
+    kit: "outline",
+  };
 
   const openCreate = () => {
     setEditingId(null);
