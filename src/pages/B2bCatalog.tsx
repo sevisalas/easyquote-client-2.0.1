@@ -27,6 +27,7 @@ interface CatalogItem {
   is_active: boolean;
   product_id: string | null;
   category_id: string | null;
+  default_prompts?: Record<string, any> | null;
 }
 
 interface ProductOption {
@@ -69,7 +70,17 @@ const B2bCatalog = () => {
     image_url: string;
     product_id: string;
     category_id: string;
-  }>({ name: "", description: "", image_url: "", product_id: "", category_id: "" });
+    default_prompts: Record<string, any>;
+  }>({ name: "", description: "", image_url: "", product_id: "", category_id: "", default_prompts: {} });
+
+  // Selector de subproducto (para productos con has_subproducts=true)
+  const [apiUserId, setApiUserId] = useState<string | null>(null);
+  const [subSelector, setSubSelector] = useState<{
+    promptId: string;
+    label: string;
+    options: { value: string; displayText: string }[];
+  } | null>(null);
+  const [loadingSubSelector, setLoadingSubSelector] = useState(false);
 
   // Categorías B2B
   const [b2bCategories, setB2bCategories] = useState<B2bCategory[]>([]);
@@ -94,7 +105,8 @@ const B2bCatalog = () => {
 
   const openCreate = () => {
     setEditingId(null);
-    setDraft({ name: "", description: "", image_url: "", product_id: "", category_id: "" });
+    setDraft({ name: "", description: "", image_url: "", product_id: "", category_id: "", default_prompts: {} });
+    setSubSelector(null);
     setDialogOpen(true);
   };
 
@@ -106,7 +118,9 @@ const B2bCatalog = () => {
       image_url: it.image_url ?? "",
       product_id: it.product_id ?? "",
       category_id: it.category_id ?? "",
+      default_prompts: (it.default_prompts as any) || {},
     });
+    setSubSelector(null);
     setDialogOpen(true);
   };
 
