@@ -931,6 +931,58 @@ const B2bCatalog = () => {
                   </Command>
                 </PopoverContent>
               </Popover>
+
+              {/* Resolución del subproducto: si el calculador es un subproducto, hay que dejar el selector previo
+                  ya elegido por el admin para que el cliente final no tenga que tocarlo. */}
+              {draft.product_id && calcKindById[draft.product_id] === "subproducto" && (
+                <div className="mt-3 rounded-md border border-dashed bg-muted/40 p-3 space-y-2">
+                  <Label className="text-xs font-semibold flex items-center gap-2">
+                    <ChevronRight className="w-3 h-3" />
+                    Subproducto a aplicar — {subSelector?.label || "selector"}
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <p className="text-[11px] text-muted-foreground -mt-1">
+                    El cliente verá este artículo con esta opción ya resuelta. No podrá cambiarla.
+                  </p>
+                  {loadingSubSelector ? (
+                    <p className="text-xs text-muted-foreground">Cargando opciones…</p>
+                  ) : !subSelector ? (
+                    <p className="text-xs text-destructive">
+                      No se encontró el campo selector de subproducto. Configúralo en Gestión de productos.
+                    </p>
+                  ) : subSelector.options.length === 0 ? (
+                    <p className="text-xs text-destructive">El selector no tiene opciones disponibles.</p>
+                  ) : (
+                    <Select
+                      value={(draft.default_prompts?.[subSelector.promptId]?.value as string) || ""}
+                      onValueChange={(v) => {
+                        const opt = subSelector.options.find((o) => o.value === v);
+                        setDraft({
+                          ...draft,
+                          default_prompts: {
+                            ...(draft.default_prompts || {}),
+                            [subSelector.promptId]: {
+                              label: subSelector.label,
+                              value: v,
+                              displayText: opt?.displayText || v,
+                              order: 0,
+                            },
+                          },
+                        });
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Elige el subproducto" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subSelector.options.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>{o.displayText}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              )}
             </section>
 
             {/* 4. Imagen */}
