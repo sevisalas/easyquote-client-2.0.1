@@ -214,6 +214,11 @@ const UsuariosSuscriptor = () => {
     }
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("No hay sesión activa");
+      }
+
       const password = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
       const emailToCreate = emailNuevoUsuario.trim();
       
@@ -226,6 +231,9 @@ const UsuariosSuscriptor = () => {
           organizationId: id,
           isNewMember: true,
           displayName: nombreNuevoUsuario.trim() || emailToCreate.split('@')[0]
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
         }
       });
 
