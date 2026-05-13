@@ -364,6 +364,7 @@ const B2bCatalog = () => {
           return keys.has(id) || keys.has(label) || keys.has(cell);
         });
         if (!selector) { if (!cancelled) setSubSelector(null); return; }
+        console.log("[B2B subproducto] prompt selector encontrado:", selector);
         const rawOpts = selector.valueOptions ?? selector.options ?? selector.choices ?? selector.values ?? selector.items ?? selector.optionsList ?? [];
         const options = (Array.isArray(rawOpts) ? rawOpts : []).map((o: any) => {
           if (typeof o === "string" || typeof o === "number") {
