@@ -2,7 +2,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 import {
   authenticatePortalUser,
   getEasyQuoteTokenForOrg,
-  callEasyQuotePricing,
+  resolveEasyQuotePricing,
   applyCustomerTariff,
   extractPrice,
   getHiddenPromptKeysForProduct,
@@ -77,24 +77,9 @@ Deno.serve(async (req) => {
       item.product_id,
     );
 
-    // Forward only customer-supplied overrides; the API merges with its own defaults.
-    const inputs = Object.entries(overrides || {})
-      .filter(([, v]) => v !== undefined && v !== null && v !== "")
-      .map(([id, value]) => ({ id, value }));
-
-    let pricing = await callEasyQuotePricing(token, item.product_id, inputs);
-
-    // First entry (no overrides): the GET returns prompt defaults but the engine
-    // hasn't recalculated. Re-issue a PATCH with the defaults so we get a real price.
-    if (pricing.ok && inputs.length === 0) {
-      const defaults = (pricing.data?.prompts ?? [])
-        .filter((p: any) => p?.id != null && p?.currentValue !== undefined && p?.currentValue !== null && p?.currentValue !== "")
-        .map((p: any) => ({ id: String(p.id), value: p.currentValue }));
-      if (defaults.length > 0) {
-        const second = await callEasyQuotePricing(token, item.product_id, defaults);
-        if (second.ok) pricing = second;
-      }
-    }
+    // EasyQuote pricing is stateless: each recalculation must include the full
+    // resolved prompt state (defaults + hidden prefilled prompts + user overrides).
+    const pricing = await resolveEasyQuotePricing(token, item.product_id, overrides || {});
 
     if (!pricing.ok) {
       return new Response(JSON.stringify({
