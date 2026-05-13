@@ -11,8 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, AlertTriangle, Check, ChevronsUpDown } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Check, ChevronsUpDown, Pencil, Package } from "lucide-react";
 import { invokeEasyQuoteFunction, getEasyQuoteToken } from "@/lib/easyquoteApi";
 import { useProductCategoryMappings } from "@/hooks/useProductCategoryMappings";
 
@@ -47,12 +48,31 @@ const B2bCatalog = () => {
   const [productPickerOpen, setProductPickerOpen] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<string>("__all__");
   const [showInactive, setShowInactive] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<{
     name: string;
     description: string;
     image_url: string;
     product_id: string;
   }>({ name: "", description: "", image_url: "", product_id: "" });
+
+  const openCreate = () => {
+    setEditingId(null);
+    setDraft({ name: "", description: "", image_url: "", product_id: "" });
+    setDialogOpen(true);
+  };
+
+  const openEdit = (it: CatalogItem) => {
+    setEditingId(it.id);
+    setDraft({
+      name: it.name ?? "",
+      description: it.description ?? "",
+      image_url: it.image_url ?? "",
+      product_id: it.product_id ?? "",
+    });
+    setDialogOpen(true);
+  };
 
   const orgId = organization?.id;
 
@@ -163,22 +183,39 @@ const B2bCatalog = () => {
       return;
     }
     setSaving(true);
-    const { error } = await supabase.from("b2b_catalog_items").insert({
-      organization_id: orgId,
-      name: draft.name.trim(),
-      description: draft.description.trim() || null,
-      image_url: draft.image_url.trim() || null,
-      display_order: items.length,
-      is_active: true,
-      product_id: draft.product_id,
-      default_prompts: {},
-      exposed_prompt_ids: [],
-    } as any);
+    let error: any = null;
+    if (editingId) {
+      const res = await supabase
+        .from("b2b_catalog_items")
+        .update({
+          name: draft.name.trim(),
+          description: draft.description.trim() || null,
+          image_url: draft.image_url.trim() || null,
+          product_id: draft.product_id,
+        } as any)
+        .eq("id", editingId);
+      error = res.error;
+    } else {
+      const res = await supabase.from("b2b_catalog_items").insert({
+        organization_id: orgId,
+        name: draft.name.trim(),
+        description: draft.description.trim() || null,
+        image_url: draft.image_url.trim() || null,
+        display_order: items.length,
+        is_active: true,
+        product_id: draft.product_id,
+        default_prompts: {},
+        exposed_prompt_ids: [],
+      } as any);
+      error = res.error;
+    }
     setSaving(false);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
       return;
     }
+    setDialogOpen(false);
+    setEditingId(null);
     setDraft({ name: "", description: "", image_url: "", product_id: "" });
     load();
   };
@@ -250,12 +287,84 @@ const B2bCatalog = () => {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Añadir producto</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
+          <div>
+            <CardTitle className="text-lg">Productos publicados</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              {items.length} {items.length === 1 ? "producto" : "productos"} en el catálogo
+            </p>
+          </div>
+          <Button onClick={openCreate}>
+            <Plus className="w-4 h-4 mr-2" /> Añadir producto
+          </Button>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="md:col-span-2 space-y-2">
+        <CardContent>
+          {items.length === 0 ? (
+            <div className="py-12 flex flex-col items-center justify-center text-center gap-3 text-muted-foreground">
+              <Package className="w-10 h-10 opacity-40" />
+              <p className="text-sm">Aún no hay productos publicados en el portal B2B.</p>
+              <Button variant="outline" onClick={openCreate}>
+                <Plus className="w-4 h-4 mr-2" /> Añadir tu primer producto
+              </Button>
+            </div>
+          ) : (
+            <div className="divide-y">
+              {items.map((it) => (
+                <div key={it.id} className="py-3 flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-md bg-muted overflow-hidden flex items-center justify-center shrink-0">
+                    {it.image_url ? (
+                      <img src={it.image_url} alt={it.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <Package className="w-5 h-5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium truncate">{it.name}</div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                      {it.product_id ? (
+                        <Badge variant="outline" className="font-normal">
+                          {productNameById[it.product_id] || it.product_id}
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive">Sin producto</Badge>
+                      )}
+                      {it.description && <span className="truncate">· {it.description}</span>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5">
+                      <Switch
+                        checked={it.is_active}
+                        onCheckedChange={(v) => updateItem(it.id, { is_active: v })}
+                      />
+                      <span className="text-xs text-muted-foreground w-12">
+                        {it.is_active ? "Activo" : "Oculto"}
+                      </span>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(it)} title="Editar">
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => removeItem(it.id)} title="Eliminar">
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingId ? "Editar producto del catálogo" : "Añadir producto al catálogo"}</DialogTitle>
+            <DialogDescription>
+              La configuración (prompts, visibilidad…) se gestiona en <strong>Productos</strong>; el portal usa esa misma configuración.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-2">
               <Label>Producto</Label>
               <div className="flex flex-wrap gap-2">
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
@@ -304,7 +413,10 @@ const B2bCatalog = () => {
                       <CommandEmpty>Sin resultados.</CommandEmpty>
                       <CommandGroup>
                         {filteredProducts.map((p) => {
-                          const already = usedProductIds.has(p.id) && p.id !== draft.product_id;
+                          const already =
+                            usedProductIds.has(p.id) &&
+                            p.id !== draft.product_id &&
+                            !(editingId && items.find((i) => i.id === editingId)?.product_id === p.id);
                           return (
                             <CommandItem
                               key={p.id}
@@ -350,6 +462,14 @@ const B2bCatalog = () => {
               />
             </div>
             <div>
+              <Label>Descripción</Label>
+              <Textarea
+                value={draft.description}
+                onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+                rows={2}
+              />
+            </div>
+            <div>
               <Label>URL imagen de respaldo (opcional)</Label>
               <Input
                 value={draft.image_url}
@@ -361,77 +481,16 @@ const B2bCatalog = () => {
               </p>
             </div>
           </div>
-          <div>
-            <Label>Descripción</Label>
-            <Textarea
-              value={draft.description}
-              onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-              rows={2}
-            />
-          </div>
-          <Button onClick={addItem} disabled={saving || !draft.name.trim() || !draft.product_id}>
-            <Plus className="w-4 h-4 mr-2" /> Añadir al catálogo
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Productos publicados</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {items.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No hay productos en el catálogo todavía.</p>
-          ) : (
-            <div className="divide-y">
-              {items.map((it) => (
-                <div key={it.id} className="py-3 flex flex-col md:flex-row md:items-center gap-3">
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <Input
-                      value={it.name}
-                      onChange={(e) => setItems((p) => p.map((x) => x.id === it.id ? { ...x, name: e.target.value } : x))}
-                      onBlur={(e) => updateItem(it.id, { name: e.target.value })}
-                    />
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>Producto:</span>
-                      {it.product_id ? (
-                        <Badge variant="outline">{productNameById[it.product_id] || it.product_id}</Badge>
-                      ) : (
-                        <Badge variant="destructive">Sin producto asignado</Badge>
-                      )}
-                    </div>
-                    <Textarea
-                      value={it.description ?? ""}
-                      rows={1}
-                      onChange={(e) => setItems((p) => p.map((x) => x.id === it.id ? { ...x, description: e.target.value } : x))}
-                      onBlur={(e) => updateItem(it.id, { description: e.target.value || null })}
-                      placeholder="Descripción"
-                    />
-                    <Input
-                      value={it.image_url ?? ""}
-                      onChange={(e) => setItems((p) => p.map((x) => x.id === it.id ? { ...x, image_url: e.target.value } : x))}
-                      onBlur={(e) => updateItem(it.id, { image_url: e.target.value.trim() || null })}
-                      placeholder="URL imagen de respaldo (https://…)"
-                    />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={it.is_active}
-                        onCheckedChange={(v) => updateItem(it.id, { is_active: v })}
-                      />
-                      <span className="text-xs text-muted-foreground">{it.is_active ? "Activo" : "Oculto"}</span>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={() => removeItem(it.id)}>
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)} disabled={saving}>
+              Cancelar
+            </Button>
+            <Button onClick={addItem} disabled={saving || !draft.name.trim() || !draft.product_id}>
+              {editingId ? "Guardar cambios" : (<><Plus className="w-4 h-4 mr-2" /> Añadir al catálogo</>)}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
