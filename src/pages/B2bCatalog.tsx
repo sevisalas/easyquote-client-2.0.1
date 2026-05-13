@@ -764,10 +764,6 @@ const B2bCatalog = () => {
                     ))}
                   </SelectContent>
                 </Select>
-                <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Switch checked={showInactive} onCheckedChange={setShowInactive} />
-                  Mostrar inactivos
-                </label>
               </div>
               <Popover open={productPickerOpen} onOpenChange={setProductPickerOpen}>
                 <PopoverTrigger asChild>
