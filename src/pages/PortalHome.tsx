@@ -35,6 +35,7 @@ interface CatalogItem {
   description: string | null;
   image_url: string | null;
   product_id: string | null;
+  default_prompts?: Record<string, any> | null;
 }
 
 const statusLabel: Record<string, string> = {
@@ -137,7 +138,7 @@ const PortalHome = () => {
       if (isB2b) {
         const { data: cat } = await portalSupabase
           .from("b2b_catalog_items")
-          .select("id, name, description, image_url, product_id")
+          .select("id, name, description, image_url, product_id, default_prompts")
           .eq("organization_id", cust.organization_id)
           .eq("is_active", true)
           .order("display_order", { ascending: true });
@@ -233,11 +234,17 @@ const PortalHome = () => {
 
   const openConfig = async (item: CatalogItem) => {
     setConfigItem(item);
-    setConfigOverrides({});
+    // Pre-aplicar los valores por defecto definidos por el admin (p.ej. selector de subproducto).
+    // Estos prompts no se mostrarán al cliente y se enviarán siempre como override al motor.
+    const seeded: Record<string, any> = {};
+    Object.entries((item.default_prompts || {}) as Record<string, any>).forEach(([id, v]) => {
+      seeded[id] = (v && typeof v === "object" && "value" in v) ? (v as any).value : v;
+    });
+    setConfigOverrides(seeded);
     setLivePrice(null);
     setPricingError(null);
     setRawPrompts([]);
-    await fetchPrice(item, {});
+    await fetchPrice(item, seeded);
   };
 
   const fetchPrice = async (item: CatalogItem, overrides: Record<string, any>) => {
@@ -569,7 +576,7 @@ const PortalHome = () => {
               )}
               <div className="max-h-[45vh] overflow-y-auto pr-1">
                 <PromptsFormLite
-                  prompts={rawPrompts}
+                  prompts={rawPrompts.filter((p) => !((configItem?.default_prompts || {}) as any)[String(p.id)])}
                   values={configOverrides}
                   onChange={(id, value) =>
                     setConfigOverrides((prev) => ({ ...prev, [id]: value }))
