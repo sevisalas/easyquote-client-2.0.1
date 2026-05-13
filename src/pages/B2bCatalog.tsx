@@ -165,14 +165,14 @@ const B2bCatalog = () => {
       if (!apiUserId) return;
       const { data, error } = await supabase
         .from("product_component_settings")
-        .select("easyquote_product_id, is_component, product_type")
+        .select("easyquote_product_id, is_component, has_subproducts")
         .eq("api_user_id", apiUserId);
       if (error || !data) return;
       const map: Record<string, CalcKind> = {};
       (data as any[]).forEach((r) => {
         let kind: CalcKind = "producto";
         if (r.is_component) kind = "componente";
-        else if (r.product_type === "kit") kind = "subproducto";
+        else if (r.has_subproducts) kind = "subproducto";
         map[String(r.easyquote_product_id)] = kind;
       });
       setCalcKindById(map);
