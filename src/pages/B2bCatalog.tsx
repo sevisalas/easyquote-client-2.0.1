@@ -428,9 +428,8 @@ const B2bCatalog = () => {
       <div>
         <h1 className="text-3xl font-bold">Catálogo Portal B2B</h1>
         <p className="text-muted-foreground">
-          Publica aquí los productos que tus clientes podrán configurar desde el portal.
-          La configuración del producto (prompts, visibilidad, etc.) se gestiona en{" "}
-          <strong>Productos</strong>; el portal usa exactamente esa misma configuración.
+          Publica aquí los <strong>artículos</strong> que tus clientes podrán configurar desde el portal.
+          Cada artículo usa como calculador un producto, componente o subproducto del motor.
         </p>
       </div>
 
@@ -460,7 +459,7 @@ const B2bCatalog = () => {
             Categorías del portal
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Organiza tus productos en categorías principales y subcategorías (un solo nivel de subcategoría).
+            Organiza tus artículos en categorías principales y subcategorías (un solo nivel de subcategoría).
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -540,22 +539,22 @@ const B2bCatalog = () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
           <div>
-            <CardTitle className="text-lg">Productos publicados</CardTitle>
+            <CardTitle className="text-lg">Artículos publicados</CardTitle>
             <p className="text-sm text-muted-foreground">
-              {items.length} {items.length === 1 ? "producto" : "productos"} en el catálogo
+              {items.length} {items.length === 1 ? "artículo" : "artículos"} en el catálogo
             </p>
           </div>
           <Button onClick={openCreate}>
-            <Plus className="w-4 h-4 mr-2" /> Añadir producto
+            <Plus className="w-4 h-4 mr-2" /> Añadir artículo
           </Button>
         </CardHeader>
         <CardContent>
           {items.length === 0 ? (
             <div className="py-12 flex flex-col items-center justify-center text-center gap-3 text-muted-foreground">
               <Package className="w-10 h-10 opacity-40" />
-              <p className="text-sm">Aún no hay productos publicados en el portal B2B.</p>
+              <p className="text-sm">Aún no hay artículos publicados en el portal B2B.</p>
               <Button variant="outline" onClick={openCreate}>
-                <Plus className="w-4 h-4 mr-2" /> Añadir tu primer producto
+                <Plus className="w-4 h-4 mr-2" /> Añadir tu primer artículo
               </Button>
             </div>
           ) : (
@@ -569,45 +568,44 @@ const B2bCatalog = () => {
                       · {group.items.length}
                     </span>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
                     {group.items.map((it) => (
-                      <div key={it.id} className="border rounded-md py-3 px-3 flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-md bg-muted overflow-hidden flex items-center justify-center shrink-0">
+                      <div key={it.id} className="border rounded-md p-2.5 flex flex-col gap-2">
+                        <div className="aspect-square w-full rounded-md bg-muted overflow-hidden flex items-center justify-center">
                           {it.image_url ? (
                             <img src={it.image_url} alt={it.name} className="w-full h-full object-cover" />
                           ) : (
-                            <Package className="w-5 h-5 text-muted-foreground" />
+                            <Package className="w-6 h-6 text-muted-foreground" />
                           )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate">{it.name}</div>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                            {it.product_id ? (
-                              <Badge variant="outline" className="font-normal">
-                                {productNameById[it.product_id] || it.product_id}
-                              </Badge>
-                            ) : (
-                              <Badge variant="destructive">Sin producto</Badge>
-                            )}
-                            {it.description && <span className="truncate">· {it.description}</span>}
-                          </div>
+                        <div className="min-w-0">
+                          <div className="font-medium text-sm truncate" title={it.name}>{it.name}</div>
+                          {it.product_id ? (
+                            <div className="text-[10px] text-muted-foreground truncate" title={productNameById[it.product_id] || it.product_id}>
+                              calc: {productNameById[it.product_id] || it.product_id}
+                            </div>
+                          ) : (
+                            <Badge variant="destructive" className="text-[10px] mt-0.5">Sin calculador</Badge>
+                          )}
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center justify-between gap-1 mt-auto pt-1 border-t">
                           <div className="flex items-center gap-1.5">
                             <Switch
                               checked={it.is_active}
                               onCheckedChange={(v) => updateItem(it.id, { is_active: v })}
                             />
-                            <span className="text-xs text-muted-foreground w-12">
+                            <span className="text-[10px] text-muted-foreground">
                               {it.is_active ? "Activo" : "Oculto"}
                             </span>
                           </div>
-                          <Button variant="ghost" size="icon" onClick={() => openEdit(it)} title="Editar">
-                            <Pencil className="w-4 h-4" />
+                          <div className="flex items-center">
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(it)} title="Editar">
+                            <Pencil className="w-3.5 h-3.5" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => removeItem(it.id)} title="Eliminar">
-                            <Trash2 className="w-4 h-4 text-destructive" />
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeItem(it.id)} title="Eliminar">
+                            <Trash2 className="w-3.5 h-3.5 text-destructive" />
                           </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -624,9 +622,9 @@ const B2bCatalog = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editingId ? "Editar producto del catálogo" : "Añadir producto al catálogo"}</DialogTitle>
+            <DialogTitle>{editingId ? "Editar artículo del catálogo" : "Añadir artículo al catálogo"}</DialogTitle>
             <DialogDescription>
-              La configuración (prompts, visibilidad…) se gestiona en <strong>Productos</strong>; el portal usa esa misma configuración.
+              Define el artículo que verá el cliente y elige qué <strong>calculador</strong> (producto, componente o subproducto) usará para el precio.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
