@@ -35,6 +35,7 @@ interface CatalogItem {
   description: string | null;
   image_url: string | null;
   product_id: string | null;
+  default_prompts?: Record<string, any> | null;
 }
 
 const statusLabel: Record<string, string> = {
