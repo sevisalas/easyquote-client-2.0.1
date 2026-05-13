@@ -175,12 +175,13 @@ const B2bCatalog = () => {
         .select("api_user_id")
         .eq("id", orgId)
         .maybeSingle();
-      const apiUserId = (org as any)?.api_user_id;
-      if (!apiUserId) return;
+      const aui = (org as any)?.api_user_id;
+      if (!aui) return;
+      setApiUserId(aui);
       const { data, error } = await supabase
         .from("product_component_settings")
         .select("easyquote_product_id, is_component, has_subproducts")
-        .eq("api_user_id", apiUserId);
+        .eq("api_user_id", aui);
       if (error || !data) return;
       const map: Record<string, CalcKind> = {};
       (data as any[]).forEach((r) => {
@@ -312,6 +313,66 @@ const B2bCatalog = () => {
     setDraft({ name: "", description: "", image_url: "", product_id: "", category_id: "" });
     load();
   };
+
+  // Cargar el selector de subproducto cuando se elige un producto con has_subproducts.
+  // Se obtiene el prompt marcado is_subproduct_selector y sus opciones desde easyquote-pricing.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const pid = draft.product_id;
+      if (!pid || !apiUserId) { setSubSelector(null); return; }
+      const kind = calcKindById[pid];
+      if (kind !== "subproducto") { setSubSelector(null); return; }
+      setLoadingSubSelector(true);
+      try {
+        // 1) Encontrar qué prompt es el selector (por celda/nombre/label)
+        const { data: settings } = await supabase
+          .from("product_prompt_settings")
+          .select("prompt_name, label, is_subproduct_selector")
+          .eq("api_user_id", apiUserId)
+          .eq("easyquote_product_id", pid)
+          .eq("is_subproduct_selector", true);
+        const keys = new Set<string>();
+        (settings as any[] || []).forEach((s) => {
+          if (s.prompt_name) keys.add(String(s.prompt_name).trim().toUpperCase());
+          if (s.label) keys.add(String(s.label).trim().toUpperCase());
+        });
+        if (keys.size === 0) {
+          if (!cancelled) setSubSelector(null);
+          return;
+        }
+        // 2) Obtener prompts + valueOptions del motor
+        const token = await getEasyQuoteToken();
+        if (!token) { if (!cancelled) setSubSelector(null); return; }
+        const { data } = await invokeEasyQuoteFunction<any>("easyquote-pricing", { token, productId: pid });
+        const prompts: any[] = Array.isArray(data?.prompts) ? data.prompts : [];
+        const norm = (v: any) => String(v ?? "").trim().toUpperCase();
+        const selector = prompts.find((p) => {
+          const id = norm(p?.id);
+          const label = norm(p?.label ?? p?.promptText ?? p?.name);
+          const cell = norm(p?.promptCell ?? p?.cell);
+          return keys.has(id) || keys.has(label) || keys.has(cell);
+        });
+        if (!selector) { if (!cancelled) setSubSelector(null); return; }
+        const options = (selector.valueOptions || []).map((o: any) => ({
+          value: String(o?.value ?? o?.id ?? o?.displayText ?? ""),
+          displayText: String(o?.displayText ?? o?.label ?? o?.value ?? ""),
+        })).filter((o: any) => o.value);
+        if (!cancelled) {
+          setSubSelector({
+            promptId: String(selector.id),
+            label: String(selector.promptText ?? selector.label ?? selector.name ?? "Subproducto"),
+            options,
+          });
+        }
+      } catch (e) {
+        if (!cancelled) setSubSelector(null);
+      } finally {
+        if (!cancelled) setLoadingSubSelector(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [draft.product_id, apiUserId, calcKindById]);
 
   const updateItem = async (id: string, patch: Partial<CatalogItem>) => {
     const { error } = await supabase.from("b2b_catalog_items").update(patch as any).eq("id", id);
