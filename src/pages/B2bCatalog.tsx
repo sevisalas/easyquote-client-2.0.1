@@ -321,6 +321,39 @@ const B2bCatalog = () => {
     setItems((prev) => prev.filter((i) => i.id !== id));
   };
 
+  const uploadDraftImage = async (file: File) => {
+    if (!orgId || !file) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Archivo no válido", description: "Sube una imagen (PNG, JPG, WebP…)", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Imagen demasiado grande", description: "Máximo 5 MB", variant: "destructive" });
+      return;
+    }
+    setUploadingImage(true);
+    const ext = file.name.split(".").pop() || "png";
+    const path = `${orgId}/b2b/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("product-images").upload(path, file, {
+      cacheControl: "3600",
+      upsert: false,
+    });
+    if (upErr) {
+      setUploadingImage(false);
+      toast({ title: "Error al subir", description: upErr.message, variant: "destructive" });
+      return;
+    }
+    const { data: signed } = await supabase.storage
+      .from("product-images")
+      .createSignedUrl(path, 60 * 60 * 24 * 365 * 5);
+    const url = signed?.signedUrl || "";
+    setUploadingImage(false);
+    if (url) {
+      setDraft((d) => ({ ...d, image_url: url }));
+      toast({ title: "Imagen subida" });
+    }
+  };
+
   // ===== Categorías B2B: helpers + CRUD =====
   const rootCategories = useMemo(
     () => b2bCategories.filter((c) => !c.parent_id),
