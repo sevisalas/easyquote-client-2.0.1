@@ -155,12 +155,10 @@ export function buildResolvedPricingInputs(
   const resolvedOverrides = extractPromptOverrideValues(overrides);
   const prompts = Array.isArray(pricingData?.prompts) ? pricingData.prompts : [];
   const inputs: Array<{ id: string; value: any }> = [];
-  const seen = new Set<string>();
 
   for (const prompt of prompts) {
     const id = String(prompt?.id ?? "").trim();
     if (!id) continue;
-    seen.add(id);
 
     const value = resolvedOverrides[id] !== undefined
       ? resolvedOverrides[id]
@@ -168,13 +166,6 @@ export function buildResolvedPricingInputs(
 
     if (value === undefined || value === null || value === "") continue;
     inputs.push({ id, value });
-  }
-
-  for (const [id, value] of Object.entries(resolvedOverrides)) {
-    const normalizedId = String(id).trim();
-    if (!normalizedId || seen.has(normalizedId)) continue;
-    if (value === undefined || value === null || value === "") continue;
-    inputs.push({ id: normalizedId, value });
   }
 
   return inputs;
