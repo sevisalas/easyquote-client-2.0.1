@@ -738,7 +738,7 @@ const B2bCatalog = () => {
                 <Calculator className="w-4 h-4" /> 3. Calculador asignado
               </Label>
               <p className="text-xs text-muted-foreground -mt-1">
-                Elige qué elemento del motor calculará el precio: un <strong>producto</strong>, un <strong>componente</strong> o un <strong>subproducto (kit)</strong>.
+                Elige qué elemento del motor calculará el precio: un <strong>producto</strong>, un <strong>componente</strong> o un <strong>subproducto</strong>.
               </p>
               <div className="flex flex-wrap gap-2">
                 <Select value={kindFilter} onValueChange={(v) => setKindFilter(v as any)}>
@@ -749,7 +749,7 @@ const B2bCatalog = () => {
                     <SelectItem value="__all__">Todos los tipos</SelectItem>
                     <SelectItem value="producto">Producto</SelectItem>
                     <SelectItem value="componente">Componente</SelectItem>
-                    <SelectItem value="kit">Subproducto (kit)</SelectItem>
+                    <SelectItem value="subproducto">Subproducto</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
