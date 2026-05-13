@@ -628,8 +628,19 @@ const B2bCatalog = () => {
                         <div className="min-w-0">
                           <div className="font-medium text-sm truncate" title={it.name}>{it.name}</div>
                           {it.product_id ? (
-                            <div className="text-[10px] text-muted-foreground truncate" title={productNameById[it.product_id] || it.product_id}>
-                              calc: {productNameById[it.product_id] || it.product_id}
+                            <div className="flex items-center gap-1 mt-0.5 min-w-0">
+                              <Badge
+                                variant={kindBadgeVariant[calcKindById[it.product_id] || "producto"]}
+                                className="text-[9px] px-1 py-0 shrink-0"
+                              >
+                                {kindLabel[calcKindById[it.product_id] || "producto"]}
+                              </Badge>
+                              <span
+                                className="text-[10px] text-muted-foreground truncate"
+                                title={productNameById[it.product_id] || it.product_id}
+                              >
+                                {productNameById[it.product_id] || it.product_id}
+                              </span>
                             </div>
                           ) : (
                             <Badge variant="destructive" className="text-[10px] mt-0.5">Sin calculador</Badge>
