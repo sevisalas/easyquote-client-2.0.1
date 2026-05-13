@@ -138,7 +138,7 @@ const PortalHome = () => {
       if (isB2b) {
         const { data: cat } = await portalSupabase
           .from("b2b_catalog_items")
-          .select("id, name, description, image_url, product_id")
+          .select("id, name, description, image_url, product_id, default_prompts")
           .eq("organization_id", cust.organization_id)
           .eq("is_active", true)
           .order("display_order", { ascending: true });
