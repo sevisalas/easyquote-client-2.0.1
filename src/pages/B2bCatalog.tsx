@@ -86,6 +86,7 @@ const B2bCatalog = () => {
   const [b2bCategories, setB2bCategories] = useState<B2bCategory[]>([]);
   const [newCatName, setNewCatName] = useState("");
   const [newCatParent, setNewCatParent] = useState<string>("__root__");
+  const [showAddCategoryForm, setShowAddCategoryForm] = useState(false);
 
   // Clasificación de los artículos de EasyQuote para el portal (producto, componente, subproducto)
   // según product_component_settings (compartida por api_user_id).
@@ -597,34 +598,7 @@ const B2bCatalog = () => {
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-end gap-2">
-            <div className="flex-1 min-w-[200px]">
-              <Label>Nombre de la categoría</Label>
-              <Input
-                value={newCatName}
-                onChange={(e) => setNewCatName(e.target.value)}
-                placeholder="Ej: Papelería"
-              />
-            </div>
-            <div className="w-[240px]">
-              <Label>Categoría padre (opcional)</Label>
-              <Select value={newCatParent} onValueChange={setNewCatParent}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__root__">— Categoría principal —</SelectItem>
-                  {rootCategories.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button onClick={addB2bCategory} disabled={!newCatName.trim()}>
-              <Plus className="w-4 h-4 mr-2" /> Crear
-            </Button>
-          </div>
-
+          {/* Árbol de categorías primero */}
           {b2bCategories.length === 0 ? (
             <p className="text-sm text-muted-foreground">Aún no has creado ninguna categoría.</p>
           ) : (
@@ -665,6 +639,48 @@ const B2bCatalog = () => {
               ))}
             </div>
           )}
+
+          {/* Botón Añadir nuevo que despliega el formulario */}
+          <div className="pt-2 border-t">
+            {!showAddCategoryForm ? (
+              <Button variant="outline" onClick={() => setShowAddCategoryForm(true)} className="w-full">
+                <Plus className="w-4 h-4 mr-2" /> Añadir nueva categoría
+              </Button>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-end gap-2">
+                  <div className="flex-1 min-w-[200px]">
+                    <Label>Nombre de la categoría</Label>
+                    <Input
+                      value={newCatName}
+                      onChange={(e) => setNewCatName(e.target.value)}
+                      placeholder="Ej: Papelería"
+                    />
+                  </div>
+                  <div className="w-[240px]">
+                    <Label>Categoría padre (opcional)</Label>
+                    <Select value={newCatParent} onValueChange={setNewCatParent}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__root__">— Categoría principal —</SelectItem>
+                        {rootCategories.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button onClick={addB2bCategory} disabled={!newCatName.trim()}>
+                    <Plus className="w-4 h-4 mr-2" /> Crear
+                  </Button>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => { setShowAddCategoryForm(false); setNewCatName(""); setNewCatParent("__root__"); }}>
+                  Cancelar
+                </Button>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
         </div>
