@@ -27,6 +27,7 @@ interface CatalogItem {
   is_active: boolean;
   product_id: string | null;
   category_id: string | null;
+  default_prompts?: Record<string, any> | null;
 }
 
 interface ProductOption {
@@ -69,7 +70,17 @@ const B2bCatalog = () => {
     image_url: string;
     product_id: string;
     category_id: string;
-  }>({ name: "", description: "", image_url: "", product_id: "", category_id: "" });
+    default_prompts: Record<string, any>;
+  }>({ name: "", description: "", image_url: "", product_id: "", category_id: "", default_prompts: {} });
+
+  // Selector de subproducto (para productos con has_subproducts=true)
+  const [apiUserId, setApiUserId] = useState<string | null>(null);
+  const [subSelector, setSubSelector] = useState<{
+    promptId: string;
+    label: string;
+    options: { value: string; displayText: string }[];
+  } | null>(null);
+  const [loadingSubSelector, setLoadingSubSelector] = useState(false);
 
   // Categorías B2B
   const [b2bCategories, setB2bCategories] = useState<B2bCategory[]>([]);
@@ -94,7 +105,8 @@ const B2bCatalog = () => {
 
   const openCreate = () => {
     setEditingId(null);
-    setDraft({ name: "", description: "", image_url: "", product_id: "", category_id: "" });
+    setDraft({ name: "", description: "", image_url: "", product_id: "", category_id: "", default_prompts: {} });
+    setSubSelector(null);
     setDialogOpen(true);
   };
 
@@ -106,7 +118,9 @@ const B2bCatalog = () => {
       image_url: it.image_url ?? "",
       product_id: it.product_id ?? "",
       category_id: it.category_id ?? "",
+      default_prompts: (it.default_prompts as any) || {},
     });
+    setSubSelector(null);
     setDialogOpen(true);
   };
 
@@ -161,12 +175,13 @@ const B2bCatalog = () => {
         .select("api_user_id")
         .eq("id", orgId)
         .maybeSingle();
-      const apiUserId = (org as any)?.api_user_id;
-      if (!apiUserId) return;
+      const aui = (org as any)?.api_user_id;
+      if (!aui) return;
+      setApiUserId(aui);
       const { data, error } = await supabase
         .from("product_component_settings")
         .select("easyquote_product_id, is_component, has_subproducts")
-        .eq("api_user_id", apiUserId);
+        .eq("api_user_id", aui);
       if (error || !data) return;
       const map: Record<string, CalcKind> = {};
       (data as any[]).forEach((r) => {
@@ -259,6 +274,14 @@ const B2bCatalog = () => {
       toast({ title: "Faltan datos", description: "Selecciona un producto y un nombre" });
       return;
     }
+    // Si el calculador es un subproducto, exigir resolución del selector
+    if (subSelector && subSelector.options.length > 0) {
+      const v = (draft.default_prompts || {})[subSelector.promptId]?.value;
+      if (!v) {
+        toast({ title: "Falta el subproducto", description: `Resuelve el campo "${subSelector.label}" para que quede asignado automáticamente al cliente.`, variant: "destructive" });
+        return;
+      }
+    }
     setSaving(true);
     let error: any = null;
     if (editingId) {
@@ -270,6 +293,7 @@ const B2bCatalog = () => {
           image_url: draft.image_url.trim() || null,
           product_id: draft.product_id,
           category_id: draft.category_id || null,
+          default_prompts: draft.default_prompts || {},
         } as any)
         .eq("id", editingId);
       error = res.error;
@@ -283,7 +307,7 @@ const B2bCatalog = () => {
         is_active: true,
         product_id: draft.product_id,
         category_id: draft.category_id || null,
-        default_prompts: {},
+        default_prompts: draft.default_prompts || {},
         exposed_prompt_ids: [],
       } as any);
       error = res.error;
@@ -295,9 +319,70 @@ const B2bCatalog = () => {
     }
     setDialogOpen(false);
     setEditingId(null);
-    setDraft({ name: "", description: "", image_url: "", product_id: "", category_id: "" });
+    setDraft({ name: "", description: "", image_url: "", product_id: "", category_id: "", default_prompts: {} });
+    setSubSelector(null);
     load();
   };
+
+  // Cargar el selector de subproducto cuando se elige un producto con has_subproducts.
+  // Se obtiene el prompt marcado is_subproduct_selector y sus opciones desde easyquote-pricing.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const pid = draft.product_id;
+      if (!pid || !apiUserId) { setSubSelector(null); return; }
+      const kind = calcKindById[pid];
+      if (kind !== "subproducto") { setSubSelector(null); return; }
+      setLoadingSubSelector(true);
+      try {
+        // 1) Encontrar qué prompt es el selector (por celda/nombre/label)
+        const { data: settings } = await supabase
+          .from("product_prompt_settings")
+          .select("prompt_name, label, is_subproduct_selector")
+          .eq("api_user_id", apiUserId)
+          .eq("easyquote_product_id", pid)
+          .eq("is_subproduct_selector", true);
+        const keys = new Set<string>();
+        (settings as any[] || []).forEach((s) => {
+          if (s.prompt_name) keys.add(String(s.prompt_name).trim().toUpperCase());
+          if (s.label) keys.add(String(s.label).trim().toUpperCase());
+        });
+        if (keys.size === 0) {
+          if (!cancelled) setSubSelector(null);
+          return;
+        }
+        // 2) Obtener prompts + valueOptions del motor
+        const token = await getEasyQuoteToken();
+        if (!token) { if (!cancelled) setSubSelector(null); return; }
+        const { data } = await invokeEasyQuoteFunction<any>("easyquote-pricing", { token, productId: pid });
+        const prompts: any[] = Array.isArray(data?.prompts) ? data.prompts : [];
+        const norm = (v: any) => String(v ?? "").trim().toUpperCase();
+        const selector = prompts.find((p) => {
+          const id = norm(p?.id);
+          const label = norm(p?.label ?? p?.promptText ?? p?.name);
+          const cell = norm(p?.promptCell ?? p?.cell);
+          return keys.has(id) || keys.has(label) || keys.has(cell);
+        });
+        if (!selector) { if (!cancelled) setSubSelector(null); return; }
+        const options = (selector.valueOptions || []).map((o: any) => ({
+          value: String(o?.value ?? o?.id ?? o?.displayText ?? ""),
+          displayText: String(o?.displayText ?? o?.label ?? o?.value ?? ""),
+        })).filter((o: any) => o.value);
+        if (!cancelled) {
+          setSubSelector({
+            promptId: String(selector.id),
+            label: String(selector.promptText ?? selector.label ?? selector.name ?? "Subproducto"),
+            options,
+          });
+        }
+      } catch (e) {
+        if (!cancelled) setSubSelector(null);
+      } finally {
+        if (!cancelled) setLoadingSubSelector(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [draft.product_id, apiUserId, calcKindById]);
 
   const updateItem = async (id: string, patch: Partial<CatalogItem>) => {
     const { error } = await supabase.from("b2b_catalog_items").update(patch as any).eq("id", id);
@@ -846,6 +931,58 @@ const B2bCatalog = () => {
                   </Command>
                 </PopoverContent>
               </Popover>
+
+              {/* Resolución del subproducto: si el calculador es un subproducto, hay que dejar el selector previo
+                  ya elegido por el admin para que el cliente final no tenga que tocarlo. */}
+              {draft.product_id && calcKindById[draft.product_id] === "subproducto" && (
+                <div className="mt-3 rounded-md border border-dashed bg-muted/40 p-3 space-y-2">
+                  <Label className="text-xs font-semibold flex items-center gap-2">
+                    <ChevronRight className="w-3 h-3" />
+                    Subproducto a aplicar — {subSelector?.label || "selector"}
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <p className="text-[11px] text-muted-foreground -mt-1">
+                    El cliente verá este artículo con esta opción ya resuelta. No podrá cambiarla.
+                  </p>
+                  {loadingSubSelector ? (
+                    <p className="text-xs text-muted-foreground">Cargando opciones…</p>
+                  ) : !subSelector ? (
+                    <p className="text-xs text-destructive">
+                      No se encontró el campo selector de subproducto. Configúralo en Gestión de productos.
+                    </p>
+                  ) : subSelector.options.length === 0 ? (
+                    <p className="text-xs text-destructive">El selector no tiene opciones disponibles.</p>
+                  ) : (
+                    <Select
+                      value={(draft.default_prompts?.[subSelector.promptId]?.value as string) || ""}
+                      onValueChange={(v) => {
+                        const opt = subSelector.options.find((o) => o.value === v);
+                        setDraft({
+                          ...draft,
+                          default_prompts: {
+                            ...(draft.default_prompts || {}),
+                            [subSelector.promptId]: {
+                              label: subSelector.label,
+                              value: v,
+                              displayText: opt?.displayText || v,
+                              order: 0,
+                            },
+                          },
+                        });
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Elige el subproducto" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subSelector.options.map((o) => (
+                          <SelectItem key={o.value} value={o.value}>{o.displayText}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              )}
             </section>
 
             {/* 4. Imagen */}
