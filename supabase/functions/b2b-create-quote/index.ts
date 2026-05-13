@@ -2,7 +2,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 import {
   authenticatePortalUser,
   getEasyQuoteTokenForOrg,
-  callEasyQuotePricing,
+  resolveEasyQuotePricing,
   applyCustomerTariff,
   extractPrice,
 } from "../_shared/b2b-pricing-core.ts";
@@ -85,13 +85,10 @@ Deno.serve(async (req) => {
       }
       if (!def.product_id) continue;
 
-      // The product is the source of truth (same as the main app). The API merges
-      // its own defaults; the portal only forwards what the customer changed.
       const overrides = (it.overrides || {}) as Record<string, any>;
-      const inputs = Object.entries(overrides)
-        .filter(([, v]) => v !== undefined && v !== null && v !== "")
-        .map(([id, value]) => ({ id, value }));
-      const pricing = await callEasyQuotePricing(token, def.product_id, inputs);
+      // Recalculate with the full resolved state (GET defaults + PATCH full prompt set),
+      // so subproducts and hidden prefilled prompts are always included.
+      const pricing = await resolveEasyQuotePricing(token, def.product_id, overrides);
       if (!pricing.ok) {
         return new Response(JSON.stringify({ error: `Error calculando precio: ${def.name}` }), {
           status: 502,
