@@ -97,9 +97,19 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Check if user already exists
-    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
-    const existingUser = existingUsers.users?.find(u => u.email === email)
+    // Check if user already exists (paginate — default page size is 50)
+    const targetEmail = email.toLowerCase()
+    let existingUser: any = null
+    for (let page = 1; page <= 50; page++) {
+      const { data: pageData, error: listErr } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 })
+      if (listErr) {
+        console.error('Error listing users on page', page, listErr)
+        break
+      }
+      const found = pageData.users?.find(u => (u.email || '').toLowerCase() === targetEmail)
+      if (found) { existingUser = found; break }
+      if (!pageData.users || pageData.users.length < 1000) break
+    }
     
     let finalUser = null;
 
