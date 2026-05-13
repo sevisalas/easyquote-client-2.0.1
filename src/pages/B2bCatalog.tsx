@@ -684,16 +684,14 @@ const B2bCatalog = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">Sin categoría</SelectItem>
-                  {rootCategories.map((root) => (
-                    <>
-                      <SelectItem key={root.id} value={root.id}>{root.name}</SelectItem>
-                      {(subCategoriesByParent[root.id] || []).map((sub) => (
-                        <SelectItem key={sub.id} value={sub.id}>
-                          {"\u00A0\u00A0\u00A0\u00A0↳ "}{sub.name}
-                        </SelectItem>
-                      ))}
-                    </>
-                  ))}
+                  {rootCategories.flatMap((root) => [
+                    <SelectItem key={root.id} value={root.id}>{root.name}</SelectItem>,
+                    ...(subCategoriesByParent[root.id] || []).map((sub) => (
+                      <SelectItem key={sub.id} value={sub.id}>
+                        {"\u00A0\u00A0\u00A0\u00A0↳ "}{sub.name}
+                      </SelectItem>
+                    )),
+                  ])}
                 </SelectContent>
               </Select>
             </div>
