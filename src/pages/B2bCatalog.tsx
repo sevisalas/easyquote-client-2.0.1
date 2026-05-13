@@ -622,9 +622,9 @@ const B2bCatalog = () => {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editingId ? "Editar producto del catálogo" : "Añadir producto al catálogo"}</DialogTitle>
+            <DialogTitle>{editingId ? "Editar artículo del catálogo" : "Añadir artículo al catálogo"}</DialogTitle>
             <DialogDescription>
-              La configuración (prompts, visibilidad…) se gestiona en <strong>Productos</strong>; el portal usa esa misma configuración.
+              Define el artículo que verá el cliente y elige qué <strong>calculador</strong> (producto, componente o subproducto) usará para el precio.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3">
