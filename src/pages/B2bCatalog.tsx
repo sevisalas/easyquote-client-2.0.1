@@ -310,7 +310,8 @@ const B2bCatalog = () => {
     }
     setDialogOpen(false);
     setEditingId(null);
-    setDraft({ name: "", description: "", image_url: "", product_id: "", category_id: "" });
+    setDraft({ name: "", description: "", image_url: "", product_id: "", category_id: "", default_prompts: {} });
+    setSubSelector(null);
     load();
   };
 
