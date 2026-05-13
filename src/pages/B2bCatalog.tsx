@@ -36,6 +36,8 @@ interface ProductOption {
   isActive: boolean;
 }
 
+type CalcKind = "producto" | "compuesto" | "componente" | "kit";
+
 interface B2bCategory {
   id: string;
   organization_id: string;
@@ -72,6 +74,11 @@ const B2bCatalog = () => {
   const [b2bCategories, setB2bCategories] = useState<B2bCategory[]>([]);
   const [newCatName, setNewCatName] = useState("");
   const [newCatParent, setNewCatParent] = useState<string>("__root__");
+
+  // Clasificación de los productos de EasyQuote (producto, compuesto, componente, kit)
+  // según product_component_settings (compartida por api_user_id).
+  const [calcKindById, setCalcKindById] = useState<Record<string, CalcKind>>({});
+  const [kindFilter, setKindFilter] = useState<"__all__" | CalcKind>("__all__");
 
   const openCreate = () => {
     setEditingId(null);
@@ -132,6 +139,35 @@ const B2bCatalog = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orgId]);
 
+  // Cargar la clasificación (producto / compuesto / componente / kit) para los
+  // productos de la org actual usando product_component_settings (api_user_id).
+  useEffect(() => {
+    (async () => {
+      if (!orgId) return;
+      const { data: org } = await supabase
+        .from("organizations")
+        .select("api_user_id")
+        .eq("id", orgId)
+        .maybeSingle();
+      const apiUserId = (org as any)?.api_user_id;
+      if (!apiUserId) return;
+      const { data, error } = await supabase
+        .from("product_component_settings")
+        .select("easyquote_product_id, is_component, product_type")
+        .eq("api_user_id", apiUserId);
+      if (error || !data) return;
+      const map: Record<string, CalcKind> = {};
+      (data as any[]).forEach((r) => {
+        let kind: CalcKind = "producto";
+        if (r.is_component) kind = "componente";
+        else if (r.product_type === "kit") kind = "kit";
+        else if (r.product_type === "compuesto") kind = "compuesto";
+        map[String(r.easyquote_product_id)] = kind;
+      });
+      setCalcKindById(map);
+    })();
+  }, [orgId]);
+
   useEffect(() => {
     (async () => {
       const token = await getEasyQuoteToken();
@@ -186,9 +222,13 @@ const B2bCatalog = () => {
       } else if (categoryFilter !== "__all__") {
         if (productCategoryById[p.id] !== categoryFilter) return false;
       }
+      if (kindFilter !== "__all__") {
+        const k = calcKindById[p.id] || "producto";
+        if (k !== kindFilter) return false;
+      }
       return true;
     });
-  }, [products, categoryFilter, showInactive, productCategoryById]);
+  }, [products, categoryFilter, showInactive, productCategoryById, kindFilter, calcKindById]);
 
   const toggleSelfService = async (v: boolean) => {
     if (!orgId) return;
