@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, AlertTriangle, Check, ChevronsUpDown, Pencil, Package } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Check, ChevronsUpDown, Pencil, Package, FolderTree, ChevronRight } from "lucide-react";
 import { invokeEasyQuoteFunction, getEasyQuoteToken } from "@/lib/easyquoteApi";
 import { useProductCategoryMappings } from "@/hooks/useProductCategoryMappings";
 
@@ -26,6 +26,7 @@ interface CatalogItem {
   display_order: number;
   is_active: boolean;
   product_id: string | null;
+  category_id: string | null;
 }
 
 interface ProductOption {
@@ -33,6 +34,15 @@ interface ProductOption {
   name: string;
   category: string;
   isActive: boolean;
+}
+
+interface B2bCategory {
+  id: string;
+  organization_id: string;
+  parent_id: string | null;
+  name: string;
+  display_order: number;
+  is_active: boolean;
 }
 
 const B2bCatalog = () => {
@@ -55,11 +65,17 @@ const B2bCatalog = () => {
     description: string;
     image_url: string;
     product_id: string;
-  }>({ name: "", description: "", image_url: "", product_id: "" });
+    category_id: string;
+  }>({ name: "", description: "", image_url: "", product_id: "", category_id: "" });
+
+  // Categorías B2B
+  const [b2bCategories, setB2bCategories] = useState<B2bCategory[]>([]);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatParent, setNewCatParent] = useState<string>("__root__");
 
   const openCreate = () => {
     setEditingId(null);
-    setDraft({ name: "", description: "", image_url: "", product_id: "" });
+    setDraft({ name: "", description: "", image_url: "", product_id: "", category_id: "" });
     setDialogOpen(true);
   };
 
@@ -70,6 +86,7 @@ const B2bCatalog = () => {
       description: it.description ?? "",
       image_url: it.image_url ?? "",
       product_id: it.product_id ?? "",
+      category_id: it.category_id ?? "",
     });
     setDialogOpen(true);
   };
@@ -98,6 +115,15 @@ const B2bCatalog = () => {
     } else {
       setItems(((data as any[]) || []) as CatalogItem[]);
     }
+
+    const { data: cats, error: catsErr } = await (supabase as any)
+      .from("b2b_categories")
+      .select("*")
+      .eq("organization_id", orgId)
+      .order("display_order", { ascending: true })
+      .order("name", { ascending: true });
+    if (!catsErr) setB2bCategories(((cats as any[]) || []) as B2bCategory[]);
+
     setLoading(false);
   };
 
@@ -192,6 +218,7 @@ const B2bCatalog = () => {
           description: draft.description.trim() || null,
           image_url: draft.image_url.trim() || null,
           product_id: draft.product_id,
+          category_id: draft.category_id || null,
         } as any)
         .eq("id", editingId);
       error = res.error;
@@ -204,6 +231,7 @@ const B2bCatalog = () => {
         display_order: items.length,
         is_active: true,
         product_id: draft.product_id,
+        category_id: draft.category_id || null,
         default_prompts: {},
         exposed_prompt_ids: [],
       } as any);
@@ -216,7 +244,7 @@ const B2bCatalog = () => {
     }
     setDialogOpen(false);
     setEditingId(null);
-    setDraft({ name: "", description: "", image_url: "", product_id: "" });
+    setDraft({ name: "", description: "", image_url: "", product_id: "", category_id: "" });
     load();
   };
 
@@ -238,6 +266,102 @@ const B2bCatalog = () => {
     }
     setItems((prev) => prev.filter((i) => i.id !== id));
   };
+
+  // ===== Categorías B2B: helpers + CRUD =====
+  const rootCategories = useMemo(
+    () => b2bCategories.filter((c) => !c.parent_id),
+    [b2bCategories],
+  );
+  const subCategoriesByParent = useMemo(() => {
+    const map: Record<string, B2bCategory[]> = {};
+    b2bCategories.forEach((c) => {
+      if (c.parent_id) {
+        (map[c.parent_id] ||= []).push(c);
+      }
+    });
+    return map;
+  }, [b2bCategories]);
+  const categoryById = useMemo(
+    () => Object.fromEntries(b2bCategories.map((c) => [c.id, c])),
+    [b2bCategories],
+  );
+  const categoryFullName = (id: string | null): string => {
+    if (!id) return "Sin categoría";
+    const c = categoryById[id];
+    if (!c) return "Sin categoría";
+    if (c.parent_id && categoryById[c.parent_id]) {
+      return `${categoryById[c.parent_id].name} › ${c.name}`;
+    }
+    return c.name;
+  };
+
+  const addB2bCategory = async () => {
+    if (!orgId || !newCatName.trim()) return;
+    const parentId = newCatParent === "__root__" ? null : newCatParent;
+    const { error } = await (supabase as any).from("b2b_categories").insert({
+      organization_id: orgId,
+      parent_id: parentId,
+      name: newCatName.trim(),
+      display_order: b2bCategories.filter((c) => c.parent_id === parentId).length,
+      is_active: true,
+    });
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    setNewCatName("");
+    setNewCatParent("__root__");
+    load();
+  };
+
+  const renameB2bCategory = async (id: string, name: string) => {
+    if (!name.trim()) return;
+    const { error } = await (supabase as any)
+      .from("b2b_categories")
+      .update({ name: name.trim() })
+      .eq("id", id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    setB2bCategories((prev) => prev.map((c) => (c.id === id ? { ...c, name: name.trim() } : c)));
+  };
+
+  const removeB2bCategory = async (id: string) => {
+    const subs = subCategoriesByParent[id]?.length || 0;
+    const used = items.filter((i) => i.category_id === id).length;
+    const msg =
+      subs > 0
+        ? `Esta categoría tiene ${subs} subcategoría(s). Se eliminarán también. ¿Continuar?`
+        : used > 0
+        ? `${used} producto(s) quedarán sin categoría. ¿Continuar?`
+        : "¿Eliminar esta categoría?";
+    if (!confirm(msg)) return;
+    const { error } = await (supabase as any).from("b2b_categories").delete().eq("id", id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+      return;
+    }
+    load();
+  };
+
+  // Agrupación de items por categoría (para la lista)
+  const itemsGrouped = useMemo(() => {
+    const groups = new Map<string, { key: string; label: string; items: CatalogItem[] }>();
+    items.forEach((it) => {
+      const key = it.category_id || "__none__";
+      const label = it.category_id ? categoryFullName(it.category_id) : "Sin categoría";
+      if (!groups.has(key)) groups.set(key, { key, label, items: [] });
+      groups.get(key)!.items.push(it);
+    });
+    // Sort: with-category alphabetically, "Sin categoría" last
+    return Array.from(groups.values()).sort((a, b) => {
+      if (a.key === "__none__") return 1;
+      if (b.key === "__none__") return -1;
+      return a.label.localeCompare(b.label);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, b2bCategories]);
 
   if (loading) return <div className="p-8 text-muted-foreground">Cargando…</div>;
 
@@ -286,6 +410,89 @@ const B2bCatalog = () => {
         </CardContent>
       </Card>
 
+      {/* Gestión de categorías del portal B2B */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <FolderTree className="w-5 h-5" />
+            Categorías del portal
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Organiza tus productos en categorías principales y subcategorías (un solo nivel de subcategoría).
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="flex-1 min-w-[200px]">
+              <Label>Nombre de la categoría</Label>
+              <Input
+                value={newCatName}
+                onChange={(e) => setNewCatName(e.target.value)}
+                placeholder="Ej: Papelería"
+              />
+            </div>
+            <div className="w-[240px]">
+              <Label>Categoría padre (opcional)</Label>
+              <Select value={newCatParent} onValueChange={setNewCatParent}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__root__">— Categoría principal —</SelectItem>
+                  {rootCategories.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={addB2bCategory} disabled={!newCatName.trim()}>
+              <Plus className="w-4 h-4 mr-2" /> Crear
+            </Button>
+          </div>
+
+          {b2bCategories.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aún no has creado ninguna categoría.</p>
+          ) : (
+            <div className="border rounded-md divide-y">
+              {rootCategories.map((root) => (
+                <div key={root.id} className="p-3">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      defaultValue={root.name}
+                      onBlur={(e) =>
+                        e.target.value !== root.name && renameB2bCategory(root.id, e.target.value)
+                      }
+                      className="font-medium"
+                    />
+                    <Button variant="ghost" size="icon" onClick={() => removeB2bCategory(root.id)} title="Eliminar">
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </div>
+                  {(subCategoriesByParent[root.id] || []).length > 0 && (
+                    <div className="mt-2 ml-4 space-y-2 border-l pl-3">
+                      {subCategoriesByParent[root.id].map((sub) => (
+                        <div key={sub.id} className="flex items-center gap-2">
+                          <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
+                          <Input
+                            defaultValue={sub.name}
+                            onBlur={(e) =>
+                              e.target.value !== sub.name && renameB2bCategory(sub.id, e.target.value)
+                            }
+                          />
+                          <Button variant="ghost" size="icon" onClick={() => removeB2bCategory(sub.id)} title="Eliminar">
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
           <div>
@@ -308,45 +515,58 @@ const B2bCatalog = () => {
               </Button>
             </div>
           ) : (
-            <div className="divide-y">
-              {items.map((it) => (
-                <div key={it.id} className="py-3 flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-md bg-muted overflow-hidden flex items-center justify-center shrink-0">
-                    {it.image_url ? (
-                      <img src={it.image_url} alt={it.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <Package className="w-5 h-5 text-muted-foreground" />
-                    )}
+            <div className="space-y-5">
+              {itemsGrouped.map((group) => (
+                <div key={group.key}>
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1">
+                    <FolderTree className="w-3.5 h-3.5" />
+                    {group.label}
+                    <span className="text-muted-foreground/70 normal-case font-normal">
+                      · {group.items.length}
+                    </span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{it.name}</div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                      {it.product_id ? (
-                        <Badge variant="outline" className="font-normal">
-                          {productNameById[it.product_id] || it.product_id}
-                        </Badge>
-                      ) : (
-                        <Badge variant="destructive">Sin producto</Badge>
-                      )}
-                      {it.description && <span className="truncate">· {it.description}</span>}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="flex items-center gap-1.5">
-                      <Switch
-                        checked={it.is_active}
-                        onCheckedChange={(v) => updateItem(it.id, { is_active: v })}
-                      />
-                      <span className="text-xs text-muted-foreground w-12">
-                        {it.is_active ? "Activo" : "Oculto"}
-                      </span>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(it)} title="Editar">
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => removeItem(it.id)} title="Eliminar">
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
+                  <div className="divide-y border rounded-md">
+                    {group.items.map((it) => (
+                      <div key={it.id} className="py-3 px-3 flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-md bg-muted overflow-hidden flex items-center justify-center shrink-0">
+                          {it.image_url ? (
+                            <img src={it.image_url} alt={it.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <Package className="w-5 h-5 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium truncate">{it.name}</div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                            {it.product_id ? (
+                              <Badge variant="outline" className="font-normal">
+                                {productNameById[it.product_id] || it.product_id}
+                              </Badge>
+                            ) : (
+                              <Badge variant="destructive">Sin producto</Badge>
+                            )}
+                            {it.description && <span className="truncate">· {it.description}</span>}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="flex items-center gap-1.5">
+                            <Switch
+                              checked={it.is_active}
+                              onCheckedChange={(v) => updateItem(it.id, { is_active: v })}
+                            />
+                            <span className="text-xs text-muted-foreground w-12">
+                              {it.is_active ? "Activo" : "Oculto"}
+                            </span>
+                          </div>
+                          <Button variant="ghost" size="icon" onClick={() => openEdit(it)} title="Editar">
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => removeItem(it.id)} title="Eliminar">
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
@@ -452,6 +672,28 @@ const B2bCatalog = () => {
                   </Command>
                 </PopoverContent>
               </Popover>
+            </div>
+            <div>
+              <Label>Categoría del portal</Label>
+              <Select
+                value={draft.category_id || "__none__"}
+                onValueChange={(v) => setDraft({ ...draft, category_id: v === "__none__" ? "" : v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sin categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Sin categoría</SelectItem>
+                  {rootCategories.flatMap((root) => [
+                    <SelectItem key={root.id} value={root.id}>{root.name}</SelectItem>,
+                    ...(subCategoriesByParent[root.id] || []).map((sub) => (
+                      <SelectItem key={sub.id} value={sub.id}>
+                        {"\u00A0\u00A0\u00A0\u00A0↳ "}{sub.name}
+                      </SelectItem>
+                    )),
+                  ])}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label>Nombre visible al cliente</Label>
