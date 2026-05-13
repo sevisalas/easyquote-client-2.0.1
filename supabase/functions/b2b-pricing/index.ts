@@ -82,7 +82,19 @@ Deno.serve(async (req) => {
       .filter(([, v]) => v !== undefined && v !== null && v !== "")
       .map(([id, value]) => ({ id, value }));
 
-    const pricing = await callEasyQuotePricing(token, item.product_id, inputs);
+    let pricing = await callEasyQuotePricing(token, item.product_id, inputs);
+
+    // First entry (no overrides): the GET returns prompt defaults but the engine
+    // hasn't recalculated. Re-issue a PATCH with the defaults so we get a real price.
+    if (pricing.ok && inputs.length === 0) {
+      const defaults = (pricing.data?.prompts ?? [])
+        .filter((p: any) => p?.id != null && p?.currentValue !== undefined && p?.currentValue !== null && p?.currentValue !== "")
+        .map((p: any) => ({ id: String(p.id), value: p.currentValue }));
+      if (defaults.length > 0) {
+        const second = await callEasyQuotePricing(token, item.product_id, defaults);
+        if (second.ok) pricing = second;
+      }
+    }
 
     if (!pricing.ok) {
       return new Response(JSON.stringify({
