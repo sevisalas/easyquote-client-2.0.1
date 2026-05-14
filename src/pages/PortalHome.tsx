@@ -260,9 +260,13 @@ const PortalHome = () => {
     const myReqId = ++pricingReqIdRef.current;
     setPricingLoading(true);
     setPricingError(null);
+    // After the first response we already have currentValue for every prompt
+    // seeded into overrides — tell the edge function to skip the resolve GET
+    // and do a single PATCH (saves one EasyQuote roundtrip).
+    const skipResolve = rawPrompts.length > 0;
     try {
       const { data, error } = await portalSupabase.functions.invoke("b2b-pricing", {
-        body: { catalog_item_id: item.id, overrides },
+        body: { catalog_item_id: item.id, overrides, skip_resolve: skipResolve },
       });
       // Discard if a newer request was issued meanwhile.
       if (myReqId !== pricingReqIdRef.current) return;

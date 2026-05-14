@@ -7,6 +7,8 @@ import {
   extractPrice,
   getHiddenPromptKeysForProduct,
   normalizePromptKey,
+  extractPromptOverrideValues,
+  callEasyQuotePricing,
 } from "../_shared/b2b-pricing-core.ts";
 
 /**
@@ -32,9 +34,10 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { catalog_item_id, overrides } = body as {
+    const { catalog_item_id, overrides, skip_resolve } = body as {
       catalog_item_id: string;
       overrides?: Record<string, any>;
+      skip_resolve?: boolean;
     };
     if (!catalog_item_id) {
       return new Response(JSON.stringify({ error: "catalog_item_id required" }), {
@@ -79,7 +82,19 @@ Deno.serve(async (req) => {
 
     // EasyQuote pricing is stateless: each recalculation must include the full
     // resolved prompt state (defaults + hidden prefilled prompts + user overrides).
-    const pricing = await resolveEasyQuotePricing(token, item.product_id, overrides || {});
+    // Fast path: if the client already holds the full prompt state (after the
+    // first response), it sends `skip_resolve: true` and we do a single PATCH
+    // instead of GET+PATCH — saves one EasyQuote roundtrip (~400-800ms).
+    let pricing;
+    if (skip_resolve && overrides && Object.keys(overrides).length > 0) {
+      const values = extractPromptOverrideValues(overrides);
+      const inputs = Object.entries(values)
+        .filter(([, v]) => v !== undefined && v !== null && v !== "")
+        .map(([id, value]) => ({ id, value }));
+      pricing = await callEasyQuotePricing(token, item.product_id, inputs);
+    } else {
+      pricing = await resolveEasyQuotePricing(token, item.product_id, overrides || {});
+    }
 
     if (!pricing.ok) {
       return new Response(JSON.stringify({
