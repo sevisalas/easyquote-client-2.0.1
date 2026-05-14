@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -77,6 +77,9 @@ const PortalHome = () => {
   const [submittingQuote, setSubmittingQuote] = useState(false);
   // Raw prompts (already filtered server-side by visibility) — passed as-is to PromptsFormLite.
   const [rawPrompts, setRawPrompts] = useState<any[]>([]);
+  // Monotonic counter to ignore stale pricing responses (no debounce: every change
+  // fires a request, but only the latest result wins).
+  const pricingReqIdRef = useRef(0);
 
   useEffect(() => {
     const load = async () => {
@@ -248,12 +251,15 @@ const PortalHome = () => {
   };
 
   const fetchPrice = async (item: CatalogItem, overrides: Record<string, any>) => {
+    const myReqId = ++pricingReqIdRef.current;
     setPricingLoading(true);
     setPricingError(null);
     try {
       const { data, error } = await portalSupabase.functions.invoke("b2b-pricing", {
         body: { catalog_item_id: item.id, overrides },
       });
+      // Discard if a newer request was issued meanwhile.
+      if (myReqId !== pricingReqIdRef.current) return;
       if (error) throw error;
       const d = data as any;
       if (d?.error) {
@@ -281,20 +287,19 @@ const PortalHome = () => {
         });
       }
     } catch (e: any) {
+      if (myReqId !== pricingReqIdRef.current) return;
       setPricingError(e?.message || "Error de cálculo");
       setLivePrice(null);
     } finally {
-      setPricingLoading(false);
+      if (myReqId === pricingReqIdRef.current) setPricingLoading(false);
     }
   };
 
-  // Debounce pricing recalc when overrides change
+  // Recalc immediately on every override change. Stale responses are discarded
+  // by the request-id check inside fetchPrice, so the latest one always wins.
   useEffect(() => {
     if (!configItem) return;
-    const t = setTimeout(() => {
-      fetchPrice(configItem, configOverrides);
-    }, 400);
-    return () => clearTimeout(t);
+    fetchPrice(configItem, configOverrides);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [configOverrides]);
 

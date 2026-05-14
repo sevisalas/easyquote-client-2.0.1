@@ -62,7 +62,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    const token = await getEasyQuoteTokenForOrg(ctx.admin, item.organization_id);
+    // Token + visibility config are independent — fetch in parallel.
+    const [token, visibility] = await Promise.all([
+      getEasyQuoteTokenForOrg(ctx.admin, item.organization_id),
+      getHiddenPromptKeysForProduct(ctx.admin, item.organization_id, item.product_id),
+    ]);
+
     if (!token) {
       return new Response(JSON.stringify({ error: "Motor de precios no disponible" }), {
         status: 503,
@@ -70,12 +75,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Visibility config from the main app
-    const { hidden } = await getHiddenPromptKeysForProduct(
-      ctx.admin,
-      item.organization_id,
-      item.product_id,
-    );
+    const { hidden } = visibility;
 
     // EasyQuote pricing is stateless: each recalculation must include the full
     // resolved prompt state (defaults + hidden prefilled prompts + user overrides).
