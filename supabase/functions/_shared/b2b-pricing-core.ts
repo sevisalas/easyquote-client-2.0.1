@@ -63,6 +63,22 @@ export async function authenticatePortalUser(
 /**
  * Get a fresh EasyQuote API token for the organization owner.
  */
+// In-memory token cache (per edge-function instance). EasyQuote tokens are JWTs that
+// usually last ~1h. We refresh ~10 min before expiry to avoid mid-request failures.
+const tokenCache = new Map<string, { token: string; expiresAt: number }>();
+const TOKEN_TTL_MS = 50 * 60 * 1000; // 50 minutes safety window
+
+function decodeJwtExpMs(token: string): number | null {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return null;
+    const json = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof json.exp === "number" ? json.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function getEasyQuoteTokenForOrg(
   admin: SupabaseClient,
   organizationId: string,
@@ -73,6 +89,13 @@ export async function getEasyQuoteTokenForOrg(
     .eq("id", organizationId)
     .maybeSingle();
   if (!org?.api_user_id) return null;
+  const cacheKey = String(org.api_user_id);
+
+  // Serve from cache if still valid (refresh 60s before expiry).
+  const cached = tokenCache.get(cacheKey);
+  if (cached && cached.expiresAt - Date.now() > 60_000) {
+    return cached.token;
+  }
 
   const { data: creds } = await admin.rpc("get_organization_easyquote_credentials", {
     p_user_id: org.api_user_id,
@@ -87,7 +110,13 @@ export async function getEasyQuoteTokenForOrg(
   });
   if (!loginRes.ok) return null;
   const data = await loginRes.json();
-  return data?.token ?? null;
+  const token = data?.token ?? null;
+  if (token) {
+    const exp = decodeJwtExpMs(token);
+    const expiresAt = exp ?? (Date.now() + TOKEN_TTL_MS);
+    tokenCache.set(cacheKey, { token, expiresAt });
+  }
+  return token;
 }
 
 /**
