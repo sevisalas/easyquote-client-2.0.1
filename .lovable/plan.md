@@ -1,38 +1,74 @@
-## Fase 2 — Selector de subproducto en pruebas
+## Objetivo
+Hacer que el portal envíe una sola petición útil a `b2b-pricing` por cálculo, evitando que el mismo body completo se mande 3 veces seguidas.
 
-Ya implementado en la fase anterior: tab "Subproductos" en `/admin/productos/test`, banner explicativo y carga inicial mostrando solo el prompt selector.
+## Diagnóstico
+El payload que has pegado confirma que no son 3 cambios distintos del usuario: es el mismo `catalog_item_id` y el mismo `overrides` completo repetido.
 
-Lo que falta para que la prueba sea claramente "subproducto":
+En `src/pages/PortalHome.tsx` el problema viene de esta secuencia:
 
-### 1. Resaltar el prompt selector
+1. Se abre el configurador y se hace un cálculo.
+2. La respuesta rellena `rawPrompts`.
+3. Luego la propia respuesta hace `setConfigOverrides(...)` para hidratar `currentValue` en prompts que faltaban.
+4. Ese `setConfigOverrides` vuelve a disparar el `useEffect` que recalcula.
+5. Sin debounce, varios cambios encadenados o renders rápidos producen más llamadas idénticas.
 
-En la página de pruebas, cuando `subproductMode` está activo:
-- Buscar en `product_prompt_settings` el prompt con `is_subproduct_selector=true` para `(api_user_id, easyquote_product_id)`.
-- Renderizarlo en una tarjeta destacada arriba del formulario, separado del resto de prompts (mismo control, distinto contenedor): borde primario, etiqueta "Subproducto" y texto de ayuda "Elige un subproducto para cargar el resto de campos".
-- Ocultar el resto de prompts hasta que el selector tenga un valor distinto del placeholder/primer GET. Una vez el usuario elige, el PATCH ya filtra y aparecen los demás prompts (flujo actual).
+## Cambios propuestos
 
-### 2. Indicador en cabecera
+### 1) Separar “hidratación interna” de “cambio real del usuario”
+Añadir una `ref` de control en `PortalHome` para que cuando `fetchPrice` complete y haga `setConfigOverrides` con valores devueltos por la API, eso **no** dispare otro recálculo.
 
-Mostrar al lado del nombre del producto un badge "Subproducto: <valor seleccionado>" en cuanto el usuario elige opción, para que quede claro qué subproducto se está probando en cada momento.
+Ejemplo de enfoque:
+- `isHydratingOverridesRef.current = true` antes de sembrar valores desde API
+- `useEffect([configOverrides])` sale temprano si la actualización venía de hidratación interna
+- después se vuelve a poner en `false`
 
-### 3. Cambio de subproducto
+Con eso se elimina la llamada duplicada generada por el propio frontend.
 
-Botón pequeño "Cambiar subproducto" junto al badge que limpia el valor del selector y vuelve al estado inicial (oculta el resto de prompts hasta nueva elección). Internamente: reset de `promptValues` salvo el id del selector que se vacía, y dispara nuevo PATCH/GET.
+### 2) Debounce corto para cambios del usuario
+Aplicar un debounce de ~300–400 ms al `useEffect` que observa `configOverrides`.
 
-### 4. Pestaña "Productos" sin cambios
+Eso agrupa:
+- cambios rápidos de select
+- escritura en inputs numéricos
+- cascadas de actualización visual
 
-Confirmado: en la pestaña Productos, aunque el producto tenga `has_subproducts=true`, se comporta como cualquier otro (no se aplica ningún filtrado ni se destaca el selector). Solo se aplica el modo subproducto cuando se llega desde la pestaña Subproductos o con `subproductMode=1` en URL.
+Resultado: un solo `invoke("b2b-pricing")` tras la última interacción.
 
-### Detalles técnicos
+### 3) No volver a pedir si el body efectivo no cambió
+Guardar una firma serializada del último request enviado (`catalog_item_id + overrides normalizados + skip_resolve`) en una `ref`.
 
-- Cargar `product_prompt_settings` en `ProductTestPage` (hook `useProductPromptSettings`) ya disponible. Identificar `selectorPromptId` por `is_subproduct_selector=true`.
-- Filtrar el array `prompts` que se pasa a `ComponentTabsPromptsForm` / `PromptsForm` para que en modo subproducto solo incluya:
-  - Solo el selector si aún no hay valor elegido.
-  - Resto de prompts una vez el selector tiene valor (después del PATCH inicial el API ya devuelve la lista filtrada, así que basta con dejar pasar todos los prompts que vengan en `pricing.prompts`).
-- Sin cambios de BD. Sin cambios en edge functions. Sin tocar portal/cliente ni `b2b_catalog_items`.
+Antes de llamar a `b2b-pricing`, comparar:
+- si la firma es igual a la anterior, no llamar
+- si cambió, sí llamar
 
-### Fuera de alcance (Fase 3)
+Esto corta incluso repeticiones accidentales aunque haya más de un trigger en UI.
 
-- Selector en `/b2b-catalog` para fijar subproducto por catálogo.
-- Cambios en `b2b-pricing` para que el portal cliente respete el subproducto fijado.
-- Persistencia del subproducto elegido en pruebas (es solo prueba, no se guarda).
+### 4) Endurecer el render del error transitorio
+Mientras exista un cálculo más reciente en curso, no mostrar `pricingError` viejo.
+
+Así evitamos el síntoma visual de:
+- primero “Error de cálculo”
+- luego precio correcto
+
+## Archivo a tocar
+- `src/pages/PortalHome.tsx`
+
+## Qué no voy a tocar
+- No cambiaré la edge function `supabase/functions/b2b-pricing/index.ts`.
+- No cambiaré la lógica del motor EasyQuote.
+- No tocaré la parte de creación de presupuestos.
+
+## Validación
+Después de implementarlo, comprobaré:
+
+1. Abrir un producto del catálogo.
+   - Debe salir 1 llamada útil, no 3 iguales.
+2. Cambiar un prompt.
+   - Debe salir 1 llamada tras la pausa del debounce.
+3. Cambiar varios prompts rápido.
+   - Debe agruparse y no mostrar el error transitorio si la última respuesta es correcta.
+
+## Resultado esperado
+- Desaparecen las 3 llamadas idénticas.
+- Baja la presión sobre EasyQuote.
+- El precio correcto aparece sin el falso error intermedio.
