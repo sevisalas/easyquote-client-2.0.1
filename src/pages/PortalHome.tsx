@@ -77,9 +77,13 @@ const PortalHome = () => {
   const [submittingQuote, setSubmittingQuote] = useState(false);
   // Raw prompts (already filtered server-side by visibility) — passed as-is to PromptsFormLite.
   const [rawPrompts, setRawPrompts] = useState<any[]>([]);
-  // Monotonic counter to ignore stale pricing responses (no debounce: every change
-  // fires a request, but only the latest result wins).
+  // Monotonic counter to ignore stale pricing responses.
   const pricingReqIdRef = useRef(0);
+  // True while we hydrate `configOverrides` from the API response itself, so the
+  // override-watching effect doesn't fire a duplicate recalculation.
+  const hydratingOverridesRef = useRef(false);
+  // Signature of the last request body actually sent — used to dedupe identical calls.
+  const lastRequestSigRef = useRef<string>("");
 
   useEffect(() => {
     const load = async () => {
@@ -246,24 +250,38 @@ const PortalHome = () => {
     setLivePrice(null);
     setPricingError(null);
     setRawPrompts([]);
+    lastRequestSigRef.current = "";
     // Bump the request counter so any in-flight response from a previously open
     // item is discarded and won't flash an error here.
     pricingReqIdRef.current++;
     setPricingLoading(true);
-    // Setting overrides triggers the useEffect below, which fires the single
-    // pricing call. We deliberately don't call fetchPrice here too — duplicate
-    // calls caused the initial "Error de cálculo" flash.
+    // The watcher effect below (debounced) will pick this up and fire a single
+    // pricing call.
     setConfigOverrides(seeded);
   };
 
   const fetchPrice = async (item: CatalogItem, overrides: Record<string, any>) => {
+    // Skip identical consecutive requests (same item + same overrides + same mode).
+    const skipResolve = rawPrompts.length > 0;
+    const sig = JSON.stringify({
+      i: item.id,
+      s: skipResolve,
+      o: Object.keys(overrides)
+        .sort()
+        .reduce<Record<string, any>>((acc, k) => {
+          acc[k] = overrides[k];
+          return acc;
+        }, {}),
+    });
+    if (sig === lastRequestSigRef.current) {
+      setPricingLoading(false);
+      return;
+    }
+    lastRequestSigRef.current = sig;
+
     const myReqId = ++pricingReqIdRef.current;
     setPricingLoading(true);
     setPricingError(null);
-    // After the first response we already have currentValue for every prompt
-    // seeded into overrides — tell the edge function to skip the resolve GET
-    // and do a single PATCH (saves one EasyQuote roundtrip).
-    const skipResolve = rawPrompts.length > 0;
     try {
       const { data, error } = await portalSupabase.functions.invoke("b2b-pricing", {
         body: { catalog_item_id: item.id, overrides, skip_resolve: skipResolve },
@@ -293,7 +311,23 @@ const PortalHome = () => {
             }
           });
 
-          return changed ? next : prev;
+          if (!changed) return prev;
+          // Mark this state update as internal hydration so the watcher effect
+          // below doesn't trigger another identical pricing call.
+          hydratingOverridesRef.current = true;
+          // Update the dedupe signature too so the next user change is detected
+          // correctly relative to the freshly-hydrated overrides.
+          lastRequestSigRef.current = JSON.stringify({
+            i: item.id,
+            s: true,
+            o: Object.keys(next)
+              .sort()
+              .reduce<Record<string, any>>((acc, k) => {
+                acc[k] = next[k];
+                return acc;
+              }, {}),
+          });
+          return next;
         });
       }
     } catch (e: any) {
@@ -305,11 +339,21 @@ const PortalHome = () => {
     }
   };
 
-  // Recalc immediately on every override change. Stale responses are discarded
-  // by the request-id check inside fetchPrice, so the latest one always wins.
+  // Recalc on override changes, debounced to coalesce rapid edits (selects,
+  // numeric inputs, cascading updates) into a single pricing call. Internal
+  // hydration from the API itself is skipped via hydratingOverridesRef.
   useEffect(() => {
     if (!configItem) return;
-    fetchPrice(configItem, configOverrides);
+    if (hydratingOverridesRef.current) {
+      hydratingOverridesRef.current = false;
+      return;
+    }
+    setPricingLoading(true);
+    setPricingError(null);
+    const t = setTimeout(() => {
+      fetchPrice(configItem, configOverrides);
+    }, 350);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [configOverrides]);
 
@@ -612,7 +656,7 @@ const PortalHome = () => {
                     )}
                   </div>
                 </div>
-                {pricingError && (
+                {pricingError && !pricingLoading && (
                   <div className="text-xs text-destructive max-w-[200px] text-right">
                     {pricingError}
                   </div>
