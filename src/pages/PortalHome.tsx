@@ -77,6 +77,9 @@ const PortalHome = () => {
   const [submittingQuote, setSubmittingQuote] = useState(false);
   // Raw prompts (already filtered server-side by visibility) — passed as-is to PromptsFormLite.
   const [rawPrompts, setRawPrompts] = useState<any[]>([]);
+  // Monotonic counter to ignore stale pricing responses (no debounce: every change
+  // fires a request, but only the latest result wins).
+  const pricingReqIdRef = useRef(0);
 
   useEffect(() => {
     const load = async () => {
