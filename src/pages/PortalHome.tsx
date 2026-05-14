@@ -243,11 +243,17 @@ const PortalHome = () => {
     Object.entries((item.default_prompts || {}) as Record<string, any>).forEach(([id, v]) => {
       seeded[id] = (v && typeof v === "object" && "value" in v) ? (v as any).value : v;
     });
-    setConfigOverrides(seeded);
     setLivePrice(null);
     setPricingError(null);
     setRawPrompts([]);
-    await fetchPrice(item, seeded);
+    // Bump the request counter so any in-flight response from a previously open
+    // item is discarded and won't flash an error here.
+    pricingReqIdRef.current++;
+    setPricingLoading(true);
+    // Setting overrides triggers the useEffect below, which fires the single
+    // pricing call. We deliberately don't call fetchPrice here too — duplicate
+    // calls caused the initial "Error de cálculo" flash.
+    setConfigOverrides(seeded);
   };
 
   const fetchPrice = async (item: CatalogItem, overrides: Record<string, any>) => {
