@@ -7,6 +7,8 @@ import {
   extractPrice,
   getHiddenPromptKeysForProduct,
   normalizePromptKey,
+  extractPromptOverrideValues,
+  callEasyQuotePricing,
 } from "../_shared/b2b-pricing-core.ts";
 
 /**
@@ -85,9 +87,6 @@ Deno.serve(async (req) => {
     // instead of GET+PATCH — saves one EasyQuote roundtrip (~400-800ms).
     let pricing;
     if (skip_resolve && overrides && Object.keys(overrides).length > 0) {
-      const { extractPromptOverrideValues, callEasyQuotePricing } = await import(
-        "../_shared/b2b-pricing-core.ts"
-      );
       const values = extractPromptOverrideValues(overrides);
       const inputs = Object.entries(values)
         .filter(([, v]) => v !== undefined && v !== null && v !== "")
