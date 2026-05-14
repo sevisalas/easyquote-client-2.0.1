@@ -656,7 +656,7 @@ const PortalHome = () => {
                     )}
                   </div>
                 </div>
-                {pricingError && (
+                {pricingError && !pricingLoading && (
                   <div className="text-xs text-destructive max-w-[200px] text-right">
                     {pricingError}
                   </div>
