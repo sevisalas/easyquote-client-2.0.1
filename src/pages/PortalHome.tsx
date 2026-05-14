@@ -261,8 +261,12 @@ const PortalHome = () => {
   };
 
   const fetchPrice = async (item: CatalogItem, overrides: Record<string, any>) => {
-    // Skip identical consecutive requests (same item + same overrides + same mode).
-    const skipResolve = rawPrompts.length > 0;
+    // NOTE: skip_resolve is intentionally disabled for the portal. The server
+    // filters out hidden/admin_only prompts from the response, so the client
+    // never holds their currentValue. A direct PATCH without server-side
+    // resolution would send an incomplete payload and EasyQuote would error
+    // on every change. Always pay the extra GET roundtrip — correctness wins.
+    const skipResolve = false;
     const sig = JSON.stringify({
       i: item.id,
       s: skipResolve,
@@ -315,11 +319,11 @@ const PortalHome = () => {
           // Mark this state update as internal hydration so the watcher effect
           // below doesn't trigger another identical pricing call.
           hydratingOverridesRef.current = true;
-          // Update the dedupe signature too so the next user change is detected
+          // Update the dedupe signature so the next user change is detected
           // correctly relative to the freshly-hydrated overrides.
           lastRequestSigRef.current = JSON.stringify({
             i: item.id,
-            s: true,
+            s: false,
             o: Object.keys(next)
               .sort()
               .reduce<Record<string, any>>((acc, k) => {
