@@ -152,7 +152,7 @@ export const useTheme = () => {
           .single();
 
         if (error) throw error;
-        result = data;
+        result = data as OrganizationTheme;
       } else {
         const { data, error } = await supabase
           .from('organization_themes')
@@ -165,7 +165,7 @@ export const useTheme = () => {
           .single();
 
         if (error) throw error;
-        result = data;
+        result = data as OrganizationTheme;
       }
 
       queryClient.invalidateQueries({ queryKey: ['organization-theme', orgId] });
