@@ -125,12 +125,13 @@ export default function SettingsThemeCorporate() {
       sidebarAccent: "240 5% 96%", sidebarAccentForeground: "240 6% 10%",
     },
     dark: {
-      primaryColor: "332 61% 55%", primaryForeground: "0 0% 100%",
-      secondaryColor: "266 40% 25%", secondaryForeground: "0 0% 98%",
-      accentColor: "240 6% 18%", accentForeground: "0 0% 95%",
-      mutedColor: "240 6% 14%", mutedForeground: "240 5% 65%",
-      sidebarBackground: "240 10% 8%", sidebarForeground: "0 0% 95%",
-      sidebarAccent: "240 6% 14%", sidebarAccentForeground: "0 0% 95%",
+      // Inspirado en la captura: navy-violeta profundo + magenta + coral
+      primaryColor: "328 82% 60%", primaryForeground: "0 0% 100%",
+      secondaryColor: "258 45% 22%", secondaryForeground: "0 0% 98%",
+      accentColor: "20 90% 62%", accentForeground: "0 0% 100%",
+      mutedColor: "245 25% 16%", mutedForeground: "240 10% 70%",
+      sidebarBackground: "245 35% 10%", sidebarForeground: "0 0% 95%",
+      sidebarAccent: "245 30% 16%", sidebarAccentForeground: "0 0% 98%",
     },
   } as const;
 
