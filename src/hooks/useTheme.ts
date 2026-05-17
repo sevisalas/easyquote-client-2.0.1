@@ -58,14 +58,31 @@ export const useTheme = () => {
 
   const applyTheme = useCallback((theme: OrganizationTheme | null | undefined) => {
     const root = document.documentElement;
+    const isDark = root.classList.contains('dark');
 
     if (theme) {
-      // Primary
+      // Primary (corporate accent) — applied in both light and dark
       root.style.setProperty('--primary', theme.primary_color);
       if (theme.primary_foreground) {
         root.style.setProperty('--primary-foreground', theme.primary_foreground);
       }
-      
+
+      // In dark mode, do NOT override background/sidebar/muted with the corporate
+      // light palette — let the .dark tokens from index.css drive the surfaces.
+      if (isDark) {
+        root.style.removeProperty('--secondary');
+        root.style.removeProperty('--secondary-foreground');
+        root.style.removeProperty('--accent');
+        root.style.removeProperty('--accent-foreground');
+        root.style.removeProperty('--muted');
+        root.style.removeProperty('--muted-foreground');
+        root.style.removeProperty('--sidebar-background');
+        root.style.removeProperty('--sidebar-foreground');
+        root.style.removeProperty('--sidebar-accent');
+        root.style.removeProperty('--sidebar-accent-foreground');
+        return;
+      }
+
       // Secondary
       root.style.setProperty('--secondary', theme.secondary_color);
       if (theme.secondary_foreground) {
