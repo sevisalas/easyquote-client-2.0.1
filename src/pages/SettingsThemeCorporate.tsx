@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useTheme } from "@/hooks/useTheme";
 import { toast } from "sonner";
 import { Loader2, RefreshCw } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 
 // Preset paletas predefinidas
 const PRESETS: Record<string, {
@@ -129,6 +130,16 @@ export default function SettingsThemeCorporate() {
   const { organizationTheme, updateOrganizationTheme, resetToOriginalTheme, loading } = useTheme();
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [isDarkPreview, setIsDarkPreview] = useState<boolean>(
+    typeof document !== "undefined" && document.documentElement.classList.contains("dark")
+  );
+
+  const togglePreview = () => {
+    const root = document.documentElement;
+    const next = !root.classList.contains("dark");
+    root.classList.toggle("dark", next);
+    setIsDarkPreview(next);
+  };
   
   const [primaryColor, setPrimaryColor] = useState("332 61% 49%");
   const [primaryForeground, setPrimaryForeground] = useState("0 0% 100%");
@@ -243,6 +254,21 @@ export default function SettingsThemeCorporate() {
           Personaliza los colores de tu organización.
         </p>
       </div>
+
+      <Card>
+        <CardContent className="pt-6 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <h2 className="font-semibold">Vista previa de modo</h2>
+            <p className="text-sm text-muted-foreground">
+              Solo previsualización. No se guarda. Recarga la página para volver al original.
+            </p>
+          </div>
+          <Button onClick={togglePreview} variant="outline" className="gap-2">
+            {isDarkPreview ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            {isDarkPreview ? "Ver tema claro" : "Ver tema oscuro"}
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="pt-6">
