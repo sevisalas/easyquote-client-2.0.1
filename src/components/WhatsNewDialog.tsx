@@ -9,10 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, UserCheck, Layers, Mail, Link2 } from "lucide-react";
+import { Sparkles, Moon, LayoutGrid } from "lucide-react";
 
   const CURRENT_VERSION = "2.8.4";
-const SILENT_UPDATE = true;
+const SILENT_UPDATE = false;
 const LS_KEY = "whats_new_seen_version";
 
 interface ReleaseNote {
@@ -22,7 +22,22 @@ interface ReleaseNote {
   badge?: string;
 }
 
-const RELEASE_NOTES: ReleaseNote[] = [];
+const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    icon: <Moon className="h-5 w-5 text-primary" />,
+    title: "Modo oscuro",
+    description:
+      "Ya puedes activar el modo oscuro desde tu perfil. La preferencia se guarda por usuario.",
+    badge: "Nuevo",
+  },
+  {
+    icon: <LayoutGrid className="h-5 w-5 text-primary" />,
+    title: "Portal B2B ampliado",
+    description:
+      "Catálogo de productos en el portal de clientes y creación de subproductos para una gestión más flexible.",
+    badge: "Mejora",
+  },
+];
 
 export function WhatsNewDialog() {
   const [open, setOpen] = useState(false);
