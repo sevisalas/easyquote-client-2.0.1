@@ -10,6 +10,7 @@ import SuperAdminDashboard from "./SuperAdminDashboard";
 import { useQuery } from "@tanstack/react-query";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { QuickActionsPanel } from "@/components/mobile/QuickActionsPanel";
+import logoDarkBottom from "@/assets/logo-dark-bottom.png";
 const Index = () => {
   const navigate = useNavigate();
   const [userName, setUserName] = useState<string>("");
@@ -381,7 +382,8 @@ const Index = () => {
 
         {/* EasyQuote Brand Image */}
         <div className="mt-4 flex justify-center">
-          <img src="/lovable-uploads/calculator-icon.png" alt="EasyQuote" className="h-16 md:h-24 w-auto opacity-80" />
+          <img src="/lovable-uploads/calculator-icon.png" alt="EasyQuote" className="h-16 md:h-24 w-auto opacity-80 block dark:hidden" />
+          <img src={logoDarkBottom} alt="EasyQuote" className="h-16 md:h-24 w-auto opacity-80 hidden dark:block" />
         </div>
       </div>
     </div>;
