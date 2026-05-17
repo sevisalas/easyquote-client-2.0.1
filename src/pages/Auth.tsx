@@ -189,7 +189,7 @@ const Auth = () => {
             <div className="flex flex-col justify-center p-8 md:p-12 bg-background">
               <div className="w-full max-w-sm mx-auto space-y-6">
                 <div className="text-center space-y-4">
-                  <img src="/lovable-uploads/logo_transparente-removebg-preview.png" alt="EasyQuote Logo" className="h-20 w-auto mx-auto" onError={e => {
+                  <img src="/lovable-uploads/logo_transparente-removebg-preview.png" alt="EasyQuote Logo" className="h-20 w-auto mx-auto dark:brightness-0 dark:invert" onError={e => {
                   const img = e.currentTarget;
                   if (img.dataset.fallbackApplied) {
                     img.style.display = 'none';
