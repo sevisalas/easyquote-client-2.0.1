@@ -13,7 +13,7 @@ import { Sparkles, Moon, LayoutGrid } from "lucide-react";
 
   const CURRENT_VERSION = "2.8.4";
 const SILENT_UPDATE = false;
-const LS_KEY = "whats_new_seen_version";
+const LS_KEY = "whats_new_seen_version_v2";
 
 interface ReleaseNote {
   icon: React.ReactNode;
