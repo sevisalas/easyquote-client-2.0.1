@@ -56,6 +56,13 @@ export const useTheme = () => {
     applyTheme(organizationTheme);
   }, [organizationTheme]);
 
+  // Re-aplicar cuando se alterna el modo oscuro (clase 'dark' en <html>)
+  useEffect(() => {
+    const obs = new MutationObserver(() => applyTheme(organizationTheme));
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => obs.disconnect();
+  }, [organizationTheme]);
+
   const applyTheme = useCallback((theme: OrganizationTheme | null | undefined) => {
     const root = document.documentElement;
     const isDark = root.classList.contains('dark');
