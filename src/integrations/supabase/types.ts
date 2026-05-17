@@ -1787,6 +1787,7 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
+          mode: string
           muted_color: string | null
           muted_foreground: string | null
           name: string
@@ -1807,6 +1808,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          mode?: string
           muted_color?: string | null
           muted_foreground?: string | null
           name?: string
@@ -1827,6 +1829,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          mode?: string
           muted_color?: string | null
           muted_foreground?: string | null
           name?: string
