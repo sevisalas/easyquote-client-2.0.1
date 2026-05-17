@@ -134,18 +134,18 @@ export default function SettingsThemeCorporate() {
     },
   } as const;
 
-  const [primaryColor, setPrimaryColor] = useState(defaultsByMode.light.primaryColor);
-  const [primaryForeground, setPrimaryForeground] = useState(defaultsByMode.light.primaryForeground);
-  const [secondaryColor, setSecondaryColor] = useState(defaultsByMode.light.secondaryColor);
-  const [secondaryForeground, setSecondaryForeground] = useState(defaultsByMode.light.secondaryForeground);
-  const [accentColor, setAccentColor] = useState(defaultsByMode.light.accentColor);
-  const [accentForeground, setAccentForeground] = useState(defaultsByMode.light.accentForeground);
-  const [mutedColor, setMutedColor] = useState(defaultsByMode.light.mutedColor);
-  const [mutedForeground, setMutedForeground] = useState(defaultsByMode.light.mutedForeground);
-  const [sidebarBackground, setSidebarBackground] = useState(defaultsByMode.light.sidebarBackground);
-  const [sidebarForeground, setSidebarForeground] = useState(defaultsByMode.light.sidebarForeground);
-  const [sidebarAccent, setSidebarAccent] = useState(defaultsByMode.light.sidebarAccent);
-  const [sidebarAccentForeground, setSidebarAccentForeground] = useState(defaultsByMode.light.sidebarAccentForeground);
+  const [primaryColor, setPrimaryColor] = useState<string>(defaultsByMode.light.primaryColor);
+  const [primaryForeground, setPrimaryForeground] = useState<string>(defaultsByMode.light.primaryForeground);
+  const [secondaryColor, setSecondaryColor] = useState<string>(defaultsByMode.light.secondaryColor);
+  const [secondaryForeground, setSecondaryForeground] = useState<string>(defaultsByMode.light.secondaryForeground);
+  const [accentColor, setAccentColor] = useState<string>(defaultsByMode.light.accentColor);
+  const [accentForeground, setAccentForeground] = useState<string>(defaultsByMode.light.accentForeground);
+  const [mutedColor, setMutedColor] = useState<string>(defaultsByMode.light.mutedColor);
+  const [mutedForeground, setMutedForeground] = useState<string>(defaultsByMode.light.mutedForeground);
+  const [sidebarBackground, setSidebarBackground] = useState<string>(defaultsByMode.light.sidebarBackground);
+  const [sidebarForeground, setSidebarForeground] = useState<string>(defaultsByMode.light.sidebarForeground);
+  const [sidebarAccent, setSidebarAccent] = useState<string>(defaultsByMode.light.sidebarAccent);
+  const [sidebarAccentForeground, setSidebarAccentForeground] = useState<string>(defaultsByMode.light.sidebarAccentForeground);
 
   useEffect(() => {
     document.title = "Tema Corporativo - EasyQuote";
