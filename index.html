@@ -28,6 +28,17 @@
       html, body { font-size: 16px; line-height: 1.5; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
       body { font-family: 'Gudea', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
     </style>
+    <script>
+      // Apply dark mode early to avoid FOUC
+      (function () {
+        try {
+          var m = localStorage.getItem('easyquote-theme') || 'system';
+          var dark = m === 'dark' || (m === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (dark) document.documentElement.classList.add('dark');
+          document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+        } catch (e) {}
+      })();
+    </script>
   </head>
 
   <body>

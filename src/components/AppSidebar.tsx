@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 import { usePdfAccess } from "@/hooks/usePdfAccess";
+import { ThemeToggle } from "@/components/ThemeToggle";
 interface Item {
   title: string;
   url: string;
@@ -88,7 +89,7 @@ export function AppSidebar() {
   return <Sidebar collapsible="icon">
       <SidebarHeader className="p-2">
         <Link to="/" aria-label="Ir al inicio" className="flex items-center justify-center px-1 py-1">
-          {isCollapsed ? <img src="/lovable-uploads/favicon.png" alt="EQ Logo" className="h-6 w-6 object-contain" onError={e => {
+          {isCollapsed ? <img src="/lovable-uploads/favicon.png" alt="EQ Logo" className="h-6 w-6 object-contain dark:brightness-0 dark:invert" onError={e => {
           const img = e.currentTarget;
           if (img.dataset.fallbackApplied) {
             console.warn('Collapsed logo fallback also failed, hiding');
@@ -98,7 +99,7 @@ export function AppSidebar() {
           console.warn('Collapsed logo failed, switching to fallback');
           img.src = '/lovable-uploads/logo_transparente.png';
           img.dataset.fallbackApplied = 'true';
-        }} /> : <img src="/lovable-uploads/logo_transparente-removebg-preview.png" alt="Logo EasyQuote" className="h-6 w-auto max-w-full object-contain" onError={e => {
+        }} /> : <img src="/lovable-uploads/logo_transparente-removebg-preview.png" alt="Logo EasyQuote" className="h-6 w-auto max-w-full object-contain dark:brightness-0 dark:invert" onError={e => {
           const img = e.currentTarget;
           if (img.dataset.fallbackApplied) {
             console.warn('Expanded logo fallback also failed, hiding');
@@ -554,6 +555,9 @@ export function AppSidebar() {
                 {!isCollapsed && <span>Contraer menú</span>}
               </button>
             </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <ThemeToggle isCollapsed={isCollapsed} />
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild tooltip="Cerrar sesión" className="h-7 px-2">

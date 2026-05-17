@@ -139,7 +139,7 @@ const Index = () => {
         {/* Hero Section */}
         <div className="mb-6 md:mb-12">
           <div className="flex flex-col md:flex-row items-center md:justify-between gap-4 mb-6">
-            <img src="/lovable-uploads/logo_transparente-removebg-preview.png" alt="EasyQuote" className="h-16 md:h-20 w-auto" onError={(e) => {
+            <img src="/lovable-uploads/logo_transparente-removebg-preview.png" alt="EasyQuote" className="h-16 md:h-20 w-auto dark:brightness-0 dark:invert" onError={(e) => {
             const img = e.currentTarget;
             if (!img.dataset.fallbackApplied) {
               img.src = "/lovable-uploads/logo_transparente.png";
