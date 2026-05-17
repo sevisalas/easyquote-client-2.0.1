@@ -384,7 +384,6 @@ const Index = () => {
         {/* EasyQuote Brand Image */}
         <div className="mt-4 flex justify-center">
           <img src={logoLightBottom} alt="EasyQuote" className="h-16 md:h-24 w-auto opacity-80 block dark:hidden" />
-          <img src={logoDarkBottom} alt="EasyQuote" className="h-16 md:h-24 w-auto opacity-80 hidden dark:block" />
         </div>
       </div>
     </div>;
