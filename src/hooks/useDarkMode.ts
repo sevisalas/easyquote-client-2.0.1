@@ -1,17 +1,16 @@
 import { useEffect, useState, useCallback } from "react";
 
-export type ThemeMode = "light" | "dark" | "system";
+export type ThemeMode = "light" | "dark";
 const STORAGE_KEY = "easyquote-theme";
 
 function getStoredMode(): ThemeMode {
-  if (typeof window === "undefined") return "system";
+  if (typeof window === "undefined") return "light";
   const v = localStorage.getItem(STORAGE_KEY);
-  return v === "light" || v === "dark" || v === "system" ? v : "system";
+  return v === "dark" ? "dark" : "light";
 }
 
 function resolve(mode: ThemeMode): "light" | "dark" {
-  if (mode !== "system") return mode;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return mode;
 }
 
 function apply(resolved: "light" | "dark") {
@@ -28,17 +27,6 @@ export function useDarkMode() {
     const r = resolve(mode);
     setResolvedMode(r);
     apply(r);
-
-    if (mode === "system") {
-      const mql = window.matchMedia("(prefers-color-scheme: dark)");
-      const handler = () => {
-        const next = mql.matches ? "dark" : "light";
-        setResolvedMode(next);
-        apply(next);
-      };
-      mql.addEventListener("change", handler);
-      return () => mql.removeEventListener("change", handler);
-    }
   }, [mode]);
 
   // Sync across tabs
