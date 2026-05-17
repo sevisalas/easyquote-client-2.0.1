@@ -348,7 +348,7 @@ export default function SettingsThemeCorporate() {
               Guardar Tema
             </Button>
             
-            {organizationTheme && (
+            {existingForMode && (
               <Button onClick={handleReset} variant="outline" disabled={resetting}>
                 {resetting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -361,6 +361,8 @@ export default function SettingsThemeCorporate() {
           </div>
         </CardContent>
       </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
