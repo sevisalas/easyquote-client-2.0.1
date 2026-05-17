@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 
@@ -7,6 +7,7 @@ export interface OrganizationTheme {
   id: string;
   organization_id: string;
   name: string;
+  mode?: 'light' | 'dark';
   primary_color: string;
   primary_foreground?: string;
   secondary_color: string;
@@ -22,106 +23,101 @@ export interface OrganizationTheme {
   is_active: boolean;
 }
 
+export type ThemeMode = 'light' | 'dark';
+
 export const useTheme = () => {
   const queryClient = useQueryClient();
   const { organization, membership } = useSubscription();
   const orgId = organization?.id || membership?.organization_id;
 
-  const { data: organizationTheme, isLoading: loading } = useQuery({
+  const { data: themes, isLoading: loading } = useQuery({
     queryKey: ['organization-theme', orgId],
     queryFn: async () => {
-      if (!orgId) return null;
+      if (!orgId) return [] as OrganizationTheme[];
 
       const { data: themeData, error } = await supabase
         .from('organization_themes')
         .select('*')
         .eq('organization_id', orgId)
-        .eq('is_active', true)
-        .maybeSingle();
+        .eq('is_active', true);
 
       if (error) {
         console.error('Error loading theme:', error);
-        return null;
+        return [] as OrganizationTheme[];
       }
 
-      return themeData as OrganizationTheme | null;
+      return (themeData ?? []) as OrganizationTheme[];
     },
     enabled: !!orgId,
     staleTime: 10 * 60 * 1000, // 10 minutos - temas cambian muy raramente
     refetchOnWindowFocus: false,
   });
 
-  // Aplicar tema cuando cambie
-  useEffect(() => {
-    applyTheme(organizationTheme);
-  }, [organizationTheme]);
+  const lightTheme = useMemo(
+    () => (themes ?? []).find(t => (t.mode ?? 'light') === 'light') ?? null,
+    [themes]
+  );
+  const darkTheme = useMemo(
+    () => (themes ?? []).find(t => t.mode === 'dark') ?? null,
+    [themes]
+  );
 
-  // Re-aplicar cuando se alterna el modo oscuro (clase 'dark' en <html>)
+  // Apply theme matching current dark/light mode
   useEffect(() => {
-    const obs = new MutationObserver(() => applyTheme(organizationTheme));
+    const isDark = document.documentElement.classList.contains('dark');
+    applyTheme(isDark ? (darkTheme ?? null) : (lightTheme ?? null), isDark);
+  }, [lightTheme, darkTheme]);
+
+  // Re-apply when dark mode class on <html> toggles
+  useEffect(() => {
+    const obs = new MutationObserver(() => {
+      const isDark = document.documentElement.classList.contains('dark');
+      applyTheme(isDark ? (darkTheme ?? null) : (lightTheme ?? null), isDark);
+    });
     obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
     return () => obs.disconnect();
-  }, [organizationTheme]);
+  }, [lightTheme, darkTheme]);
 
-  const applyTheme = useCallback((theme: OrganizationTheme | null | undefined) => {
+  const applyTheme = useCallback((theme: OrganizationTheme | null | undefined, isDark: boolean) => {
     const root = document.documentElement;
-    const isDark = root.classList.contains('dark');
 
     if (theme) {
-      // Primary (corporate accent) — applied in both light and dark
       root.style.setProperty('--primary', theme.primary_color);
       if (theme.primary_foreground) {
         root.style.setProperty('--primary-foreground', theme.primary_foreground);
       }
 
-      // In dark mode, do NOT override background/sidebar/muted with the corporate
-      // light palette — let the .dark tokens from index.css drive the surfaces.
-      if (isDark) {
-        root.style.removeProperty('--secondary');
-        root.style.removeProperty('--secondary-foreground');
-        root.style.removeProperty('--accent');
-        root.style.removeProperty('--accent-foreground');
-        root.style.removeProperty('--muted');
-        root.style.removeProperty('--muted-foreground');
-        root.style.removeProperty('--sidebar-background');
-        root.style.removeProperty('--sidebar-foreground');
-        root.style.removeProperty('--sidebar-accent');
-        root.style.removeProperty('--sidebar-accent-foreground');
-        return;
-      }
-
-      // Secondary
       root.style.setProperty('--secondary', theme.secondary_color);
       if (theme.secondary_foreground) {
         root.style.setProperty('--secondary-foreground', theme.secondary_foreground);
       }
-      
-      // Accent
+
       root.style.setProperty('--accent', theme.accent_color);
       if (theme.accent_foreground) {
         root.style.setProperty('--accent-foreground', theme.accent_foreground);
       }
-      
-      // Muted
+
       if (theme.muted_color) {
         root.style.setProperty('--muted', theme.muted_color);
       }
       if (theme.muted_foreground) {
         root.style.setProperty('--muted-foreground', theme.muted_foreground);
       }
-      
-      // Sidebar - siempre establecer valores con defaults para evitar texto invisible
-      const sidebarBg = theme.sidebar_background || '0 0% 98%';
-      const sidebarFg = theme.sidebar_foreground || '240 5% 26%';
-      const sidebarAccent = theme.sidebar_accent || '240 5% 96%';
-      const sidebarAccentFg = theme.sidebar_accent_foreground || '240 6% 10%';
-      
+
+      // Sidebar - safe defaults to avoid invisible text
+      const defaults = isDark
+        ? { bg: '240 10% 8%', fg: '0 0% 95%', accent: '240 6% 14%', accentFg: '0 0% 95%' }
+        : { bg: '0 0% 98%', fg: '240 5% 26%', accent: '240 5% 96%', accentFg: '240 6% 10%' };
+      const sidebarBg = theme.sidebar_background || defaults.bg;
+      const sidebarFg = theme.sidebar_foreground || defaults.fg;
+      const sidebarAccent = theme.sidebar_accent || defaults.accent;
+      const sidebarAccentFg = theme.sidebar_accent_foreground || defaults.accentFg;
+
       root.style.setProperty('--sidebar-background', sidebarBg);
       root.style.setProperty('--sidebar-foreground', sidebarFg);
       root.style.setProperty('--sidebar-accent', sidebarAccent);
       root.style.setProperty('--sidebar-accent-foreground', sidebarAccentFg);
     } else {
-      // No corporate theme - remove custom properties so CSS defaults apply
       root.style.removeProperty('--primary');
       root.style.removeProperty('--primary-foreground');
       root.style.removeProperty('--secondary');
@@ -137,30 +133,33 @@ export const useTheme = () => {
     }
   }, []);
 
-  const updateOrganizationTheme = async (theme: Partial<OrganizationTheme>) => {
+  const updateOrganizationTheme = async (
+    theme: Partial<OrganizationTheme>,
+    mode: ThemeMode = 'light'
+  ) => {
     if (!orgId) throw new Error('No organization found');
 
     try {
       let result: OrganizationTheme;
+      const existing = (themes ?? []).find(t => (t.mode ?? 'light') === mode) ?? null;
 
-      if (organizationTheme) {
-        // Update existing theme
+      if (existing) {
         const { data, error } = await supabase
           .from('organization_themes')
-          .update(theme)
-          .eq('id', organizationTheme.id)
+          .update({ ...theme, mode })
+          .eq('id', existing.id)
           .select()
           .single();
 
         if (error) throw error;
         result = data;
       } else {
-        // Create new theme
         const { data, error } = await supabase
           .from('organization_themes')
           .insert({
             organization_id: orgId,
-            ...theme
+            ...theme,
+            mode,
           })
           .select()
           .single();
@@ -169,7 +168,6 @@ export const useTheme = () => {
         result = data;
       }
 
-      // Invalidar cache para refrescar
       queryClient.invalidateQueries({ queryKey: ['organization-theme', orgId] });
       return result;
     } catch (error) {
@@ -178,20 +176,19 @@ export const useTheme = () => {
     }
   };
 
-  const resetToOriginalTheme = async () => {
+  const resetToOriginalTheme = async (mode: ThemeMode = 'light') => {
     try {
-      if (!organizationTheme) return;
+      const existing = (themes ?? []).find(t => (t.mode ?? 'light') === mode) ?? null;
+      if (!existing) return;
 
       await supabase
         .from('organization_themes')
         .delete()
-        .eq('id', organizationTheme.id);
+        .eq('id', existing.id);
 
-      // Invalidar cache
       queryClient.invalidateQueries({ queryKey: ['organization-theme', orgId] });
-      
-      // Reset CSS variables to default
-      applyTheme(null);
+      const isDark = document.documentElement.classList.contains('dark');
+      applyTheme(null, isDark);
     } catch (error) {
       console.error('Error resetting theme:', error);
       throw error;
@@ -203,7 +200,9 @@ export const useTheme = () => {
   }, [queryClient, orgId]);
 
   return {
-    organizationTheme: organizationTheme ?? null,
+    organizationTheme: lightTheme,
+    lightTheme,
+    darkTheme,
     loading,
     updateOrganizationTheme,
     resetToOriginalTheme,

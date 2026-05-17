@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { useTheme } from "@/hooks/useTheme";
+import { useTheme, type ThemeMode } from "@/hooks/useTheme";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, Sun, Moon } from "lucide-react";
 
 // Utility functions outside component to prevent recreation
 const hexToHSL = (hex: string): string => {
@@ -108,49 +109,72 @@ const ColorColumn = ({ title, bgValue, bgOnChange, fgValue, fgOnChange }: ColorC
 );
 
 export default function SettingsThemeCorporate() {
-  const { organizationTheme, updateOrganizationTheme, resetToOriginalTheme, loading } = useTheme();
+  const { lightTheme, darkTheme, updateOrganizationTheme, resetToOriginalTheme, loading } = useTheme();
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
-  
-  const [primaryColor, setPrimaryColor] = useState("332 61% 49%");
-  const [primaryForeground, setPrimaryForeground] = useState("0 0% 100%");
-  const [secondaryColor, setSecondaryColor] = useState("266 93% 17%");
-  const [secondaryForeground, setSecondaryForeground] = useState("0 0% 98%");
-  const [accentColor, setAccentColor] = useState("210 40% 96%");
-  const [accentForeground, setAccentForeground] = useState("222 47% 11%");
-  const [mutedColor, setMutedColor] = useState("210 40% 96%");
-  const [mutedForeground, setMutedForeground] = useState("215 16% 47%");
-  const [sidebarBackground, setSidebarBackground] = useState("0 0% 98%");
-  const [sidebarForeground, setSidebarForeground] = useState("240 5% 26%");
-  const [sidebarAccent, setSidebarAccent] = useState("240 5% 96%");
-  const [sidebarAccentForeground, setSidebarAccentForeground] = useState("240 6% 10%");
+  const [activeMode, setActiveMode] = useState<ThemeMode>("light");
+
+  // Defaults per mode
+  const defaultsByMode = {
+    light: {
+      primaryColor: "332 61% 49%", primaryForeground: "0 0% 100%",
+      secondaryColor: "266 93% 17%", secondaryForeground: "0 0% 98%",
+      accentColor: "210 40% 96%", accentForeground: "222 47% 11%",
+      mutedColor: "210 40% 96%", mutedForeground: "215 16% 47%",
+      sidebarBackground: "0 0% 98%", sidebarForeground: "240 5% 26%",
+      sidebarAccent: "240 5% 96%", sidebarAccentForeground: "240 6% 10%",
+    },
+    dark: {
+      primaryColor: "332 61% 55%", primaryForeground: "0 0% 100%",
+      secondaryColor: "266 40% 25%", secondaryForeground: "0 0% 98%",
+      accentColor: "240 6% 18%", accentForeground: "0 0% 95%",
+      mutedColor: "240 6% 14%", mutedForeground: "240 5% 65%",
+      sidebarBackground: "240 10% 8%", sidebarForeground: "0 0% 95%",
+      sidebarAccent: "240 6% 14%", sidebarAccentForeground: "0 0% 95%",
+    },
+  } as const;
+
+  const [primaryColor, setPrimaryColor] = useState<string>(defaultsByMode.light.primaryColor);
+  const [primaryForeground, setPrimaryForeground] = useState<string>(defaultsByMode.light.primaryForeground);
+  const [secondaryColor, setSecondaryColor] = useState<string>(defaultsByMode.light.secondaryColor);
+  const [secondaryForeground, setSecondaryForeground] = useState<string>(defaultsByMode.light.secondaryForeground);
+  const [accentColor, setAccentColor] = useState<string>(defaultsByMode.light.accentColor);
+  const [accentForeground, setAccentForeground] = useState<string>(defaultsByMode.light.accentForeground);
+  const [mutedColor, setMutedColor] = useState<string>(defaultsByMode.light.mutedColor);
+  const [mutedForeground, setMutedForeground] = useState<string>(defaultsByMode.light.mutedForeground);
+  const [sidebarBackground, setSidebarBackground] = useState<string>(defaultsByMode.light.sidebarBackground);
+  const [sidebarForeground, setSidebarForeground] = useState<string>(defaultsByMode.light.sidebarForeground);
+  const [sidebarAccent, setSidebarAccent] = useState<string>(defaultsByMode.light.sidebarAccent);
+  const [sidebarAccentForeground, setSidebarAccentForeground] = useState<string>(defaultsByMode.light.sidebarAccentForeground);
 
   useEffect(() => {
     document.title = "Tema Corporativo - EasyQuote";
   }, []);
 
+  // Load values whenever the active tab changes, from the corresponding theme (or defaults)
   useEffect(() => {
-    if (organizationTheme) {
-      setPrimaryColor(organizationTheme.primary_color);
-      setPrimaryForeground(organizationTheme.primary_foreground || "0 0% 100%");
-      setSecondaryColor(organizationTheme.secondary_color);
-      setSecondaryForeground(organizationTheme.secondary_foreground || "0 0% 98%");
-      setAccentColor(organizationTheme.accent_color);
-      setAccentForeground(organizationTheme.accent_foreground || "222 47% 11%");
-      if (organizationTheme.muted_color) setMutedColor(organizationTheme.muted_color);
-      if (organizationTheme.muted_foreground) setMutedForeground(organizationTheme.muted_foreground);
-      if (organizationTheme.sidebar_background) setSidebarBackground(organizationTheme.sidebar_background);
-      if (organizationTheme.sidebar_foreground) setSidebarForeground(organizationTheme.sidebar_foreground);
-      if (organizationTheme.sidebar_accent) setSidebarAccent(organizationTheme.sidebar_accent);
-      if (organizationTheme.sidebar_accent_foreground) setSidebarAccentForeground(organizationTheme.sidebar_accent_foreground);
-    }
-  }, [organizationTheme]);
+    const source = activeMode === "dark" ? darkTheme : lightTheme;
+    const d = defaultsByMode[activeMode];
+    setPrimaryColor(source?.primary_color ?? d.primaryColor);
+    setPrimaryForeground(source?.primary_foreground ?? d.primaryForeground);
+    setSecondaryColor(source?.secondary_color ?? d.secondaryColor);
+    setSecondaryForeground(source?.secondary_foreground ?? d.secondaryForeground);
+    setAccentColor(source?.accent_color ?? d.accentColor);
+    setAccentForeground(source?.accent_foreground ?? d.accentForeground);
+    setMutedColor(source?.muted_color ?? d.mutedColor);
+    setMutedForeground(source?.muted_foreground ?? d.mutedForeground);
+    setSidebarBackground(source?.sidebar_background ?? d.sidebarBackground);
+    setSidebarForeground(source?.sidebar_foreground ?? d.sidebarForeground);
+    setSidebarAccent(source?.sidebar_accent ?? d.sidebarAccent);
+    setSidebarAccentForeground(source?.sidebar_accent_foreground ?? d.sidebarAccentForeground);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeMode, lightTheme, darkTheme]);
 
   const handleSave = async () => {
     setSaving(true);
     try {
       await updateOrganizationTheme({
-        name: "Tema corporativo",
+        name: activeMode === "dark" ? "Tema oscuro" : "Tema claro",
         primary_color: primaryColor,
         primary_foreground: primaryForeground,
         secondary_color: secondaryColor,
@@ -163,8 +187,8 @@ export default function SettingsThemeCorporate() {
         sidebar_foreground: sidebarForeground,
         sidebar_accent: sidebarAccent,
         sidebar_accent_foreground: sidebarAccentForeground
-      });
-      toast.success("Tema corporativo guardado correctamente");
+      }, activeMode);
+      toast.success(`Tema ${activeMode === "dark" ? "oscuro" : "claro"} guardado correctamente`);
     } catch (error) {
       console.error('Error saving theme:', error);
       toast.error("Error al guardar el tema corporativo");
@@ -176,20 +200,21 @@ export default function SettingsThemeCorporate() {
   const handleReset = async () => {
     setResetting(true);
     try {
-      await resetToOriginalTheme();
-      setPrimaryColor("332 61% 49%");
-      setPrimaryForeground("0 0% 100%");
-      setSecondaryColor("266 93% 17%");
-      setSecondaryForeground("0 0% 98%");
-      setAccentColor("210 40% 96%");
-      setAccentForeground("222 47% 11%");
-      setMutedColor("210 40% 96%");
-      setMutedForeground("215 16% 47%");
-      setSidebarBackground("0 0% 98%");
-      setSidebarForeground("240 5% 26%");
-      setSidebarAccent("240 5% 96%");
-      setSidebarAccentForeground("240 6% 10%");
-      toast.success("Tema restaurado al original de EasyQuote");
+      await resetToOriginalTheme(activeMode);
+      const d = defaultsByMode[activeMode];
+      setPrimaryColor(d.primaryColor);
+      setPrimaryForeground(d.primaryForeground);
+      setSecondaryColor(d.secondaryColor);
+      setSecondaryForeground(d.secondaryForeground);
+      setAccentColor(d.accentColor);
+      setAccentForeground(d.accentForeground);
+      setMutedColor(d.mutedColor);
+      setMutedForeground(d.mutedForeground);
+      setSidebarBackground(d.sidebarBackground);
+      setSidebarForeground(d.sidebarForeground);
+      setSidebarAccent(d.sidebarAccent);
+      setSidebarAccentForeground(d.sidebarAccentForeground);
+      toast.success(`Tema ${activeMode === "dark" ? "oscuro" : "claro"} restaurado al original`);
     } catch (error) {
       console.error('Error resetting theme:', error);
       toast.error("Error al restaurar el tema");
@@ -206,15 +231,23 @@ export default function SettingsThemeCorporate() {
     );
   }
 
+  const existingForMode = activeMode === "dark" ? darkTheme : lightTheme;
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Tema Corporativo</h1>
         <p className="text-muted-foreground mt-2">
-          Personaliza los colores de tu organización.
+          Personaliza los colores de tu organización. El tema <strong>Claro</strong> se aplica cuando el usuario tiene apariencia clara, y el tema <strong>Oscuro</strong> cuando tiene apariencia oscura.
         </p>
       </div>
 
+      <Tabs value={activeMode} onValueChange={(v) => setActiveMode(v as ThemeMode)}>
+        <TabsList>
+          <TabsTrigger value="light"><Sun className="mr-2 h-4 w-4" />Tema claro</TabsTrigger>
+          <TabsTrigger value="dark"><Moon className="mr-2 h-4 w-4" />Tema oscuro</TabsTrigger>
+        </TabsList>
+        <TabsContent value={activeMode} forceMount>
       <Card>
         <CardContent className="pt-6">
           {/* Main colors: Primary, Secondary, Accent, Muted */}
@@ -315,7 +348,7 @@ export default function SettingsThemeCorporate() {
               Guardar Tema
             </Button>
             
-            {organizationTheme && (
+            {existingForMode && (
               <Button onClick={handleReset} variant="outline" disabled={resetting}>
                 {resetting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -328,6 +361,8 @@ export default function SettingsThemeCorporate() {
           </div>
         </CardContent>
       </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
