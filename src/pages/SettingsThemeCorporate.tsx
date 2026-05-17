@@ -7,6 +7,24 @@ import { useTheme } from "@/hooks/useTheme";
 import { toast } from "sonner";
 import { Loader2, RefreshCw } from "lucide-react";
 
+// Preset paletas predefinidas
+const PRESETS: Record<string, {
+  primary: string; primaryFg: string;
+  secondary: string; secondaryFg: string;
+  accent: string; accentFg: string;
+  muted: string; mutedFg: string;
+  sbBg: string; sbFg: string; sbAcc: string; sbAccFg: string;
+}> = {
+  tradsisDark: {
+    primary: "322 88% 62%", primaryFg: "0 0% 100%",
+    secondary: "262 60% 55%", secondaryFg: "0 0% 100%",
+    accent: "280 70% 60%", accentFg: "0 0% 100%",
+    muted: "252 18% 20%", mutedFg: "240 12% 70%",
+    sbBg: "252 30% 8%", sbFg: "240 15% 88%",
+    sbAcc: "252 22% 16%", sbAccFg: "240 20% 96%",
+  },
+};
+
 // Utility functions outside component to prevent recreation
 const hexToHSL = (hex: string): string => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -198,6 +216,17 @@ export default function SettingsThemeCorporate() {
     }
   };
 
+  const applyPreset = (key: keyof typeof PRESETS) => {
+    const p = PRESETS[key];
+    setPrimaryColor(p.primary); setPrimaryForeground(p.primaryFg);
+    setSecondaryColor(p.secondary); setSecondaryForeground(p.secondaryFg);
+    setAccentColor(p.accent); setAccentForeground(p.accentFg);
+    setMutedColor(p.muted); setMutedForeground(p.mutedFg);
+    setSidebarBackground(p.sbBg); setSidebarForeground(p.sbFg);
+    setSidebarAccent(p.sbAcc); setSidebarAccentForeground(p.sbAccFg);
+    toast.info("Preset cargado. Pulsa Guardar para aplicarlo.");
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -217,6 +246,26 @@ export default function SettingsThemeCorporate() {
 
       <Card>
         <CardContent className="pt-6">
+          {/* Presets */}
+          <div className="flex flex-wrap items-center gap-3 mb-6 pb-6 border-b">
+            <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Presets
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => applyPreset("tradsisDark")}
+              className="gap-2"
+            >
+              <span className="flex gap-1">
+                <span className="w-3 h-3 rounded-full" style={{ background: "hsl(252 30% 8%)" }} />
+                <span className="w-3 h-3 rounded-full" style={{ background: "hsl(322 88% 62%)" }} />
+                <span className="w-3 h-3 rounded-full" style={{ background: "hsl(262 60% 55%)" }} />
+              </span>
+              Tradsis Dark
+            </Button>
+          </div>
+
           {/* Main colors: Primary, Secondary, Accent, Muted */}
           <div className="grid gap-8 grid-cols-2 md:grid-cols-4 mb-8">
             <ColorColumn
