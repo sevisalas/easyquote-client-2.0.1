@@ -23,25 +23,29 @@ export function useOutputTypeVisibility() {
   const queryClient = useQueryClient();
   const organizationId = sessionStorage.getItem("selected_organization_id");
 
-  // Fetch real output types from EasyQuote API
-  const tokenReady = !!sessionStorage.getItem("easyquote_token");
-
   const { data: apiOutputTypes = [], isLoading: isLoadingTypes } = useQuery({
     queryKey: ["easyquote-output-types"],
     queryFn: async () => {
       const token = await getEasyQuoteToken();
-      if (!token) return [];
+      if (!token) {
+        console.warn("[OutputTypeVisibility] No EasyQuote token available");
+        return [];
+      }
       const resp = await fetch("https://api.easyquote.cloud/api/v1/products/outputs/types", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!resp.ok) return [];
+      if (!resp.ok) {
+        console.warn("[OutputTypeVisibility] API error:", resp.status);
+        return [];
+      }
       const data = await resp.json();
       console.log("[OutputTypeVisibility] API output types:", data);
       return (Array.isArray(data) ? data : []) as EasyQuoteOutputType[];
     },
-    enabled: tokenReady,
+    enabled: true,
     staleTime: 1000 * 60 * 60,
     refetchOnWindowFocus: false,
+    retry: 1,
   });
 
   const { data: visibilitySettings, isLoading: isLoadingSettings } = useQuery({
