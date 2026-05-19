@@ -18,6 +18,7 @@ import { useProductionVariables } from "@/hooks/useProductionVariables";
 import { useOutputTypeVisibility } from "@/hooks/useOutputTypeVisibility";
 import { Switch } from "@/components/ui/switch";
 import type { DefaultProductionTask } from "@/hooks/useDefaultProductionTasks";
+import { ProductionPhasesPanel } from "@/components/production/ProductionPhasesPanel";
 
 const impositionFieldLabels: Record<string, string> = {
   productWidth: "Ancho producto",
@@ -313,8 +314,8 @@ export default function ProductionConfiguration() {
         </p>
       </div>
 
-      {/* Top Row: Workload and Default Tasks */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      {/* Top Row: Workload, Phases and Default Tasks */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
         {/* Workload Configuration */}
         <Card>
           <CardHeader>
@@ -337,6 +338,9 @@ export default function ProductionConfiguration() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Production Phases (custom by tenant) */}
+        <ProductionPhasesPanel />
 
         {/* Default Tasks */}
         <Card>
