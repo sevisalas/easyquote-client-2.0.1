@@ -71,32 +71,21 @@ export function ProductionPhasesPanel() {
         {phases.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">Sin fases</p>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-1">
             {phases.map((phase) => {
               const isGlobal = phase.organization_id === null;
               const canEdit = !isGlobal && phase.organization_id === organizationId;
               return (
-                <div key={phase.id} className="flex items-center justify-between p-2 border rounded-lg">
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: phase.color }} />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">{phase.display_name}</div>
-                      {isGlobal && (
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <Lock className="h-2.5 w-2.5 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">Global</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" disabled={!canEdit} onClick={() => openEdit(phase)}>
-                      <Pencil className="h-3 w-3" />
-                    </Button>
-                    <Button variant="ghost" size="sm" disabled={!canEdit} onClick={() => openDelete(phase)}>
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
+                <div key={phase.id} className="flex items-center gap-2 px-2 py-1 border rounded-md">
+                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: phase.color }} />
+                  <span className="text-sm font-medium truncate flex-1 min-w-0">{phase.display_name}</span>
+                  {isGlobal && <Lock className="h-3 w-3 text-muted-foreground flex-shrink-0" />}
+                  <Button variant="ghost" size="icon" className="h-6 w-6" disabled={!canEdit} onClick={() => openEdit(phase)}>
+                    <Pencil className="h-3 w-3" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-6 w-6" disabled={!canEdit} onClick={() => openDelete(phase)}>
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
                 </div>
               );
             })}
