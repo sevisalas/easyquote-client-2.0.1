@@ -22,18 +22,14 @@ export function useProductionPhases() {
   const { data: phases = [], isLoading, error } = useQuery({
     queryKey: ["production-phases", organizationId],
     queryFn: async () => {
-      let query = supabase
+      if (!organizationId) return [] as ProductionPhase[];
+
+      const { data, error } = await supabase
         .from("production_phases")
         .select("*")
-        .eq("is_active", true);
-
-      if (organizationId) {
-        query = query.or(`organization_id.is.null,organization_id.eq.${organizationId}`);
-      } else {
-        query = query.is("organization_id", null);
-      }
-
-      const { data, error } = await query.order("display_order");
+        .eq("is_active", true)
+        .eq("organization_id", organizationId)
+        .order("display_order");
 
       if (error) {
         console.error("Error fetching production phases:", error);

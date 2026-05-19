@@ -5,13 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Lock } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useProductionPhases, type ProductionPhase } from "@/hooks/useProductionPhases";
 
 const PRESET_COLORS = ["#3B82F6", "#E91E8C", "#00D4FF", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#6B7280"];
 
 export function ProductionPhasesPanel() {
-  const { phases, organizationId, createPhase, updatePhase, deletePhase } = useProductionPhases();
+  const { phases, createPhase, updatePhase, deletePhase } = useProductionPhases();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -72,23 +72,18 @@ export function ProductionPhasesPanel() {
           <p className="text-sm text-muted-foreground text-center py-4">Sin fases</p>
         ) : (
           <div className="space-y-1">
-            {phases.map((phase) => {
-              const isGlobal = phase.organization_id === null;
-              const canEdit = !isGlobal && phase.organization_id === organizationId;
-              return (
-                <div key={phase.id} className="flex items-center gap-2 px-2 py-1 border rounded-md">
-                  <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: phase.color }} />
-                  <span className="text-sm font-medium truncate flex-1 min-w-0">{phase.display_name}</span>
-                  {isGlobal && <Lock className="h-3 w-3 text-muted-foreground flex-shrink-0" />}
-                  <Button variant="ghost" size="icon" className="h-6 w-6" disabled={!canEdit} onClick={() => openEdit(phase)}>
-                    <Pencil className="h-3 w-3" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-6 w-6" disabled={!canEdit} onClick={() => openDelete(phase)}>
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              );
-            })}
+            {phases.map((phase) => (
+              <div key={phase.id} className="flex items-center gap-2 px-2 py-1 border rounded-md">
+                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: phase.color }} />
+                <span className="text-sm font-medium truncate flex-1 min-w-0">{phase.display_name}</span>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEdit(phase)}>
+                  <Pencil className="h-3 w-3" />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openDelete(phase)}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            ))}
           </div>
         )}
       </CardContent>

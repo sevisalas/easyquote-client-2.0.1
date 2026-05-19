@@ -3743,6 +3743,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      initialize_organization_production_phases: {
+        Args: { p_organization_id: string }
+        Returns: undefined
+      }
       is_org_admin: {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
