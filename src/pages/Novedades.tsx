@@ -26,6 +26,15 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.8.5",
+    date: "2026-05-19",
+    changes: {
+      changed: [
+        "Gestión completa de fases de producción: ahora cada organización puede editar, añadir o eliminar sus propias fases de producción de forma independiente.",
+      ],
+    },
+  },
+  {
     version: "2.8.2",
     date: "2026-05-07",
     changes: {
