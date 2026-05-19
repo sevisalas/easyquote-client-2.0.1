@@ -361,32 +361,22 @@ export default function ProductionConfiguration() {
           <CardContent>
             {tasks.length === 0 ? <p className="text-sm text-muted-foreground text-center py-4">
                 No hay tareas configuradas
-              </p> : <div className="space-y-2">
+              </p> : <div className="space-y-1">
                 {tasks.map(task => {
               const phase = phases.find(p => p.id === task.phase_id);
-              return <div key={task.id} className="flex items-center justify-between p-2 border rounded-lg">
-                      <div className="flex items-center gap-2 flex-1">
-                        <GripVertical className="h-4 w-4 text-muted-foreground" />
-                        <div className="flex-1">
-                          <div className="text-sm font-medium">{task.task_name}</div>
-                          {phase && <div className="flex items-center gap-1 mt-0.5">
-                              <span className="w-2 h-2 rounded-full" style={{
-                        backgroundColor: phase.color
-                      }} />
-                              <span className="text-xs text-muted-foreground">
-                                {phase.display_name}
-                              </span>
-                            </div>}
-                        </div>
-                      </div>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => openEditTaskDialog(task)}>
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => openDeleteTaskDialog(task)}>
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
-                      </div>
+              return <div key={task.id} className="flex items-center gap-2 px-2 py-1 border rounded-md">
+                      <GripVertical className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm font-medium truncate flex-1 min-w-0">{task.task_name}</span>
+                      {phase && <>
+                        <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: phase.color }} />
+                        <span className="text-xs text-muted-foreground truncate max-w-[100px]">{phase.display_name}</span>
+                      </>}
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openEditTaskDialog(task)}>
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => openDeleteTaskDialog(task)}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
                     </div>;
             })}
               </div>}
