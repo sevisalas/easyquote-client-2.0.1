@@ -44,7 +44,7 @@ function OutputTypeVisibilitySection() {
   return (
     <Card>
       <CardHeader className="py-3 px-4">
-        <CardTitle className="text-sm">Visibilidad de tipos de output</CardTitle>
+        <CardTitle className="text-sm">Visibilidad de tipos de datos de salida</CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-3 pt-0">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
