@@ -59,14 +59,14 @@ export default function ProductionBoard() {
   const { view, updateView } = useProductionBoardView();
 
   useEffect(() => {
-    loadJobs();
-    const interval = setInterval(loadJobs, 5 * 60 * 1000);
+    loadJobs(true);
+    const interval = setInterval(() => loadJobs(false), 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
-  const loadJobs = async () => {
+  const loadJobs = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       const organizationId = sessionStorage.getItem("selected_organization_id");
 
       let query = supabase
