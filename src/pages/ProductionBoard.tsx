@@ -52,6 +52,64 @@ const itemStatusLabels: Record<string, string> = {
   cancelled: "Cancelado",
 };
 
+function PhaseIndicator({
+  color,
+  status,
+}: {
+  color: string;
+  status: "pending" | "in_progress" | "paused" | "completed" | "none";
+}) {
+  if (status === "none") {
+    return <span className="inline-block h-2 w-2 rounded-full bg-muted" />;
+  }
+  const titleMap: Record<string, string> = {
+    pending: "Pendiente",
+    in_progress: "En proceso",
+    paused: "Pausada",
+    completed: "Completada",
+  };
+  const base = "inline-block h-3 w-3 rounded-full ring-1 ring-border";
+  if (status === "pending") {
+    return (
+      <span
+        title={titleMap[status]}
+        className={base}
+        style={{ backgroundColor: "transparent", boxShadow: `inset 0 0 0 2px ${color}` }}
+      />
+    );
+  }
+  if (status === "in_progress") {
+    return (
+      <span
+        title={titleMap[status]}
+        className={`${base} animate-pulse`}
+        style={{ backgroundColor: color }}
+      />
+    );
+  }
+  if (status === "paused") {
+    return (
+      <span
+        title={titleMap[status]}
+        className={base}
+        style={{ backgroundColor: color, opacity: 0.5 }}
+      />
+    );
+  }
+  // completed
+  return (
+    <span
+      title={titleMap[status]}
+      className={`${base} relative`}
+      style={{ backgroundColor: color }}
+    >
+      <svg viewBox="0 0 12 12" className="absolute inset-0 h-3 w-3 text-background" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="2.5,6.5 5,9 9.5,3.5" />
+      </svg>
+    </span>
+  );
+}
+
 export default function ProductionBoard() {
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState<Job[]>([]);
