@@ -28,6 +28,7 @@ import { es } from "date-fns/locale";
 import { Package, LayoutGrid, ExternalLink } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useProductionBoardView } from "@/hooks/useProductionBoardView";
+import { useProductionPhases } from "@/hooks/useProductionPhases";
 
 interface Job {
   orderId: string;
@@ -40,6 +41,7 @@ interface Job {
   productName: string;
   quantity: number;
   productionStatus: string;
+  phaseStatuses: Record<string, "pending" | "in_progress" | "paused" | "completed" | "none">;
 }
 
 const itemStatusLabels: Record<string, string> = {
@@ -49,6 +51,64 @@ const itemStatusLabels: Record<string, string> = {
   cancelled: "Cancelado",
 };
 
+function PhaseIndicator({
+  color,
+  status,
+}: {
+  color: string;
+  status: "pending" | "in_progress" | "paused" | "completed" | "none";
+}) {
+  if (status === "none") {
+    return <span className="inline-block h-2 w-2 rounded-full bg-muted" />;
+  }
+  const titleMap: Record<string, string> = {
+    pending: "Pendiente",
+    in_progress: "En proceso",
+    paused: "Pausada",
+    completed: "Completada",
+  };
+  const base = "inline-block h-3 w-3 rounded-full ring-1 ring-border";
+  if (status === "pending") {
+    return (
+      <span
+        title={titleMap[status]}
+        className={base}
+        style={{ backgroundColor: "transparent", boxShadow: `inset 0 0 0 2px ${color}` }}
+      />
+    );
+  }
+  if (status === "in_progress") {
+    return (
+      <span
+        title={titleMap[status]}
+        className={`${base} animate-pulse`}
+        style={{ backgroundColor: color }}
+      />
+    );
+  }
+  if (status === "paused") {
+    return (
+      <span
+        title={titleMap[status]}
+        className={base}
+        style={{ backgroundColor: color, opacity: 0.5 }}
+      />
+    );
+  }
+  // completed
+  return (
+    <span
+      title={titleMap[status]}
+      className={`${base} relative`}
+      style={{ backgroundColor: color }}
+    >
+      <svg viewBox="0 0 12 12" className="absolute inset-0 h-3 w-3 text-background" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="2.5,6.5 5,9 9.5,3.5" />
+      </svg>
+    </span>
+  );
+}
+
 export default function ProductionBoard() {
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -57,6 +117,7 @@ export default function ProductionBoard() {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
   const { view, updateView } = useProductionBoardView();
+  const { phases } = useProductionPhases();
 
   useEffect(() => {
     loadJobs(true);
@@ -91,9 +152,38 @@ export default function ProductionBoard() {
         .order("position");
       if (itemsError) throw itemsError;
 
+      const itemIds = (itemsData || []).map((it) => it.id);
+      const tasksByItem = new Map<string, Array<{ phase_id: string; status: string }>>();
+      if (itemIds.length > 0) {
+        const { data: tasksData } = await supabase
+          .from("production_tasks")
+          .select("sales_order_item_id, phase_id, status")
+          .in("sales_order_item_id", itemIds);
+        for (const t of tasksData || []) {
+          const arr = tasksByItem.get(t.sales_order_item_id) || [];
+          arr.push({ phase_id: t.phase_id, status: t.status });
+          tasksByItem.set(t.sales_order_item_id, arr);
+        }
+      }
+
       const ordersById = new Map((ordersData || []).map((o) => [o.id, o]));
       const flat: Job[] = (itemsData || []).map((it) => {
         const o = ordersById.get(it.sales_order_id)!;
+        const itemTasks = tasksByItem.get(it.id) || [];
+        const phaseStatuses: Job["phaseStatuses"] = {};
+        // Group by phase, aggregate: in_progress > paused > pending > completed (all)
+        const byPhase = new Map<string, string[]>();
+        for (const t of itemTasks) {
+          const arr = byPhase.get(t.phase_id) || [];
+          arr.push(t.status);
+          byPhase.set(t.phase_id, arr);
+        }
+        for (const [phaseId, statuses] of byPhase.entries()) {
+          if (statuses.includes("in_progress")) phaseStatuses[phaseId] = "in_progress";
+          else if (statuses.includes("paused")) phaseStatuses[phaseId] = "paused";
+          else if (statuses.every((s) => s === "completed")) phaseStatuses[phaseId] = "completed";
+          else phaseStatuses[phaseId] = "pending";
+        }
         return {
           orderId: o.id,
           orderNumber: o.order_number,
@@ -106,6 +196,7 @@ export default function ProductionBoard() {
           quantity: it.quantity,
           productionStatus:
             o.status === "cancelled" ? "cancelled" : it.production_status || "pending",
+          phaseStatuses,
         };
       });
 
@@ -234,12 +325,25 @@ export default function ProductionBoard() {
                 <TableHead>Artículo</TableHead>
                 <TableHead className="w-32 py-2">Estado</TableHead>
                 <TableHead className="w-20 py-2 text-right">Cantidad</TableHead>
+                {phases.map((p) => (
+                  <TableHead key={p.id} className="py-2 text-center px-2" title={p.display_name}>
+                    <div className="flex flex-col items-center gap-1">
+                      <span
+                        className="inline-block h-2.5 w-2.5 rounded-full ring-1 ring-border"
+                        style={{ backgroundColor: p.color }}
+                      />
+                      <span className="text-[10px] font-medium uppercase tracking-wide truncate max-w-[80px]">
+                        {p.display_name}
+                      </span>
+                    </div>
+                  </TableHead>
+                ))}
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredJobs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-12">
+                  <TableCell colSpan={6 + phases.length} className="text-center text-muted-foreground py-12">
                     No hay trabajos pendientes
                   </TableCell>
                 </TableRow>
@@ -276,6 +380,14 @@ export default function ProductionBoard() {
                       </Badge>
                     </TableCell>
                     <TableCell className="py-1.5 text-right tabular-nums">{j.quantity}</TableCell>
+                    {phases.map((p) => {
+                      const st = j.phaseStatuses[p.id] || "none";
+                      return (
+                        <TableCell key={p.id} className="py-1.5 px-2 text-center">
+                          <PhaseIndicator color={p.color} status={st} />
+                        </TableCell>
+                      );
+                    })}
                   </TableRow>
                 ))
               )}
