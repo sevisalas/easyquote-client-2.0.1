@@ -204,7 +204,8 @@ export default function ProductionBoard() {
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="pending">Pendiente</SelectItem>
                 <SelectItem value="in_progress">En proceso</SelectItem>
-                {!excludeFinished && <SelectItem value="completed">Completado</SelectItem>}
+                <SelectItem value="completed">Completado</SelectItem>
+                <SelectItem value="cancelled">Cancelado</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -212,13 +213,10 @@ export default function ProductionBoard() {
             <Switch
               id="exclude-finished"
               checked={excludeFinished}
-              onCheckedChange={(v) => {
-                setExcludeFinished(v);
-                if (v && statusFilter === "completed") setStatusFilter("all");
-              }}
+              onCheckedChange={setExcludeFinished}
             />
             <Label htmlFor="exclude-finished" className="text-sm cursor-pointer">
-              Excluir terminados
+              Excluir terminados y cancelados
             </Label>
           </div>
           <div className="ml-auto text-sm text-muted-foreground">
