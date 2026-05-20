@@ -268,12 +268,25 @@ export default function ProductionBoard() {
                 <TableHead>Artículo</TableHead>
                 <TableHead className="w-32 py-2">Estado</TableHead>
                 <TableHead className="w-20 py-2 text-right">Cantidad</TableHead>
+                {phases.map((p) => (
+                  <TableHead key={p.id} className="py-2 text-center px-2" title={p.display_name}>
+                    <div className="flex flex-col items-center gap-1">
+                      <span
+                        className="inline-block h-2.5 w-2.5 rounded-full ring-1 ring-border"
+                        style={{ backgroundColor: p.color }}
+                      />
+                      <span className="text-[10px] font-medium uppercase tracking-wide truncate max-w-[80px]">
+                        {p.display_name}
+                      </span>
+                    </div>
+                  </TableHead>
+                ))}
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredJobs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-12">
+                  <TableCell colSpan={6 + phases.length} className="text-center text-muted-foreground py-12">
                     No hay trabajos pendientes
                   </TableCell>
                 </TableRow>
@@ -310,6 +323,14 @@ export default function ProductionBoard() {
                       </Badge>
                     </TableCell>
                     <TableCell className="py-1.5 text-right tabular-nums">{j.quantity}</TableCell>
+                    {phases.map((p) => {
+                      const st = j.phaseStatuses[p.id] || "none";
+                      return (
+                        <TableCell key={p.id} className="py-1.5 px-2 text-center">
+                          <PhaseIndicator color={p.color} status={st} />
+                        </TableCell>
+                      );
+                    })}
                   </TableRow>
                 ))
               )}
