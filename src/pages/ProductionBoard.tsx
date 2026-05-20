@@ -28,6 +28,8 @@ import { es } from "date-fns/locale";
 import { Package, LayoutGrid, ExternalLink } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useProductionBoardView } from "@/hooks/useProductionBoardView";
+import { useProductionPhases } from "@/hooks/useProductionPhases";
+import { cn } from "@/lib/utils";
 
 interface Job {
   orderId: string;
@@ -40,6 +42,7 @@ interface Job {
   productName: string;
   quantity: number;
   productionStatus: string;
+  phaseStatuses: Record<string, "pending" | "in_progress" | "paused" | "completed" | "none">;
 }
 
 const itemStatusLabels: Record<string, string> = {
@@ -57,6 +60,7 @@ export default function ProductionBoard() {
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
   const { view, updateView } = useProductionBoardView();
+  const { phases } = useProductionPhases();
 
   useEffect(() => {
     loadJobs(true);
@@ -91,9 +95,38 @@ export default function ProductionBoard() {
         .order("position");
       if (itemsError) throw itemsError;
 
+      const itemIds = (itemsData || []).map((it) => it.id);
+      const tasksByItem = new Map<string, Array<{ phase_id: string; status: string }>>();
+      if (itemIds.length > 0) {
+        const { data: tasksData } = await supabase
+          .from("production_tasks")
+          .select("sales_order_item_id, phase_id, status")
+          .in("sales_order_item_id", itemIds);
+        for (const t of tasksData || []) {
+          const arr = tasksByItem.get(t.sales_order_item_id) || [];
+          arr.push({ phase_id: t.phase_id, status: t.status });
+          tasksByItem.set(t.sales_order_item_id, arr);
+        }
+      }
+
       const ordersById = new Map((ordersData || []).map((o) => [o.id, o]));
       const flat: Job[] = (itemsData || []).map((it) => {
         const o = ordersById.get(it.sales_order_id)!;
+        const itemTasks = tasksByItem.get(it.id) || [];
+        const phaseStatuses: Job["phaseStatuses"] = {};
+        // Group by phase, aggregate: in_progress > paused > pending > completed (all)
+        const byPhase = new Map<string, string[]>();
+        for (const t of itemTasks) {
+          const arr = byPhase.get(t.phase_id) || [];
+          arr.push(t.status);
+          byPhase.set(t.phase_id, arr);
+        }
+        for (const [phaseId, statuses] of byPhase.entries()) {
+          if (statuses.includes("in_progress")) phaseStatuses[phaseId] = "in_progress";
+          else if (statuses.includes("paused")) phaseStatuses[phaseId] = "paused";
+          else if (statuses.every((s) => s === "completed")) phaseStatuses[phaseId] = "completed";
+          else phaseStatuses[phaseId] = "pending";
+        }
         return {
           orderId: o.id,
           orderNumber: o.order_number,
@@ -106,6 +139,7 @@ export default function ProductionBoard() {
           quantity: it.quantity,
           productionStatus:
             o.status === "cancelled" ? "cancelled" : it.production_status || "pending",
+          phaseStatuses,
         };
       });
 
