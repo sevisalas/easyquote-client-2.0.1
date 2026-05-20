@@ -104,7 +104,8 @@ export default function ProductionBoard() {
           itemId: it.id,
           productName: it.product_name,
           quantity: it.quantity,
-          productionStatus: it.production_status || "pending",
+          productionStatus:
+            o.status === "cancelled" ? "cancelled" : it.production_status || "pending",
         };
       });
 
@@ -123,8 +124,11 @@ export default function ProductionBoard() {
   const filteredJobs = useMemo(() => {
     const q = search.trim().toLowerCase();
     return jobs.filter((j) => {
-      if (excludeFinished && j.productionStatus === "completed") return false;
-      if (statusFilter !== "all" && j.productionStatus !== statusFilter) return false;
+      if (statusFilter !== "all") {
+        if (j.productionStatus !== statusFilter) return false;
+      } else if (excludeFinished) {
+        if (j.productionStatus === "completed" || j.productionStatus === "cancelled") return false;
+      }
       if (q) {
         const hay = `${j.orderNumber} ${j.productName}`.toLowerCase();
         if (!hay.includes(q)) return false;
