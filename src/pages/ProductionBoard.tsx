@@ -229,12 +229,12 @@ export default function ProductionBoard() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-28">Fecha</TableHead>
-                <TableHead className="w-40">Nº pedido</TableHead>
+                <TableHead className="w-24 py-2">Fecha</TableHead>
+                <TableHead className="w-56 py-2">Nº pedido</TableHead>
                 <TableHead>Cliente</TableHead>
                 <TableHead>Artículo</TableHead>
-                <TableHead className="w-36">Estado</TableHead>
-                <TableHead className="w-24 text-right">Cantidad</TableHead>
+                <TableHead className="w-32 py-2">Estado</TableHead>
+                <TableHead className="w-20 py-2 text-right">Cantidad</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -247,10 +247,10 @@ export default function ProductionBoard() {
               ) : (
                 filteredJobs.map((j) => (
                   <TableRow key={j.itemId}>
-                    <TableCell className="whitespace-nowrap">
+                    <TableCell className="whitespace-nowrap py-1.5">
                       {format(new Date(j.orderDate), "dd/MM/yyyy", { locale: es })}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-1.5 whitespace-nowrap">
                       <Link
                         to={`/pedidos/${j.orderId}`}
                         className="inline-flex items-center gap-1 font-medium hover:underline"
@@ -259,11 +259,11 @@ export default function ProductionBoard() {
                         <ExternalLink className="h-3 w-3 opacity-60" />
                       </Link>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-1.5">
                       <CustomerName customerId={j.customerId} />
                     </TableCell>
-                    <TableCell className="font-medium">{j.productName}</TableCell>
-                    <TableCell>
+                    <TableCell className="py-1.5 font-medium">{j.productName}</TableCell>
+                    <TableCell className="py-1.5">
                       <Badge
                         variant={
                           j.productionStatus === "completed"
@@ -276,7 +276,7 @@ export default function ProductionBoard() {
                         {itemStatusLabels[j.productionStatus] || "Pendiente"}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right tabular-nums">{j.quantity}</TableCell>
+                    <TableCell className="py-1.5 text-right tabular-nums">{j.quantity}</TableCell>
                   </TableRow>
                 ))
               )}
