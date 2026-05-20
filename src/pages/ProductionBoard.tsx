@@ -46,6 +46,7 @@ const itemStatusLabels: Record<string, string> = {
   pending: "Pendiente",
   in_progress: "En proceso",
   completed: "Completado",
+  cancelled: "Cancelado",
 };
 
 export default function ProductionBoard() {
@@ -70,8 +71,7 @@ export default function ProductionBoard() {
 
       let query = supabase
         .from("sales_orders")
-        .select("id, order_number, order_date, delivery_date, customer_id, status")
-        .neq("status", "cancelled");
+        .select("id, order_number, order_date, delivery_date, customer_id, status");
 
       if (organizationId) query = query.eq("organization_id", organizationId);
 
