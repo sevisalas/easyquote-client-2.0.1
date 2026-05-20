@@ -49,7 +49,6 @@ const itemStatusLabels: Record<string, string> = {
 };
 
 export default function ProductionBoard() {
-  const [orders, setOrders] = useState<SalesOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [excludeFinished, setExcludeFinished] = useState(true);
