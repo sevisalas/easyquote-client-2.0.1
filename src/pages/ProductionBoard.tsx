@@ -109,9 +109,6 @@ export default function ProductionBoard() {
       });
 
       flat.sort((a, b) => {
-        const ad = a.deliveryDate ? new Date(a.deliveryDate).getTime() : Infinity;
-        const bd = b.deliveryDate ? new Date(b.deliveryDate).getTime() : Infinity;
-        if (ad !== bd) return ad - bd;
         return new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime();
       });
 
