@@ -29,7 +29,6 @@ import { Package, LayoutGrid, ExternalLink } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useProductionBoardView } from "@/hooks/useProductionBoardView";
 import { useProductionPhases } from "@/hooks/useProductionPhases";
-import { cn } from "@/lib/utils";
 
 interface Job {
   orderId: string;
