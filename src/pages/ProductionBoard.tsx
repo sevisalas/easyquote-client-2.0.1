@@ -46,6 +46,7 @@ const itemStatusLabels: Record<string, string> = {
   pending: "Pendiente",
   in_progress: "En proceso",
   completed: "Completado",
+  cancelled: "Cancelado",
 };
 
 export default function ProductionBoard() {
@@ -70,8 +71,7 @@ export default function ProductionBoard() {
 
       let query = supabase
         .from("sales_orders")
-        .select("id, order_number, order_date, delivery_date, customer_id, status")
-        .neq("status", "cancelled");
+        .select("id, order_number, order_date, delivery_date, customer_id, status");
 
       if (organizationId) query = query.eq("organization_id", organizationId);
 
@@ -104,7 +104,8 @@ export default function ProductionBoard() {
           itemId: it.id,
           productName: it.product_name,
           quantity: it.quantity,
-          productionStatus: it.production_status || "pending",
+          productionStatus:
+            o.status === "cancelled" ? "cancelled" : it.production_status || "pending",
         };
       });
 
@@ -123,8 +124,11 @@ export default function ProductionBoard() {
   const filteredJobs = useMemo(() => {
     const q = search.trim().toLowerCase();
     return jobs.filter((j) => {
-      if (excludeFinished && j.productionStatus === "completed") return false;
-      if (statusFilter !== "all" && j.productionStatus !== statusFilter) return false;
+      if (statusFilter !== "all") {
+        if (j.productionStatus !== statusFilter) return false;
+      } else if (excludeFinished) {
+        if (j.productionStatus === "completed" || j.productionStatus === "cancelled") return false;
+      }
       if (q) {
         const hay = `${j.orderNumber} ${j.productName}`.toLowerCase();
         if (!hay.includes(q)) return false;
@@ -200,7 +204,8 @@ export default function ProductionBoard() {
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="pending">Pendiente</SelectItem>
                 <SelectItem value="in_progress">En proceso</SelectItem>
-                {!excludeFinished && <SelectItem value="completed">Completado</SelectItem>}
+                <SelectItem value="completed">Completado</SelectItem>
+                <SelectItem value="cancelled">Cancelado</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -208,13 +213,10 @@ export default function ProductionBoard() {
             <Switch
               id="exclude-finished"
               checked={excludeFinished}
-              onCheckedChange={(v) => {
-                setExcludeFinished(v);
-                if (v && statusFilter === "completed") setStatusFilter("all");
-              }}
+              onCheckedChange={setExcludeFinished}
             />
             <Label htmlFor="exclude-finished" className="text-sm cursor-pointer">
-              Excluir terminados
+              Excluir terminados y cancelados
             </Label>
           </div>
           <div className="ml-auto text-sm text-muted-foreground">
