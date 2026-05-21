@@ -3,70 +3,69 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import AppLayout from "./components/layout/AppLayout";
+
+// Eager: rutas críticas (login + home) para LCP rápido
+import Auth from "./pages/Auth";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import Clientes from "./pages/Clientes";
-import ClienteForm from "./pages/ClienteForm";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
-import Auth from "./pages/Auth";
-import AppLayout from "./components/layout/AppLayout";
-import QuoteNew from "./pages/QuoteNew";
-import QuoteEdit from "./pages/QuoteEdit";
-import QuotesList from "./pages/QuotesList";
-import GroupedQuoteNew from "./pages/GroupedQuoteNew";
-import SettingsPdfTemplate from "./pages/SettingsPdfTemplate";
-import SettingsNumberingFormats from "./pages/SettingsNumberingFormats";
-import SettingsThemeCorporate from "./pages/SettingsThemeCorporate";
-import SettingsSmtp from "./pages/SettingsSmtp";
-import Additionals from "./pages/Additionals";
-import QuoteDetail from "./pages/QuoteDetail";
-import EditarSuscriptor from "./pages/SubscriberEdit";
-import UsuariosSuscriptor from "./pages/SubscriberUsers";
-import SubscribersList from "./pages/SubscribersList";
-import NuevoSuscriptor from "./pages/SubscriberNew";
-import GestionPlanes from "./pages/PlansManagement";
-import SuperAdminDashboard from "./pages/SuperAdminDashboard";
-import SuperAdminUsers from "./pages/SuperAdminUsers";
-import SuperAdminRoadmap from "./pages/SuperAdminRoadmap";
-import SuperAdminSupportRequests from "./pages/SuperAdminSupportRequests";
-import SuperAdminTools from "./pages/SuperAdminTools";
-import SettingsRenumberDocuments from "./pages/SettingsRenumberDocuments";
-import Integrations from "./pages/Integrations";
-import IntegrationAccess from "./pages/IntegrationAccess";
-import ExcelFiles from "./pages/ExcelFiles";
-import AdminDashboard from "./pages/AdminDashboard";
-import ProductManagement from "./pages/ProductManagement";
-import ProductCategories from "./pages/ProductCategories";
 
-import ProductForm from "./pages/ProductForm";
-import ProductConfigPage from "./pages/ProductConfigPage";
-import ProductionConfiguration from "./pages/ProductionConfiguration";
-import WorkloadDashboard from "./pages/WorkloadDashboard";
-import ProductTestPage from "./pages/ProductTestPage";
-
-
-
-
-import PresupuestosDashboard from "./pages/PresupuestosDashboard";
-
-import ImageManagement from "./pages/ImageManagement";
-import SalesOrdersList from "./pages/SalesOrdersList";
-import SalesOrderDetail from "./pages/SalesOrderDetail";
-import SalesOrderNew from "./pages/SalesOrderNew";
-import SalesOrderEdit from "./pages/SalesOrderEdit";
-import ProductionBoard from "./pages/ProductionBoard";
-import ProductionBoardKanban from "./pages/ProductionBoardKanban";
-import ProductionBoardCompact from "./pages/ProductionBoardCompact";
-import ProductionBoardRedirect from "./pages/ProductionBoardRedirect";
-import Novedades from "./pages/Novedades";
-import ApiHome from "./pages/ApiHome";
-import CustomerDiscountsPage from "./pages/CustomerDiscountsPage";
-import HelpPage from "./pages/HelpPage";
-import PortalQuote from "./pages/PortalQuote";
-import PortalLogin from "./pages/PortalLogin";
-import PortalSetPassword from "./pages/PortalSetPassword";
-import PortalHome from "./pages/PortalHome";
-import B2bCatalog from "./pages/B2bCatalog";
+// Lazy: el resto se carga bajo demanda
+const Clientes = lazy(() => import("./pages/Clientes"));
+const ClienteForm = lazy(() => import("./pages/ClienteForm"));
+const QuoteNew = lazy(() => import("./pages/QuoteNew"));
+const QuoteEdit = lazy(() => import("./pages/QuoteEdit"));
+const QuotesList = lazy(() => import("./pages/QuotesList"));
+const GroupedQuoteNew = lazy(() => import("./pages/GroupedQuoteNew"));
+const SettingsPdfTemplate = lazy(() => import("./pages/SettingsPdfTemplate"));
+const SettingsNumberingFormats = lazy(() => import("./pages/SettingsNumberingFormats"));
+const SettingsThemeCorporate = lazy(() => import("./pages/SettingsThemeCorporate"));
+const SettingsSmtp = lazy(() => import("./pages/SettingsSmtp"));
+const Additionals = lazy(() => import("./pages/Additionals"));
+const QuoteDetail = lazy(() => import("./pages/QuoteDetail"));
+const EditarSuscriptor = lazy(() => import("./pages/SubscriberEdit"));
+const UsuariosSuscriptor = lazy(() => import("./pages/SubscriberUsers"));
+const SubscribersList = lazy(() => import("./pages/SubscribersList"));
+const NuevoSuscriptor = lazy(() => import("./pages/SubscriberNew"));
+const GestionPlanes = lazy(() => import("./pages/PlansManagement"));
+const SuperAdminDashboard = lazy(() => import("./pages/SuperAdminDashboard"));
+const SuperAdminUsers = lazy(() => import("./pages/SuperAdminUsers"));
+const SuperAdminRoadmap = lazy(() => import("./pages/SuperAdminRoadmap"));
+const SuperAdminSupportRequests = lazy(() => import("./pages/SuperAdminSupportRequests"));
+const SuperAdminTools = lazy(() => import("./pages/SuperAdminTools"));
+const SettingsRenumberDocuments = lazy(() => import("./pages/SettingsRenumberDocuments"));
+const Integrations = lazy(() => import("./pages/Integrations"));
+const IntegrationAccess = lazy(() => import("./pages/IntegrationAccess"));
+const ExcelFiles = lazy(() => import("./pages/ExcelFiles"));
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const ProductManagement = lazy(() => import("./pages/ProductManagement"));
+const ProductCategories = lazy(() => import("./pages/ProductCategories"));
+const ProductForm = lazy(() => import("./pages/ProductForm"));
+const ProductConfigPage = lazy(() => import("./pages/ProductConfigPage"));
+const ProductionConfiguration = lazy(() => import("./pages/ProductionConfiguration"));
+const WorkloadDashboard = lazy(() => import("./pages/WorkloadDashboard"));
+const ProductTestPage = lazy(() => import("./pages/ProductTestPage"));
+const PresupuestosDashboard = lazy(() => import("./pages/PresupuestosDashboard"));
+const ImageManagement = lazy(() => import("./pages/ImageManagement"));
+const SalesOrdersList = lazy(() => import("./pages/SalesOrdersList"));
+const SalesOrderDetail = lazy(() => import("./pages/SalesOrderDetail"));
+const SalesOrderNew = lazy(() => import("./pages/SalesOrderNew"));
+const SalesOrderEdit = lazy(() => import("./pages/SalesOrderEdit"));
+const ProductionBoard = lazy(() => import("./pages/ProductionBoard"));
+const ProductionBoardKanban = lazy(() => import("./pages/ProductionBoardKanban"));
+const ProductionBoardCompact = lazy(() => import("./pages/ProductionBoardCompact"));
+const ProductionBoardRedirect = lazy(() => import("./pages/ProductionBoardRedirect"));
+const Novedades = lazy(() => import("./pages/Novedades"));
+const ApiHome = lazy(() => import("./pages/ApiHome"));
+const CustomerDiscountsPage = lazy(() => import("./pages/CustomerDiscountsPage"));
+const HelpPage = lazy(() => import("./pages/HelpPage"));
+const PortalQuote = lazy(() => import("./pages/PortalQuote"));
+const PortalLogin = lazy(() => import("./pages/PortalLogin"));
+const PortalSetPassword = lazy(() => import("./pages/PortalSetPassword"));
+const PortalHome = lazy(() => import("./pages/PortalHome"));
+const B2bCatalog = lazy(() => import("./pages/B2bCatalog"));
 import { SubscriptionProvider } from "./contexts/SubscriptionContext";
 import { useSessionMonitor } from "./hooks/useSessionMonitor";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -87,6 +86,13 @@ const AppContent = () => {
   useSessionMonitor();
   
   return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen grid place-items-center">
+          <p className="text-muted-foreground">Cargando…</p>
+        </div>
+      }
+    >
     <Routes>
       <Route path="/auth" element={<Auth />} />
       <Route
@@ -617,6 +623,7 @@ const AppContent = () => {
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </Suspense>
   );
 };
 
