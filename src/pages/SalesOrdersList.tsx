@@ -49,7 +49,7 @@ const fmtEUR = (n: any) => {
 const SalesOrdersList = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { canAccessProduccion } = useSubscription();
+  const { canAccessProduccion, loading: subscriptionLoading } = useSubscription();
   const { loading, fetchSalesOrders } = useSalesOrders();
   const { isHoldedActive, hasHoldedAccess } = useHoldedIntegration();
   const [orders, setOrders] = useState<SalesOrder[]>([]);
@@ -69,6 +69,7 @@ const SalesOrdersList = () => {
   const itemsPerPage = 25;
 
   useEffect(() => {
+    if (subscriptionLoading) return;
     if (!canAccessProduccion()) {
       navigate("/");
       return;
@@ -76,7 +77,7 @@ const SalesOrdersList = () => {
     loadOrders();
     loadCustomers();
     loadOrgMembers();
-  }, [canAccessProduccion, navigate]);
+  }, [subscriptionLoading, navigate]);
 
   // Auto-sync missing Holded numbers
   useEffect(() => {
