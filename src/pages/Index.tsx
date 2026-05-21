@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, Plus, Users, TrendingUp, Clock, CheckCircle2, ArrowRight, Package } from "lucide-react";
@@ -6,7 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
-import SuperAdminDashboard from "./SuperAdminDashboard";
+// Lazy: solo se carga si el usuario es superadmin
+const SuperAdminDashboard = lazy(() => import("./SuperAdminDashboard"));
 import { useQuery } from "@tanstack/react-query";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { QuickActionsPanel } from "@/components/mobile/QuickActionsPanel";
@@ -134,7 +135,11 @@ const Index = () => {
 
   // Si es superadmin, mostrar el dashboard específico de superadmin
   if (isSuperAdmin) {
-    return <SuperAdminDashboard />;
+    return (
+      <Suspense fallback={<div className="min-h-screen grid place-items-center"><p className="text-muted-foreground">Cargando…</p></div>}>
+        <SuperAdminDashboard />
+      </Suspense>
+    );
   }
   return <div className="w-full min-h-screen bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
