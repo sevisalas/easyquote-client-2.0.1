@@ -365,7 +365,11 @@ async function approveQuoteCore(
     if (m?.rows && Array.isArray(m.rows) && m.rows.length > 1) {
       const provided = Number(resolvedQuantities[it.id]);
       if (!Number.isFinite(provided) || provided <= 0) {
-        const storedQty = resolveQtyStrict(it);
+        const storedQty = it.accepted_quantity
+          ? parseQuantity(it.accepted_quantity)
+          : it.quantity
+            ? parseQuantity(it.quantity)
+            : null;
         if (storedQty && Number.isFinite(storedQty) && storedQty > 0) {
           resolvedQuantities[it.id] = storedQty;
         } else {
