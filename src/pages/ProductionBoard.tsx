@@ -320,6 +320,7 @@ export default function ProductionBoard() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-24 py-2">Fecha</TableHead>
+                <TableHead className="w-24 py-2">Entrega</TableHead>
                 <TableHead className="w-56 py-2">Nº pedido</TableHead>
                 <TableHead>Cliente</TableHead>
                 <TableHead>Artículo</TableHead>
