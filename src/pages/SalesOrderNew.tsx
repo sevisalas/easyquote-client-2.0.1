@@ -16,7 +16,7 @@ import QuoteItem from "@/components/quotes/QuoteItem";
 import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
 import { getEasyQuoteToken } from "@/lib/easyquoteApi";
 import { useNumberingFormat, generateDocumentNumber } from "@/hooks/useNumberingFormat";
-import { findProductionPromptValue, calculateDeliveryDateFromProduction } from "@/utils/businessDays";
+import { findProductionPromptValue, calculateDeliveryDateFromProduction, addBusinessDays } from "@/utils/businessDays";
 import DocumentAttachments, { type DocumentAttachmentsHandle } from "@/components/quotes/DocumentAttachments";
 import { useActiveCustomerDiscounts } from "@/hooks/useCustomerDiscounts";
 
