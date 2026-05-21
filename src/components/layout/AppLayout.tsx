@@ -1,4 +1,4 @@
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useEffect } from "react";
 import { SidebarProvider, useSidebar } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useTokenRefresh } from "@/hooks/useTokenRefresh";
@@ -8,6 +8,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { WhatsNewDialog } from "@/components/WhatsNewDialog";
 import { UpdateBanner } from "@/components/UpdateBanner";
 import { cn } from "@/lib/utils";
+import { prefetchCommonRoutes } from "@/lib/prefetchRoutes";
 
 function MainContent({ children }: PropsWithChildren) {
   const { state } = useSidebar();
@@ -31,6 +32,12 @@ export default function AppLayout({ children }: PropsWithChildren) {
   const isMobile = useIsMobile();
   useTokenRefresh();
   useTheme(); // Apply theme automatically
+
+  // Prefetch en background de las rutas más usadas tras login.
+  // No bloquea el render; solo descarga los chunks cuando el navegador está idle.
+  useEffect(() => {
+    prefetchCommonRoutes();
+  }, []);
 
   return (
     <SidebarProvider>
