@@ -344,7 +344,7 @@ export default function ProductionBoard() {
             <TableBody>
               {filteredJobs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6 + phases.length} className="text-center text-muted-foreground py-12">
+                  <TableCell colSpan={7 + phases.length} className="text-center text-muted-foreground py-12">
                     No hay trabajos pendientes
                   </TableCell>
                 </TableRow>
