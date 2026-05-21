@@ -100,6 +100,7 @@ export default function ProductionConfiguration() {
 
   // Workload Configuration
   const [maxDailyOrders, setMaxDailyOrders] = useState<number>(20);
+  const [defaultDeliveryDays, setDefaultDeliveryDays] = useState<number>(5);
   const [isSaving, setIsSaving] = useState(false);
 
   // Default Tasks
@@ -149,6 +150,7 @@ export default function ProductionConfiguration() {
   useEffect(() => {
     if (organization) {
       setMaxDailyOrders(organization.max_daily_orders || 20);
+      setDefaultDeliveryDays(organization.default_delivery_business_days ?? 5);
     }
   }, [organization]);
   const handleSaveWorkload = async () => {
@@ -158,12 +160,13 @@ export default function ProductionConfiguration() {
       const {
         error
       } = await supabase.from("organizations").update({
-        max_daily_orders: maxDailyOrders
+        max_daily_orders: maxDailyOrders,
+        default_delivery_business_days: defaultDeliveryDays
       }).eq("id", organization.id);
       if (error) throw error;
       toast({
-        title: "Capacidad actualizada",
-        description: "La capacidad máxima diaria se ha guardado correctamente"
+        title: "Configuración actualizada",
+        description: "La capacidad y los días de entrega se han guardado correctamente"
       });
     } catch (error) {
       console.error("Error updating capacity:", error);
@@ -326,15 +329,31 @@ export default function ProductionConfiguration() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-end gap-4">
-              <div className="flex-1">
+            <div className="space-y-4">
+              <div>
                 <Label htmlFor="max-capacity">Pedidos por día</Label>
                 <Input id="max-capacity" type="number" min="1" value={maxDailyOrders} onChange={e => setMaxDailyOrders(parseInt(e.target.value) || 1)} className="mt-2" />
               </div>
-              <Button onClick={handleSaveWorkload} disabled={isSaving}>
-                <Save className="h-4 w-4 mr-2" />
-                {isSaving ? "Guardando..." : "Guardar"}
-              </Button>
+              <div>
+                <Label htmlFor="default-delivery-days">Días laborables de entrega por defecto</Label>
+                <Input
+                  id="default-delivery-days"
+                  type="number"
+                  min="0"
+                  value={defaultDeliveryDays}
+                  onChange={e => setDefaultDeliveryDays(parseInt(e.target.value) || 0)}
+                  className="mt-2"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Días hábiles desde la creación del pedido hasta la entrega prevista. Se puede modificar en cada pedido.
+                </p>
+              </div>
+              <div className="flex justify-end">
+                <Button onClick={handleSaveWorkload} disabled={isSaving}>
+                  <Save className="h-4 w-4 mr-2" />
+                  {isSaving ? "Guardando..." : "Guardar"}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
