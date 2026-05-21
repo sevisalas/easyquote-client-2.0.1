@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles, Moon, LayoutGrid } from "lucide-react";
 
-  const CURRENT_VERSION = "2.8.8";
+  const CURRENT_VERSION = "2.8.7";
 const SILENT_UPDATE = true;
 const LS_KEY = "whats_new_seen_version_v2";
 
