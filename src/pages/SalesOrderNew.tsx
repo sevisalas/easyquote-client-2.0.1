@@ -65,21 +65,26 @@ export default function SalesOrderNew() {
     if (deliveryDateManuallySet) return; // Don't override manual selection
     
     const itemsArray = Object.values(items);
-    if (itemsArray.length === 0) return;
-    
     // Check first item's prompts for PRODUCCION
     const firstItem = itemsArray[0];
+    let calculatedDate: string | null = null;
     if (firstItem?.prompts) {
       const productionValue = findProductionPromptValue(firstItem.prompts);
       if (productionValue) {
-        const calculatedDate = calculateDeliveryDateFromProduction(productionValue);
-        if (calculatedDate && calculatedDate !== deliveryDate) {
-          console.log('Auto-setting delivery date from PRODUCCION:', productionValue, '->', calculatedDate);
-          setDeliveryDate(calculatedDate);
-        }
+        calculatedDate = calculateDeliveryDateFromProduction(productionValue);
       }
     }
-  }, [items, deliveryDateManuallySet]);
+    // Fallback to organization default business days
+    if (!calculatedDate) {
+      const defaultDays = currentOrganization?.default_delivery_business_days;
+      if (typeof defaultDays === 'number' && defaultDays >= 0) {
+        calculatedDate = addBusinessDays(new Date(), defaultDays).toISOString().split('T')[0];
+      }
+    }
+    if (calculatedDate && calculatedDate !== deliveryDate) {
+      setDeliveryDate(calculatedDate);
+    }
+  }, [items, deliveryDateManuallySet, currentOrganization?.default_delivery_business_days]);
 
   // Handler for manual delivery date changes
   const handleDeliveryDateChange = (newDate: string) => {
@@ -408,6 +413,13 @@ export default function SalesOrderNew() {
           if (productionValue) {
             calculatedDeliveryDate = calculateDeliveryDateFromProduction(productionValue);
             console.log('Calculated delivery date from PRODUCCION prompt:', productionValue, '->', calculatedDeliveryDate);
+          }
+        }
+        // Fallback to organization default business days
+        if (!calculatedDeliveryDate) {
+          const defaultDays = currentOrganization?.default_delivery_business_days;
+          if (typeof defaultDays === 'number' && defaultDays >= 0) {
+            calculatedDeliveryDate = addBusinessDays(new Date(), defaultDays).toISOString().split('T')[0];
           }
         }
       }
