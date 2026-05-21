@@ -357,18 +357,28 @@ async function approveQuoteCore(
     : quote.items;
   if (!itemsToApprove?.length) throw new Error("No hay items para aprobar");
 
-  // Ensure every multi-qty item has a quantity; fallback to first row if missing
+  // Ensure every multi-qty item has a quantity; prioritize the stored/sent quantity
+  // and only fall back to the first row when there is truly no persisted quantity.
   const resolvedQuantities: Record<string, number> = { ...(itemQuantities || {}) };
   for (const it of itemsToApprove) {
     const m = it.multi as any;
     if (m?.rows && Array.isArray(m.rows) && m.rows.length > 1) {
       const provided = Number(resolvedQuantities[it.id]);
       if (!Number.isFinite(provided) || provided <= 0) {
-        const firstQty = Number(m.rows[0]?.qty ?? m.rows[0]?.quantity);
-        if (Number.isFinite(firstQty) && firstQty > 0) {
-          resolvedQuantities[it.id] = firstQty;
+        const storedQty = it.accepted_quantity
+          ? parseQuantity(it.accepted_quantity)
+          : it.quantity
+            ? parseQuantity(it.quantity)
+            : null;
+        if (storedQty && Number.isFinite(storedQty) && storedQty > 0) {
+          resolvedQuantities[it.id] = storedQty;
         } else {
-          throw new Error("Debes seleccionar una cantidad para cada item con múltiples opciones");
+          const firstQty = Number(m.rows[0]?.qty ?? m.rows[0]?.quantity);
+          if (Number.isFinite(firstQty) && firstQty > 0) {
+            resolvedQuantities[it.id] = firstQty;
+          } else {
+            throw new Error("Debes seleccionar una cantidad para cada item con múltiples opciones");
+          }
         }
       }
     }
@@ -462,6 +472,14 @@ async function approveQuoteCore(
     return parseLocaleNumber(item.price || 0);
   };
 
+  const approvalMatchesStoredQuote =
+    itemsToApprove.length === quote.items.length
+    && itemsToApprove.every((item: any) => {
+      const storedQty = resolveQty(item);
+      const selectedQty = Number(resolvedQuantities[item.id] ?? storedQty);
+      return Number.isFinite(selectedQty) && selectedQty === storedQty;
+    });
+
   // Subtotal
   let subtotal = 0;
   for (const item of itemsToApprove) {
@@ -498,6 +516,16 @@ async function approveQuoteCore(
   }
   const finalPrice = subtotal - discountAmount + taxAmount;
 
+  const persistedSubtotal = parseLocaleNumber(quote.subtotal || 0);
+  const persistedDiscount = parseLocaleNumber(quote.discount_amount || 0);
+  const persistedTax = parseLocaleNumber(quote.tax_amount || 0);
+  const persistedFinalPrice = parseLocaleNumber(quote.final_price || 0);
+
+  const orderSubtotal = approvalMatchesStoredQuote ? persistedSubtotal : subtotal;
+  const orderDiscountAmount = approvalMatchesStoredQuote ? persistedDiscount : discountAmount;
+  const orderTaxAmount = approvalMatchesStoredQuote ? persistedTax : taxAmount;
+  const orderFinalPrice = approvalMatchesStoredQuote ? persistedFinalPrice : finalPrice;
+
   // Create order
   const { data: salesOrder, error: orderError } = await supabase
     .from("sales_orders")
@@ -511,10 +539,10 @@ async function approveQuoteCore(
       description: quote.description,
       terms_conditions: quote.terms_conditions,
       valid_until: quote.valid_until,
-      subtotal,
-      tax_amount: taxAmount,
-      discount_amount: discountAmount,
-      final_price: finalPrice,
+      subtotal: orderSubtotal,
+      tax_amount: orderTaxAmount,
+      discount_amount: orderDiscountAmount,
+      final_price: orderFinalPrice,
       notes: quote.notes,
       created_from_scratch: false,
     })
@@ -670,8 +698,10 @@ async function approveQuoteCore(
 
   await supabase.from("quotes").update({
     status: "approved",
-    subtotal,
-    final_price: finalPrice,
+    subtotal: orderSubtotal,
+    tax_amount: orderTaxAmount,
+    discount_amount: orderDiscountAmount,
+    final_price: orderFinalPrice,
     selections: updatedSelections,
   }).eq("id", quoteId);
 
