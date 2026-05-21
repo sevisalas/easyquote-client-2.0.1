@@ -26,6 +26,15 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.8.7",
+    date: "2026-05-21",
+    changes: {
+      fixed: [
+        "Integridad de precios en aprobación: los totales del presupuesto se mantienen fieles al valor enviado originalmente, evitando recalculos indeseados al aprobar.",
+      ],
+    },
+  },
+  {
     version: "2.8.5",
     date: "2026-05-19",
     changes: {
