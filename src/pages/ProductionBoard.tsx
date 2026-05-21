@@ -354,6 +354,11 @@ export default function ProductionBoard() {
                     <TableCell className="whitespace-nowrap py-1.5">
                       {format(new Date(j.orderDate), "dd/MM/yyyy", { locale: es })}
                     </TableCell>
+                    <TableCell className="whitespace-nowrap py-1.5 text-muted-foreground">
+                      {j.deliveryDate
+                        ? format(new Date(j.deliveryDate), "dd/MM/yyyy", { locale: es })
+                        : "—"}
+                    </TableCell>
                     <TableCell className="py-1.5 whitespace-nowrap">
                       <Link
                         to={`/pedidos/${j.orderId}`}
