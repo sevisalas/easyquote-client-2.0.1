@@ -60,6 +60,17 @@ export default function SalesOrderNew() {
   const isSavingRef = useRef(false); // Protection against double-click
   const attachmentsRef = useRef<DocumentAttachmentsHandle>(null);
 
+  // Handler for manual delivery date changes
+  const handleDeliveryDateChange = (newDate: string) => {
+    setDeliveryDate(newDate);
+    setDeliveryDateManuallySet(true);
+  };
+
+  // Holded integration
+  const { isHoldedActive } = useHoldedIntegration();
+  const { organization, membership, canAccessProduccion } = useSubscription();
+  const currentOrganization = organization || membership?.organization;
+
   // Auto-calculate delivery date from PRODUCCION prompt when items change
   useEffect(() => {
     if (deliveryDateManuallySet) return; // Don't override manual selection
@@ -85,17 +96,6 @@ export default function SalesOrderNew() {
       setDeliveryDate(calculatedDate);
     }
   }, [items, deliveryDateManuallySet, currentOrganization?.default_delivery_business_days]);
-
-  // Handler for manual delivery date changes
-  const handleDeliveryDateChange = (newDate: string) => {
-    setDeliveryDate(newDate);
-    setDeliveryDateManuallySet(true);
-  };
-
-  // Holded integration
-  const { isHoldedActive } = useHoldedIntegration();
-  const { organization, membership, canAccessProduccion } = useSubscription();
-  const currentOrganization = organization || membership?.organization;
 
   // Customer discounts / tariff
   const actualCustomerIdForDiscounts = customerId?.startsWith('holded:') ? customerId.replace('holded:', '') : customerId;
