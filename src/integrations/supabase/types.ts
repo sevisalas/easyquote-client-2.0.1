@@ -1870,6 +1870,7 @@ export type Database = {
           client_user_extra: number
           client_user_limit: number
           created_at: string
+          default_delivery_business_days: number | null
           excel_extra: number
           excel_limit: number
           generate_pdfs: boolean
@@ -1892,6 +1893,7 @@ export type Database = {
           client_user_extra?: number
           client_user_limit?: number
           created_at?: string
+          default_delivery_business_days?: number | null
           excel_extra?: number
           excel_limit?: number
           generate_pdfs?: boolean
@@ -1914,6 +1916,7 @@ export type Database = {
           client_user_extra?: number
           client_user_limit?: number
           created_at?: string
+          default_delivery_business_days?: number | null
           excel_extra?: number
           excel_limit?: number
           generate_pdfs?: boolean

@@ -16,7 +16,7 @@ import QuoteItem from "@/components/quotes/QuoteItem";
 import QuoteAdditionalsSelector from "@/components/quotes/QuoteAdditionalsSelector";
 import { getEasyQuoteToken } from "@/lib/easyquoteApi";
 import { useNumberingFormat, generateDocumentNumber } from "@/hooks/useNumberingFormat";
-import { findProductionPromptValue, calculateDeliveryDateFromProduction } from "@/utils/businessDays";
+import { findProductionPromptValue, calculateDeliveryDateFromProduction, addBusinessDays } from "@/utils/businessDays";
 import DocumentAttachments, { type DocumentAttachmentsHandle } from "@/components/quotes/DocumentAttachments";
 import { useActiveCustomerDiscounts } from "@/hooks/useCustomerDiscounts";
 
@@ -60,27 +60,6 @@ export default function SalesOrderNew() {
   const isSavingRef = useRef(false); // Protection against double-click
   const attachmentsRef = useRef<DocumentAttachmentsHandle>(null);
 
-  // Auto-calculate delivery date from PRODUCCION prompt when items change
-  useEffect(() => {
-    if (deliveryDateManuallySet) return; // Don't override manual selection
-    
-    const itemsArray = Object.values(items);
-    if (itemsArray.length === 0) return;
-    
-    // Check first item's prompts for PRODUCCION
-    const firstItem = itemsArray[0];
-    if (firstItem?.prompts) {
-      const productionValue = findProductionPromptValue(firstItem.prompts);
-      if (productionValue) {
-        const calculatedDate = calculateDeliveryDateFromProduction(productionValue);
-        if (calculatedDate && calculatedDate !== deliveryDate) {
-          console.log('Auto-setting delivery date from PRODUCCION:', productionValue, '->', calculatedDate);
-          setDeliveryDate(calculatedDate);
-        }
-      }
-    }
-  }, [items, deliveryDateManuallySet]);
-
   // Handler for manual delivery date changes
   const handleDeliveryDateChange = (newDate: string) => {
     setDeliveryDate(newDate);
@@ -91,6 +70,32 @@ export default function SalesOrderNew() {
   const { isHoldedActive } = useHoldedIntegration();
   const { organization, membership, canAccessProduccion } = useSubscription();
   const currentOrganization = organization || membership?.organization;
+
+  // Auto-calculate delivery date from PRODUCCION prompt when items change
+  useEffect(() => {
+    if (deliveryDateManuallySet) return; // Don't override manual selection
+    
+    const itemsArray = Object.values(items);
+    // Check first item's prompts for PRODUCCION
+    const firstItem = itemsArray[0];
+    let calculatedDate: string | null = null;
+    if (firstItem?.prompts) {
+      const productionValue = findProductionPromptValue(firstItem.prompts);
+      if (productionValue) {
+        calculatedDate = calculateDeliveryDateFromProduction(productionValue);
+      }
+    }
+    // Fallback to organization default business days
+    if (!calculatedDate) {
+      const defaultDays = currentOrganization?.default_delivery_business_days;
+      if (typeof defaultDays === 'number' && defaultDays >= 0) {
+        calculatedDate = addBusinessDays(new Date(), defaultDays).toISOString().split('T')[0];
+      }
+    }
+    if (calculatedDate && calculatedDate !== deliveryDate) {
+      setDeliveryDate(calculatedDate);
+    }
+  }, [items, deliveryDateManuallySet, currentOrganization?.default_delivery_business_days]);
 
   // Customer discounts / tariff
   const actualCustomerIdForDiscounts = customerId?.startsWith('holded:') ? customerId.replace('holded:', '') : customerId;
@@ -408,6 +413,13 @@ export default function SalesOrderNew() {
           if (productionValue) {
             calculatedDeliveryDate = calculateDeliveryDateFromProduction(productionValue);
             console.log('Calculated delivery date from PRODUCCION prompt:', productionValue, '->', calculatedDeliveryDate);
+          }
+        }
+        // Fallback to organization default business days
+        if (!calculatedDeliveryDate) {
+          const defaultDays = currentOrganization?.default_delivery_business_days;
+          if (typeof defaultDays === 'number' && defaultDays >= 0) {
+            calculatedDeliveryDate = addBusinessDays(new Date(), defaultDays).toISOString().split('T')[0];
           }
         }
       }
