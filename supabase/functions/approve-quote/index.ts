@@ -469,13 +469,17 @@ async function approveQuoteCore(
     const rq = resolveQty(item);
     let price = isCustomProductItem(item)
       ? applyItemAdditionals(customBasePrice(item, rq), item, rq)
-      : (item.price || 0);
+      : parseLocaleNumber(item.price || 0);
+    // Solo recalcular si el usuario seleccionó una cantidad DISTINTA a la guardada
     if (m?.rows?.length && resolvedQuantities[item.id]) {
       const sQ = resolvedQuantities[item.id];
-      const row = m.rows.find((r: any) => parseQuantity(r.qty) === sQ || parseQuantity(r.quantity) === sQ);
-      if (row) {
-        const base = parseFloat(row.outs?.find((o: any) => o.type === "Price")?.value || row.price || item.price || 0);
-        price = applyItemAdditionals(base, item, sQ);
+      const storedQ = parseQuantity(item.quantity ?? item.accepted_quantity ?? rq);
+      if (sQ !== storedQ) {
+        const row = m.rows.find((r: any) => parseQuantity(r.qty) === sQ || parseQuantity(r.quantity) === sQ);
+        if (row) {
+          const base = parseFloat(row.outs?.find((o: any) => o.type === "Price")?.value || row.price || item.price || 0);
+          price = applyItemAdditionals(base, item, sQ);
+        }
       }
     }
     subtotal += price;
@@ -535,7 +539,7 @@ async function approveQuoteCore(
     if (m?.rows?.length > 1 && resolvedQuantities[item.id]) finalQuantity = resolvedQuantities[item.id];
 
     const isCustom = isCustomProductItem(item);
-    let fPrice = item.price || 0;
+    let fPrice = parseLocaleNumber(item.price || 0);
     let fMulti = item.multi;
     let fOutputs = Array.isArray(item.outputs) ? item.outputs : [];
     const quantityResolver = item.product_id
@@ -557,22 +561,24 @@ async function approveQuoteCore(
 
     if (m?.rows?.length > 1 && resolvedQuantities[item.id]) {
       const sQ = resolvedQuantities[item.id];
+      const storedQ = parseQuantity(item.quantity ?? item.accepted_quantity ?? finalQuantity);
       const row = m.rows.find((r: any) => parseQuantity(r.qty) === sQ || parseQuantity(r.quantity) === sQ);
       fPrompts = syncPromptsWithQuantity(item.prompts, sQ, quantityResolver);
       if (row) {
-        const base = parseFloat(row.outs?.find((o: any) => o.type === "Price")?.value || row.price || item.price || 0);
-        fPrice = applyItemAdditionals(base, item, sQ);
         fOutputs = Array.isArray(row.outs) ? row.outs : fOutputs;
         fMulti = { ...m, rows: [row] };
+        // Solo recalcular precio si la cantidad seleccionada difiere de la guardada
+        if (sQ !== storedQ && !isCustom) {
+          const base = parseFloat(row.outs?.find((o: any) => o.type === "Price")?.value || row.price || item.price || 0);
+          fPrice = applyItemAdditionals(base, item, sQ);
+        }
       }
     }
 
-    if (m?.rows?.length === 1) {
+    if (m?.rows?.length === 1 && !isCustom) {
       const row = m.rows[0];
-      const base = parseFloat(row.outs?.find((o: any) => o.type === "Price")?.value || row.price || item.price || 0);
-      const rq = parseQuantity(row.qty) || parseQuantity(row.quantity) || finalQuantity;
-      fPrice = applyItemAdditionals(base, item, rq);
       fOutputs = Array.isArray(row.outs) ? row.outs : fOutputs;
+      // Mantener el precio guardado; NO recalcular desde row.outs + additionals
     }
 
     if (isCustom) fDesc = item.description || fDesc || "";
