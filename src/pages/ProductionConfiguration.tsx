@@ -322,10 +322,9 @@ export default function ProductionConfiguration() {
         {/* Workload Configuration */}
         <Card>
           <CardHeader>
-            <CardTitle>Capacidad máxima diaria</CardTitle>
+            <CardTitle>Valores predeterminados</CardTitle>
             <CardDescription>
-              Capacidad máxima que tus recursos pueden
- gestionar por día
+              Configuración de capacidad y plazos de entrega por defecto
             </CardDescription>
           </CardHeader>
           <CardContent>
