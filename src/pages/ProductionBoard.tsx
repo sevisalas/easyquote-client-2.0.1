@@ -320,6 +320,7 @@ export default function ProductionBoard() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-24 py-2">Fecha</TableHead>
+                <TableHead className="w-24 py-2">Entrega</TableHead>
                 <TableHead className="w-56 py-2">Nº pedido</TableHead>
                 <TableHead>Cliente</TableHead>
                 <TableHead>Artículo</TableHead>
@@ -343,7 +344,7 @@ export default function ProductionBoard() {
             <TableBody>
               {filteredJobs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6 + phases.length} className="text-center text-muted-foreground py-12">
+                  <TableCell colSpan={7 + phases.length} className="text-center text-muted-foreground py-12">
                     No hay trabajos pendientes
                   </TableCell>
                 </TableRow>
@@ -352,6 +353,11 @@ export default function ProductionBoard() {
                   <TableRow key={j.itemId}>
                     <TableCell className="whitespace-nowrap py-1.5">
                       {format(new Date(j.orderDate), "dd/MM/yyyy", { locale: es })}
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap py-1.5 text-muted-foreground">
+                      {j.deliveryDate
+                        ? format(new Date(j.deliveryDate), "dd/MM/yyyy", { locale: es })
+                        : "—"}
                     </TableCell>
                     <TableCell className="py-1.5 whitespace-nowrap">
                       <Link
