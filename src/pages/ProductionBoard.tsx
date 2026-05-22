@@ -388,17 +388,20 @@ export default function ProductionBoard() {
                       </div>
                     </TableCell>
                     <TableCell className="py-2 align-top">
-                      <Badge
-                        variant={
-                          j.productionStatus === "completed"
-                            ? "default"
-                            : j.productionStatus === "in_progress"
-                              ? "secondary"
-                              : "outline"
-                        }
-                      >
-                        {itemStatusLabels[j.productionStatus] || "Pendiente"}
-                      </Badge>
+                      {(() => {
+                        const key = (j.productionStatus as keyof typeof STATUS_COLORS) in STATUS_COLORS
+                          ? (j.productionStatus as keyof typeof STATUS_COLORS)
+                          : "pending";
+                        const s = STATUS_COLORS[key];
+                        return (
+                          <Badge
+                            className="border"
+                            style={{ backgroundColor: s.bg, borderColor: s.border, color: s.text }}
+                          >
+                            {itemStatusLabels[j.productionStatus] || s.label}
+                          </Badge>
+                        );
+                      })()}
                     </TableCell>
                     {phases.map((p) => {
                       const tasks = j.phaseTasks[p.id] || [];
