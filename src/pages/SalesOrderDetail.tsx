@@ -1220,11 +1220,11 @@ const SalesOrderDetail = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="draft">Borrador</SelectItem>
-                        <SelectItem value="pending">Pendiente</SelectItem>
-                        <SelectItem value="in_production">En Producción</SelectItem>
-                        <SelectItem value="completed">Completado</SelectItem>
-                        <SelectItem value="cancelled">Anulado</SelectItem>
+                        <SelectItem value="draft">{statusMap.draft.label}</SelectItem>
+                        <SelectItem value="pending">{statusMap.pending.label}</SelectItem>
+                        <SelectItem value="in_production">{statusMap.in_progress.label}</SelectItem>
+                        <SelectItem value="completed">{statusMap.completed.label}</SelectItem>
+                        <SelectItem value="cancelled">{statusMap.cancelled.label}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1280,11 +1280,11 @@ const SalesOrderDetail = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="draft">Borrador</SelectItem>
-                        <SelectItem value="pending">Pendiente</SelectItem>
-                        <SelectItem value="in_production">En Producción</SelectItem>
-                        <SelectItem value="completed">Completado</SelectItem>
-                        <SelectItem value="cancelled">Anulado</SelectItem>
+                        <SelectItem value="draft">{statusMap.draft.label}</SelectItem>
+                        <SelectItem value="pending">{statusMap.pending.label}</SelectItem>
+                        <SelectItem value="in_production">{statusMap.in_progress.label}</SelectItem>
+                        <SelectItem value="completed">{statusMap.completed.label}</SelectItem>
+                        <SelectItem value="cancelled">{statusMap.cancelled.label}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
