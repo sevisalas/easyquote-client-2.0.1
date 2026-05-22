@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { useProductionPhases } from "@/hooks/useProductionPhases";
 import { useDefaultProductionTasks } from "@/hooks/useDefaultProductionTasks";
+import { useProductionResources } from "@/hooks/useProductionResources";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -27,9 +28,11 @@ export function ProductionTaskForm({
 }: ProductionTaskFormProps) {
   const { phases, isLoading: phasesLoading } = useProductionPhases();
   const { tasks: defaultTasks, isLoading: defaultsLoading } = useDefaultProductionTasks();
+  const { resources } = useProductionResources();
   const [taskName, setTaskName] = useState("");
   const [selectedPhaseId, setSelectedPhaseId] = useState("");
   const [selectedDefaultId, setSelectedDefaultId] = useState<string>("");
+  const [selectedResourceId, setSelectedResourceId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isMobile = useIsMobile();
 
@@ -38,12 +41,14 @@ export function ProductionTaskForm({
     if (id === "__custom__") {
       setTaskName("");
       setSelectedPhaseId("");
+      setSelectedResourceId("");
       return;
     }
     const t = defaultTasks.find((x) => x.id === id);
     if (t) {
       setTaskName(t.task_name);
       setSelectedPhaseId(t.phase_id);
+      setSelectedResourceId("");
     }
   };
 
@@ -69,6 +74,7 @@ export function ProductionTaskForm({
         task_name: taskName.trim(),
         operator_id: user.id,
         status: "pending",
+        resource_id: selectedResourceId || null,
       });
 
       if (error) throw error;
@@ -76,6 +82,7 @@ export function ProductionTaskForm({
       onTaskCreated();
       setTaskName("");
       setSelectedPhaseId("");
+      setSelectedResourceId("");
     } catch (error) {
       console.error("Error creating task:", error);
     } finally {
@@ -150,6 +157,31 @@ export function ProductionTaskForm({
           </Select>
         </div>
       </div>
+
+      {selectedPhaseId && (
+        <div className="space-y-1.5">
+          <Label htmlFor="resource" className={isMobile ? "text-sm" : "text-xs"}>Recurso</Label>
+          <Select value={selectedResourceId || "__none__"} onValueChange={(v) => setSelectedResourceId(v === "__none__" ? "" : v)}>
+            <SelectTrigger id="resource" className={isMobile ? "h-11 text-base" : "h-8 text-sm"}>
+              <SelectValue placeholder="Sin recurso" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">Sin recurso</SelectItem>
+              {resources
+                .filter((r) => r.phase_id === selectedPhaseId)
+                .map((r) => (
+                  <SelectItem key={r.id} value={r.id}>
+                    {r.name}
+                    <span className="text-muted-foreground text-xs ml-1">· {r.resource_type === "machine" ? "Máquina" : "Manual"}</span>
+                  </SelectItem>
+                ))}
+              {resources.filter((r) => r.phase_id === selectedPhaseId).length === 0 && (
+                <div className="px-2 py-1.5 text-xs text-muted-foreground">No hay recursos para esta fase</div>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <div className={`flex gap-2 ${isMobile ? 'flex-col' : 'justify-end'}`}>
         <Button 
