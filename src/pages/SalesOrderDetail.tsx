@@ -1363,24 +1363,28 @@ const SalesOrderDetail = () => {
           {order.status !== 'cancelled' ? (
             <div className="pt-3">
               <div className="flex items-center gap-2">
-                <div className={`flex-1 h-2 rounded-full transition-all ${
-                  order.status === 'draft' || order.status === 'pending' || order.status === 'in_production' || order.status === 'completed' ? 'bg-slate-400' : 'bg-muted'
-                }`} title="Borrador" />
-                <div className={`flex-1 h-2 rounded-full transition-all ${
-                  order.status === 'pending' || order.status === 'in_production' || order.status === 'completed' ? 'bg-orange-500' : 'bg-muted'
-                }`} title="Pendiente" />
-                <div className={`flex-1 h-2 rounded-full transition-all ${
-                  order.status === 'in_production' || order.status === 'completed' ? 'bg-blue-500' : 'bg-muted'
-                }`} title="En producción" />
-                <div className={`flex-1 h-2 rounded-full transition-all ${
-                  order.status === 'completed' ? 'bg-green-500' : 'bg-muted'
-                }`} title="Terminado" />
+                {(['draft','pending','in_progress','completed'] as const).map((k) => {
+                  const reached =
+                    (k === 'draft' && ['draft','pending','in_production','completed'].includes(order.status)) ||
+                    (k === 'pending' && ['pending','in_production','completed'].includes(order.status)) ||
+                    (k === 'in_progress' && ['in_production','completed'].includes(order.status)) ||
+                    (k === 'completed' && order.status === 'completed');
+                  const s = statusMap[k];
+                  return (
+                    <div
+                      key={k}
+                      className="flex-1 h-2 rounded-full transition-all"
+                      style={{ backgroundColor: reached ? s.color : 'hsl(var(--muted))' }}
+                      title={s.label}
+                    />
+                  );
+                })}
               </div>
               <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
-                <span>Borrador</span>
-                <span>Pendiente</span>
-                <span>En producción</span>
-                <span>Terminado</span>
+                <span>{statusMap.draft.label}</span>
+                <span>{statusMap.pending.label}</span>
+                <span>{statusMap.in_progress.label}</span>
+                <span>{statusMap.completed.label}</span>
               </div>
             </div>
           ) : (
