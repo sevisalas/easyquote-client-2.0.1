@@ -31,6 +31,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useProductionBoardView } from "@/hooks/useProductionBoardView";
 import { useProductionPhases } from "@/hooks/useProductionPhases";
 import { useStatusSettings } from "@/hooks/useStatusSettings";
+import { TaskEditDialog, type EditableTask } from "@/components/production/TaskEditDialog";
 
 interface Job {
   orderId: string;
@@ -43,7 +44,7 @@ interface Job {
   productName: string;
   quantity: number;
   productionStatus: string;
-  phaseTasks: Record<string, Array<{ taskName: string; status: "pending" | "in_progress" | "paused" | "completed"; resourceName?: string | null }>>;
+  phaseTasks: Record<string, Array<{ id: string; taskName: string; status: "pending" | "in_progress" | "paused" | "completed"; resourceName?: string | null; resourceId?: string | null; phaseId: string }>>;
 }
 
 const itemStatusLabels: Record<string, string> = {
@@ -55,8 +56,10 @@ const itemStatusLabels: Record<string, string> = {
 
 function PhaseIndicator({
   tasks,
+  onEdit,
 }: {
-  tasks: Array<{ taskName: string; status: "pending" | "in_progress" | "paused" | "completed"; resourceName?: string | null }>;
+  tasks: Array<{ id: string; taskName: string; status: "pending" | "in_progress" | "paused" | "completed"; resourceName?: string | null; resourceId?: string | null; phaseId: string }>;
+  onEdit: (task: EditableTask) => void;
 }) {
   if (tasks.length === 0) {
     return <div className="h-10 rounded-md border border-dashed border-border/40 bg-muted/10" />;
