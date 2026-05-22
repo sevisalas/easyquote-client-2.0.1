@@ -19,6 +19,7 @@ import { useOutputTypeVisibility } from "@/hooks/useOutputTypeVisibility";
 import { Switch } from "@/components/ui/switch";
 import type { DefaultProductionTask } from "@/hooks/useDefaultProductionTasks";
 import { ProductionPhasesPanel } from "@/components/production/ProductionPhasesPanel";
+import { ProductionResourcesPanel } from "@/components/production/ProductionResourcesPanel";
 
 const impositionFieldLabels: Record<string, string> = {
   productWidth: "Ancho producto",
@@ -404,8 +405,10 @@ export default function ProductionConfiguration() {
 
       {/* Output Type Visibility moved to end */}
 
-      {/* Bottom Row: Production Variables */}
-      <Card>
+      {/* Bottom Row: Production Resources + Production Variables (50/50) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ProductionResourcesPanel />
+        <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -429,7 +432,7 @@ export default function ProductionConfiguration() {
                 <Plus className="h-4 w-4 mr-2" />
                 Crear primera variable
               </Button>
-            </div> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            </div> : <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {variables.map(variable => <div key={variable.id} className="border rounded-lg p-3 text-sm space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="font-semibold truncate">{variable.name}</span>
