@@ -84,9 +84,20 @@ function PhaseIndicator({
       {tasks.map((task, index) => {
         const s = statusStyles[task.status];
         return (
-          <div
+          <button
+            type="button"
             key={`${task.taskName}-${index}`}
-            className="rounded-md border px-2 py-1 text-left leading-tight"
+            className="rounded-md border px-2 py-1 text-left leading-tight w-full hover:opacity-80 transition-opacity"
+            title="Editar tarea"
+            onClick={() =>
+              onEdit({
+                id: task.id,
+                taskName: task.taskName,
+                status: task.status,
+                phaseId: task.phaseId,
+                resourceId: task.resourceId ?? null,
+              })
+            }
             style={{
               backgroundColor: s.bg,
               borderColor: s.border,
@@ -104,7 +115,7 @@ function PhaseIndicator({
             >
               {labelMap[task.status]}
             </div>
-          </div>
+          </button>
         );
       })}
     </div>
