@@ -1365,13 +1365,13 @@ const SalesOrderDetail = () => {
                   order.status === 'draft' || order.status === 'pending' || order.status === 'in_production' || order.status === 'completed' ? 'bg-slate-400' : 'bg-muted'
                 }`} title="Borrador" />
                 <div className={`flex-1 h-2 rounded-full transition-all ${
-                  order.status === 'pending' || order.status === 'in_production' || order.status === 'completed' ? 'bg-orange-500' : 'bg-muted'
+                  order.status === 'pending' || order.status === 'in_production' || order.status === 'completed' ? 'bg-primary' : 'bg-muted'
                 }`} title="Pendiente" />
                 <div className={`flex-1 h-2 rounded-full transition-all ${
-                  order.status === 'in_production' || order.status === 'completed' ? 'bg-green-500' : 'bg-muted'
+                  order.status === 'in_production' || order.status === 'completed' ? 'bg-blue-500' : 'bg-muted'
                 }`} title="En producción" />
                 <div className={`flex-1 h-2 rounded-full transition-all ${
-                  order.status === 'completed' ? 'bg-blue-500' : 'bg-muted'
+                  order.status === 'completed' ? 'bg-green-500' : 'bg-muted'
                 }`} title="Terminado" />
               </div>
               <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">

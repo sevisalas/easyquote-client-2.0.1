@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
+import { STATUS_COLORS } from "@/lib/statusColors";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,14 +68,11 @@ function PhaseIndicator({
     completed: "Hecha",
   };
 
-  const statusStyles: Record<
-    "pending" | "in_progress" | "paused" | "completed",
-    { bg: string; border: string; text: string; label: string }
-  > = {
-    pending: { bg: "hsl(var(--primary) / 0.24)", border: "hsl(var(--primary) / 0.52)", text: "hsl(var(--foreground))", label: "hsl(var(--foreground))" },
-    in_progress: { bg: "hsl(217 91% 60%)", border: "hsl(217 91% 50%)", text: "white", label: "white" },
-    paused: { bg: "hsl(38 92% 80%)", border: "hsl(38 92% 50%)", text: "hsl(38 92% 20%)", label: "hsl(38 92% 25%)" },
-    completed: { bg: "hsl(142 65% 75%)", border: "hsl(142 65% 40%)", text: "hsl(142 70% 15%)", label: "hsl(142 70% 20%)" },
+  const statusStyles = {
+    pending: { ...STATUS_COLORS.pending, label: STATUS_COLORS.pending.text },
+    in_progress: { ...STATUS_COLORS.in_progress, label: STATUS_COLORS.in_progress.text },
+    paused: { ...STATUS_COLORS.paused, label: STATUS_COLORS.paused.text },
+    completed: { ...STATUS_COLORS.completed, label: STATUS_COLORS.completed.text },
   };
 
   return (
