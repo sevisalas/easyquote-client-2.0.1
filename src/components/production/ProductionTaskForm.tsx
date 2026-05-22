@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useProductionPhases } from "@/hooks/useProductionPhases";
+import { useDefaultProductionTasks } from "@/hooks/useDefaultProductionTasks";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -25,10 +26,26 @@ export function ProductionTaskForm({
   onCancel,
 }: ProductionTaskFormProps) {
   const { phases, isLoading: phasesLoading } = useProductionPhases();
+  const { tasks: defaultTasks, isLoading: defaultsLoading } = useDefaultProductionTasks();
   const [taskName, setTaskName] = useState("");
   const [selectedPhaseId, setSelectedPhaseId] = useState("");
+  const [selectedDefaultId, setSelectedDefaultId] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isMobile = useIsMobile();
+
+  const handlePickDefault = (id: string) => {
+    setSelectedDefaultId(id);
+    if (id === "__custom__") {
+      setTaskName("");
+      setSelectedPhaseId("");
+      return;
+    }
+    const t = defaultTasks.find((x) => x.id === id);
+    if (t) {
+      setTaskName(t.task_name);
+      setSelectedPhaseId(t.phase_id);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +85,36 @@ export function ProductionTaskForm({
 
   return (
     <form onSubmit={handleSubmit} className={`space-y-3 border rounded-lg bg-muted/30 ${isMobile ? 'p-4' : 'p-3'}`}>
+      {defaultTasks.length > 0 && (
+        <div className="space-y-1.5">
+          <Label className={isMobile ? "text-sm" : "text-xs"}>Tarea predefinida</Label>
+          <Select value={selectedDefaultId} onValueChange={handlePickDefault}>
+            <SelectTrigger className={isMobile ? "h-11 text-base" : "h-8 text-sm"}>
+              <SelectValue placeholder={defaultsLoading ? "Cargando..." : "Elige una tarea predefinida o personaliza"} />
+            </SelectTrigger>
+            <SelectContent>
+              {defaultTasks.map((t) => {
+                const phase = phases.find((p) => p.id === t.phase_id);
+                return (
+                  <SelectItem key={t.id} value={t.id}>
+                    <span className="flex items-center gap-2">
+                      {phase && (
+                        <span
+                          className="w-2.5 h-2.5 rounded-full"
+                          style={{ backgroundColor: phase.color }}
+                        />
+                      )}
+                      {t.task_name}
+                      {phase && <span className="text-muted-foreground text-xs">· {phase.display_name}</span>}
+                    </span>
+                  </SelectItem>
+                );
+              })}
+              <SelectItem value="__custom__">Personalizada…</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <div className="space-y-1.5">
           <Label htmlFor="taskName" className={isMobile ? "text-sm" : "text-xs"}>Nombre de la tarea</Label>
