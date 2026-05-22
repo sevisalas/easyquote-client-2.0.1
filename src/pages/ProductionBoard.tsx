@@ -154,7 +154,8 @@ export default function ProductionBoard() {
           .in("sales_order_item_id", itemIds);
         for (const t of tasksData || []) {
           const arr = tasksByItem.get(t.sales_order_item_id) || [];
-          arr.push({ phase_id: t.phase_id, task_name: t.task_name, status: t.status });
+          const taskStatus = t.status as "pending" | "in_progress" | "paused" | "completed";
+          arr.push({ phase_id: t.phase_id, task_name: t.task_name, status: taskStatus });
           tasksByItem.set(t.sales_order_item_id, arr);
         }
       }
@@ -312,15 +313,13 @@ export default function ProductionBoard() {
                 <TableHead className="w-[300px] py-2 sticky left-[110px] bg-card z-10">Trabajo</TableHead>
                 <TableHead className="w-[110px] py-2">Estado</TableHead>
                 {phases.map((p) => (
-                  <TableHead
-                    key={p.id}
-                    className="py-2 text-center px-1 min-w-[104px]"
-                    title={p.display_name}
-                  >
-                    <span
-                      className="block h-1.5 w-full rounded-full"
-                      style={{ backgroundColor: p.color }}
-                    />
+                  <TableHead key={p.id} className="py-2 text-center px-1 min-w-[140px]" title={p.display_name}>
+                    <div className="space-y-1">
+                      <span className="block h-1.5 w-full rounded-full" style={{ backgroundColor: p.color }} />
+                      <span className="block text-[10px] font-semibold uppercase tracking-wide text-foreground truncate">
+                        {p.display_name}
+                      </span>
+                    </div>
                   </TableHead>
                 ))}
               </TableRow>
@@ -383,10 +382,10 @@ export default function ProductionBoard() {
                       </Badge>
                     </TableCell>
                     {phases.map((p) => {
-                      const st = j.phaseStatuses[p.id] || "none";
+                      const tasks = j.phaseTasks[p.id] || [];
                       return (
                         <TableCell key={p.id} className="py-1.5 px-1 align-middle">
-                          <PhaseIndicator color={p.color} phaseName={p.display_name} status={st} />
+                          <PhaseIndicator color={p.color} tasks={tasks} />
                         </TableCell>
                       );
                     })}
