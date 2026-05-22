@@ -197,6 +197,25 @@ export function ProductionResourcesPanel() {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label>Fase de producción</Label>
+              <Select
+                value={form.phase_id ?? "__none__"}
+                onValueChange={(v) => setForm({ ...form, phase_id: v === "__none__" ? null : v })}
+              >
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Sin fase" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Sin fase</SelectItem>
+                  {phases.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.display_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
@@ -233,6 +252,25 @@ export function ProductionResourcesPanel() {
                 <SelectContent>
                   <SelectItem value="machine">Máquina</SelectItem>
                   <SelectItem value="manual">Proceso manual</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Fase de producción</Label>
+              <Select
+                value={form.phase_id ?? "__none__"}
+                onValueChange={(v) => setForm({ ...form, phase_id: v === "__none__" ? null : v })}
+              >
+                <SelectTrigger className="mt-2">
+                  <SelectValue placeholder="Sin fase" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Sin fase</SelectItem>
+                  {phases.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.display_name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
