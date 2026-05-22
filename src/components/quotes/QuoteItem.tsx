@@ -2698,7 +2698,36 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
 
             <Card className="border-accent/50 bg-muted/50">
               <CardHeader>
-                <CardTitle>Resultado</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Resultado</CardTitle>
+                  {!isCustomProduct && productId && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      disabled={isPricingLoading}
+                      onClick={async () => {
+                        // Invalidar TODA la caché de pricing para este producto
+                        // (cualquier combinación de inputs) y forzar refetch limpio
+                        await queryClient.removeQueries({
+                          queryKey: ["easyquote-pricing", productId],
+                          exact: false,
+                        });
+                        await queryClient.removeQueries({
+                          queryKey: ["easyquote-multi", productId],
+                          exact: false,
+                        });
+                        setUserEditedPrice(null);
+                        setForceRecalculate(true);
+                      }}
+                      title="Volver a pedir el cálculo al motor ignorando la caché local"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isPricingLoading ? "animate-spin" : ""}`} />
+                      Recalcular
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 {isCustomProduct ? (
