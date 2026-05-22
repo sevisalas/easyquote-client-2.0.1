@@ -126,8 +126,8 @@ export function ProductionTaskList({ itemId }: ProductionTaskListProps) {
                           {Math.floor(task.total_time_seconds / 3600)}h {Math.floor((task.total_time_seconds % 3600) / 60)}m
                         </span>
                       </div>
-                      {task.status !== "completed" && (
-                        <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1">
+                        {task.status !== "completed" && (
                           <Button
                             variant="ghost"
                             size="icon"
@@ -143,10 +143,12 @@ export function ProductionTaskList({ itemId }: ProductionTaskListProps) {
                           >
                             <Check className="h-4 w-4" />
                           </Button>
-                          <Button
+                        )}
+                        <Button
                             variant="ghost"
                             size="icon"
                             className="h-9 w-9 shrink-0 text-destructive hover:text-destructive"
+                            title="Eliminar tarea"
                             onClick={(e) => {
                               e.stopPropagation();
                               deleteTask(task.id);
@@ -154,8 +156,7 @@ export function ProductionTaskList({ itemId }: ProductionTaskListProps) {
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
-                        </div>
-                      )}
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -188,8 +189,8 @@ export function ProductionTaskList({ itemId }: ProductionTaskListProps) {
                         {Math.floor(task.total_time_seconds / 3600)}h {Math.floor((task.total_time_seconds % 3600) / 60)}m
                       </span>
                     </div>
-                    {task.status !== "completed" && (
-                      <div className="flex items-center gap-0.5">
+                    <div className="flex items-center gap-0.5">
+                      {task.status !== "completed" && (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -205,10 +206,12 @@ export function ProductionTaskList({ itemId }: ProductionTaskListProps) {
                         >
                           <Check className="h-3.5 w-3.5" />
                         </Button>
-                        <Button
+                      )}
+                      <Button
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7 shrink-0 text-destructive hover:text-destructive"
+                          title="Eliminar tarea"
                           onClick={(e) => {
                             e.stopPropagation();
                             deleteTask(task.id);
@@ -216,8 +219,7 @@ export function ProductionTaskList({ itemId }: ProductionTaskListProps) {
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 )}
               </CollapsibleTrigger>
