@@ -1,47 +1,58 @@
-# Panel de taller — más espacio para los procesos
-
 ## Objetivo
-Ver en pantalla **todos los procesos y su estado** de cada trabajo sin scroll horizontal, dando peso visual a las fases (que hoy son puntitos diminutos).
 
-## Cambios propuestos en `src/pages/ProductionBoard.tsx`
+Que cada organización pueda personalizar **etiqueta** y **color** de los 5 estados del flujo, válidos tanto para el **pedido** como para el **trabajo (item)**. Renombrar "En producción" → "En curso" por defecto.
 
-### 1. Compactar columnas de info (recuperar ancho)
-Hoy ocupan ~60% del ancho. Las fusionamos en 2 columnas estrechas:
+## Estados (claves fijas, etiqueta/color editables)
 
-- **Trabajo** (una sola columna apilada):
-  - Línea 1: `Nº pedido` (link) · cantidad pequeña a la derecha
-  - Línea 2: Cliente en `text-xs text-muted-foreground`
-  - Línea 3: Artículo en `text-xs` truncado
-- **Fechas** (una sola columna estrecha):
-  - Línea 1: Entrega (destacada)
-  - Línea 2: Pedido en `text-xs text-muted-foreground`
-- Eliminar columnas separadas de Fecha, Entrega, Cliente, Artículo, Cantidad.
-- Mantener columna **Estado** como badge compacto.
+| key (BD, no se toca) | label por defecto | color por defecto |
+|---|---|---|
+| `draft` | Borrador | gris |
+| `pending` | Pendiente | naranja |
+| `in_progress` *(pedido: `in_production`)* | En curso | azul |
+| `completed` | Terminado | verde |
+| `cancelled` | Cancelado | rojo |
 
-### 2. Dar protagonismo a las fases
-- Cada fase pasa de `w-3` (punto) a una **celda tipo "chip"** de ~80–100px con:
-  - Color de la fase como fondo según estado
-  - Nombre corto de la fase
-  - Icono/letra de estado (✓ completada, ● en curso pulsante, ‖ pausada, ○ pendiente, vacío si no aplica)
-- Header de fase con nombre completo y color en barra superior fina.
-- Las celdas de fase usan `min-w-[90px]` para que se lean.
+Las **claves en BD se mantienen** (`sales_orders.status` sigue usando `in_production`, `sales_order_items.production_status` sigue usando `in_progress`). Solo se mapean a un único concepto visual "En curso".
 
-### 3. Aprovechar el ancho de pantalla
-- Reducir padding del contenedor (`p-4 md:p-8` → `p-3 md:p-4`).
-- Quitar `Card` envoltorio de la tabla o usar `border-0` para ganar ~32px.
-- Tabla en `table-fixed` con anchos controlados: Fechas 90px, Trabajo 280px, Estado 110px, resto repartido entre fases.
-- Si hay muchas fases (>8), permitir scroll horizontal **solo** en la zona de fases manteniendo las columnas de info fijas (`sticky left-0`).
+## Modelo de datos
 
-### 4. Densidad de fila
-- `py-2` por celda, alto de fila consistente ~52px (caben las 2–3 líneas del bloque Trabajo).
-- Hover row sutil.
+Nueva tabla `organization_status_settings`:
+- `organization_id` (FK, único + status_key)
+- `status_key` text (`draft|pending|in_progress|completed|cancelled`)
+- `label` text
+- `color` text (hex)
+- `display_order` int
 
-## Resultado esperado
-En un viewport de 1784px caben cómodamente ~10–12 fases visibles con nombre legible, y la info de pedido/cliente/artículo sigue completa pero en menos espacio.
+RLS: lectura cualquier miembro de la organización, escritura solo Admin/Gestor. Si no hay fila, frontend usa defaults.
 
-## Fuera de alcance
-- No tocar lógica de carga, RLS, ni cálculo de estados de fase.
-- No tocar vistas Compacta ni Tablero.
-- Solo cambios de presentación en `ProductionBoard.tsx`.
+## UI
 
-¿Apruebas o quieres ajustar algo (p. ej. mantener columna Cliente separada, o no usar sticky)?
+**Nueva pestaña "Estados" en `/configuracion/produccion`** (junto a Fases, Tareas, Recursos). Es donde el usuario espera tocar estética de producción y queda agrupado con Fases (mismo paradigma: lista editable con color picker).
+
+Por estado: input de etiqueta + color picker + restore-default. No se puede crear/borrar (claves fijas). Preview en vivo de badge.
+
+## Cambios de código (frontend)
+
+- **Hook nuevo** `useStatusSettings()` con React Query (key `["status-settings", orgId]`). Devuelve mapa `{ key → {label, color} }` con fallback a defaults.
+- **Refactor `src/lib/statusColors.ts`**: pasa a exportar solo defaults + helper `getStatusStyle(key, settings)` que resuelve color/label dinámicamente.
+- **Sustituir usos hardcoded** de colores/labels de estado en:
+  - `src/pages/SalesOrderDetail.tsx` (barra de progreso pedido + items, selector de estado)
+  - `src/pages/ProductionBoard.tsx` (badges y `PhaseIndicator`)
+  - `src/pages/SalesOrdersList.tsx`, `src/components/sales/SalesOrderCard.tsx`
+  - `src/pages/ProductionBoardKanban.tsx`, `ProductionBoardCompact.tsx`
+  - Selectores de estado (mostrar la `label` del usuario en `SelectItem`)
+- **Mapping pedido ↔ trabajo**: `in_production` (pedido) y `in_progress` (item/tarea) leen la misma config con clave lógica `in_progress`. Helper `normalizeStatusKey()`.
+
+## Lo que NO cambia
+
+- Enum/strings en BD (`sales_orders.status`, `production_status`, `production_tasks.status`).
+- Lógica de aprobación, Holded, sincronización de estados.
+- Fases de producción (ya son configurables, otra cosa).
+
+## Pasos de implementación
+
+1. Migración: tabla `organization_status_settings` + RLS + trigger updated_at.
+2. Hook `useStatusSettings` + refactor `statusColors.ts` con helper resolutivo.
+3. Pestaña "Estados" en `ProductionConfiguration.tsx` con form de 5 filas.
+4. Reemplazar usos hardcoded en las páginas listadas.
+5. Verificar barra de progreso del pedido, badges en listas y kanban con la nueva config.
