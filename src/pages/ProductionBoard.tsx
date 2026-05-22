@@ -41,12 +41,12 @@ interface Job {
   productName: string;
   quantity: number;
   productionStatus: string;
-  phaseTasks: Record<string, Array<{ taskName: string; status: "pending" | "in_progress" | "paused" | "completed" }>>;
+  phaseTasks: Record<string, Array<{ taskName: string; status: "pending" | "in_progress" | "paused" | "completed"; resourceName?: string | null }>>;
 }
 
 const itemStatusLabels: Record<string, string> = {
   pending: "Pendiente",
-  in_progress: "En proceso",
+  in_progress: "En curso",
   completed: "Completado",
   cancelled: "Cancelado",
 };
@@ -56,7 +56,7 @@ function PhaseIndicator({
   tasks,
 }: {
   color: string;
-  tasks: Array<{ taskName: string; status: "pending" | "in_progress" | "paused" | "completed" }>;
+  tasks: Array<{ taskName: string; status: "pending" | "in_progress" | "paused" | "completed"; resourceName?: string | null }>;
 }) {
   if (tasks.length === 0) {
     return <div className="h-10 rounded-md border border-dashed border-border/40 bg-muted/10" />;
@@ -89,6 +89,14 @@ function PhaseIndicator({
             <div className="truncate text-[10px] font-semibold" title={task.taskName}>
               {task.taskName}
             </div>
+            {task.resourceName && (
+              <div
+                className={`truncate text-[9px] ${isActive ? "opacity-90" : "text-muted-foreground"}`}
+                title={task.resourceName}
+              >
+                {task.resourceName}
+              </div>
+            )}
             <div
               className={`text-[9px] ${isActive ? "font-semibold" : "text-muted-foreground"}`}
               style={!isActive ? { color } : undefined}
@@ -146,18 +154,28 @@ export default function ProductionBoard() {
       if (itemsError) throw itemsError;
 
       const itemIds = (itemsData || []).map((it) => it.id);
-      const tasksByItem = new Map<string, Array<{ phase_id: string; task_name: string; status: "pending" | "in_progress" | "paused" | "completed" }>>();
+      const tasksByItem = new Map<string, Array<{ phase_id: string; task_name: string; status: "pending" | "in_progress" | "paused" | "completed"; resource_id: string | null }>>();
       if (itemIds.length > 0) {
         const { data: tasksData } = await supabase
           .from("production_tasks")
-          .select("sales_order_item_id, phase_id, task_name, status")
+          .select("sales_order_item_id, phase_id, task_name, status, resource_id")
           .in("sales_order_item_id", itemIds);
         for (const t of tasksData || []) {
           const arr = tasksByItem.get(t.sales_order_item_id) || [];
           const taskStatus = t.status as "pending" | "in_progress" | "paused" | "completed";
-          arr.push({ phase_id: t.phase_id, task_name: t.task_name, status: taskStatus });
+          arr.push({ phase_id: t.phase_id, task_name: t.task_name, status: taskStatus, resource_id: (t as any).resource_id ?? null });
           tasksByItem.set(t.sales_order_item_id, arr);
         }
+      }
+
+      // Load resources to resolve resource_id -> name
+      const resourcesById = new Map<string, string>();
+      if (organizationId) {
+        const { data: resourcesData } = await supabase
+          .from("production_resources")
+          .select("id, name")
+          .eq("organization_id", organizationId);
+        for (const r of resourcesData || []) resourcesById.set(r.id, r.name);
       }
 
       const ordersById = new Map((ordersData || []).map((o) => [o.id, o]));
@@ -165,10 +183,14 @@ export default function ProductionBoard() {
         const o = ordersById.get(it.sales_order_id)!;
         const itemTasks = tasksByItem.get(it.id) || [];
         const phaseTasks: Job["phaseTasks"] = {};
-        const byPhase = new Map<string, Array<{ taskName: string; status: "pending" | "in_progress" | "paused" | "completed" }>>();
+        const byPhase = new Map<string, Array<{ taskName: string; status: "pending" | "in_progress" | "paused" | "completed"; resourceName?: string | null }>>();
         for (const t of itemTasks) {
           const arr = byPhase.get(t.phase_id) || [];
-          arr.push({ taskName: t.task_name, status: t.status });
+          arr.push({
+            taskName: t.task_name,
+            status: t.status,
+            resourceName: t.resource_id ? resourcesById.get(t.resource_id) ?? null : null,
+          });
           byPhase.set(t.phase_id, arr);
         }
         for (const [phaseId, tasks] of byPhase.entries()) {
