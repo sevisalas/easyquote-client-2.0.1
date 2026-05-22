@@ -41,7 +41,7 @@ interface Job {
   productName: string;
   quantity: number;
   productionStatus: string;
-  phaseStatuses: Record<string, "pending" | "in_progress" | "paused" | "completed" | "none">;
+  phaseTasks: Record<string, Array<{ taskName: string; status: "pending" | "in_progress" | "paused" | "completed" }>>;
 }
 
 const itemStatusLabels: Record<string, string> = {
@@ -53,91 +53,51 @@ const itemStatusLabels: Record<string, string> = {
 
 function PhaseIndicator({
   color,
-  phaseName,
-  status,
+  tasks,
 }: {
   color: string;
-  phaseName: string;
-  status: "pending" | "in_progress" | "paused" | "completed" | "none";
+  tasks: Array<{ taskName: string; status: "pending" | "in_progress" | "paused" | "completed" }>;
 }) {
-  if (status === "none") {
-    return (
-      <div className="flex flex-col items-center justify-center h-12 rounded-md border border-dashed border-border/50 bg-muted/20 px-1">
-        <span className="text-[10px] font-semibold uppercase tracking-tight text-muted-foreground/50 truncate max-w-full">
-          {phaseName}
-        </span>
-        <span className="text-[9px] text-muted-foreground/40">N/A</span>
-      </div>
-    );
+  if (tasks.length === 0) {
+    return <div className="h-10 rounded-md border border-dashed border-border/40 bg-muted/10" />;
   }
-  const labelMap = {
+
+  const labelMap: Record<"pending" | "in_progress" | "paused" | "completed", string> = {
     pending: "Pendiente",
     in_progress: "En curso",
     paused: "Pausada",
     completed: "Hecha",
-  } as const;
+  };
 
-  const base = "flex flex-col items-center justify-center h-12 rounded-md px-1 leading-tight";
-
-  if (status === "pending") {
-    return (
-      <div
-        className={base}
-        style={{ backgroundColor: `${color}14`, boxShadow: `inset 0 0 0 1.5px ${color}` }}
-      >
-        <span
-          className="text-[10px] font-bold uppercase tracking-tight truncate max-w-full"
-          style={{ color }}
-        >
-          {phaseName}
-        </span>
-        <span className="text-[9px] font-medium" style={{ color }}>
-          {labelMap.pending}
-        </span>
-      </div>
-    );
-  }
-
-  if (status === "in_progress") {
-    return (
-      <div
-        className={`${base} animate-pulse text-white`}
-        style={{ backgroundColor: color }}
-      >
-        <span className="text-[10px] font-bold uppercase tracking-tight truncate max-w-full">
-          {phaseName}
-        </span>
-        <span className="text-[9px] font-semibold">{labelMap.in_progress}</span>
-      </div>
-    );
-  }
-
-  if (status === "paused") {
-    return (
-      <div
-        className={`${base} text-white`}
-        style={{ backgroundColor: color, opacity: 0.65 }}
-      >
-        <span className="text-[10px] font-bold uppercase tracking-tight truncate max-w-full">
-          {phaseName}
-        </span>
-        <span className="text-[9px] font-semibold">{labelMap.paused}</span>
-      </div>
-    );
-  }
-
-  // completed
   return (
-    <div className={`${base} text-white`} style={{ backgroundColor: color }}>
-      <span className="text-[10px] font-bold uppercase tracking-tight truncate max-w-full">
-        {phaseName}
-      </span>
-      <span className="text-[9px] font-semibold inline-flex items-center gap-0.5">
-        <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="2.5,6.5 5,9 9.5,3.5" />
-        </svg>
-        {labelMap.completed}
-      </span>
+    <div className="flex flex-col gap-1">
+      {tasks.map((task, index) => {
+        const isActive = task.status === "in_progress";
+        const isPending = task.status === "pending";
+        const isPaused = task.status === "paused";
+
+        return (
+          <div
+            key={`${task.taskName}-${index}`}
+            className="rounded-md border px-2 py-1 text-left leading-tight"
+            style={{
+              borderColor: `${color}${isActive ? "" : "66"}`,
+              backgroundColor: isActive ? color : `${color}${isPending ? "14" : isPaused ? "20" : "26"}`,
+              color: isActive ? "white" : undefined,
+            }}
+          >
+            <div className="truncate text-[10px] font-semibold" title={task.taskName}>
+              {task.taskName}
+            </div>
+            <div
+              className={`text-[9px] ${isActive ? "font-semibold" : "text-muted-foreground"}`}
+              style={!isActive ? { color } : undefined}
+            >
+              {labelMap[task.status]}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -186,15 +146,15 @@ export default function ProductionBoard() {
       if (itemsError) throw itemsError;
 
       const itemIds = (itemsData || []).map((it) => it.id);
-      const tasksByItem = new Map<string, Array<{ phase_id: string; status: string }>>();
+      const tasksByItem = new Map<string, Array<{ phase_id: string; task_name: string; status: "pending" | "in_progress" | "paused" | "completed" }>>();
       if (itemIds.length > 0) {
         const { data: tasksData } = await supabase
           .from("production_tasks")
-          .select("sales_order_item_id, phase_id, status")
+          .select("sales_order_item_id, phase_id, task_name, status")
           .in("sales_order_item_id", itemIds);
         for (const t of tasksData || []) {
           const arr = tasksByItem.get(t.sales_order_item_id) || [];
-          arr.push({ phase_id: t.phase_id, status: t.status });
+          arr.push({ phase_id: t.phase_id, task_name: t.task_name, status: t.status });
           tasksByItem.set(t.sales_order_item_id, arr);
         }
       }
@@ -203,19 +163,15 @@ export default function ProductionBoard() {
       const flat: Job[] = (itemsData || []).map((it) => {
         const o = ordersById.get(it.sales_order_id)!;
         const itemTasks = tasksByItem.get(it.id) || [];
-        const phaseStatuses: Job["phaseStatuses"] = {};
-        // Group by phase, aggregate: in_progress > paused > pending > completed (all)
-        const byPhase = new Map<string, string[]>();
+        const phaseTasks: Job["phaseTasks"] = {};
+        const byPhase = new Map<string, Array<{ taskName: string; status: "pending" | "in_progress" | "paused" | "completed" }>>();
         for (const t of itemTasks) {
           const arr = byPhase.get(t.phase_id) || [];
-          arr.push(t.status);
+          arr.push({ taskName: t.task_name, status: t.status });
           byPhase.set(t.phase_id, arr);
         }
-        for (const [phaseId, statuses] of byPhase.entries()) {
-          if (statuses.includes("in_progress")) phaseStatuses[phaseId] = "in_progress";
-          else if (statuses.includes("paused")) phaseStatuses[phaseId] = "paused";
-          else if (statuses.every((s) => s === "completed")) phaseStatuses[phaseId] = "completed";
-          else phaseStatuses[phaseId] = "pending";
+        for (const [phaseId, tasks] of byPhase.entries()) {
+          phaseTasks[phaseId] = tasks;
         }
         return {
           orderId: o.id,
@@ -229,7 +185,7 @@ export default function ProductionBoard() {
           quantity: it.quantity,
           productionStatus:
             o.status === "cancelled" ? "cancelled" : it.production_status || "pending",
-          phaseStatuses,
+          phaseTasks,
         };
       });
 
