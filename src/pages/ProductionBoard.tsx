@@ -31,6 +31,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { useProductionBoardView } from "@/hooks/useProductionBoardView";
 import { useProductionPhases } from "@/hooks/useProductionPhases";
 import { useStatusSettings } from "@/hooks/useStatusSettings";
+import { TaskEditDialog, type EditableTask } from "@/components/production/TaskEditDialog";
 
 interface Job {
   orderId: string;
@@ -43,7 +44,7 @@ interface Job {
   productName: string;
   quantity: number;
   productionStatus: string;
-  phaseTasks: Record<string, Array<{ taskName: string; status: "pending" | "in_progress" | "paused" | "completed"; resourceName?: string | null }>>;
+  phaseTasks: Record<string, Array<{ id: string; taskName: string; status: "pending" | "in_progress" | "paused" | "completed"; resourceName?: string | null; resourceId?: string | null; phaseId: string }>>;
 }
 
 const itemStatusLabels: Record<string, string> = {
@@ -55,8 +56,10 @@ const itemStatusLabels: Record<string, string> = {
 
 function PhaseIndicator({
   tasks,
+  onEdit,
 }: {
-  tasks: Array<{ taskName: string; status: "pending" | "in_progress" | "paused" | "completed"; resourceName?: string | null }>;
+  tasks: Array<{ id: string; taskName: string; status: "pending" | "in_progress" | "paused" | "completed"; resourceName?: string | null; resourceId?: string | null; phaseId: string }>;
+  onEdit: (task: EditableTask) => void;
 }) {
   if (tasks.length === 0) {
     return <div className="h-10 rounded-md border border-dashed border-border/40 bg-muted/10" />;
@@ -81,9 +84,20 @@ function PhaseIndicator({
       {tasks.map((task, index) => {
         const s = statusStyles[task.status];
         return (
-          <div
+          <button
+            type="button"
             key={`${task.taskName}-${index}`}
-            className="rounded-md border px-2 py-1 text-left leading-tight"
+            className="rounded-md border px-2 py-1 text-left leading-tight w-full hover:opacity-80 transition-opacity"
+            title="Editar tarea"
+            onClick={() =>
+              onEdit({
+                id: task.id,
+                taskName: task.taskName,
+                status: task.status,
+                phaseId: task.phaseId,
+                resourceId: task.resourceId ?? null,
+              })
+            }
             style={{
               backgroundColor: s.bg,
               borderColor: s.border,
@@ -101,7 +115,7 @@ function PhaseIndicator({
             >
               {labelMap[task.status]}
             </div>
-          </div>
+          </button>
         );
       })}
     </div>
@@ -114,6 +128,8 @@ export default function ProductionBoard() {
   const [excludeFinished, setExcludeFinished] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [editingTask, setEditingTask] = useState<EditableTask | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
   const navigate = useNavigate();
   const { view, updateView } = useProductionBoardView();
   const { phases } = useProductionPhases();
@@ -153,16 +169,16 @@ export default function ProductionBoard() {
       if (itemsError) throw itemsError;
 
       const itemIds = (itemsData || []).map((it) => it.id);
-      const tasksByItem = new Map<string, Array<{ phase_id: string; task_name: string; status: "pending" | "in_progress" | "paused" | "completed"; resource_id: string | null }>>();
+      const tasksByItem = new Map<string, Array<{ id: string; phase_id: string; task_name: string; status: "pending" | "in_progress" | "paused" | "completed"; resource_id: string | null }>>();
       if (itemIds.length > 0) {
         const { data: tasksData } = await supabase
           .from("production_tasks")
-          .select("sales_order_item_id, phase_id, task_name, status, resource_id")
+          .select("id, sales_order_item_id, phase_id, task_name, status, resource_id")
           .in("sales_order_item_id", itemIds);
         for (const t of tasksData || []) {
           const arr = tasksByItem.get(t.sales_order_item_id) || [];
           const taskStatus = t.status as "pending" | "in_progress" | "paused" | "completed";
-          arr.push({ phase_id: t.phase_id, task_name: t.task_name, status: taskStatus, resource_id: (t as any).resource_id ?? null });
+          arr.push({ id: (t as any).id, phase_id: t.phase_id, task_name: t.task_name, status: taskStatus, resource_id: (t as any).resource_id ?? null });
           tasksByItem.set(t.sales_order_item_id, arr);
         }
       }
@@ -182,13 +198,16 @@ export default function ProductionBoard() {
         const o = ordersById.get(it.sales_order_id)!;
         const itemTasks = tasksByItem.get(it.id) || [];
         const phaseTasks: Job["phaseTasks"] = {};
-        const byPhase = new Map<string, Array<{ taskName: string; status: "pending" | "in_progress" | "paused" | "completed"; resourceName?: string | null }>>();
+        const byPhase: Map<string, Job["phaseTasks"][string]> = new Map();
         for (const t of itemTasks) {
           const arr = byPhase.get(t.phase_id) || [];
           arr.push({
+            id: t.id,
             taskName: t.task_name,
             status: t.status,
             resourceName: t.resource_id ? resourcesById.get(t.resource_id) ?? null : null,
+            resourceId: t.resource_id,
+            phaseId: t.phase_id,
           });
           byPhase.set(t.phase_id, arr);
         }
@@ -406,7 +425,13 @@ export default function ProductionBoard() {
                       const tasks = j.phaseTasks[p.id] || [];
                       return (
                         <TableCell key={p.id} className="py-1.5 px-1 align-middle">
-                          <PhaseIndicator tasks={tasks} />
+                          <PhaseIndicator
+                            tasks={tasks}
+                            onEdit={(t) => {
+                              setEditingTask(t);
+                              setEditOpen(true);
+                            }}
+                          />
                         </TableCell>
                       );
                     })}
@@ -417,6 +442,12 @@ export default function ProductionBoard() {
           </Table>
         </div>
       </div>
+      <TaskEditDialog
+        task={editingTask}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSaved={() => loadJobs(false)}
+      />
     </div>
   );
 }
