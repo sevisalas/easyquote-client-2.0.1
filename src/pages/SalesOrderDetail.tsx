@@ -27,6 +27,7 @@ import { ItemProductionCard } from "@/components/production/ItemProductionCard";
 import { WorkOrderItem } from "@/components/production/WorkOrderItem";
 import { ImpositionSection } from "@/components/production/ImpositionSection";
 import { useOutputTypeVisibility } from "@/hooks/useOutputTypeVisibility";
+import { useStatusSettings } from "@/hooks/useStatusSettings";
 
 import { generateWorkOrderPDF } from "@/utils/workOrderPdfGenerator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -127,6 +128,7 @@ const SalesOrderDetail = () => {
   const [adminOnlyPrompts, setAdminOnlyPrompts] = useState<Set<string>>(new Set());
   const [customerInfo, setCustomerInfo] = useState<{ name: string; email?: string; phone?: string }>({ name: 'Sin cliente' });
   const { isHoldedActive } = useHoldedIntegration();
+  const { resolve: resolveStatus, map: statusMap } = useStatusSettings();
   // Edit confirmation dialog state
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editReason, setEditReason] = useState('');
