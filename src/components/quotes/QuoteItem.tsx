@@ -33,7 +33,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import AdditionalsSelector from "@/components/quotes/AdditionalsSelector";
-import { ChevronDown, ChevronUp, Pencil, Trash2, Package } from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, Trash2, Package, RefreshCw } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useSubscription } from "@/contexts/SubscriptionContext";
 import { normalizeApiUserId } from "@/utils/normalizeApiUserId";
