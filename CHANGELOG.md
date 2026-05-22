@@ -5,6 +5,26 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Versionado Semántico](https://semver.org/lang/es/).
 
+ ## [2.8.8] - 2026-05-22
+
+ ### Añadido
+ - **Nuevo panel de producción** con vistas lista, compacta y kanban, y preferencia guardada por usuario.
+ - **Recursos de producción**: alta, edición y asignación de recursos a tareas.
+ - **Visualización de tareas y estados** (pendiente, en curso, pausada, terminada) con tiempos totales por artículo.
+ - **Cierre forzado de pedidos** con tareas pendientes mediante diálogo de confirmación.
+ - **Cálculo automático de fecha de entrega** según días hábiles por organización.
+
+ ### Mejorado
+ - Etiquetas de tarea editables (recurso y estado) desde el panel.
+ - Modal de novedades reactivado para esta versión.
+
+ ### QA
+ - Bloques validados: 12 (producción), 13 (UI/versión)
+ - Validado por: equipo
+ - Incidencias: ninguna
+
+ ---
+
  ## [2.8.2] - 2026-05-05
  
  ### Mejorado
