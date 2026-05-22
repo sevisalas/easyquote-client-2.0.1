@@ -136,6 +136,10 @@ const SalesOrderDetail = () => {
   // Cancellation dialog state
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
+  // Force-complete dialog state (cierre con trabajos pendientes)
+  const [showForceCompleteDialog, setShowForceCompleteDialog] = useState(false);
+  const [forceCompleteCounts, setForceCompleteCounts] = useState<{ items: number; tasks: number }>({ items: 0, tasks: 0 });
+  const [forceCompleteLoading, setForceCompleteLoading] = useState(false);
   // Item notes dialog state
   const [notesDialogItem, setNotesDialogItem] = useState<SalesOrderItem | null>(null);
   const [notesText, setNotesText] = useState('');
@@ -606,8 +610,23 @@ const SalesOrderDetail = () => {
     // Validar que todos los artículos estén completados antes de marcar el pedido como completado
     if (newStatus === 'completed') {
       const incompleteItems = items.filter(item => item.production_status !== 'completed');
-      if (incompleteItems.length > 0) {
-        toast.error(`No se puede completar el pedido. Hay ${incompleteItems.length} artículo(s) sin terminar.`);
+      // Contar tareas pendientes (pending / in_progress / paused) en todos los artículos
+      const itemIds = items.map(i => i.id);
+      let pendingTasksCount = 0;
+      if (itemIds.length > 0) {
+        const { count, error: tasksErr } = await supabase
+          .from('production_tasks')
+          .select('id', { count: 'exact', head: true })
+          .in('sales_order_item_id', itemIds)
+          .in('status', ['pending', 'in_progress', 'paused']);
+        if (tasksErr) {
+          console.error('Error consultando tareas pendientes:', tasksErr);
+        }
+        pendingTasksCount = count || 0;
+      }
+      if (incompleteItems.length > 0 || pendingTasksCount > 0) {
+        setForceCompleteCounts({ items: incompleteItems.length, tasks: pendingTasksCount });
+        setShowForceCompleteDialog(true);
         return;
       }
     }
@@ -691,6 +710,7 @@ const SalesOrderDetail = () => {
   };
 
   const handleConfirmCancellation = async () => {
+    // placeholder anchor — patched below
     if (!id || !order) return;
     if (!cancellationReason.trim()) {
       toast.error('Debes indicar el motivo de la anulación');
