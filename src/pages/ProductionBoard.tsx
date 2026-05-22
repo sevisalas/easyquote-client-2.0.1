@@ -128,6 +128,8 @@ export default function ProductionBoard() {
   const [excludeFinished, setExcludeFinished] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
+  const [editingTask, setEditingTask] = useState<EditableTask | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
   const navigate = useNavigate();
   const { view, updateView } = useProductionBoardView();
   const { phases } = useProductionPhases();
@@ -423,7 +425,13 @@ export default function ProductionBoard() {
                       const tasks = j.phaseTasks[p.id] || [];
                       return (
                         <TableCell key={p.id} className="py-1.5 px-1 align-middle">
-                          <PhaseIndicator tasks={tasks} />
+                          <PhaseIndicator
+                            tasks={tasks}
+                            onEdit={(t) => {
+                              setEditingTask(t);
+                              setEditOpen(true);
+                            }}
+                          />
                         </TableCell>
                       );
                     })}
@@ -434,6 +442,12 @@ export default function ProductionBoard() {
           </Table>
         </div>
       </div>
+      <TaskEditDialog
+        task={editingTask}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        onSaved={() => loadJobs(false)}
+      />
     </div>
   );
 }
