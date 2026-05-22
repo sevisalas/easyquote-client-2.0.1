@@ -1,58 +1,59 @@
 ## Objetivo
 
-Que cada organización pueda personalizar **etiqueta** y **color** de los 5 estados del flujo, válidos tanto para el **pedido** como para el **trabajo (item)**. Renombrar "En producción" → "En curso" por defecto.
+Cuando el usuario intente marcar un pedido como **Completado** y existan artículos o tareas de producción pendientes, mostrar un diálogo de aviso que:
 
-## Estados (claves fijas, etiqueta/color editables)
+1. Liste cuántos artículos y/o tareas quedan sin terminar.
+2. Permita elegir entre:
+   - **Cancelar** (no cerrar el pedido).
+   - **Cerrar todo y completar el pedido** (marca como `completed` todos los artículos y todas sus tareas pendientes/en curso/pausadas, y después el pedido).
 
-| key (BD, no se toca) | label por defecto | color por defecto |
-|---|---|---|
-| `draft` | Borrador | gris |
-| `pending` | Pendiente | naranja |
-| `in_progress` *(pedido: `in_production`)* | En curso | azul |
-| `completed` | Terminado | verde |
-| `cancelled` | Cancelado | rojo |
+Hoy mismo (línea 606-613 de `src/pages/SalesOrderDetail.tsx`) la app bloquea el cierre con un toast de error. Lo sustituiremos por este flujo.
 
-Las **claves en BD se mantienen** (`sales_orders.status` sigue usando `in_production`, `sales_order_items.production_status` sigue usando `in_progress`). Solo se mapean a un único concepto visual "En curso".
+## Alcance
 
-## Modelo de datos
+Cambios sólo de UI/flujo en `SalesOrderDetail.tsx`. No se tocan reglas de negocio de Holded, ni RLS, ni cálculo de precios.
 
-Nueva tabla `organization_status_settings`:
-- `organization_id` (FK, único + status_key)
-- `status_key` text (`draft|pending|in_progress|completed|cancelled`)
-- `label` text
-- `color` text (hex)
-- `display_order` int
+## Cambios
 
-RLS: lectura cualquier miembro de la organización, escritura solo Admin/Gestor. Si no hay fila, frontend usa defaults.
+### 1. `src/pages/SalesOrderDetail.tsx`
 
-## UI
+- Reemplazar el bloque actual de validación en `handleStatusChange` (cuando `newStatus === 'completed'`):
+  - Calcular `incompleteItems` = artículos con `production_status !== 'completed'` (excluyendo cancelados si aplica).
+  - Consultar a `production_tasks` por todos los `sales_order_item_id` del pedido las tareas con `status IN ('pending','in_progress','paused')`.
+  - Si hay artículos o tareas pendientes → abrir un nuevo `AlertDialog` (estado `showForceCompleteDialog`) en lugar del `toast.error`.
+  - Si no hay nada pendiente → flujo actual (marcar pedido completado).
 
-**Nueva pestaña "Estados" en `/configuracion/produccion`** (junto a Fases, Tareas, Recursos). Es donde el usuario espera tocar estética de producción y queda agrupado con Fases (mismo paradigma: lista editable con color picker).
+- Nuevo `AlertDialog` ("¿Cerrar pedido con trabajos pendientes?"):
+  - Texto de aviso explícito:  
+    *"Hay X artículo(s) y Y tarea(s) de producción sin terminar. Si continúas, todos ellos se marcarán como **Terminados** automáticamente. Esta acción no se puede deshacer."*
+  - Botón secundario: **Cancelar**.
+  - Botón primario destructivo: **Cerrar todo y completar pedido**.
 
-Por estado: input de etiqueta + color picker + restore-default. No se puede crear/borrar (claves fijas). Preview en vivo de badge.
+- Nueva función `handleForceCompleteOrder()`:
+  1. `UPDATE production_tasks SET status='completed', completed_at=now() WHERE sales_order_item_id IN (...) AND status <> 'completed'`.
+  2. `UPDATE sales_order_items SET production_status='completed' WHERE sales_order_id = id AND production_status <> 'completed'`.
+  3. `updateSalesOrderStatus(id, 'completed')`.
+  4. Refrescar estado local (`setItems`, `setOrder`) y `loadOrderData()`.
+  5. Invalidate React Query keys: `production-tasks`, claves del pedido.
+  6. Toast informativo: "Pedido cerrado. Se completaron N tareas y M artículos pendientes."
 
-## Cambios de código (frontend)
+- Manejar errores con toast destructivo y no cambiar el estado del pedido si falla algún UPDATE.
 
-- **Hook nuevo** `useStatusSettings()` con React Query (key `["status-settings", orgId]`). Devuelve mapa `{ key → {label, color} }` con fallback a defaults.
-- **Refactor `src/lib/statusColors.ts`**: pasa a exportar solo defaults + helper `getStatusStyle(key, settings)` que resuelve color/label dinámicamente.
-- **Sustituir usos hardcoded** de colores/labels de estado en:
-  - `src/pages/SalesOrderDetail.tsx` (barra de progreso pedido + items, selector de estado)
-  - `src/pages/ProductionBoard.tsx` (badges y `PhaseIndicator`)
-  - `src/pages/SalesOrdersList.tsx`, `src/components/sales/SalesOrderCard.tsx`
-  - `src/pages/ProductionBoardKanban.tsx`, `ProductionBoardCompact.tsx`
-  - Selectores de estado (mostrar la `label` del usuario en `SelectItem`)
-- **Mapping pedido ↔ trabajo**: `in_production` (pedido) y `in_progress` (item/tarea) leen la misma config con clave lógica `in_progress`. Helper `normalizeStatusKey()`.
+### 2. Sin cambios en BD
 
-## Lo que NO cambia
+Las políticas RLS existentes sobre `production_tasks` y `sales_order_items` ya permiten al Admin/Gestor actualizar estos registros. No se requieren migraciones.
 
-- Enum/strings en BD (`sales_orders.status`, `production_status`, `production_tasks.status`).
-- Lógica de aprobación, Holded, sincronización de estados.
-- Fases de producción (ya son configurables, otra cosa).
+## Notas técnicas
 
-## Pasos de implementación
+- Importar `AlertDialog`, `AlertDialogAction`, `AlertDialogCancel`, etc. desde `@/components/ui/alert-dialog` (ya usados en la pantalla para cancelación).
+- Reutilizar el helper `updateSalesOrderStatus` existente.
+- Mantener la regla actual: si el pedido está `cancelled`, no se ofrece este flujo.
+- El conteo de tareas pendientes se hace en el momento del click (consulta fresca), no se depende de caché.
 
-1. Migración: tabla `organization_status_settings` + RLS + trigger updated_at.
-2. Hook `useStatusSettings` + refactor `statusColors.ts` con helper resolutivo.
-3. Pestaña "Estados" en `ProductionConfiguration.tsx` con form de 5 filas.
-4. Reemplazar usos hardcoded en las páginas listadas.
-5. Verificar barra de progreso del pedido, badges en listas y kanban con la nueva config.
+## QA
+
+1. Pedido con todos los artículos completados → marcar como completado sigue funcionando sin diálogo extra.
+2. Pedido con artículos sin completar y sin tareas → aparece diálogo con "X artículos, 0 tareas". Confirmar marca todo como completado.
+3. Pedido con tareas pausadas/en curso → aparece diálogo con el conteo correcto. Confirmar las cierra todas.
+4. Cancelar el diálogo → el pedido conserva su estado original.
+5. Verificar que el panel de producción refleja las tareas como terminadas tras forzar el cierre.
