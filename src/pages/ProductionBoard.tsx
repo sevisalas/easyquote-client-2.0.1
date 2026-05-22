@@ -30,6 +30,7 @@ import { Package, LayoutGrid, ExternalLink } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useProductionBoardView } from "@/hooks/useProductionBoardView";
 import { useProductionPhases } from "@/hooks/useProductionPhases";
+import { useStatusSettings } from "@/hooks/useStatusSettings";
 
 interface Job {
   orderId: string;
@@ -116,6 +117,7 @@ export default function ProductionBoard() {
   const navigate = useNavigate();
   const { view, updateView } = useProductionBoardView();
   const { phases } = useProductionPhases();
+  const { resolve: resolveStatus } = useStatusSettings();
 
   useEffect(() => {
     loadJobs(true);
@@ -389,16 +391,13 @@ export default function ProductionBoard() {
                     </TableCell>
                     <TableCell className="py-2 align-top">
                       {(() => {
-                        const key = (j.productionStatus as keyof typeof STATUS_COLORS) in STATUS_COLORS
-                          ? (j.productionStatus as keyof typeof STATUS_COLORS)
-                          : "pending";
-                        const s = STATUS_COLORS[key];
+                        const r = resolveStatus(j.productionStatus);
                         return (
                           <Badge
                             className="border"
-                            style={{ backgroundColor: s.bg, borderColor: s.border, color: s.text }}
+                            style={{ backgroundColor: r.style.bg, borderColor: r.style.border, color: r.style.text }}
                           >
-                            {itemStatusLabels[j.productionStatus] || s.label}
+                            {r.label}
                           </Badge>
                         );
                       })()}

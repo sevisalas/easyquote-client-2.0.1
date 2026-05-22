@@ -27,6 +27,7 @@ import { ItemProductionCard } from "@/components/production/ItemProductionCard";
 import { WorkOrderItem } from "@/components/production/WorkOrderItem";
 import { ImpositionSection } from "@/components/production/ImpositionSection";
 import { useOutputTypeVisibility } from "@/hooks/useOutputTypeVisibility";
+import { useStatusSettings } from "@/hooks/useStatusSettings";
 
 import { generateWorkOrderPDF } from "@/utils/workOrderPdfGenerator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -127,6 +128,7 @@ const SalesOrderDetail = () => {
   const [adminOnlyPrompts, setAdminOnlyPrompts] = useState<Set<string>>(new Set());
   const [customerInfo, setCustomerInfo] = useState<{ name: string; email?: string; phone?: string }>({ name: 'Sin cliente' });
   const { isHoldedActive } = useHoldedIntegration();
+  const { resolve: resolveStatus, map: statusMap } = useStatusSettings();
   // Edit confirmation dialog state
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editReason, setEditReason] = useState('');
@@ -1218,11 +1220,11 @@ const SalesOrderDetail = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="draft">Borrador</SelectItem>
-                        <SelectItem value="pending">Pendiente</SelectItem>
-                        <SelectItem value="in_production">En Producción</SelectItem>
-                        <SelectItem value="completed">Completado</SelectItem>
-                        <SelectItem value="cancelled">Anulado</SelectItem>
+                        <SelectItem value="draft">{statusMap.draft.label}</SelectItem>
+                        <SelectItem value="pending">{statusMap.pending.label}</SelectItem>
+                        <SelectItem value="in_production">{statusMap.in_progress.label}</SelectItem>
+                        <SelectItem value="completed">{statusMap.completed.label}</SelectItem>
+                        <SelectItem value="cancelled">{statusMap.cancelled.label}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1278,11 +1280,11 @@ const SalesOrderDetail = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="draft">Borrador</SelectItem>
-                        <SelectItem value="pending">Pendiente</SelectItem>
-                        <SelectItem value="in_production">En Producción</SelectItem>
-                        <SelectItem value="completed">Completado</SelectItem>
-                        <SelectItem value="cancelled">Anulado</SelectItem>
+                        <SelectItem value="draft">{statusMap.draft.label}</SelectItem>
+                        <SelectItem value="pending">{statusMap.pending.label}</SelectItem>
+                        <SelectItem value="in_production">{statusMap.in_progress.label}</SelectItem>
+                        <SelectItem value="completed">{statusMap.completed.label}</SelectItem>
+                        <SelectItem value="cancelled">{statusMap.cancelled.label}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1361,24 +1363,28 @@ const SalesOrderDetail = () => {
           {order.status !== 'cancelled' ? (
             <div className="pt-3">
               <div className="flex items-center gap-2">
-                <div className={`flex-1 h-2 rounded-full transition-all ${
-                  order.status === 'draft' || order.status === 'pending' || order.status === 'in_production' || order.status === 'completed' ? 'bg-slate-400' : 'bg-muted'
-                }`} title="Borrador" />
-                <div className={`flex-1 h-2 rounded-full transition-all ${
-                  order.status === 'pending' || order.status === 'in_production' || order.status === 'completed' ? 'bg-orange-500' : 'bg-muted'
-                }`} title="Pendiente" />
-                <div className={`flex-1 h-2 rounded-full transition-all ${
-                  order.status === 'in_production' || order.status === 'completed' ? 'bg-blue-500' : 'bg-muted'
-                }`} title="En producción" />
-                <div className={`flex-1 h-2 rounded-full transition-all ${
-                  order.status === 'completed' ? 'bg-green-500' : 'bg-muted'
-                }`} title="Terminado" />
+                {(['draft','pending','in_progress','completed'] as const).map((k) => {
+                  const reached =
+                    (k === 'draft' && ['draft','pending','in_production','completed'].includes(order.status)) ||
+                    (k === 'pending' && ['pending','in_production','completed'].includes(order.status)) ||
+                    (k === 'in_progress' && ['in_production','completed'].includes(order.status)) ||
+                    (k === 'completed' && order.status === 'completed');
+                  const s = statusMap[k];
+                  return (
+                    <div
+                      key={k}
+                      className="flex-1 h-2 rounded-full transition-all"
+                      style={{ backgroundColor: reached ? s.color : 'hsl(var(--muted))' }}
+                      title={s.label}
+                    />
+                  );
+                })}
               </div>
               <div className="flex items-center justify-between mt-1 text-xs text-muted-foreground">
-                <span>Borrador</span>
-                <span>Pendiente</span>
-                <span>En producción</span>
-                <span>Terminado</span>
+                <span>{statusMap.draft.label}</span>
+                <span>{statusMap.pending.label}</span>
+                <span>{statusMap.in_progress.label}</span>
+                <span>{statusMap.completed.label}</span>
               </div>
             </div>
           ) : (
@@ -1450,15 +1456,15 @@ const SalesOrderDetail = () => {
                             <h3 className={`font-semibold truncate ${isMobile ? 'text-base' : 'text-lg'}`}>{item.product_name}</h3>
                             {!isMobile && (
                               <div className="flex items-center gap-1 ml-3">
-                                <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                  ['pending', 'in_progress', 'completed'].includes(item.production_status || '') ? 'bg-orange-500' : 'bg-muted'
-                                }`} title="Pendiente" />
-                                <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                  ['in_progress', 'completed'].includes(item.production_status || '') ? 'bg-blue-500' : 'bg-muted'
-                                }`} title="En curso" />
-                                <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                  item.production_status === 'completed' ? 'bg-green-500' : 'bg-muted'
-                                }`} title="Terminado" />
+                                {(['pending','in_progress','completed'] as const).map((k) => {
+                                  const reached =
+                                    (k === 'pending' && ['pending','in_progress','completed'].includes(item.production_status || '')) ||
+                                    (k === 'in_progress' && ['in_progress','completed'].includes(item.production_status || '')) ||
+                                    (k === 'completed' && item.production_status === 'completed');
+                                  const s = statusMap[k];
+                                  return <div key={k} className="w-5 h-1.5 rounded-full transition-all"
+                                    style={{ backgroundColor: reached ? s.color : 'hsl(var(--muted))' }} title={s.label} />;
+                                })}
                               </div>
                             )}
                           </div>
@@ -1618,15 +1624,15 @@ const SalesOrderDetail = () => {
                                     <div className="flex items-center gap-2">
                                       <h3 className="font-semibold text-sm">{item.product_name}</h3>
                                       <div className="flex items-center gap-1">
-                                        <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                          ['pending', 'in_progress', 'completed'].includes(item.production_status || '') ? 'bg-orange-500' : 'bg-muted'
-                                        }`} title="Pendiente" />
-                                        <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                          ['in_progress', 'completed'].includes(item.production_status || '') ? 'bg-blue-500' : 'bg-muted'
-                                        }`} title="En curso" />
-                                        <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                          item.production_status === 'completed' ? 'bg-green-500' : 'bg-muted'
-                                        }`} title="Terminado" />
+                                        {(['pending','in_progress','completed'] as const).map((k) => {
+                                          const reached =
+                                            (k === 'pending' && ['pending','in_progress','completed'].includes(item.production_status || '')) ||
+                                            (k === 'in_progress' && ['in_progress','completed'].includes(item.production_status || '')) ||
+                                            (k === 'completed' && item.production_status === 'completed');
+                                          const s = statusMap[k];
+                                          return <div key={k} className="w-5 h-1.5 rounded-full transition-all"
+                                            style={{ backgroundColor: reached ? s.color : 'hsl(var(--muted))' }} title={s.label} />;
+                                        })}
                                       </div>
                                     </div>
                                     <Select
@@ -1648,9 +1654,9 @@ const SalesOrderDetail = () => {
                                         <SelectValue />
                                       </SelectTrigger>
                                       <SelectContent>
-                                        <SelectItem value="pending">Pendiente</SelectItem>
-                                        <SelectItem value="in_progress">En curso</SelectItem>
-                                        <SelectItem value="completed">Completado</SelectItem>
+                                        <SelectItem value="pending">{statusMap.pending.label}</SelectItem>
+                                        <SelectItem value="in_progress">{statusMap.in_progress.label}</SelectItem>
+                                        <SelectItem value="completed">{statusMap.completed.label}</SelectItem>
                                       </SelectContent>
                                     </Select>
                                   </div>

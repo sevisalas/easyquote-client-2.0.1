@@ -1780,6 +1780,54 @@ export type Database = {
           },
         ]
       }
+      organization_status_settings: {
+        Row: {
+          color: string
+          created_at: string
+          display_order: number
+          id: string
+          label: string
+          organization_id: string
+          status_key: string
+          updated_at: string
+        }
+        Insert: {
+          color: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          label: string
+          organization_id: string
+          status_key: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          label?: string
+          organization_id?: string
+          status_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_status_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "organization_status_settings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_themes: {
         Row: {
           accent_color: string
