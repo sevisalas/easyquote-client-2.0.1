@@ -26,6 +26,18 @@ interface Version {
 
 const versions: Version[] = [
   {
+    version: "2.8.8",
+    date: "2026-05-22",
+    changes: {
+      added: [
+        "Cálculo automático de fecha de entrega: los nuevos pedidos calculan su fecha prevista basándose en los días hábiles configurados por organización.",
+      ],
+      changed: [
+        "Gestión de tareas en panel de producción: las etiquetas de tarea ahora son editables permitiendo cambiar recurso y estado directamente mediante un diálogo modal.",
+      ],
+    },
+  },
+  {
     version: "2.8.7",
     date: "2026-05-21",
     changes: {
