@@ -30,10 +30,15 @@ const versions: Version[] = [
     date: "2026-05-22",
     changes: {
       added: [
-        "Cálculo automático de fecha de entrega: los nuevos pedidos calculan su fecha prevista basándose en los días hábiles configurados por organización.",
+        "Nuevo panel de producción con vistas lista, compacta y kanban, y preferencia guardada por usuario.",
+        "Recursos de producción: alta, edición y asignación de recursos (máquinas/puestos) a las tareas.",
+        "Visualización de tareas y estados (pendiente, en curso, pausada, terminada) con tiempos totales por artículo.",
+        "Cálculo automático de fecha de entrega en nuevos pedidos según los días hábiles configurados por organización.",
+        "Cierre forzado de pedidos: al completar un pedido con tareas pendientes, se pregunta si terminar automáticamente todas las tareas y artículos.",
       ],
       changed: [
-        "Gestión de tareas en panel de producción: las etiquetas de tarea ahora son editables permitiendo cambiar recurso y estado directamente mediante un diálogo modal.",
+        "Etiquetas de tarea editables desde el panel: permite cambiar recurso y estado con un diálogo modal.",
+        "Modal de novedades reactivado para esta versión.",
       ],
     },
   },
