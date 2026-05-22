@@ -59,7 +59,11 @@ function PhaseIndicator({
   status: "pending" | "in_progress" | "paused" | "completed" | "none";
 }) {
   if (status === "none") {
-    return <span className="inline-block h-2 w-2 rounded-full bg-muted" />;
+    return (
+      <div className="flex items-center justify-center h-7 rounded-md border border-dashed border-border/60 bg-muted/30 text-[10px] text-muted-foreground/60">
+        —
+      </div>
+    );
   }
   const titleMap: Record<string, string> = {
     pending: "Pendiente",
@@ -67,45 +71,50 @@ function PhaseIndicator({
     paused: "Pausada",
     completed: "Completada",
   };
-  const base = "inline-block h-3 w-3 rounded-full ring-1 ring-border";
+  const base = "flex items-center justify-center h-7 rounded-md text-[11px] font-semibold ring-1 ring-inset";
   if (status === "pending") {
     return (
-      <span
+      <div
         title={titleMap[status]}
         className={base}
-        style={{ backgroundColor: "transparent", boxShadow: `inset 0 0 0 2px ${color}` }}
-      />
+        style={{ color, borderColor: color, backgroundColor: `${color}10`, boxShadow: `inset 0 0 0 1.5px ${color}` }}
+      >
+        ○
+      </div>
     );
   }
   if (status === "in_progress") {
     return (
-      <span
+      <div
         title={titleMap[status]}
-        className={`${base} animate-pulse`}
-        style={{ backgroundColor: color }}
-      />
+        className={`${base} animate-pulse text-white`}
+        style={{ backgroundColor: color, borderColor: color }}
+      >
+        EN CURSO
+      </div>
     );
   }
   if (status === "paused") {
     return (
-      <span
+      <div
         title={titleMap[status]}
-        className={base}
-        style={{ backgroundColor: color, opacity: 0.5 }}
-      />
+        className={`${base} text-white`}
+        style={{ backgroundColor: color, opacity: 0.55, borderColor: color }}
+      >
+        ‖
+      </div>
     );
   }
-  // completed
   return (
-    <span
+    <div
       title={titleMap[status]}
-      className={`${base} relative`}
-      style={{ backgroundColor: color }}
+      className={`${base} text-white gap-1`}
+      style={{ backgroundColor: color, borderColor: color }}
     >
-      <svg viewBox="0 0 12 12" className="absolute inset-0 h-3 w-3 text-background" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="2.5,6.5 5,9 9.5,3.5" />
       </svg>
-    </span>
+    </div>
   );
 }
 
@@ -315,25 +324,25 @@ export default function ProductionBoard() {
           </div>
         </Card>
 
-        <Card>
+        <div className="rounded-lg border bg-card overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-24 py-2">Fecha</TableHead>
-                <TableHead className="w-24 py-2">Entrega</TableHead>
-                <TableHead className="w-56 py-2">Nº pedido</TableHead>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Artículo</TableHead>
-                <TableHead className="w-32 py-2">Estado</TableHead>
-                <TableHead className="w-20 py-2 text-right">Cantidad</TableHead>
+                <TableHead className="w-[110px] py-2 sticky left-0 bg-card z-10">Fechas</TableHead>
+                <TableHead className="w-[300px] py-2 sticky left-[110px] bg-card z-10">Trabajo</TableHead>
+                <TableHead className="w-[110px] py-2">Estado</TableHead>
                 {phases.map((p) => (
-                  <TableHead key={p.id} className="py-2 text-center px-2" title={p.display_name}>
+                  <TableHead
+                    key={p.id}
+                    className="py-2 text-center px-1.5 min-w-[96px]"
+                    title={p.display_name}
+                  >
                     <div className="flex flex-col items-center gap-1">
                       <span
-                        className="inline-block h-2.5 w-2.5 rounded-full ring-1 ring-border"
+                        className="block h-1 w-10 rounded-full"
                         style={{ backgroundColor: p.color }}
                       />
-                      <span className="text-[10px] font-medium uppercase tracking-wide truncate max-w-[80px]">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide truncate max-w-[90px]">
                         {p.display_name}
                       </span>
                     </div>
@@ -344,35 +353,48 @@ export default function ProductionBoard() {
             <TableBody>
               {filteredJobs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7 + phases.length} className="text-center text-muted-foreground py-12">
+                  <TableCell colSpan={3 + phases.length} className="text-center text-muted-foreground py-12">
                     No hay trabajos pendientes
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredJobs.map((j) => (
-                  <TableRow key={j.itemId}>
-                    <TableCell className="whitespace-nowrap py-1.5">
-                      {format(new Date(j.orderDate), "dd/MM/yyyy", { locale: es })}
+                  <TableRow key={j.itemId} className="hover:bg-muted/30">
+                    <TableCell className="py-2 sticky left-0 bg-card z-10 align-top">
+                      <div className="flex flex-col leading-tight">
+                        <span className="text-sm font-medium whitespace-nowrap">
+                          {j.deliveryDate
+                            ? format(new Date(j.deliveryDate), "dd/MM/yyyy", { locale: es })
+                            : "—"}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                          ped. {format(new Date(j.orderDate), "dd/MM/yy", { locale: es })}
+                        </span>
+                      </div>
                     </TableCell>
-                    <TableCell className="whitespace-nowrap py-1.5 text-muted-foreground">
-                      {j.deliveryDate
-                        ? format(new Date(j.deliveryDate), "dd/MM/yyyy", { locale: es })
-                        : "—"}
+                    <TableCell className="py-2 sticky left-[110px] bg-card z-10 align-top">
+                      <div className="flex flex-col leading-tight min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <Link
+                            to={`/pedidos/${j.orderId}`}
+                            className="inline-flex items-center gap-1 font-semibold text-sm hover:underline truncate"
+                          >
+                            {j.orderNumber}
+                            <ExternalLink className="h-3 w-3 opacity-60 flex-shrink-0" />
+                          </Link>
+                          <span className="text-[11px] tabular-nums text-muted-foreground flex-shrink-0">
+                            ×{j.quantity}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-muted-foreground truncate">
+                          <CustomerName customerId={j.customerId} />
+                        </span>
+                        <span className="text-[11px] truncate" title={j.productName}>
+                          {j.productName}
+                        </span>
+                      </div>
                     </TableCell>
-                    <TableCell className="py-1.5 whitespace-nowrap">
-                      <Link
-                        to={`/pedidos/${j.orderId}`}
-                        className="inline-flex items-center gap-1 font-medium hover:underline"
-                      >
-                        {j.orderNumber}
-                        <ExternalLink className="h-3 w-3 opacity-60" />
-                      </Link>
-                    </TableCell>
-                    <TableCell className="py-1.5">
-                      <CustomerName customerId={j.customerId} />
-                    </TableCell>
-                    <TableCell className="py-1.5 font-medium">{j.productName}</TableCell>
-                    <TableCell className="py-1.5">
+                    <TableCell className="py-2 align-top">
                       <Badge
                         variant={
                           j.productionStatus === "completed"
@@ -385,11 +407,10 @@ export default function ProductionBoard() {
                         {itemStatusLabels[j.productionStatus] || "Pendiente"}
                       </Badge>
                     </TableCell>
-                    <TableCell className="py-1.5 text-right tabular-nums">{j.quantity}</TableCell>
                     {phases.map((p) => {
                       const st = j.phaseStatuses[p.id] || "none";
                       return (
-                        <TableCell key={p.id} className="py-1.5 px-2 text-center">
+                        <TableCell key={p.id} className="py-2 px-1.5 align-middle">
                           <PhaseIndicator color={p.color} status={st} />
                         </TableCell>
                       );
@@ -399,7 +420,7 @@ export default function ProductionBoard() {
               )}
             </TableBody>
           </Table>
-        </Card>
+        </div>
       </div>
     </div>
   );
