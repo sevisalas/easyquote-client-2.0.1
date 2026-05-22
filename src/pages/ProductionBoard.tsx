@@ -53,67 +53,91 @@ const itemStatusLabels: Record<string, string> = {
 
 function PhaseIndicator({
   color,
+  phaseName,
   status,
 }: {
   color: string;
+  phaseName: string;
   status: "pending" | "in_progress" | "paused" | "completed" | "none";
 }) {
   if (status === "none") {
     return (
-      <div className="flex items-center justify-center h-7 rounded-md border border-dashed border-border/60 bg-muted/30 text-[10px] text-muted-foreground/60">
-        —
+      <div className="flex flex-col items-center justify-center h-12 rounded-md border border-dashed border-border/50 bg-muted/20 px-1">
+        <span className="text-[10px] font-semibold uppercase tracking-tight text-muted-foreground/50 truncate max-w-full">
+          {phaseName}
+        </span>
+        <span className="text-[9px] text-muted-foreground/40">N/A</span>
       </div>
     );
   }
-  const titleMap: Record<string, string> = {
+  const labelMap = {
     pending: "Pendiente",
-    in_progress: "En proceso",
+    in_progress: "En curso",
     paused: "Pausada",
-    completed: "Completada",
-  };
-  const base = "flex items-center justify-center h-7 rounded-md text-[11px] font-semibold ring-1 ring-inset";
+    completed: "Hecha",
+  } as const;
+
+  const base = "flex flex-col items-center justify-center h-12 rounded-md px-1 leading-tight";
+
   if (status === "pending") {
     return (
       <div
-        title={titleMap[status]}
         className={base}
-        style={{ color, borderColor: color, backgroundColor: `${color}10`, boxShadow: `inset 0 0 0 1.5px ${color}` }}
+        style={{ backgroundColor: `${color}14`, boxShadow: `inset 0 0 0 1.5px ${color}` }}
       >
-        ○
+        <span
+          className="text-[10px] font-bold uppercase tracking-tight truncate max-w-full"
+          style={{ color }}
+        >
+          {phaseName}
+        </span>
+        <span className="text-[9px] font-medium" style={{ color }}>
+          {labelMap.pending}
+        </span>
       </div>
     );
   }
+
   if (status === "in_progress") {
     return (
       <div
-        title={titleMap[status]}
         className={`${base} animate-pulse text-white`}
-        style={{ backgroundColor: color, borderColor: color }}
+        style={{ backgroundColor: color }}
       >
-        EN CURSO
+        <span className="text-[10px] font-bold uppercase tracking-tight truncate max-w-full">
+          {phaseName}
+        </span>
+        <span className="text-[9px] font-semibold">{labelMap.in_progress}</span>
       </div>
     );
   }
+
   if (status === "paused") {
     return (
       <div
-        title={titleMap[status]}
         className={`${base} text-white`}
-        style={{ backgroundColor: color, opacity: 0.55, borderColor: color }}
+        style={{ backgroundColor: color, opacity: 0.65 }}
       >
-        ‖
+        <span className="text-[10px] font-bold uppercase tracking-tight truncate max-w-full">
+          {phaseName}
+        </span>
+        <span className="text-[9px] font-semibold">{labelMap.paused}</span>
       </div>
     );
   }
+
+  // completed
   return (
-    <div
-      title={titleMap[status]}
-      className={`${base} text-white gap-1`}
-      style={{ backgroundColor: color, borderColor: color }}
-    >
-      <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <polyline points="2.5,6.5 5,9 9.5,3.5" />
-      </svg>
+    <div className={`${base} text-white`} style={{ backgroundColor: color }}>
+      <span className="text-[10px] font-bold uppercase tracking-tight truncate max-w-full">
+        {phaseName}
+      </span>
+      <span className="text-[9px] font-semibold inline-flex items-center gap-0.5">
+        <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="2.5,6.5 5,9 9.5,3.5" />
+        </svg>
+        {labelMap.completed}
+      </span>
     </div>
   );
 }
@@ -334,18 +358,13 @@ export default function ProductionBoard() {
                 {phases.map((p) => (
                   <TableHead
                     key={p.id}
-                    className="py-2 text-center px-1.5 min-w-[96px]"
+                    className="py-2 text-center px-1 min-w-[104px]"
                     title={p.display_name}
                   >
-                    <div className="flex flex-col items-center gap-1">
-                      <span
-                        className="block h-1 w-10 rounded-full"
-                        style={{ backgroundColor: p.color }}
-                      />
-                      <span className="text-[10px] font-semibold uppercase tracking-wide truncate max-w-[90px]">
-                        {p.display_name}
-                      </span>
-                    </div>
+                    <span
+                      className="block h-1.5 w-full rounded-full"
+                      style={{ backgroundColor: p.color }}
+                    />
                   </TableHead>
                 ))}
               </TableRow>
@@ -410,8 +429,8 @@ export default function ProductionBoard() {
                     {phases.map((p) => {
                       const st = j.phaseStatuses[p.id] || "none";
                       return (
-                        <TableCell key={p.id} className="py-2 px-1.5 align-middle">
-                          <PhaseIndicator color={p.color} status={st} />
+                        <TableCell key={p.id} className="py-1.5 px-1 align-middle">
+                          <PhaseIndicator color={p.color} phaseName={p.display_name} status={st} />
                         </TableCell>
                       );
                     })}
