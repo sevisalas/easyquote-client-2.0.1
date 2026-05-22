@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Play, Pause, Square } from "lucide-react";
+import { Play, Pause, Square, Timer, Circle, CheckCircle2, Loader2 } from "lucide-react";
 import { ProductionTask } from "@/hooks/useProductionTasks";
 
 interface ProductionTaskTimerProps {
@@ -13,6 +13,9 @@ export function ProductionTaskTimer({ task, onUpdate }: ProductionTaskTimerProps
   const [elapsedTime, setElapsedTime] = useState(task.total_time_seconds);
   const [comments, setComments] = useState(task.comments || "");
   const [isRunning, setIsRunning] = useState(task.status === "in_progress");
+  const [showTimer, setShowTimer] = useState(
+    task.status === "in_progress" || task.total_time_seconds > 0
+  );
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -63,6 +66,26 @@ export function ProductionTaskTimer({ task, onUpdate }: ProductionTaskTimerProps
     });
   };
 
+  // Cambios de estado manuales (sin cronómetro)
+  const setStatus = async (status: "pending" | "in_progress" | "completed") => {
+    setIsRunning(false);
+    const updates: any = { status };
+    if (status === "pending") {
+      updates.started_at = null;
+      updates.paused_at = null;
+      updates.completed_at = null;
+    }
+    if (status === "in_progress") {
+      updates.started_at = task.started_at || new Date().toISOString();
+      updates.paused_at = null;
+      updates.completed_at = null;
+    }
+    if (status === "completed") {
+      updates.completed_at = new Date().toISOString();
+    }
+    await onUpdate(task.id, updates);
+  };
+
   const handleCommentChange = async (value: string) => {
     setComments(value);
     await onUpdate(task.id, {
@@ -70,36 +93,83 @@ export function ProductionTaskTimer({ task, onUpdate }: ProductionTaskTimerProps
     });
   };
 
-  const canStart = task.status === "pending" || task.status === "paused";
-  const canPause = task.status === "in_progress";
-  const canFinish = task.status === "in_progress" || task.status === "paused";
   const isCompleted = task.status === "completed";
 
   return (
     <div className="space-y-4 p-4 border rounded-lg bg-card">
-      <div className="flex items-center justify-between">
-        <div className="text-2xl font-mono font-bold">{formatTime(elapsedTime)}</div>
-        <div className="flex gap-2">
-          {canStart && (
-            <Button onClick={handleStart} size="sm" variant="default">
-              <Play className="h-4 w-4 mr-1" />
-              {task.status === "paused" ? "Reanudar" : "Iniciar"}
-            </Button>
+      {/* Gestión de estado manual (siempre visible) */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          onClick={() => setStatus("pending")}
+          size="sm"
+          variant={task.status === "pending" ? "default" : "outline"}
+        >
+          <Circle className="h-4 w-4 mr-1" />
+          Pendiente
+        </Button>
+        <Button
+          onClick={() => setStatus("in_progress")}
+          size="sm"
+          variant={task.status === "in_progress" ? "default" : "outline"}
+        >
+          <Loader2 className="h-4 w-4 mr-1" />
+          En curso
+        </Button>
+        <Button
+          onClick={() => setStatus("completed")}
+          size="sm"
+          variant={isCompleted ? "default" : "outline"}
+        >
+          <CheckCircle2 className="h-4 w-4 mr-1" />
+          Hecha
+        </Button>
+
+        <div className="ml-auto flex items-center gap-2">
+          {(showTimer || elapsedTime > 0) && (
+            <span className="text-sm font-mono font-semibold tabular-nums">
+              {formatTime(elapsedTime)}
+            </span>
           )}
-          {canPause && (
-            <Button onClick={handlePause} size="sm" variant="secondary">
-              <Pause className="h-4 w-4 mr-1" />
-              Pausar
-            </Button>
-          )}
-          {canFinish && !isCompleted && (
-            <Button onClick={handleFinish} size="sm" variant="destructive">
-              <Square className="h-4 w-4 mr-1" />
-              Finalizar
-            </Button>
-          )}
+          <Button
+            onClick={() => setShowTimer((v) => !v)}
+            size="sm"
+            variant="ghost"
+            title="Cronómetro opcional"
+          >
+            <Timer className="h-4 w-4 mr-1" />
+            {showTimer ? "Ocultar tiempo" : "Usar cronómetro"}
+          </Button>
         </div>
       </div>
+
+      {/* Cronómetro opcional */}
+      {showTimer && (
+        <div className="flex items-center justify-between p-3 border rounded-md bg-muted/30">
+          <div className="text-2xl font-mono font-bold tabular-nums">
+            {formatTime(elapsedTime)}
+          </div>
+          <div className="flex gap-2">
+            {!isRunning && !isCompleted && (
+              <Button onClick={handleStart} size="sm" variant="default">
+                <Play className="h-4 w-4 mr-1" />
+                {task.status === "paused" ? "Reanudar" : "Iniciar"}
+              </Button>
+            )}
+            {isRunning && (
+              <Button onClick={handlePause} size="sm" variant="secondary">
+                <Pause className="h-4 w-4 mr-1" />
+                Pausar
+              </Button>
+            )}
+            {!isCompleted && (isRunning || task.status === "paused") && (
+              <Button onClick={handleFinish} size="sm" variant="destructive">
+                <Square className="h-4 w-4 mr-1" />
+                Finalizar
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="space-y-2">
         <label className="text-sm font-medium">Comentarios</label>
