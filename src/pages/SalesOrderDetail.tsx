@@ -136,6 +136,10 @@ const SalesOrderDetail = () => {
   // Cancellation dialog state
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
+  // Force-complete dialog state (cierre con trabajos pendientes)
+  const [showForceCompleteDialog, setShowForceCompleteDialog] = useState(false);
+  const [forceCompleteCounts, setForceCompleteCounts] = useState<{ items: number; tasks: number }>({ items: 0, tasks: 0 });
+  const [forceCompleteLoading, setForceCompleteLoading] = useState(false);
   // Item notes dialog state
   const [notesDialogItem, setNotesDialogItem] = useState<SalesOrderItem | null>(null);
   const [notesText, setNotesText] = useState('');
@@ -606,8 +610,23 @@ const SalesOrderDetail = () => {
     // Validar que todos los artículos estén completados antes de marcar el pedido como completado
     if (newStatus === 'completed') {
       const incompleteItems = items.filter(item => item.production_status !== 'completed');
-      if (incompleteItems.length > 0) {
-        toast.error(`No se puede completar el pedido. Hay ${incompleteItems.length} artículo(s) sin terminar.`);
+      // Contar tareas pendientes (pending / in_progress / paused) en todos los artículos
+      const itemIds = items.map(i => i.id);
+      let pendingTasksCount = 0;
+      if (itemIds.length > 0) {
+        const { count, error: tasksErr } = await supabase
+          .from('production_tasks')
+          .select('id', { count: 'exact', head: true })
+          .in('sales_order_item_id', itemIds)
+          .in('status', ['pending', 'in_progress', 'paused']);
+        if (tasksErr) {
+          console.error('Error consultando tareas pendientes:', tasksErr);
+        }
+        pendingTasksCount = count || 0;
+      }
+      if (incompleteItems.length > 0 || pendingTasksCount > 0) {
+        setForceCompleteCounts({ items: incompleteItems.length, tasks: pendingTasksCount });
+        setShowForceCompleteDialog(true);
         return;
       }
     }
@@ -711,6 +730,54 @@ const SalesOrderDetail = () => {
     toast.success('Pedido anulado');
     setOrder(prev => prev ? { ...prev, status: 'cancelled', cancellation_reason: cancellationReason.trim() } : null);
     setShowCancelDialog(false);
+  };
+
+  const handleForceCompleteOrder = async () => {
+    if (!id || !order) return;
+    setForceCompleteLoading(true);
+    try {
+      const itemIds = items.map(i => i.id);
+      let closedTasks = 0;
+      let closedItems = 0;
+
+      if (itemIds.length > 0) {
+        // 1) Cerrar todas las tareas pendientes/en curso/pausadas
+        const nowIso = new Date().toISOString();
+        const { data: updatedTasks, error: tasksErr } = await supabase
+          .from('production_tasks')
+          .update({ status: 'completed', completed_at: nowIso })
+          .in('sales_order_item_id', itemIds)
+          .in('status', ['pending', 'in_progress', 'paused'])
+          .select('id');
+        if (tasksErr) throw tasksErr;
+        closedTasks = updatedTasks?.length || 0;
+
+        // 2) Cerrar todos los artículos no completados
+        const { data: updatedItems, error: itemsErr } = await supabase
+          .from('sales_order_items')
+          .update({ production_status: 'completed' })
+          .eq('sales_order_id', id)
+          .neq('production_status', 'completed')
+          .select('id');
+        if (itemsErr) throw itemsErr;
+        closedItems = updatedItems?.length || 0;
+      }
+
+      // 3) Marcar pedido como completado
+      const success = await updateSalesOrderStatus(id, 'completed');
+      if (!success) throw new Error('No se pudo actualizar el estado del pedido');
+
+      setOrder(prev => prev ? { ...prev, status: 'completed' } : null);
+      setItems(prev => prev.map(i => ({ ...i, production_status: 'completed' as any })));
+      setShowForceCompleteDialog(false);
+      toast.success(`Pedido cerrado. Se completaron ${closedItems} artículo(s) y ${closedTasks} tarea(s) pendientes.`);
+      await loadOrderData();
+    } catch (err: any) {
+      console.error('Error forzando cierre del pedido:', err);
+      toast.error(err?.message || 'Error al cerrar el pedido');
+    } finally {
+      setForceCompleteLoading(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -1852,6 +1919,29 @@ const SalesOrderDetail = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Confirmar anulación
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* Force-complete (cierre con trabajos pendientes) Dialog */}
+      <AlertDialog open={showForceCompleteDialog} onOpenChange={(o) => !forceCompleteLoading && setShowForceCompleteDialog(o)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Cerrar pedido con trabajos pendientes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hay <strong>{forceCompleteCounts.items}</strong> artículo(s) y <strong>{forceCompleteCounts.tasks}</strong> tarea(s) de producción sin terminar.
+              <br />
+              Si continúas, todos ellos se marcarán como <strong>Terminados</strong> automáticamente. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={forceCompleteLoading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleForceCompleteOrder(); }}
+              disabled={forceCompleteLoading}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {forceCompleteLoading ? 'Cerrando...' : 'Cerrar todo y completar pedido'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
