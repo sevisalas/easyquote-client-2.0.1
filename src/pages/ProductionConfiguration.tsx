@@ -20,6 +20,7 @@ import { Switch } from "@/components/ui/switch";
 import type { DefaultProductionTask } from "@/hooks/useDefaultProductionTasks";
 import { ProductionPhasesPanel } from "@/components/production/ProductionPhasesPanel";
 import { ProductionResourcesPanel } from "@/components/production/ProductionResourcesPanel";
+import { StatusSettingsPanel } from "@/components/production/StatusSettingsPanel";
 
 const impositionFieldLabels: Record<string, string> = {
   productWidth: "Ancho producto",
@@ -357,6 +358,9 @@ export default function ProductionConfiguration() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Estados del pedido y trabajo (configurables) */}
+        <StatusSettingsPanel />
 
         {/* Production Phases (custom by tenant) */}
         <ProductionPhasesPanel />
