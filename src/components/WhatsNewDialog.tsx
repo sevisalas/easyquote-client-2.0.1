@@ -9,10 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Moon, LayoutGrid } from "lucide-react";
+import { Sparkles, LayoutGrid, Factory, ListChecks } from "lucide-react";
 
   const CURRENT_VERSION = "2.8.8";
-const SILENT_UPDATE = true;
+const SILENT_UPDATE = false;
 const LS_KEY = "whats_new_seen_version_v2";
 
 interface ReleaseNote {
@@ -24,17 +24,24 @@ interface ReleaseNote {
 
 const RELEASE_NOTES: ReleaseNote[] = [
   {
-    icon: <Moon className="h-5 w-5 text-primary" />,
-    title: "Modo oscuro",
+    icon: <LayoutGrid className="h-5 w-5 text-primary" />,
+    title: "Nuevo panel de producción",
     description:
-      "Ya puedes activar el modo oscuro desde tu perfil. La preferencia se guarda por usuario.",
+      "Vista renovada del panel de producción con cambio entre lista, compacta y kanban, y preferencia guardada por usuario.",
     badge: "Nuevo",
   },
   {
-    icon: <LayoutGrid className="h-5 w-5 text-primary" />,
-    title: "Portal B2B ampliado",
+    icon: <Factory className="h-5 w-5 text-primary" />,
+    title: "Recursos de producción",
     description:
-      "Catálogo de productos en el portal de clientes y creación de subproductos para una gestión más flexible.",
+      "Añade y gestiona recursos (máquinas, puestos) y asígnalos a las tareas de cada artículo.",
+    badge: "Nuevo",
+  },
+  {
+    icon: <ListChecks className="h-5 w-5 text-primary" />,
+    title: "Visualización de tareas y estados",
+    description:
+      "Consulta el estado de cada tarea (pendiente, en curso, pausada, terminada) con tiempos totales por artículo.",
     badge: "Mejora",
   },
 ];
