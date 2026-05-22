@@ -1923,6 +1923,29 @@ const SalesOrderDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Force-complete (cierre con trabajos pendientes) Dialog */}
+      <AlertDialog open={showForceCompleteDialog} onOpenChange={(o) => !forceCompleteLoading && setShowForceCompleteDialog(o)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Cerrar pedido con trabajos pendientes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hay <strong>{forceCompleteCounts.items}</strong> artículo(s) y <strong>{forceCompleteCounts.tasks}</strong> tarea(s) de producción sin terminar.
+              <br />
+              Si continúas, todos ellos se marcarán como <strong>Terminados</strong> automáticamente. Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={forceCompleteLoading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleForceCompleteOrder(); }}
+              disabled={forceCompleteLoading}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {forceCompleteLoading ? 'Cerrando...' : 'Cerrar todo y completar pedido'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {/* Item Notes Dialog */}
       <Dialog open={!!notesDialogItem} onOpenChange={(open) => { if (!open) { setNotesDialogItem(null); setEditingNoteIndex(null); } }}>
         <DialogContent className="sm:max-w-[500px]">
