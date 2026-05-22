@@ -34,6 +34,7 @@ import {
   type ProductionResource,
   type ProductionResourceType,
 } from "@/hooks/useProductionResources";
+import { useProductionPhases } from "@/hooks/useProductionPhases";
 
 const TYPE_LABEL: Record<ProductionResourceType, string> = {
   machine: "Máquina",
@@ -43,28 +44,43 @@ const TYPE_LABEL: Record<ProductionResourceType, string> = {
 export function ProductionResourcesPanel() {
   const { resources, isLoading, createResource, updateResource, deleteResource } =
     useProductionResources();
+  const { phases } = useProductionPhases();
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selected, setSelected] = useState<ProductionResource | null>(null);
-  const [form, setForm] = useState<{ name: string; resource_type: ProductionResourceType }>({
+  const [form, setForm] = useState<{
+    name: string;
+    resource_type: ProductionResourceType;
+    phase_id: string | null;
+  }>({
     name: "",
     resource_type: "machine",
+    phase_id: null,
   });
 
-  const resetForm = () => setForm({ name: "", resource_type: "machine" });
+  const resetForm = () => setForm({ name: "", resource_type: "machine", phase_id: null });
 
   const onCreate = () => {
     if (!form.name.trim()) return;
-    createResource({ name: form.name.trim(), resource_type: form.resource_type });
+    createResource({
+      name: form.name.trim(),
+      resource_type: form.resource_type,
+      phase_id: form.phase_id,
+    });
     setCreateOpen(false);
     resetForm();
   };
 
   const onEdit = () => {
     if (!selected || !form.name.trim()) return;
-    updateResource({ id: selected.id, name: form.name.trim(), resource_type: form.resource_type });
+    updateResource({
+      id: selected.id,
+      name: form.name.trim(),
+      resource_type: form.resource_type,
+      phase_id: form.phase_id,
+    });
     setEditOpen(false);
     setSelected(null);
     resetForm();
@@ -72,7 +88,7 @@ export function ProductionResourcesPanel() {
 
   const openEdit = (r: ProductionResource) => {
     setSelected(r);
-    setForm({ name: r.name, resource_type: r.resource_type });
+    setForm({ name: r.name, resource_type: r.resource_type, phase_id: r.phase_id });
     setEditOpen(true);
   };
 
@@ -121,6 +137,19 @@ export function ProductionResourcesPanel() {
                   <Hand className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 )}
                 <span className="text-sm font-medium truncate flex-1 min-w-0">{r.name}</span>
+                {r.phase_id && (() => {
+                  const phase = phases.find((p) => p.id === r.phase_id);
+                  if (!phase) return null;
+                  return (
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground truncate max-w-[110px]">
+                      <span
+                        className="w-2 h-2 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: phase.color }}
+                      />
+                      <span className="truncate">{phase.display_name}</span>
+                    </span>
+                  );
+                })()}
                 <Badge variant="secondary" className="text-xs">
                   {TYPE_LABEL[r.resource_type]}
                 </Badge>
