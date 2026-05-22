@@ -30,6 +30,7 @@ import { Package, LayoutGrid, ExternalLink } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useProductionBoardView } from "@/hooks/useProductionBoardView";
 import { useProductionPhases } from "@/hooks/useProductionPhases";
+import { useStatusSettings } from "@/hooks/useStatusSettings";
 
 interface Job {
   orderId: string;
@@ -116,6 +117,7 @@ export default function ProductionBoard() {
   const navigate = useNavigate();
   const { view, updateView } = useProductionBoardView();
   const { phases } = useProductionPhases();
+  const { resolve: resolveStatus } = useStatusSettings();
 
   useEffect(() => {
     loadJobs(true);
