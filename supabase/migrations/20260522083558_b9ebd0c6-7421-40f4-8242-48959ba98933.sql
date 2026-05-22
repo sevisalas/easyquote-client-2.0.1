@@ -1,0 +1,2 @@
+ALTER TABLE public.production_tasks ADD COLUMN resource_id uuid REFERENCES public.production_resources(id) ON DELETE SET NULL;
+CREATE INDEX idx_production_tasks_resource ON public.production_tasks(resource_id);
