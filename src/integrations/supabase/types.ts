@@ -2705,6 +2705,7 @@ export type Database = {
           operator_id: string
           paused_at: string | null
           phase_id: string
+          resource_id: string | null
           sales_order_item_id: string
           started_at: string | null
           status: string | null
@@ -2720,6 +2721,7 @@ export type Database = {
           operator_id: string
           paused_at?: string | null
           phase_id: string
+          resource_id?: string | null
           sales_order_item_id: string
           started_at?: string | null
           status?: string | null
@@ -2735,6 +2737,7 @@ export type Database = {
           operator_id?: string
           paused_at?: string | null
           phase_id?: string
+          resource_id?: string | null
           sales_order_item_id?: string
           started_at?: string | null
           status?: string | null
@@ -2748,6 +2751,13 @@ export type Database = {
             columns: ["phase_id"]
             isOneToOne: false
             referencedRelation: "production_phases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_tasks_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "production_resources"
             referencedColumns: ["id"]
           },
           {

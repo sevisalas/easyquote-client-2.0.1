@@ -18,6 +18,7 @@ export interface ProductionTask {
   comments: string | null;
   created_at: string;
   updated_at: string;
+  resource_id?: string | null;
 }
 
 export interface CreateProductionTaskData {
@@ -25,6 +26,7 @@ export interface CreateProductionTaskData {
   phase_id: string;
   task_name: string;
   operator_id: string;
+  resource_id?: string | null;
 }
 
 export interface UpdateProductionTaskData {
@@ -34,6 +36,7 @@ export interface UpdateProductionTaskData {
   completed_at?: string | null;
   total_time_seconds?: number;
   comments?: string | null;
+  resource_id?: string | null;
 }
 
 export function useProductionTasks(itemId?: string) {

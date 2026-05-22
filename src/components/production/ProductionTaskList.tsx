@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProductionTask, useProductionTasks } from "@/hooks/useProductionTasks";
 import { useProductionPhases } from "@/hooks/useProductionPhases";
+import { useProductionResources } from "@/hooks/useProductionResources";
 import { ProductionTaskTimer } from "./ProductionTaskTimer";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useState, useEffect, useMemo } from "react";
@@ -15,6 +16,7 @@ interface ProductionTaskListProps {
 export function ProductionTaskList({ itemId }: ProductionTaskListProps) {
   const { tasks, updateTask, deleteTask } = useProductionTasks(itemId);
   const { phases } = useProductionPhases();
+  const { resources } = useProductionResources();
   const [expandedTasks, setExpandedTasks] = useState<Set<string>>(new Set());
   const isMobile = useIsMobile();
 
@@ -44,6 +46,11 @@ export function ProductionTaskList({ itemId }: ProductionTaskListProps) {
     return phase ? { name: phase.display_name, color: phase.color } : null;
   };
 
+  const getResourceName = (resourceId?: string | null) => {
+    if (!resourceId) return null;
+    return resources.find((r) => r.id === resourceId)?.name ?? null;
+  };
+
   const getStatusBadge = (status: ProductionTask["status"]) => {
     const statusConfig = {
       pending: { label: "Pendiente", variant: "secondary" as const },
@@ -68,6 +75,7 @@ export function ProductionTaskList({ itemId }: ProductionTaskListProps) {
     <div className="space-y-2">
       {tasks.map((task) => {
         const phaseDisplay = getPhaseDisplay(task.phase_id);
+        const resourceName = getResourceName(task.resource_id);
         const isExpanded = expandedTasks.has(task.id);
 
         return (
@@ -114,6 +122,9 @@ export function ProductionTaskList({ itemId }: ProductionTaskListProps) {
                         </Badge>
                       )}
                       {getStatusBadge(task.status)}
+                      {resourceName && (
+                        <Badge variant="secondary" className="text-xs">{resourceName}</Badge>
+                      )}
                     </div>
                     
                     {/* Fila 3: Operador + Tiempo + Botón eliminar */}
@@ -182,6 +193,9 @@ export function ProductionTaskList({ itemId }: ProductionTaskListProps) {
                         </Badge>
                       )}
                       {getStatusBadge(task.status)}
+                      {resourceName && (
+                        <Badge variant="secondary" className="text-xs shrink-0">{resourceName}</Badge>
+                      )}
                       <span className="text-xs text-muted-foreground shrink-0">
                         {task.operator_name || 'Usuario'}
                       </span>
