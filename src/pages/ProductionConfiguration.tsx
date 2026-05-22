@@ -806,6 +806,8 @@ export default function ProductionConfiguration() {
       </AlertDialog>
 
       {/* Output Type Visibility — al final */}
-      <OutputTypeVisibilitySection />
+      <div className="mt-6">
+        <OutputTypeVisibilitySection />
+      </div>
     </div>;
 }
