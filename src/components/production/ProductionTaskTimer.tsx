@@ -12,9 +12,9 @@ interface ProductionTaskTimerProps {
 export function ProductionTaskTimer({ task, onUpdate }: ProductionTaskTimerProps) {
   const [elapsedTime, setElapsedTime] = useState(task.total_time_seconds);
   const [comments, setComments] = useState(task.comments || "");
-  const [isRunning, setIsRunning] = useState(task.status === "in_progress");
-  const [showTimer, setShowTimer] = useState(
-    task.status === "in_progress" || task.total_time_seconds > 0
+  const [showTimer, setShowTimer] = useState(task.total_time_seconds > 0);
+  const [isRunning, setIsRunning] = useState(
+    task.status === "in_progress" && task.total_time_seconds > 0
   );
 
   useEffect(() => {
