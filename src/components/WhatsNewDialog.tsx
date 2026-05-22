@@ -13,7 +13,7 @@ import { Sparkles, LayoutGrid, Factory, ListChecks } from "lucide-react";
 
   const CURRENT_VERSION = "2.8.8";
 const SILENT_UPDATE = false;
-const LS_KEY = "whats_new_seen_version_v2";
+const LS_KEY = "whats_new_seen_version_v3";
 
 interface ReleaseNote {
   icon: React.ReactNode;
