@@ -69,21 +69,30 @@ function PhaseIndicator({
     completed: "Hecha",
   };
 
+  const statusStyles: Record<
+    "pending" | "in_progress" | "paused" | "completed",
+    { bg: string; border: string; text: string; label: string }
+  > = {
+    pending: { bg: "hsl(var(--muted))", border: "hsl(var(--border))", text: "hsl(var(--muted-foreground))", label: "hsl(var(--muted-foreground))" },
+    in_progress: { bg: "hsl(217 91% 60%)", border: "hsl(217 91% 50%)", text: "white", label: "white" },
+    paused: { bg: "hsl(38 92% 90%)", border: "hsl(38 92% 50%)", text: "hsl(38 92% 25%)", label: "hsl(38 92% 30%)" },
+    completed: { bg: "hsl(142 70% 88%)", border: "hsl(142 70% 45%)", text: "hsl(142 70% 20%)", label: "hsl(142 70% 25%)" },
+  };
+
   return (
     <div className="flex flex-col gap-1">
       {tasks.map((task, index) => {
+        const s = statusStyles[task.status];
         const isActive = task.status === "in_progress";
-        const isPending = task.status === "pending";
-        const isPaused = task.status === "paused";
-
         return (
           <div
             key={`${task.taskName}-${index}`}
-            className="rounded-md border px-2 py-1 text-left leading-tight"
+            className="rounded-md border-l-4 border px-2 py-1 text-left leading-tight"
             style={{
-              borderColor: `${color}${isActive ? "" : "66"}`,
-              backgroundColor: isActive ? color : `${color}${isPending ? "14" : isPaused ? "20" : "26"}`,
-              color: isActive ? "white" : undefined,
+              backgroundColor: s.bg,
+              borderColor: s.border,
+              borderLeftColor: color,
+              color: s.text,
             }}
           >
             <div className="truncate text-[10px] font-semibold" title={task.taskName}>
@@ -98,8 +107,8 @@ function PhaseIndicator({
               </div>
             )}
             <div
-              className={`text-[9px] ${isActive ? "font-semibold" : "text-muted-foreground"}`}
-              style={!isActive ? { color } : undefined}
+              className="text-[9px] font-semibold"
+              style={{ color: s.label }}
             >
               {labelMap[task.status]}
             </div>
