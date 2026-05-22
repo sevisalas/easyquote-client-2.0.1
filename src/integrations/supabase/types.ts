@@ -2641,6 +2641,51 @@ export type Database = {
           },
         ]
       }
+      production_resources: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          organization_id: string
+          resource_type: Database["public"]["Enums"]["production_resource_type"]
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          organization_id: string
+          resource_type?: Database["public"]["Enums"]["production_resource_type"]
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          organization_id?: string
+          resource_type?: Database["public"]["Enums"]["production_resource_type"]
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_resources_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organization_daily_stats"
+            referencedColumns: ["organization_id"]
+          },
+          {
+            foreignKeyName: "production_resources_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       production_tasks: {
         Row: {
           comments: string | null
@@ -3818,6 +3863,7 @@ export type Database = {
     }
     Enums: {
       app_role: "superadmin" | "admin" | "comercial" | "operador" | "gestor"
+      production_resource_type: "machine" | "manual"
       support_request_status:
         | "pending"
         | "in_progress"
@@ -3952,6 +3998,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["superadmin", "admin", "comercial", "operador", "gestor"],
+      production_resource_type: ["machine", "manual"],
       support_request_status: [
         "pending",
         "in_progress",
