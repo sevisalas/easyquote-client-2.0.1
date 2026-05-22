@@ -24,12 +24,12 @@ export const STATUS_COLORS: Record<
     tw: "bg-slate-400",
     label: "Borrador",
   },
-  // Pendiente → magenta corporativo
+  // Pendiente → naranja
   pending: {
-    bg: "hsl(var(--primary) / 0.24)",
-    border: "hsl(var(--primary) / 0.52)",
-    text: "hsl(var(--foreground))",
-    tw: "bg-primary",
+    bg: "hsl(25 95% 80%)",
+    border: "hsl(25 95% 50%)",
+    text: "hsl(25 95% 20%)",
+    tw: "bg-orange-500",
     label: "Pendiente",
   },
   // En curso / En producción → azul
