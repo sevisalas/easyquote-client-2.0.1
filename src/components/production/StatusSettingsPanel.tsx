@@ -45,9 +45,8 @@ export function StatusSettingsPanel() {
           return (
             <div
               key={row.status_key}
-              className="grid grid-cols-[140px_1fr_72px_140px_auto] items-center gap-2 border rounded p-2"
+              className="grid grid-cols-[1fr_72px_140px_auto] items-center gap-2 border rounded p-2"
             >
-              <code className="text-[11px] text-muted-foreground">{row.status_key}</code>
               <Input
                 value={row.label}
                 onChange={(e) => update(i, { label: e.target.value })}
