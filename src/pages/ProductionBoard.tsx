@@ -52,10 +52,8 @@ const itemStatusLabels: Record<string, string> = {
 };
 
 function PhaseIndicator({
-  color,
   tasks,
 }: {
-  color: string;
   tasks: Array<{ taskName: string; status: "pending" | "in_progress" | "paused" | "completed"; resourceName?: string | null }>;
 }) {
   if (tasks.length === 0) {
@@ -83,7 +81,6 @@ function PhaseIndicator({
     <div className="flex flex-col gap-1">
       {tasks.map((task, index) => {
         const s = statusStyles[task.status];
-        const isActive = task.status === "in_progress";
         return (
           <div
             key={`${task.taskName}-${index}`}
@@ -409,7 +406,7 @@ export default function ProductionBoard() {
                       const tasks = j.phaseTasks[p.id] || [];
                       return (
                         <TableCell key={p.id} className="py-1.5 px-1 align-middle">
-                          <PhaseIndicator color={p.color} tasks={tasks} />
+                          <PhaseIndicator tasks={tasks} />
                         </TableCell>
                       );
                     })}
