@@ -769,7 +769,6 @@ const SalesOrderDetail = () => {
 
       setOrder(prev => prev ? { ...prev, status: 'completed' } : null);
       setItems(prev => prev.map(i => ({ ...i, production_status: 'completed' as any })));
-      queryClient.invalidateQueries({ queryKey: ['production-tasks'] });
       setShowForceCompleteDialog(false);
       toast.success(`Pedido cerrado. Se completaron ${closedItems} artículo(s) y ${closedTasks} tarea(s) pendientes.`);
       await loadOrderData();
