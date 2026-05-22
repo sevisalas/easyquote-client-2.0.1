@@ -455,6 +455,7 @@ export default function ProductionConfiguration() {
             </div>}
         </CardContent>
       </Card>
+      </div>
 
       {/* Task Create Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
