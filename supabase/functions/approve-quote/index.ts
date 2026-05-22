@@ -526,6 +526,29 @@ async function approveQuoteCore(
   const orderTaxAmount = approvalMatchesStoredQuote ? persistedTax : taxAmount;
   const orderFinalPrice = approvalMatchesStoredQuote ? persistedFinalPrice : finalPrice;
 
+  // Compute delivery_date from organization's default business days (skip weekends)
+  let computedDeliveryDate: string | null = null;
+  try {
+    const { data: orgRow } = await supabase
+      .from("organizations")
+      .select("default_delivery_business_days")
+      .eq("id", quote.organization_id)
+      .maybeSingle();
+    const days = Number(orgRow?.default_delivery_business_days || 0);
+    if (days > 0) {
+      const d = new Date();
+      let added = 0;
+      while (added < days) {
+        d.setDate(d.getDate() + 1);
+        const day = d.getDay();
+        if (day !== 0 && day !== 6) added++;
+      }
+      computedDeliveryDate = d.toISOString().slice(0, 10);
+    }
+  } catch (e) {
+    console.warn("Could not compute delivery_date:", e);
+  }
+
   // Create order
   const { data: salesOrder, error: orderError } = await supabase
     .from("sales_orders")
@@ -539,6 +562,7 @@ async function approveQuoteCore(
       description: quote.description,
       terms_conditions: quote.terms_conditions,
       valid_until: quote.valid_until,
+      delivery_date: computedDeliveryDate,
       subtotal: orderSubtotal,
       tax_amount: orderTaxAmount,
       discount_amount: orderDiscountAmount,
