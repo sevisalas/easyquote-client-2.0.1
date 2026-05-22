@@ -1365,7 +1365,7 @@ const SalesOrderDetail = () => {
                   order.status === 'draft' || order.status === 'pending' || order.status === 'in_production' || order.status === 'completed' ? 'bg-slate-400' : 'bg-muted'
                 }`} title="Borrador" />
                 <div className={`flex-1 h-2 rounded-full transition-all ${
-                  order.status === 'pending' || order.status === 'in_production' || order.status === 'completed' ? 'bg-primary' : 'bg-muted'
+                  order.status === 'pending' || order.status === 'in_production' || order.status === 'completed' ? 'bg-orange-500' : 'bg-muted'
                 }`} title="Pendiente" />
                 <div className={`flex-1 h-2 rounded-full transition-all ${
                   order.status === 'in_production' || order.status === 'completed' ? 'bg-blue-500' : 'bg-muted'
@@ -1454,11 +1454,11 @@ const SalesOrderDetail = () => {
                                   ['pending', 'in_progress', 'completed'].includes(item.production_status || '') ? 'bg-orange-500' : 'bg-muted'
                                 }`} title="Pendiente" />
                                 <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                  ['in_progress', 'completed'].includes(item.production_status || '') ? 'bg-green-500' : 'bg-muted'
+                                  ['in_progress', 'completed'].includes(item.production_status || '') ? 'bg-blue-500' : 'bg-muted'
                                 }`} title="En curso" />
                                 <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                  item.production_status === 'completed' ? 'bg-blue-500' : 'bg-muted'
-                                }`} title="Completado" />
+                                  item.production_status === 'completed' ? 'bg-green-500' : 'bg-muted'
+                                }`} title="Terminado" />
                               </div>
                             )}
                           </div>
@@ -1619,14 +1619,14 @@ const SalesOrderDetail = () => {
                                       <h3 className="font-semibold text-sm">{item.product_name}</h3>
                                       <div className="flex items-center gap-1">
                                         <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                          ['pending', 'in_progress', 'completed'].includes(item.production_status || '') ? 'bg-amber-500' : 'bg-muted'
+                                          ['pending', 'in_progress', 'completed'].includes(item.production_status || '') ? 'bg-orange-500' : 'bg-muted'
                                         }`} title="Pendiente" />
                                         <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                          ['in_progress', 'completed'].includes(item.production_status || '') ? 'bg-emerald-500' : 'bg-muted'
+                                          ['in_progress', 'completed'].includes(item.production_status || '') ? 'bg-blue-500' : 'bg-muted'
                                         }`} title="En curso" />
                                         <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                          item.production_status === 'completed' ? 'bg-blue-500' : 'bg-muted'
-                                        }`} title="Completado" />
+                                          item.production_status === 'completed' ? 'bg-green-500' : 'bg-muted'
+                                        }`} title="Terminado" />
                                       </div>
                                     </div>
                                     <Select
