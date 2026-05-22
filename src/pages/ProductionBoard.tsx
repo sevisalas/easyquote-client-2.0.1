@@ -367,8 +367,8 @@ export default function ProductionBoard() {
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="py-2 sticky left-[110px] bg-card z-10 align-top">
-                      <div className="flex flex-col leading-tight min-w-0">
+                    <TableCell className="py-2 sticky left-[110px] bg-card z-10 align-top w-[300px] max-w-[300px]">
+                      <div className="flex flex-col leading-tight min-w-0 w-[284px] max-w-[284px]">
                         <div className="flex items-center justify-between gap-2">
                           <Link
                             to={`/pedidos/${j.orderId}`}
