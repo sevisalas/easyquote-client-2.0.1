@@ -710,7 +710,6 @@ const SalesOrderDetail = () => {
   };
 
   const handleConfirmCancellation = async () => {
-    // placeholder anchor — patched below
     if (!id || !order) return;
     if (!cancellationReason.trim()) {
       toast.error('Debes indicar el motivo de la anulación');
