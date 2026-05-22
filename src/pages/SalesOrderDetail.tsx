@@ -1654,9 +1654,9 @@ const SalesOrderDetail = () => {
                                         <SelectValue />
                                       </SelectTrigger>
                                       <SelectContent>
-                                        <SelectItem value="pending">Pendiente</SelectItem>
-                                        <SelectItem value="in_progress">En curso</SelectItem>
-                                        <SelectItem value="completed">Completado</SelectItem>
+                                        <SelectItem value="pending">{statusMap.pending.label}</SelectItem>
+                                        <SelectItem value="in_progress">{statusMap.in_progress.label}</SelectItem>
+                                        <SelectItem value="completed">{statusMap.completed.label}</SelectItem>
                                       </SelectContent>
                                     </Select>
                                   </div>
