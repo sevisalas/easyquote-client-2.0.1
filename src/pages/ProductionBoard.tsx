@@ -327,7 +327,7 @@ export default function ProductionBoard() {
         </Card>
 
         <div className="rounded-lg border bg-card overflow-x-auto">
-          <Table>
+          <Table className="w-max min-w-full">
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[110px] py-2 sticky left-0 bg-card z-10">Fechas</TableHead>
