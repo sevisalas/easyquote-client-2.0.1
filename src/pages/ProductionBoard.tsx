@@ -73,10 +73,10 @@ function PhaseIndicator({
     "pending" | "in_progress" | "paused" | "completed",
     { bg: string; border: string; text: string; label: string }
   > = {
-    pending: { bg: "hsl(var(--muted))", border: "hsl(var(--border))", text: "hsl(var(--muted-foreground))", label: "hsl(var(--muted-foreground))" },
+    pending: { bg: "hsl(220 13% 91%)", border: "hsl(220 13% 75%)", text: "hsl(220 9% 30%)", label: "hsl(220 9% 35%)" },
     in_progress: { bg: "hsl(217 91% 60%)", border: "hsl(217 91% 50%)", text: "white", label: "white" },
-    paused: { bg: "hsl(38 92% 90%)", border: "hsl(38 92% 50%)", text: "hsl(38 92% 25%)", label: "hsl(38 92% 30%)" },
-    completed: { bg: "hsl(142 70% 88%)", border: "hsl(142 70% 45%)", text: "hsl(142 70% 20%)", label: "hsl(142 70% 25%)" },
+    paused: { bg: "hsl(38 92% 80%)", border: "hsl(38 92% 50%)", text: "hsl(38 92% 20%)", label: "hsl(38 92% 25%)" },
+    completed: { bg: "hsl(142 65% 75%)", border: "hsl(142 65% 40%)", text: "hsl(142 70% 15%)", label: "hsl(142 70% 20%)" },
   };
 
   return (
@@ -87,11 +87,10 @@ function PhaseIndicator({
         return (
           <div
             key={`${task.taskName}-${index}`}
-            className="rounded-md border-l-4 border px-2 py-1 text-left leading-tight"
+            className="rounded-md border px-2 py-1 text-left leading-tight"
             style={{
               backgroundColor: s.bg,
               borderColor: s.border,
-              borderLeftColor: color,
               color: s.text,
             }}
           >
