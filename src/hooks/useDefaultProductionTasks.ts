@@ -30,17 +30,18 @@ export interface UpdateDefaultTaskData {
 export function useDefaultProductionTasks() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { organization } = useSubscription();
+  const { organization, membership } = useSubscription();
+  const organizationId = organization?.id || membership?.organization_id || null;
 
   const { data: tasks = [], isLoading } = useQuery({
-    queryKey: ["default-production-tasks", organization?.id],
+    queryKey: ["default-production-tasks", organizationId],
     queryFn: async () => {
-      if (!organization?.id) return [];
+      if (!organizationId) return [];
 
       const { data, error } = await supabase
         .from("default_production_tasks")
         .select("*")
-        .eq("organization_id", organization.id)
+        .eq("organization_id", organizationId)
         .eq("is_active", true)
         .order("display_order", { ascending: true });
 
@@ -51,17 +52,17 @@ export function useDefaultProductionTasks() {
 
       return data as DefaultProductionTask[];
     },
-    enabled: !!organization?.id,
+    enabled: !!organizationId,
   });
 
   const createMutation = useMutation({
     mutationFn: async (data: CreateDefaultTaskData) => {
-      if (!organization?.id) throw new Error("No organization found");
+      if (!organizationId) throw new Error("No organization found");
 
       const { data: result, error } = await supabase
         .from("default_production_tasks")
         .insert({
-          organization_id: organization.id,
+          organization_id: organizationId,
           task_name: data.task_name,
           phase_id: data.phase_id,
           display_order: data.display_order || tasks.length,
