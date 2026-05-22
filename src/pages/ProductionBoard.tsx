@@ -71,7 +71,7 @@ function PhaseIndicator({
     "pending" | "in_progress" | "paused" | "completed",
     { bg: string; border: string; text: string; label: string }
   > = {
-    pending: { bg: "hsl(220 13% 91%)", border: "hsl(220 13% 75%)", text: "hsl(220 9% 30%)", label: "hsl(220 9% 35%)" },
+    pending: { bg: "hsl(var(--primary) / 0.24)", border: "hsl(var(--primary) / 0.52)", text: "hsl(var(--foreground))", label: "hsl(var(--foreground))" },
     in_progress: { bg: "hsl(217 91% 60%)", border: "hsl(217 91% 50%)", text: "white", label: "white" },
     paused: { bg: "hsl(38 92% 80%)", border: "hsl(38 92% 50%)", text: "hsl(38 92% 20%)", label: "hsl(38 92% 25%)" },
     completed: { bg: "hsl(142 65% 75%)", border: "hsl(142 65% 40%)", text: "hsl(142 70% 15%)", label: "hsl(142 70% 20%)" },
