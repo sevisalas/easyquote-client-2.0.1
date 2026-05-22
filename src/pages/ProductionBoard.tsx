@@ -95,14 +95,8 @@ function PhaseIndicator({
               color: s.text,
             }}
           >
-            <div className="truncate text-[10px] font-semibold" title={task.taskName}>
-              {task.taskName}
-            </div>
             {task.resourceName && (
-              <div
-                className={`truncate text-[9px] ${isActive ? "opacity-90" : "text-muted-foreground"}`}
-                title={task.resourceName}
-              >
+              <div className="truncate text-[10px] font-semibold" title={task.resourceName}>
                 {task.resourceName}
               </div>
             )}
