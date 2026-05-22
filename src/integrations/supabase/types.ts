@@ -2647,6 +2647,7 @@ export type Database = {
           id: string
           name: string
           organization_id: string
+          phase_id: string | null
           resource_type: Database["public"]["Enums"]["production_resource_type"]
           sort_order: number
           updated_at: string
@@ -2656,6 +2657,7 @@ export type Database = {
           id?: string
           name: string
           organization_id: string
+          phase_id?: string | null
           resource_type?: Database["public"]["Enums"]["production_resource_type"]
           sort_order?: number
           updated_at?: string
@@ -2665,6 +2667,7 @@ export type Database = {
           id?: string
           name?: string
           organization_id?: string
+          phase_id?: string | null
           resource_type?: Database["public"]["Enums"]["production_resource_type"]
           sort_order?: number
           updated_at?: string
@@ -2682,6 +2685,13 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_resources_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "production_phases"
             referencedColumns: ["id"]
           },
         ]

@@ -9,6 +9,7 @@ export interface ProductionResource {
   organization_id: string;
   name: string;
   resource_type: ProductionResourceType;
+  phase_id: string | null;
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -35,12 +36,13 @@ export function useProductionResources() {
   });
 
   const createResource = useMutation({
-    mutationFn: async (input: { name: string; resource_type: ProductionResourceType }) => {
+    mutationFn: async (input: { name: string; resource_type: ProductionResourceType; phase_id: string | null }) => {
       if (!organizationId) throw new Error("No organization selected");
       const maxOrder = Math.max(0, ...resources.map((r) => r.sort_order));
       const { error } = await supabase.from("production_resources").insert({
         name: input.name,
         resource_type: input.resource_type,
+        phase_id: input.phase_id,
         organization_id: organizationId,
         sort_order: maxOrder + 1,
       });
@@ -56,10 +58,11 @@ export function useProductionResources() {
   });
 
   const updateResource = useMutation({
-    mutationFn: async (input: { id: string; name?: string; resource_type?: ProductionResourceType }) => {
+    mutationFn: async (input: { id: string; name?: string; resource_type?: ProductionResourceType; phase_id?: string | null }) => {
       const updates: Record<string, unknown> = {};
       if (input.name !== undefined) updates.name = input.name;
       if (input.resource_type !== undefined) updates.resource_type = input.resource_type;
+      if (input.phase_id !== undefined) updates.phase_id = input.phase_id;
       const { error } = await supabase
         .from("production_resources")
         .update(updates)
