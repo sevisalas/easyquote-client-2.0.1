@@ -167,16 +167,16 @@ export default function ProductionBoard() {
       if (itemsError) throw itemsError;
 
       const itemIds = (itemsData || []).map((it) => it.id);
-      const tasksByItem = new Map<string, Array<{ phase_id: string; task_name: string; status: "pending" | "in_progress" | "paused" | "completed"; resource_id: string | null }>>();
+      const tasksByItem = new Map<string, Array<{ id: string; phase_id: string; task_name: string; status: "pending" | "in_progress" | "paused" | "completed"; resource_id: string | null }>>();
       if (itemIds.length > 0) {
         const { data: tasksData } = await supabase
           .from("production_tasks")
-          .select("sales_order_item_id, phase_id, task_name, status, resource_id")
+          .select("id, sales_order_item_id, phase_id, task_name, status, resource_id")
           .in("sales_order_item_id", itemIds);
         for (const t of tasksData || []) {
           const arr = tasksByItem.get(t.sales_order_item_id) || [];
           const taskStatus = t.status as "pending" | "in_progress" | "paused" | "completed";
-          arr.push({ phase_id: t.phase_id, task_name: t.task_name, status: taskStatus, resource_id: (t as any).resource_id ?? null });
+          arr.push({ id: (t as any).id, phase_id: t.phase_id, task_name: t.task_name, status: taskStatus, resource_id: (t as any).resource_id ?? null });
           tasksByItem.set(t.sales_order_item_id, arr);
         }
       }
@@ -196,13 +196,16 @@ export default function ProductionBoard() {
         const o = ordersById.get(it.sales_order_id)!;
         const itemTasks = tasksByItem.get(it.id) || [];
         const phaseTasks: Job["phaseTasks"] = {};
-        const byPhase = new Map<string, Array<{ taskName: string; status: "pending" | "in_progress" | "paused" | "completed"; resourceName?: string | null }>>();
+        const byPhase: Map<string, Job["phaseTasks"][string]> = new Map();
         for (const t of itemTasks) {
           const arr = byPhase.get(t.phase_id) || [];
           arr.push({
+            id: t.id,
             taskName: t.task_name,
             status: t.status,
             resourceName: t.resource_id ? resourcesById.get(t.resource_id) ?? null : null,
+            resourceId: t.resource_id,
+            phaseId: t.phase_id,
           });
           byPhase.set(t.phase_id, arr);
         }
