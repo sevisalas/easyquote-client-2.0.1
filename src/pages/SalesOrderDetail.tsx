@@ -1624,15 +1624,15 @@ const SalesOrderDetail = () => {
                                     <div className="flex items-center gap-2">
                                       <h3 className="font-semibold text-sm">{item.product_name}</h3>
                                       <div className="flex items-center gap-1">
-                                        <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                          ['pending', 'in_progress', 'completed'].includes(item.production_status || '') ? 'bg-orange-500' : 'bg-muted'
-                                        }`} title="Pendiente" />
-                                        <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                          ['in_progress', 'completed'].includes(item.production_status || '') ? 'bg-blue-500' : 'bg-muted'
-                                        }`} title="En curso" />
-                                        <div className={`w-5 h-1.5 rounded-full transition-all ${
-                                          item.production_status === 'completed' ? 'bg-green-500' : 'bg-muted'
-                                        }`} title="Terminado" />
+                                        {(['pending','in_progress','completed'] as const).map((k) => {
+                                          const reached =
+                                            (k === 'pending' && ['pending','in_progress','completed'].includes(item.production_status || '')) ||
+                                            (k === 'in_progress' && ['in_progress','completed'].includes(item.production_status || '')) ||
+                                            (k === 'completed' && item.production_status === 'completed');
+                                          const s = statusMap[k];
+                                          return <div key={k} className="w-5 h-1.5 rounded-full transition-all"
+                                            style={{ backgroundColor: reached ? s.color : 'hsl(var(--muted))' }} title={s.label} />;
+                                        })}
                                       </div>
                                     </div>
                                     <Select
