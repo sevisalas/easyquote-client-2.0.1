@@ -306,7 +306,7 @@ export default function ProductionBoard() {
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="pending">Pendiente</SelectItem>
-                <SelectItem value="in_progress">En proceso</SelectItem>
+                <SelectItem value="in_progress">En curso</SelectItem>
                 <SelectItem value="completed">Completado</SelectItem>
                 <SelectItem value="cancelled">Cancelado</SelectItem>
               </SelectContent>

@@ -1455,7 +1455,7 @@ const SalesOrderDetail = () => {
                                 }`} title="Pendiente" />
                                 <div className={`w-5 h-1.5 rounded-full transition-all ${
                                   ['in_progress', 'completed'].includes(item.production_status || '') ? 'bg-green-500' : 'bg-muted'
-                                }`} title="En proceso" />
+                                }`} title="En curso" />
                                 <div className={`w-5 h-1.5 rounded-full transition-all ${
                                   item.production_status === 'completed' ? 'bg-blue-500' : 'bg-muted'
                                 }`} title="Completado" />
