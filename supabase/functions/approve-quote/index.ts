@@ -618,10 +618,9 @@ async function approveQuoteCore(
       fPrompts = syncPromptsWithQuantity(item.prompts, sQ, quantityResolver);
       if (row) {
         fOutputs = Array.isArray(row.outs) ? row.outs : fOutputs;
-        // Preserve all quoted multi-quantity rows on the source quote.
-        // The order item uses the selected quantity via quantity/prompts/outputs,
-        // but the quote must retain the full comparison table for traceability.
-        fMulti = { ...m, rows: Array.isArray(m.rows) ? m.rows : [] };
+        // Order items keep only the approved row; the source quote is updated
+        // separately below to preserve the full comparison table.
+        fMulti = { ...m, rows: [row] };
         // Solo recalcular precio si la cantidad seleccionada difiere de la guardada
         if (sQ !== storedQ && !isCustom) {
           const base = parseFloat(row.outs?.find((o: any) => o.type === "Price")?.value || row.price || item.price || 0);
@@ -699,7 +698,7 @@ async function approveQuoteCore(
       price: oi.price,
       prompts: oi.prompts,
       outputs: oi.outputs,
-      multi: oi.multi,
+      multi: src.multi,
       description: oi.description,
     }).eq("id", src.id);
   }
