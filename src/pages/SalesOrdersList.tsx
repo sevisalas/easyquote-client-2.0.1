@@ -374,13 +374,6 @@ const SalesOrdersList = () => {
 
       <Card>
         <CardHeader className="pb-2 px-3 md:px-6">
-          {membership?.display_name && (
-            <div className="mb-2">
-              <h2 className="text-base md:text-lg font-bold text-foreground">
-                Hola, <span className="text-primary">{membership.display_name}</span>
-              </h2>
-            </div>
-          )}
           <div className="flex items-center justify-between">
             <CardTitle className="text-base md:text-lg">Listado de pedidos</CardTitle>
             {membership?.role !== 'operador' && <Button 
