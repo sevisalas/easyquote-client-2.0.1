@@ -41,6 +41,7 @@ interface Job {
   orderDate: string;
   deliveryDate: string | null;
   customerId: string | null;
+  customerName: string | null;
   orderStatus: string;
   itemId: string;
   productName: string;
@@ -159,6 +160,8 @@ export default function ProductionBoard() {
         .select("id, order_number, order_date, delivery_date, customer_id, status");
 
       if (organizationId) query = query.eq("organization_id", organizationId);
+      // Only load orders that may have pending work — completed/cancelled excluded at DB level for speed.
+      query = query.not("status", "in", "(completed,cancelled)");
 
       const { data: ordersData, error: ordersError } = await query;
       if (ordersError) throw ordersError;
@@ -201,6 +204,19 @@ export default function ProductionBoard() {
         for (const r of resourcesData || []) resourcesById.set(r.id, r.name);
       }
 
+      // Batch-fetch customer names (avoid N+1 from CustomerName component)
+      const customerIds = Array.from(
+        new Set((ordersData || []).map((o) => o.customer_id).filter(Boolean) as string[])
+      );
+      const customersById = new Map<string, string>();
+      if (customerIds.length > 0) {
+        const { data: customersData } = await supabase
+          .from("customers")
+          .select("id, name")
+          .in("id", customerIds);
+        for (const c of customersData || []) customersById.set(c.id, c.name || "");
+      }
+
       const ordersById = new Map((ordersData || []).map((o) => [o.id, o]));
       const flat: Job[] = (itemsData || []).map((it) => {
         const o = ordersById.get(it.sales_order_id)!;
@@ -228,6 +244,7 @@ export default function ProductionBoard() {
           orderDate: o.order_date,
           deliveryDate: o.delivery_date,
           customerId: o.customer_id,
+          customerName: o.customer_id ? customersById.get(o.customer_id) ?? null : null,
           orderStatus: o.status,
           itemId: it.id,
           productName: it.product_name,
@@ -409,7 +426,7 @@ export default function ProductionBoard() {
                           </span>
                         </div>
                         <span className="text-[11px] text-muted-foreground truncate">
-                          <CustomerName customerId={j.customerId} />
+                          {j.customerName || "—"}
                         </span>
                         <span className="text-[11px] truncate" title={j.productName}>
                           {j.productName}
