@@ -54,6 +54,7 @@ type ItemSnapshot = {
   needsRecalculation?: boolean;
   isFinalized?: boolean; // Track if item is finalized
   compositeData?: any; // Datos de componentes compuestos
+  compositeMultiData?: any; // Fotografía por cantidad de componentes (multi-Q compuestos)
 };
 type SelectedAdditional = {
   id: string;
