@@ -138,25 +138,21 @@ const Auth = () => {
   };
 
   const completeLogin = async (userId: string) => {
-    // Obtener token de EasyQuote usando la edge function segura
-    // La edge function obtiene las credenciales server-side y solo devuelve el token
-    try {
-      const { data, error: fxError } = await supabase.functions.invoke("easyquote-refresh-token", {
-        body: {}
-      });
-      
-      if (fxError) {
-        console.error("easyquote-refresh-token error:", fxError);
-      } else if ((data as any)?.token) {
-        sessionStorage.setItem("easyquote_token", (data as any).token);
-        console.log("Token de EasyQuote obtenido correctamente");
-        window.dispatchEvent(new CustomEvent('easyquote-token-updated'));
-      } else {
-        console.warn("No se pudo obtener token de EasyQuote - puede que no haya credenciales configuradas");
-      }
-    } catch (e) {
-      console.error("Error obteniendo el token de EasyQuote:", e);
-    }
+    // Obtener token de EasyQuote en background (no bloquea el login)
+    // La app se cargará y el token llegará cuando la API responda
+    supabase.functions
+      .invoke("easyquote-refresh-token", { body: {} })
+      .then(({ data, error: fxError }) => {
+        if (fxError) {
+          console.error("easyquote-refresh-token error:", fxError);
+          return;
+        }
+        if ((data as any)?.token) {
+          sessionStorage.setItem("easyquote_token", (data as any).token);
+          window.dispatchEvent(new CustomEvent('easyquote-token-updated'));
+        }
+      })
+      .catch((e) => console.error("Error obteniendo el token de EasyQuote:", e));
 
     toast({
       title: "Bienvenido",
