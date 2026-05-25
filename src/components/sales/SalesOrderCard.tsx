@@ -41,6 +41,7 @@ interface SalesOrderCardProps {
   onDownloadHoldedPdf?: (holdedDocumentId: string, orderNumber: string) => void;
   onDelete?: () => void;
   hidePrice?: boolean;
+  hideDuplicate?: boolean;
 }
 
 export function SalesOrderCard({ 
@@ -51,6 +52,7 @@ export function SalesOrderCard({
   onDownloadHoldedPdf,
   onDelete,
   hidePrice = false,
+  hideDuplicate = false,
 }: SalesOrderCardProps) {
   const navigate = useNavigate();
 
@@ -152,7 +154,7 @@ export function SalesOrderCard({
             <Eye className="h-4 w-4 mr-2" />
             Ver
           </Button>
-          <Button
+          {!hideDuplicate && <Button
             size="lg"
             variant="default"
             onClick={() => onDuplicate(order.id)}
@@ -160,7 +162,7 @@ export function SalesOrderCard({
           >
             <Copy className="h-4 w-4 mr-2" />
             Duplicar
-          </Button>
+          </Button>}
           {order.status === 'draft' && (
             <Button
               size="lg"
