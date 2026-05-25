@@ -2285,6 +2285,22 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             parentOutputs: compositeParentOutputs,
           }
         : undefined,
+      compositeMultiData: (hasConfiguredComponents && multiEnabled && Array.isArray(compositeMultiResults))
+        ? (() => {
+            const map: Record<string, any> = {};
+            for (const row of compositeMultiResults as any[]) {
+              const q = (row as any)?.qty;
+              if (q == null) continue;
+              map[String(q)] = {
+                components: (row as any).components || {},
+                activeComponents: activeCompositeComponents,
+                totalPrice: (row as any).totalPrice ?? 0,
+                parentOutputs: compositeParentOutputs || [],
+              };
+            }
+            return Object.keys(map).length ? map : undefined;
+          })()
+        : undefined,
     };
 
     const snapshotKey = JSON.stringify(snapshot);
@@ -2323,6 +2339,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     activeCompositeComponents,
     compositeTotalPrice,
     compositeParentOutputs,
+    compositeMultiResults,
+    multiEnabled,
     tariffSignature,
     id,
   ]);
