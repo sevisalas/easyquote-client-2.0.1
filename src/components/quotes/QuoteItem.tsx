@@ -22,7 +22,8 @@ import CompositeComponentTabs, { type ComponentsDataMap } from "@/components/quo
 import CompositeComponentsSelector, {
   type ActiveComponent,
   getInitialActiveComponents,
-  hasRequiredComponents
+  hasRequiredComponents,
+  getActiveComponentKey
 } from "@/components/quotes/CompositeComponentsSelector";
 import { useProductComponentSettings } from "@/hooks/useProductComponentSettings";
 import { useCompositeProductConfig } from "@/hooks/useCompositeProductConfig";
