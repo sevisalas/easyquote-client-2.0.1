@@ -1315,7 +1315,9 @@ export default function QuoteDetail() {
                                     return { qty, row };
                                   })
                                   .map(({ qty, row }: any, idx: number) => {
-                                    const rowPrice = parseLocaleNumber(row?.outs?.find((o: any) => o.type === 'Price')?.value ?? row?.price ?? 0);
+                                    const rowPrice = row
+                                      ? parseLocaleNumber(row?.outs?.find((o: any) => o.type === 'Price')?.value ?? row?.price ?? 0)
+                                      : null;
                                     const isApproved = parseLocaleNumber(qty) === parseLocaleNumber(item.accepted_quantity);
                                     return (
                                       <div 
@@ -1327,7 +1329,7 @@ export default function QuoteDetail() {
                                         }`}
                                       >
                                         <span>{qty} uds.</span>
-                                        <span>{fmtEUR(rowPrice)}</span>
+                                        <span>{rowPrice !== null ? fmtEUR(rowPrice) : '—'}</span>
                                         {isApproved && (
                                           <Badge variant="outline" className="text-[10px] h-4 bg-green-500/10 text-green-600 border-green-500/20 ml-1">
                                             Aprobada
