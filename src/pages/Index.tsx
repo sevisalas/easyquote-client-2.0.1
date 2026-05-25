@@ -38,6 +38,13 @@ const Index = () => {
     }
   }, [isAPISubscription, canAccessPresupuestos, navigate]);
 
+  // Redirigir operadores directamente a Pedidos (no tienen acceso a presupuestos/clientes)
+  useEffect(() => {
+    if (membership?.role === "operador") {
+      navigate("/pedidos", { replace: true });
+    }
+  }, [membership?.role, navigate]);
+
   // Obtener estadísticas rápidas de presupuestos
   const {
     data: stats
