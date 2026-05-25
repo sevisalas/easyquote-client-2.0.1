@@ -28,6 +28,7 @@ const Index = () => {
   } = useSubscription();
   const isMobile = useIsMobile();
   const activeOrganizationId = organization?.id || membership?.organization?.id || null;
+  const isOperator = membership?.role === "operador";
 
   // Redirigir a usuarios API puros a su página específica
   useEffect(() => {
@@ -37,13 +38,6 @@ const Index = () => {
       });
     }
   }, [isAPISubscription, canAccessPresupuestos, navigate]);
-
-  // Redirigir operadores directamente a Pedidos (no tienen acceso a presupuestos/clientes)
-  useEffect(() => {
-    if (membership?.role === "operador") {
-      navigate("/pedidos", { replace: true });
-    }
-  }, [membership?.role, navigate]);
 
   // Obtener estadísticas rápidas de presupuestos
   const {
@@ -165,7 +159,7 @@ const Index = () => {
                 Hola, <span className="text-primary font-bold">{userName}</span>
               </h1>
               <p className="text-sm md:text-base text-muted-foreground mt-1">
-                Gestiona tus presupuestos y pedidos de forma profesional
+                {isOperator ? "Consulta tus pedidos y el estado del taller" : "Gestiona tus presupuestos y pedidos de forma profesional"}
               </p>
             </div>
           </div>
@@ -180,83 +174,84 @@ const Index = () => {
         </div>
 
         {/* Atajos Rápidos - Solo móvil */}
-        {isMobile && <QuickActionsPanel />}
+        {isMobile && !isOperator && <QuickActionsPanel />}
 
-        {/* Stats Cards - Presupuestos */}
-        <div className="mb-4">
-          <h2 className="text-lg md:text-xl font-semibold text-foreground mb-3">Presupuestos</h2>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-6 mb-6">
-          <Card className="border-primary/20 hover:border-primary/40 transition-all">
-            <CardContent className="p-3 md:p-6">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                <div>
-                  <p className="text-xs md:text-sm text-muted-foreground mb-1">Total</p>
-                  <p className="text-2xl md:text-3xl font-bold text-foreground">{stats?.total ?? 0}</p>
+        {!isOperator && <>
+          <div className="mb-4">
+            <h2 className="text-lg md:text-xl font-semibold text-foreground mb-3">Presupuestos</h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-6 mb-6">
+            <Card className="border-primary/20 hover:border-primary/40 transition-all">
+              <CardContent className="p-3 md:p-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                  <div>
+                    <p className="text-xs md:text-sm text-muted-foreground mb-1">Total</p>
+                    <p className="text-2xl md:text-3xl font-bold text-foreground">{stats?.total ?? 0}</p>
+                  </div>
+                  <div className="w-8 h-8 md:w-12 md:h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                    <TrendingUp className="w-4 h-4 md:w-6 md:h-6 text-primary" />
+                  </div>
                 </div>
-                <div className="w-8 h-8 md:w-12 md:h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                  <TrendingUp className="w-4 h-4 md:w-6 md:h-6 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card className="border-gray-500/20 hover:border-gray-500/40 transition-all">
-            <CardContent className="p-3 md:p-6">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                <div>
-                  <p className="text-xs md:text-sm text-muted-foreground mb-1">Borrador</p>
-                  <p className="text-2xl md:text-3xl font-bold text-foreground">{stats?.draft ?? 0}</p>
+            <Card className="border-gray-500/20 hover:border-gray-500/40 transition-all">
+              <CardContent className="p-3 md:p-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                  <div>
+                    <p className="text-xs md:text-sm text-muted-foreground mb-1">Borrador</p>
+                    <p className="text-2xl md:text-3xl font-bold text-foreground">{stats?.draft ?? 0}</p>
+                  </div>
+                  <div className="w-8 h-8 md:w-12 md:h-12 bg-gray-500/10 rounded-full flex items-center justify-center">
+                    <FileText className="w-4 h-4 md:w-6 md:h-6 text-gray-500" />
+                  </div>
                 </div>
-                <div className="w-8 h-8 md:w-12 md:h-12 bg-gray-500/10 rounded-full flex items-center justify-center">
-                  <FileText className="w-4 h-4 md:w-6 md:h-6 text-gray-500" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card className="border-blue-500/20 hover:border-blue-500/40 transition-all">
-            <CardContent className="p-3 md:p-6">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                <div>
-                  <p className="text-xs md:text-sm text-muted-foreground mb-1">Preparado</p>
-                  <p className="text-2xl md:text-3xl font-bold text-foreground">{stats?.sent ?? 0}</p>
+            <Card className="border-blue-500/20 hover:border-blue-500/40 transition-all">
+              <CardContent className="p-3 md:p-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                  <div>
+                    <p className="text-xs md:text-sm text-muted-foreground mb-1">Preparado</p>
+                    <p className="text-2xl md:text-3xl font-bold text-foreground">{stats?.sent ?? 0}</p>
+                  </div>
+                  <div className="w-8 h-8 md:w-12 md:h-12 bg-blue-500/10 rounded-full flex items-center justify-center">
+                    <Clock className="w-4 h-4 md:w-6 md:h-6 text-blue-500" />
+                  </div>
                 </div>
-                <div className="w-8 h-8 md:w-12 md:h-12 bg-blue-500/10 rounded-full flex items-center justify-center">
-                  <Clock className="w-4 h-4 md:w-6 md:h-6 text-blue-500" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card className="border-green-500/20 hover:border-green-500/40 transition-all">
-            <CardContent className="p-3 md:p-6">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                <div>
-                  <p className="text-xs md:text-sm text-muted-foreground mb-1">Aprobado</p>
-                  <p className="text-2xl md:text-3xl font-bold text-foreground">{stats?.approved ?? 0}</p>
+            <Card className="border-green-500/20 hover:border-green-500/40 transition-all">
+              <CardContent className="p-3 md:p-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                  <div>
+                    <p className="text-xs md:text-sm text-muted-foreground mb-1">Aprobado</p>
+                    <p className="text-2xl md:text-3xl font-bold text-foreground">{stats?.approved ?? 0}</p>
+                  </div>
+                  <div className="w-8 h-8 md:w-12 md:h-12 bg-green-500/10 rounded-full flex items-center justify-center">
+                    <CheckCircle2 className="w-4 h-4 md:w-6 md:h-6 text-green-500" />
+                  </div>
                 </div>
-                <div className="w-8 h-8 md:w-12 md:h-12 bg-green-500/10 rounded-full flex items-center justify-center">
-                  <CheckCircle2 className="w-4 h-4 md:w-6 md:h-6 text-green-500" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card className="border-red-500/20 hover:border-red-500/40 transition-all">
-            <CardContent className="p-3 md:p-6">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                <div>
-                  <p className="text-xs md:text-sm text-muted-foreground mb-1">Rechazado</p>
-                  <p className="text-2xl md:text-3xl font-bold text-foreground">{stats?.rejected ?? 0}</p>
+            <Card className="border-red-500/20 hover:border-red-500/40 transition-all">
+              <CardContent className="p-3 md:p-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                  <div>
+                    <p className="text-xs md:text-sm text-muted-foreground mb-1">Rechazado</p>
+                    <p className="text-2xl md:text-3xl font-bold text-foreground">{stats?.rejected ?? 0}</p>
+                  </div>
+                  <div className="w-8 h-8 md:w-12 md:h-12 bg-red-500/10 rounded-full flex items-center justify-center">
+                    <FileText className="w-4 h-4 md:w-6 md:h-6 text-red-500" />
+                  </div>
                 </div>
-                <div className="w-8 h-8 md:w-12 md:h-12 bg-red-500/10 rounded-full flex items-center justify-center">
-                  <FileText className="w-4 h-4 md:w-6 md:h-6 text-red-500" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>}
 
         {/* Stats Cards - Pedidos (solo para usuarios con acceso a producción) */}
         {canAccessProduccion() && <>
