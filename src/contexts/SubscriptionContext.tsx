@@ -152,12 +152,12 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         if (savedOrgId) {
           selectedOrg = allOrgs.find(org => org.id === savedOrgId) || null;
           
-          // If saved org not found in user's orgs, DO NOT clear it or auto-select another
-          // The user explicitly chose this org - keep it until they manually switch
-          // This prevents unwanted org switches due to timing issues or stale data
-          if (!selectedOrg && savedOrgId) {
-            console.warn('[SubscriptionContext] Saved org not found in allOrgs, keeping savedOrgId:', savedOrgId);
-            // Do NOT remove or auto-select - wait for user to manually switch if needed
+          // If saved org not found in user's orgs (stale sessionStorage), fall back to first available
+          if (!selectedOrg && allOrgs.length > 0) {
+            console.warn('[SubscriptionContext] Saved org not found in allOrgs, falling back to first available:', savedOrgId);
+            sessionStorage.removeItem('selected_organization_id');
+            selectedOrg = allOrgs[0];
+            sessionStorage.setItem('selected_organization_id', selectedOrg.id);
           }
         }
 
