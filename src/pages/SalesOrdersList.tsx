@@ -20,6 +20,7 @@ import { CustomerName } from "@/components/quotes/CustomerName";
 import { useHoldedIntegration } from "@/hooks/useHoldedIntegration";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { SalesOrderCard } from "@/components/sales/SalesOrderCard";
+import { getActiveOrganizationId } from "@/lib/activeOrganization";
 
 const statusColors = {
   draft: "outline",
@@ -49,7 +50,7 @@ const fmtEUR = (n: any) => {
 const SalesOrdersList = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { canAccessProduccion, loading: subscriptionLoading, membership } = useSubscription();
+  const { canAccessProduccion, loading: subscriptionLoading, membership, organization } = useSubscription();
   const { loading, fetchSalesOrders } = useSalesOrders();
   const { isHoldedActive, hasHoldedAccess } = useHoldedIntegration();
   const isOperator = membership?.role === 'operador';
@@ -69,6 +70,12 @@ const SalesOrdersList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 25;
 
+  const activeOrganizationId = getActiveOrganizationId({
+    sessionOrganizationId: sessionStorage.getItem('selected_organization_id'),
+    membershipOrganizationId: membership?.organization_id,
+    ownedOrganizationId: organization?.id,
+  });
+
   useEffect(() => {
     if (subscriptionLoading) return;
     if (!canAccessProduccion()) {
@@ -78,7 +85,7 @@ const SalesOrdersList = () => {
     loadOrders();
     loadCustomers();
     loadOrgMembers();
-  }, [subscriptionLoading, navigate]);
+  }, [subscriptionLoading, navigate, activeOrganizationId]);
 
   // Auto-sync missing Holded numbers
   useEffect(() => {
@@ -126,22 +133,34 @@ const SalesOrdersList = () => {
   }, [orders.length, isHoldedActive]);
 
   const loadOrders = async () => {
-    const data = await fetchSalesOrders();
+    const data = await fetchSalesOrders(activeOrganizationId);
     setOrders(data);
   };
 
   const loadCustomers = async () => {
-    const { data: allCustomers } = await supabase
+    let query = supabase
       .from("customers")
       .select("id, name");
+
+    if (activeOrganizationId) {
+      query = query.eq("organization_id", activeOrganizationId);
+    }
+
+    const { data: allCustomers } = await query;
 
     setCustomers(allCustomers || []);
   };
 
   const loadOrgMembers = async () => {
-    const { data } = await supabase
+    let query = supabase
       .from("organization_members")
       .select("user_id, display_name");
+
+    if (activeOrganizationId) {
+      query = query.eq("organization_id", activeOrganizationId);
+    }
+
+    const { data } = await query;
     setOrgMembers(data || []);
   };
 

@@ -11,6 +11,8 @@ import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import type { Json } from "@/integrations/supabase/types";
 import { useProductionBoardView } from "@/hooks/useProductionBoardView";
+import { useSubscription } from "@/contexts/SubscriptionContext";
+import { getActiveOrganizationId } from "@/lib/activeOrganization";
 interface SalesOrderItem {
   id: string;
   product_name: string;
@@ -66,7 +68,13 @@ export default function ProductionBoardCompact() {
   const [loading, setLoading] = useState(true);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
+  const { membership, organization } = useSubscription();
   const { view, updateView } = useProductionBoardView();
+  const activeOrganizationId = getActiveOrganizationId({
+    sessionOrganizationId: sessionStorage.getItem("selected_organization_id"),
+    membershipOrganizationId: membership?.organization_id,
+    ownedOrganizationId: organization?.id,
+  });
   const toggleItemExpanded = (itemId: string) => {
     setExpandedItems((prev) => {
       const newSet = new Set(prev);
@@ -82,13 +90,13 @@ export default function ProductionBoardCompact() {
     loadOrders();
     const interval = setInterval(loadOrders, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [activeOrganizationId]);
   const loadOrders = async () => {
     try {
       setLoading(true);
 
       // Filtrar por organization_id para separar datos por tenant
-      const organizationId = sessionStorage.getItem("selected_organization_id");
+      const organizationId = activeOrganizationId;
 
       let query = supabase
         .from("sales_orders")

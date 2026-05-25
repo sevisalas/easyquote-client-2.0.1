@@ -32,6 +32,8 @@ import { useProductionBoardView } from "@/hooks/useProductionBoardView";
 import { useProductionPhases } from "@/hooks/useProductionPhases";
 import { useStatusSettings } from "@/hooks/useStatusSettings";
 import { TaskEditDialog, type EditableTask } from "@/components/production/TaskEditDialog";
+import { useSubscription } from "@/contexts/SubscriptionContext";
+import { getActiveOrganizationId } from "@/lib/activeOrganization";
 
 interface Job {
   orderId: string;
@@ -131,20 +133,26 @@ export default function ProductionBoard() {
   const [editingTask, setEditingTask] = useState<EditableTask | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const navigate = useNavigate();
+  const { membership, organization } = useSubscription();
   const { view, updateView } = useProductionBoardView();
   const { phases } = useProductionPhases();
   const { resolve: resolveStatus } = useStatusSettings();
+  const activeOrganizationId = getActiveOrganizationId({
+    sessionOrganizationId: sessionStorage.getItem("selected_organization_id"),
+    membershipOrganizationId: membership?.organization_id,
+    ownedOrganizationId: organization?.id,
+  });
 
   useEffect(() => {
     loadJobs(true);
     const interval = setInterval(() => loadJobs(false), 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [activeOrganizationId]);
 
   const loadJobs = async (showLoading = true) => {
     try {
       if (showLoading) setLoading(true);
-      const organizationId = sessionStorage.getItem("selected_organization_id");
+      const organizationId = activeOrganizationId;
 
       let query = supabase
         .from("sales_orders")

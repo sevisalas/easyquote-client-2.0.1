@@ -69,12 +69,12 @@ export const useSalesOrders = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
-  const fetchSalesOrders = async () => {
+  const fetchSalesOrders = async (organizationIdOverride?: string | null) => {
     try {
       setLoading(true);
       
       // Filtrar por organization_id para separar datos por tenant
-      const organizationId = sessionStorage.getItem('selected_organization_id');
+       const organizationId = organizationIdOverride ?? sessionStorage.getItem('selected_organization_id');
       
       let query = supabase
         .from('sales_orders')
