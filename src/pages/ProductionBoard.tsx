@@ -69,7 +69,7 @@ function PhaseIndicator({
     pending: "Pendiente",
     in_progress: "En curso",
     paused: "Pausada",
-    completed: "Hecha",
+    completed: "Terminada",
   };
 
   const statusStyles = {
