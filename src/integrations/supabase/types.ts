@@ -2988,6 +2988,7 @@ export type Database = {
           accepted: boolean | null
           accepted_quantity: number | null
           composite_data: Json | null
+          composite_multi_data: Json | null
           created_at: string
           description: string | null
           description_manual: boolean
@@ -3013,6 +3014,7 @@ export type Database = {
           accepted?: boolean | null
           accepted_quantity?: number | null
           composite_data?: Json | null
+          composite_multi_data?: Json | null
           created_at?: string
           description?: string | null
           description_manual?: boolean
@@ -3038,6 +3040,7 @@ export type Database = {
           accepted?: boolean | null
           accepted_quantity?: number | null
           composite_data?: Json | null
+          composite_multi_data?: Json | null
           created_at?: string
           description?: string | null
           description_manual?: boolean
