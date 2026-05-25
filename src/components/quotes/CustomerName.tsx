@@ -6,37 +6,49 @@ interface CustomerNameProps {
   fallback?: string;
 }
 
+// Shared in-memory cache + in-flight dedupe across all CustomerName instances
+const nameCache = new Map<string, string>();
+const inflight = new Map<string, Promise<string>>();
+
+async function fetchCustomerName(id: string): Promise<string> {
+  if (nameCache.has(id)) return nameCache.get(id)!;
+  if (inflight.has(id)) return inflight.get(id)!;
+  const p = (async () => {
+    const { data } = await supabase
+      .from("customers")
+      .select("name")
+      .eq("id", id)
+      .maybeSingle();
+    const name = data?.name || "";
+    nameCache.set(id, name);
+    inflight.delete(id);
+    return name;
+  })();
+  inflight.set(id, p);
+  return p;
+}
+
 export const CustomerName = ({ customerId, fallback = "—" }: CustomerNameProps) => {
-  const [customerName, setCustomerName] = useState<string>(fallback);
+  const [customerName, setCustomerName] = useState<string>(
+    customerId && nameCache.has(customerId) ? nameCache.get(customerId)! || fallback : fallback
+  );
 
   useEffect(() => {
     if (!customerId) {
       setCustomerName(fallback);
       return;
     }
-
-    const fetchCustomerName = async () => {
-      try {
-        // Fetch from unified customers table
-        const { data: customer } = await supabase
-          .from('customers')
-          .select('name')
-          .eq('id', customerId)
-          .maybeSingle();
-
-        if (customer) {
-          setCustomerName(customer.name || fallback);
-          return;
-        }
-
-        setCustomerName(fallback);
-      } catch (error) {
-        console.error('Error fetching customer name:', error);
-        setCustomerName(fallback);
-      }
+    let cancelled = false;
+    fetchCustomerName(customerId)
+      .then((name) => {
+        if (!cancelled) setCustomerName(name || fallback);
+      })
+      .catch(() => {
+        if (!cancelled) setCustomerName(fallback);
+      });
+    return () => {
+      cancelled = true;
     };
-
-    fetchCustomerName();
   }, [customerId, fallback]);
 
   return <span>{customerName}</span>;
