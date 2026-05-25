@@ -112,6 +112,10 @@ const SalesOrderDetail = () => {
   const isMobile = useIsMobile();
   const { canAccessProduccion, membership } = useSubscription();
   const canViewProduction = canAccessProduccion();
+  // No bloquear el acceso al detalle del pedido por el módulo "Production":
+  // basta con que el rol no sea 'comercial'. Si membership aún no ha cargado,
+  // permitimos seguir (evitamos el redirect a "/" durante la hidratación).
+  const isComercial = membership?.role === 'comercial';
   const { loading, fetchSalesOrderById, fetchSalesOrderItems, fetchSalesOrderAdditionals, updateSalesOrderStatus, updateSalesOrderItem, deleteSalesOrder } = useSalesOrders();
   const { isVisibleIn } = useOutputTypeVisibility();
   const [order, setOrder] = useState<SalesOrder | null>(null);
@@ -147,7 +151,7 @@ const SalesOrderDetail = () => {
   const [editingNoteIndex, setEditingNoteIndex] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!canViewProduction) {
+    if (isComercial) {
       navigate("/");
       return;
     }
@@ -155,7 +159,7 @@ const SalesOrderDetail = () => {
     if (id) {
       loadOrderData();
     }
-  }, [id, canViewProduction, navigate]);
+  }, [id, isComercial, navigate]);
 
   const loadUserRole = async () => {
     const { data: roleData } = await supabase.rpc('get_current_user_role').single();
