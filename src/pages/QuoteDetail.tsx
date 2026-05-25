@@ -329,9 +329,11 @@ export default function QuoteDetail() {
   const customerMissingHoldedId = canExportQuotes && !customerHoldedId;
 
   // Check if quote has multi-quantities
-  const hasMultiQuantities = quote?.items?.some((item: any) => 
-    item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1
-  ) || false;
+  const hasMultiQuantities = quote?.items?.some((item: any) => {
+    const rows = item?.multi?.rows;
+    const qtyInputs = item?.multi?.qtyInputs;
+    return (Array.isArray(rows) && rows.length > 1) || (Array.isArray(qtyInputs) && qtyInputs.filter((q: any) => String(q ?? '').trim() !== '').length > 1);
+  }) || false;
 
   // Check if all multi-quantity items have a selected quantity
   const allMultiQuantitiesSelected = () => {
@@ -346,9 +348,11 @@ export default function QuoteDetail() {
     }
     
     // Find multi-quantity items that need validation
-    const multiItems = itemsToValidate.filter((item: any) => 
-      item.multi && Array.isArray(item.multi.rows) && item.multi.rows.length > 1
-    );
+      const multiItems = itemsToValidate.filter((item: any) => {
+        const rows = item?.multi?.rows;
+        const qtyInputs = item?.multi?.qtyInputs;
+        return (Array.isArray(rows) && rows.length > 1) || (Array.isArray(qtyInputs) && qtyInputs.filter((q: any) => String(q ?? '').trim() !== '').length > 1);
+      });
     
     if (multiItems.length === 0) return true;
     
@@ -1126,7 +1130,14 @@ export default function QuoteDetail() {
                   const resolvedQuantity = strictQty ?? 0;
                   const additionalsBreakdown = buildItemAdditionalsBreakdown(item, displayedItemPrice, resolvedQuantity);
                   const multi = item.multi as any;
-                  const hasMultipleQuantities = multi?.rows && Array.isArray(multi.rows) && multi.rows.length > 1;
+                  const multiQtyOptions = Array.isArray(multi?.rows) && multi.rows.length > 0
+                    ? multi.rows
+                        .map((row: any) => row?.qty ?? row?.quantity)
+                        .filter((qty: any) => qty != null && qty !== '' && qty !== 0 && qty !== '0')
+                    : Array.isArray(multi?.qtyInputs)
+                      ? multi.qtyInputs.filter((qty: any) => qty != null && String(qty).trim() !== '' && qty !== 0 && qty !== '0')
+                      : [];
+                  const hasMultipleQuantities = multiQtyOptions.length > 1;
                   const itemPrompts = approvedState?.resolvedPromptsObject || (item.prompts && typeof item.prompts === 'object' ? item.prompts : {});
                    const itemOutputs = approvedState?.resolvedOutputs || (Array.isArray(item.outputs) ? item.outputs : []);
                    const compositeData = (item as any).composite_data;
@@ -1276,21 +1287,12 @@ export default function QuoteDetail() {
                                     <SelectValue placeholder="Cantidad" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {multi.rows && multi.rows.length > 0 ? (
-                                      multi.rows
-                                        .filter((row: any) => {
-                                          // Usar qty que es la propiedad real en los datos
-                                          const qty = row.qty || row.quantity;
-                                          return qty != null && qty !== '' && qty !== 0 && qty !== '0';
-                                        })
-                                        .map((row: any, idx: number) => {
-                                          const qty = row.qty || row.quantity;
-                                          return (
-                                            <SelectItem key={idx} value={String(qty)}>
-                                              {qty}
-                                            </SelectItem>
-                                          );
-                                        })
+                                    {multiQtyOptions.length > 0 ? (
+                                      multiQtyOptions.map((qty: any, idx: number) => (
+                                        <SelectItem key={idx} value={String(qty)}>
+                                          {qty}
+                                        </SelectItem>
+                                      ))
                                     ) : (
                                       <SelectItem value="no-quantities" disabled>
                                         No hay cantidades disponibles
@@ -1305,14 +1307,17 @@ export default function QuoteDetail() {
                             {hasMultipleQuantities && quote.status === 'approved' && item.accepted && item.accepted_quantity && (
                               <div className="mt-2 space-y-1">
                                 <p className="text-xs font-medium text-muted-foreground mb-1">Cantidades presupuestadas:</p>
-                                {multi.rows
-                                  .filter((row: any) => {
-                                    const qty = row.qty || row.quantity;
-                                    return qty != null && qty !== '' && qty !== 0 && qty !== '0';
+                                {multiQtyOptions
+                                  .map((qty: any) => {
+                                    const row = Array.isArray(multi?.rows)
+                                      ? multi.rows.find((candidate: any) => parseLocaleNumber(candidate?.qty ?? candidate?.quantity) === parseLocaleNumber(qty))
+                                      : null;
+                                    return { qty, row };
                                   })
-                                  .map((row: any, idx: number) => {
-                                    const qty = row.qty || row.quantity;
-                                    const rowPrice = parseLocaleNumber(row.outs?.find((o: any) => o.type === 'Price')?.value ?? row.price ?? 0);
+                                  .map(({ qty, row }: any, idx: number) => {
+                                    const rowPrice = row
+                                      ? parseLocaleNumber(row?.outs?.find((o: any) => o.type === 'Price')?.value ?? row?.price ?? 0)
+                                      : null;
                                     const isApproved = parseLocaleNumber(qty) === parseLocaleNumber(item.accepted_quantity);
                                     return (
                                       <div 
@@ -1324,7 +1329,7 @@ export default function QuoteDetail() {
                                         }`}
                                       >
                                         <span>{qty} uds.</span>
-                                        <span>{fmtEUR(rowPrice)}</span>
+                                        <span>{rowPrice !== null ? fmtEUR(rowPrice) : '—'}</span>
                                         {isApproved && (
                                           <Badge variant="outline" className="text-[10px] h-4 bg-green-500/10 text-green-600 border-green-500/20 ml-1">
                                             Aprobada

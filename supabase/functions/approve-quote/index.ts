@@ -618,6 +618,8 @@ async function approveQuoteCore(
       fPrompts = syncPromptsWithQuantity(item.prompts, sQ, quantityResolver);
       if (row) {
         fOutputs = Array.isArray(row.outs) ? row.outs : fOutputs;
+        // Order items keep only the approved row; the source quote is updated
+        // separately below to preserve the full comparison table.
         fMulti = { ...m, rows: [row] };
         // Solo recalcular precio si la cantidad seleccionada difiere de la guardada
         if (sQ !== storedQ && !isCustom) {
@@ -696,7 +698,7 @@ async function approveQuoteCore(
       price: oi.price,
       prompts: oi.prompts,
       outputs: oi.outputs,
-      multi: oi.multi,
+      multi: src.multi,
       description: oi.description,
     }).eq("id", src.id);
   }
