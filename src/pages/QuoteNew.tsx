@@ -224,6 +224,7 @@ export default function QuoteNew() {
           // Descripción (solo para productos custom)
           itemAdditionals: item.item_additionals || [],
           compositeData: item.composite_data || undefined,
+          compositeMultiData: (item as any).composite_multi_data || undefined,
           needsRecalculation: false,
           isFinalized: true
         };
