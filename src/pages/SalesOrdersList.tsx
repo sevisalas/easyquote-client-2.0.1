@@ -577,6 +577,7 @@ const SalesOrdersList = () => {
                   isHoldedActive={isHoldedActive}
                   hasHoldedAccess={hasHoldedAccess && !isOperator}
                   hidePrice={isOperator}
+                  hideDuplicate={isOperator}
                   onDuplicate={handleDuplicate}
                   onDownloadHoldedPdf={handleDownloadHoldedPdf}
                   onDelete={loadOrders}
