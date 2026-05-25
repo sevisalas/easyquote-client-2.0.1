@@ -618,7 +618,10 @@ async function approveQuoteCore(
       fPrompts = syncPromptsWithQuantity(item.prompts, sQ, quantityResolver);
       if (row) {
         fOutputs = Array.isArray(row.outs) ? row.outs : fOutputs;
-        fMulti = { ...m, rows: [row] };
+        // Preserve all quoted multi-quantity rows on the source quote.
+        // The order item uses the selected quantity via quantity/prompts/outputs,
+        // but the quote must retain the full comparison table for traceability.
+        fMulti = { ...m, rows: Array.isArray(m.rows) ? m.rows : [] };
         // Solo recalcular precio si la cantidad seleccionada difiere de la guardada
         if (sQ !== storedQ && !isCustom) {
           const base = parseFloat(row.outs?.find((o: any) => o.type === "Price")?.value || row.price || item.price || 0);
