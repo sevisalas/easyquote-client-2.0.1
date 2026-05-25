@@ -914,6 +914,7 @@ export default function QuoteEdit() {
             quantity: resolvedQuantity ?? 1,
             item_additionals: item.itemAdditionals || [],
             composite_data: item.compositeData || null,
+            composite_multi_data: (item as any).compositeMultiData || null,
           };
         });
 
