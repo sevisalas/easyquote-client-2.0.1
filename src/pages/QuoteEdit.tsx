@@ -546,6 +546,7 @@ export default function QuoteEdit() {
             descriptionManual: item.description_manual || false,  // Flag: usuario editó la descripción
             itemAdditionals: Array.isArray(item.item_additionals) ? item.item_additionals : [],
             compositeData: item.composite_data || undefined,
+            compositeMultiData: (item as any).composite_multi_data || undefined,
             source_quote_id: item.source_quote_id || null,
             source_item_id: item.source_item_id || null,
           };
