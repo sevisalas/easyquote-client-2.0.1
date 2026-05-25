@@ -52,6 +52,7 @@ const SalesOrdersList = () => {
   const { canAccessProduccion, loading: subscriptionLoading, membership } = useSubscription();
   const { loading, fetchSalesOrders } = useSalesOrders();
   const { isHoldedActive, hasHoldedAccess } = useHoldedIntegration();
+  const isOperator = membership?.role === 'operador';
   const [orders, setOrders] = useState<SalesOrder[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [orgMembers, setOrgMembers] = useState<any[]>([]);
@@ -528,11 +529,13 @@ const SalesOrdersList = () => {
               <span className="text-muted-foreground">
                 {filteredOrders.length} de {orders.length} pedidos
               </span>
-              <span className="font-semibold text-foreground">
-                Total: {fmtEUR(filteredOrders.reduce((s: number, o: any) => s + (Number(o.final_price) || 0), 0))}
-              </span>
+              {!isOperator && (
+                <span className="font-semibold text-foreground">
+                  Total: {fmtEUR(filteredOrders.reduce((s: number, o: any) => s + (Number(o.final_price) || 0), 0))}
+                </span>
+              )}
             </div>
-            <Button
+            {!isOperator && <Button
               variant="outline"
               size="sm"
               className="h-7 text-xs gap-1"
@@ -563,7 +566,7 @@ const SalesOrdersList = () => {
             >
               <FileSpreadsheet className="h-3.5 w-3.5" />
               Exportar Excel
-            </Button>
+            </Button>}
           </div>
 
           {loading ? (
@@ -579,7 +582,8 @@ const SalesOrdersList = () => {
                   key={order.id}
                   order={order}
                   isHoldedActive={isHoldedActive}
-                  hasHoldedAccess={hasHoldedAccess}
+                  hasHoldedAccess={hasHoldedAccess && !isOperator}
+                  hidePrice={isOperator}
                   onDuplicate={handleDuplicate}
                   onDownloadHoldedPdf={handleDownloadHoldedPdf}
                   onDelete={loadOrders}
@@ -595,8 +599,8 @@ const SalesOrdersList = () => {
                   <TableHead className="py-2 text-xs font-semibold">Cliente</TableHead>
                   <TableHead className="py-2 text-xs font-semibold">Usuario</TableHead>
                   <TableHead className="py-2 text-xs font-semibold max-w-[200px]">Descripción</TableHead>
-                  <TableHead className="py-2 text-right text-xs font-semibold">Total</TableHead>
-                  {hasHoldedAccess && (
+                  {!isOperator && <TableHead className="py-2 text-right text-xs font-semibold">Total</TableHead>}
+                  {hasHoldedAccess && !isOperator && (
                     <>
                       <TableHead className="py-2 text-xs font-semibold">Nº Holded</TableHead>
                       <TableHead className="py-2 text-xs font-semibold">PDF</TableHead>
@@ -616,8 +620,8 @@ const SalesOrdersList = () => {
                     </TableCell>
                     <TableCell className="py-1.5 px-3 text-sm text-muted-foreground">{getUserName(order.user_id)}</TableCell>
                     <TableCell className="py-1.5 px-3 text-sm max-w-[200px] truncate">{order.description || order.title || ""}</TableCell>
-                    <TableCell className="py-1.5 px-3 text-sm text-right font-medium">{fmtEUR(order.final_price)}</TableCell>
-                    {hasHoldedAccess && (
+                    {!isOperator && <TableCell className="py-1.5 px-3 text-sm text-right font-medium">{fmtEUR(order.final_price)}</TableCell>}
+                    {hasHoldedAccess && !isOperator && (
                       <>
                         <TableCell className="py-1.5 px-3">
                           {order.holded_document_number ? (
