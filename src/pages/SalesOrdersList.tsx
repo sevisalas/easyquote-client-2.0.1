@@ -645,9 +645,9 @@ const SalesOrdersList = () => {
                         <Button size="sm" variant="secondary" className="h-7 px-2 text-xs" onClick={() => navigate(`/pedidos/${order.id}`)}>
                           Ver
                         </Button>
-                        <Button size="sm" variant="default" className="h-7 px-2 text-xs" onClick={() => handleDuplicate(order.id)}>
+                        {!isOperator && <Button size="sm" variant="default" className="h-7 px-2 text-xs" onClick={() => handleDuplicate(order.id)}>
                           Duplicar
-                        </Button>
+                        </Button>}
                         {order.status === 'draft' && (
                           <Button 
                             size="sm" 
