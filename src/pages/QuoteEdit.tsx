@@ -1064,6 +1064,7 @@ export default function QuoteEdit() {
               itemDescription: snapshot.itemDescription ?? item.itemDescription,
               itemAdditionals: snapshot.itemAdditionals ?? item.itemAdditionals,
               compositeData: snapshot.compositeData ?? item.compositeData,
+              compositeMultiData: (snapshot as any).compositeMultiData ?? (item as any).compositeMultiData,
               _liveUpdated: true,
               _tariffSignature: snapshot.tariffSignature ?? activeTariffSignature,
             }
