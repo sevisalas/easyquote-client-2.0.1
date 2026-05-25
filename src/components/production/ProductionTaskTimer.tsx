@@ -121,7 +121,7 @@ export function ProductionTaskTimer({ task, onUpdate }: ProductionTaskTimerProps
           variant={isCompleted ? "default" : "outline"}
         >
           <CheckCircle2 className="h-4 w-4 mr-1" />
-          Hecha
+          Terminada
         </Button>
 
         <div className="ml-auto flex items-center gap-2">

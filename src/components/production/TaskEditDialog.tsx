@@ -29,7 +29,7 @@ const STATUS_OPTIONS: Array<{ value: EditableTask["status"]; label: string }> = 
   { value: "pending", label: "Pendiente" },
   { value: "in_progress", label: "En curso" },
   { value: "paused", label: "Pausada" },
-  { value: "completed", label: "Hecha" },
+  { value: "completed", label: "Terminada" },
 ];
 
 export function TaskEditDialog({ task, open, onOpenChange, onSaved }: Props) {
