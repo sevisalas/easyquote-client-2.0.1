@@ -652,7 +652,25 @@ async function approveQuoteCore(
       multi: fMulti,
       position: index,
       composite_data: item.composite_data
-        ? syncCompositeDataWithQuantity(item.composite_data, finalQuantity)
+        ? (() => {
+            // Si tenemos la fotografía multi-cantidad guardada para la qty aprobada,
+            // úsala TAL CUAL (sin recalcular nada contra el motor externo).
+            const cmd = (item as any).composite_multi_data;
+            const snap = cmd && typeof cmd === "object" ? cmd[String(finalQuantity)] : null;
+            if (snap && snap.components) {
+              return {
+                components: snap.components,
+                activeComponents: snap.activeComponents || item.composite_data.activeComponents || [],
+                totalPrice: snap.totalPrice ?? item.composite_data.totalPrice ?? 0,
+                parentOutputs: snap.parentOutputs || item.composite_data.parentOutputs || [],
+              };
+            }
+            // Fallback legacy: ajusta solo el prompt de cantidad sobre la foto principal.
+            console.warn(
+              `[approve-quote] composite_multi_data ausente para qty=${finalQuantity} (item ${item.id}); usando fallback syncCompositeDataWithQuantity`,
+            );
+            return syncCompositeDataWithQuantity(item.composite_data, finalQuantity);
+          })()
         : null,
       item_additionals: item.item_additionals || null,
     };
