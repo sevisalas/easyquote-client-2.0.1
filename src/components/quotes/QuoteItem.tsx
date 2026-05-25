@@ -69,6 +69,15 @@ type ItemSnapshot = {
     totalPrice: number;
     parentOutputs: any[];
   };
+  // Fotografía COMPLETA por cantidad para compuestos multi-cantidad.
+  // Estructura: { [qty: string]: { components, activeComponents, totalPrice, parentOutputs } }
+  // Permite reabrir/aprobar sin volver a llamar al motor externo.
+  compositeMultiData?: Record<string, {
+    components: any;
+    activeComponents: any[];
+    totalPrice: number;
+    parentOutputs: any[];
+  }>;
 };
 
 interface QuoteItemProps {
