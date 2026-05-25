@@ -774,6 +774,7 @@ export default function QuoteNew() {
           position: index,
           item_additionals: item.itemAdditionals || [],
           composite_data: item.compositeData || null,
+          composite_multi_data: (item as any).compositeMultiData || null,
         };
       });
       const {
