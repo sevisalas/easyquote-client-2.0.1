@@ -1348,7 +1348,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       const results = await Promise.all(
         qtys.map(async (qty) => {
           // Calculate price for each component with this quantity
-          const componentPrices = await Promise.all(
+          const componentResults = await Promise.all(
             activeCompositeComponents.map(async (component) => {
               // Build inputs for this component
               const componentInputs: { id: string; value: any }[] = [];
@@ -1431,7 +1431,13 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                 
                 if (error) {
                   console.error(`Error calculating component ${component.component_alias}:`, error);
-                  return 0;
+                  return {
+                    componentKey: getActiveComponentKey(component),
+                    alias: component.component_alias,
+                    prompts: [],
+                    outputs: [],
+                    price: 0,
+                  };
                 }
                 
                 // Extract price from outputs
@@ -1443,17 +1449,40 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                   ? parseFloat(String(priceOutput.value ?? "0").replace(/\./g, "").replace(",", ".")) || 0
                   : 0;
                   
-                return price;
+                return {
+                  componentKey: getActiveComponentKey(component),
+                  alias: component.component_alias,
+                  prompts: (data as any)?.prompts || [],
+                  outputs,
+                  price,
+                };
               } catch (err) {
                 console.error(`Error calculating component ${component.component_alias}:`, err);
-                return 0;
+                return {
+                  componentKey: getActiveComponentKey(component),
+                  alias: component.component_alias,
+                  prompts: [],
+                  outputs: [],
+                  price: 0,
+                };
               }
             })
           );
 
           // Sum all component prices for this quantity
-          const totalPrice = componentPrices.reduce((sum, price) => sum + price, 0);
-          
+          const totalPrice = componentResults.reduce((sum, r) => sum + (r?.price || 0), 0);
+
+          // Build components map keyed by componentKey (same shape as composite_data.components)
+          const componentsMap: Record<string, any> = {};
+          for (const r of componentResults) {
+            componentsMap[r.componentKey] = {
+              prompts: r.prompts || [],
+              outputs: r.outputs || [],
+              price: r.price || 0,
+              alias: r.alias,
+            };
+          }
+
           return {
             qty,
             data: {
@@ -1462,6 +1491,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               ]
             },
             totalPrice,
+            components: componentsMap,
           };
         })
       );
