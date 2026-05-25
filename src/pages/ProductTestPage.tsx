@@ -761,7 +761,9 @@ export default function ProductTestPage({
             // Only convert to number if the prompt type is numeric (Number or Quantity)
             const isNumericType = promptType === "Number" || promptType === "Quantity";
             if (isNumericType) {
-              const asNum = parseFloat(trimmed);
+              // Normalizar separador decimal español (coma → punto) igual que QuoteItem
+              const normalized = trimmed.replace(/\./g, "").replace(",", ".");
+              const asNum = parseFloat(normalized);
               norm[k] = Number.isNaN(asNum) ? trimmed : asNum;
             } else {
               // For dropdown and other types, keep as string
