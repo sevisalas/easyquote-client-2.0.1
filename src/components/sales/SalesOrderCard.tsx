@@ -40,6 +40,7 @@ interface SalesOrderCardProps {
   onDuplicate: (orderId: string) => void;
   onDownloadHoldedPdf?: (holdedDocumentId: string, orderNumber: string) => void;
   onDelete?: () => void;
+  hidePrice?: boolean;
 }
 
 export function SalesOrderCard({ 
@@ -48,7 +49,8 @@ export function SalesOrderCard({
   hasHoldedAccess = false,
   onDuplicate, 
   onDownloadHoldedPdf,
-  onDelete 
+  onDelete,
+  hidePrice = false,
 }: SalesOrderCardProps) {
   const navigate = useNavigate();
 
@@ -110,12 +112,12 @@ export function SalesOrderCard({
         )}
 
         {/* Price */}
-        <div className="mb-3 pt-2 border-t">
+        {!hidePrice && <div className="mb-3 pt-2 border-t">
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">Total</p>
             <p className="text-lg font-bold text-primary">{fmtEUR(order.final_price)}</p>
           </div>
-        </div>
+        </div>}
 
         {/* Holded Info */}
         {hasHoldedAccess && order.holded_document_number && (
