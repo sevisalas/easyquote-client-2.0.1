@@ -65,6 +65,7 @@ interface QuoteItem {
   description_manual?: boolean;  // From DB
   itemAdditionals?: any[];
   compositeData?: any;
+  compositeMultiData?: any;
   _liveUpdated?: boolean;  // Flag: item has been updated by live QuoteItem component (price is trustworthy)
   _tariffSignature?: string;
 }
