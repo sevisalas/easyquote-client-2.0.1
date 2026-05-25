@@ -180,16 +180,14 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         }
 
         if (selectedOrg) {
-          // Get membership in background - don't block
-          supabase
+          // Wait for membership so role-based gates have data before rendering
+          const { data: memberData } = await supabase
             .from('organization_members')
             .select(`id, organization_id, user_id, role, display_name, organization:organizations(*)`)
             .eq('user_id', user.id)
             .eq('organization_id', selectedOrg.id)
-            .maybeSingle()
-            .then(({ data: memberData }) => {
-              setMembership(memberData as OrganizationMember);
-            });
+            .maybeSingle();
+          setMembership(memberData as OrganizationMember);
 
           if (selectedOrg.api_user_id === user.id) {
             setOrganization(selectedOrg);
