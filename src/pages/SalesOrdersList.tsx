@@ -382,13 +382,13 @@ const SalesOrdersList = () => {
           )}
           <div className="flex items-center justify-between">
             <CardTitle className="text-base md:text-lg">Listado de pedidos</CardTitle>
-            <Button 
+            {membership?.role !== 'operador' && <Button 
               size={isMobile ? "default" : "sm"}
               onClick={() => navigate('/pedidos/nuevo')}
               className={isMobile ? "h-10" : "h-8 text-xs"}
             >
               Nuevo Pedido
-            </Button>
+            </Button>}
           </div>
         </CardHeader>
         <CardContent className="px-3 md:px-6 py-2">

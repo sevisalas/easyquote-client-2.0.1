@@ -57,6 +57,7 @@ export function AppSidebar() {
     loading: pdfAccessLoading
   } = usePdfAccess();
   const isComercial = membership?.role === 'comercial';
+  const isOperador = membership?.role === 'operador';
   const b2bEnabled = !!(organization as any)?.b2b_portal_enabled;
   const handleSignOut = async () => {
     try {
@@ -298,14 +299,14 @@ export function AppSidebar() {
                                   </NavLink>
                                 </SidebarMenuSubButton>
                               </SidebarMenuSubItem>
-                              <SidebarMenuSubItem>
+                              {!isOperador && <SidebarMenuSubItem>
                                 <SidebarMenuSubButton asChild isActive={currentPath === "/pedidos/nuevo"} className="h-6 px-2">
                                   <NavLink to="/pedidos/nuevo" className={getNavCls}>
                                     <PlusCircle className="mr-2 h-4 w-4" />
                                     {!isCollapsed && <span>Nuevo</span>}
                                   </NavLink>
                                 </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
+                              </SidebarMenuSubItem>}
                               <SidebarMenuSubItem>
                                 <SidebarMenuSubButton asChild isActive={currentPath === "/panel-produccion"} className="h-6 px-2">
                                   <NavLink to="/panel-produccion" className={getNavCls}>
