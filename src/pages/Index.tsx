@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Plus, Users, TrendingUp, Clock, CheckCircle2, ArrowRight, Package } from "lucide-react";
+import { FileText, Plus, Users, TrendingUp, Clock, CheckCircle2, ArrowRight, Package, Monitor } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/contexts/SubscriptionContext";
@@ -332,8 +332,8 @@ const Index = () => {
           </>}
 
         {/* Quick Actions */}
-        <div className={`grid gap-3 md:gap-6 ${canAccessProduccion() ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1 md:grid-cols-2"}`}>
-          <Card className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer" onClick={() => navigate("/clientes")}>
+        <div className={`grid gap-3 md:gap-6 ${isOperator ? "grid-cols-1 md:grid-cols-2" : canAccessProduccion() ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1 md:grid-cols-2"}`}>
+          {!isOperator && <Card className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer" onClick={() => navigate("/clientes")}>
             <CardContent className="p-4 md:p-6">
               <div className="flex items-center justify-between mb-3 md:mb-4">
                 <div className="w-10 h-10 md:w-12 md:h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -344,9 +344,9 @@ const Index = () => {
               <h3 className="text-base md:text-lg font-semibold mb-1 md:mb-2 text-foreground">Gestionar clientes</h3>
               <p className="text-xs md:text-sm text-muted-foreground">Administra tu cartera de clientes</p>
             </CardContent>
-          </Card>
+          </Card>}
 
-          <Card className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer" onClick={() => navigate("/presupuestos")}>
+          {!isOperator && <Card className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer" onClick={() => navigate("/presupuestos")}>
             <CardContent className="p-4 md:p-6">
               <div className="flex items-center justify-between mb-3 md:mb-4">
                 <div className="w-10 h-10 md:w-12 md:h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -361,7 +361,7 @@ const Index = () => {
                 Ver, editar y administrar todos tus presupuestos
               </p>
             </CardContent>
-          </Card>
+          </Card>}
 
           {/* Gestionar Pedidos - Solo para usuarios con acceso a producción */}
           {canAccessProduccion() && <Card className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer" onClick={() => navigate("/pedidos")}>
@@ -374,6 +374,19 @@ const Index = () => {
                 </div>
                 <h3 className="text-base md:text-lg font-semibold mb-1 md:mb-2 text-foreground">Gestionar pedidos</h3>
                 <p className="text-xs md:text-sm text-muted-foreground">Accede a todos tus pedidos de venta</p>
+              </CardContent>
+            </Card>}
+
+          {isOperator && <Card className="border-primary/20 hover:border-primary/40 transition-all group cursor-pointer" onClick={() => navigate("/panel-produccion") }>
+              <CardContent className="p-4 md:p-6">
+                <div className="flex items-center justify-between mb-3 md:mb-4">
+                  <div className="w-10 h-10 md:w-12 md:h-12 bg-primary/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Monitor className="w-5 h-5 md:w-6 md:h-6 text-primary" />
+                  </div>
+                  <ArrowRight className="w-4 h-4 md:w-5 md:h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                </div>
+                <h3 className="text-base md:text-lg font-semibold mb-1 md:mb-2 text-foreground">Panel taller</h3>
+                <p className="text-xs md:text-sm text-muted-foreground">Consulta la vista de producción y seguimiento</p>
               </CardContent>
             </Card>}
         </div>
