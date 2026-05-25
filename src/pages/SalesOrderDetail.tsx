@@ -169,6 +169,10 @@ const SalesOrderDetail = () => {
       if (roleData.role === 'comercial') {
         setViewMode('administrative');
       }
+      // Operador solo ve vista de producción
+      if (roleData.role === 'operador') {
+        setViewMode('production');
+      }
       // Always load admin_only prompts (needed for production view filtering)
       if (roleData.organization_id) {
         loadAdminOnlyPrompts(roleData.organization_id);
@@ -1067,7 +1071,7 @@ const SalesOrderDetail = () => {
               </div>
               
               {/* Toggle de vistas - oculto para comerciales */}
-              {userRole !== 'comercial' && !isMobile && (
+              {userRole !== 'comercial' && userRole !== 'operador' && !isMobile && (
                 <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'production' | 'administrative')}>
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="production" className="gap-1.5">
@@ -1195,7 +1199,7 @@ const SalesOrderDetail = () => {
               )}
             
             {/* Toggle móvil de vistas - solo visible en móvil */}
-            {userRole !== 'comercial' && isMobile && (
+            {userRole !== 'comercial' && userRole !== 'operador' && isMobile && (
               <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'production' | 'administrative')} className="w-full">
                 <TabsList className="grid w-full grid-cols-2 h-11">
                   <TabsTrigger value="production" className="gap-2">
