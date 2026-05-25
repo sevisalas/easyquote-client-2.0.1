@@ -22,7 +22,8 @@ import CompositeComponentTabs, { type ComponentsDataMap } from "@/components/quo
 import CompositeComponentsSelector, {
   type ActiveComponent,
   getInitialActiveComponents,
-  hasRequiredComponents
+  hasRequiredComponents,
+  getActiveComponentKey
 } from "@/components/quotes/CompositeComponentsSelector";
 import { useProductComponentSettings } from "@/hooks/useProductComponentSettings";
 import { useCompositeProductConfig } from "@/hooks/useCompositeProductConfig";
@@ -68,6 +69,15 @@ type ItemSnapshot = {
     totalPrice: number;
     parentOutputs: any[];
   };
+  // Fotografía COMPLETA por cantidad para compuestos multi-cantidad.
+  // Estructura: { [qty: string]: { components, activeComponents, totalPrice, parentOutputs } }
+  // Permite reabrir/aprobar sin volver a llamar al motor externo.
+  compositeMultiData?: Record<string, {
+    components: any;
+    activeComponents: any[];
+    totalPrice: number;
+    parentOutputs: any[];
+  }>;
 };
 
 interface QuoteItemProps {
@@ -1338,7 +1348,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
       const results = await Promise.all(
         qtys.map(async (qty) => {
           // Calculate price for each component with this quantity
-          const componentPrices = await Promise.all(
+          const componentResults = await Promise.all(
             activeCompositeComponents.map(async (component) => {
               // Build inputs for this component
               const componentInputs: { id: string; value: any }[] = [];
@@ -1421,7 +1431,13 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                 
                 if (error) {
                   console.error(`Error calculating component ${component.component_alias}:`, error);
-                  return 0;
+                  return {
+                    componentKey: getActiveComponentKey(component),
+                    alias: component.component_alias,
+                    prompts: [],
+                    outputs: [],
+                    price: 0,
+                  };
                 }
                 
                 // Extract price from outputs
@@ -1433,17 +1449,40 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
                   ? parseFloat(String(priceOutput.value ?? "0").replace(/\./g, "").replace(",", ".")) || 0
                   : 0;
                   
-                return price;
+                return {
+                  componentKey: getActiveComponentKey(component),
+                  alias: component.component_alias,
+                  prompts: (data as any)?.prompts || [],
+                  outputs,
+                  price,
+                };
               } catch (err) {
                 console.error(`Error calculating component ${component.component_alias}:`, err);
-                return 0;
+                return {
+                  componentKey: getActiveComponentKey(component),
+                  alias: component.component_alias,
+                  prompts: [],
+                  outputs: [],
+                  price: 0,
+                };
               }
             })
           );
 
           // Sum all component prices for this quantity
-          const totalPrice = componentPrices.reduce((sum, price) => sum + price, 0);
-          
+          const totalPrice = componentResults.reduce((sum, r) => sum + (r?.price || 0), 0);
+
+          // Build components map keyed by componentKey (same shape as composite_data.components)
+          const componentsMap: Record<string, any> = {};
+          for (const r of componentResults) {
+            componentsMap[r.componentKey] = {
+              prompts: r.prompts || [],
+              outputs: r.outputs || [],
+              price: r.price || 0,
+              alias: r.alias,
+            };
+          }
+
           return {
             qty,
             data: {
@@ -1452,6 +1491,7 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
               ]
             },
             totalPrice,
+            components: componentsMap,
           };
         })
       );
@@ -2245,6 +2285,22 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
             parentOutputs: compositeParentOutputs,
           }
         : undefined,
+      compositeMultiData: (hasConfiguredComponents && multiEnabled && Array.isArray(compositeMultiResults))
+        ? (() => {
+            const map: Record<string, any> = {};
+            for (const row of compositeMultiResults as any[]) {
+              const q = (row as any)?.qty;
+              if (q == null) continue;
+              map[String(q)] = {
+                components: (row as any).components || {},
+                activeComponents: activeCompositeComponents,
+                totalPrice: (row as any).totalPrice ?? 0,
+                parentOutputs: compositeParentOutputs || [],
+              };
+            }
+            return Object.keys(map).length ? map : undefined;
+          })()
+        : undefined,
     };
 
     const snapshotKey = JSON.stringify(snapshot);
@@ -2283,6 +2339,8 @@ export default function QuoteItem({ hasToken, id, initialData, onChange, onRemov
     activeCompositeComponents,
     compositeTotalPrice,
     compositeParentOutputs,
+    compositeMultiResults,
+    multiEnabled,
     tariffSignature,
     id,
   ]);

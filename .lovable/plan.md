@@ -1,59 +1,59 @@
 ## Objetivo
-
-Cuando el usuario intente marcar un pedido como **Completado** y existan artículos o tareas de producción pendientes, mostrar un diálogo de aviso que:
-
-1. Liste cuántos artículos y/o tareas quedan sin terminar.
-2. Permita elegir entre:
-   - **Cancelar** (no cerrar el pedido).
-   - **Cerrar todo y completar el pedido** (marca como `completed` todos los artículos y todas sus tareas pendientes/en curso/pausadas, y después el pedido).
-
-Hoy mismo (línea 606-613 de `src/pages/SalesOrderDetail.tsx`) la app bloquea el cierre con un toast de error. Lo sustituiremos por este flujo.
+Eliminar para siempre cualquier recálculo en la aprobación/edición de presupuestos compuestos multi-cantidad. La fotografía completa de los componentes para CADA cantidad de la tabla multi-Q debe quedar persistida en `quote_items.composite_multi_data` y ser la única fuente de verdad al aprobar o reabrir.
 
 ## Alcance
-
-Cambios sólo de UI/flujo en `SalesOrderDetail.tsx`. No se tocan reglas de negocio de Holded, ni RLS, ni cálculo de precios.
+Solo presupuestos de productos compuestos multi-cantidad. El comportamiento de simples y de la cantidad principal de compuestos NO se toca (ya funcionaba).
 
 ## Cambios
 
-### 1. `src/pages/SalesOrderDetail.tsx`
+### 1. `src/components/quotes/QuoteItem.tsx` (compositeMultiResults)
+Hoy la query devuelve solo `{ qty, totalPrice }`. Ampliarla para que, por cada `qty` de la tabla multi, devuelva la foto completa:
+```
+{
+  qty,
+  totalPrice,
+  components: [
+    {
+      componentId, instanceIndex, productId, alias,
+      inputs: [...],           // los enviados al motor
+      outputValues: [...],     // respuesta cruda de easyquote-pricing
+      price                    // extraído
+    }
+  ],
+  parentOutputs: [...]         // si aplica, los del padre en esa qty
+}
+```
+Esto se obtiene de las llamadas que YA se hacen; solo se conserva `data` en lugar de descartarlo.
 
-- Reemplazar el bloque actual de validación en `handleStatusChange` (cuando `newStatus === 'completed'`):
-  - Calcular `incompleteItems` = artículos con `production_status !== 'completed'` (excluyendo cancelados si aplica).
-  - Consultar a `production_tasks` por todos los `sales_order_item_id` del pedido las tareas con `status IN ('pending','in_progress','paused')`.
-  - Si hay artículos o tareas pendientes → abrir un nuevo `AlertDialog` (estado `showForceCompleteDialog`) en lugar del `toast.error`.
-  - Si no hay nada pendiente → flujo actual (marcar pedido completado).
+Exponer este objeto al padre vía la prop `onChange`/snapshot que ya usa `QuoteNew`/`QuoteEdit` para persistir el item, añadiendo `compositeMultiData` al snapshot.
 
-- Nuevo `AlertDialog` ("¿Cerrar pedido con trabajos pendientes?"):
-  - Texto de aviso explícito:  
-    *"Hay X artículo(s) y Y tarea(s) de producción sin terminar. Si continúas, todos ellos se marcarán como **Terminados** automáticamente. Esta acción no se puede deshacer."*
-  - Botón secundario: **Cancelar**.
-  - Botón primario destructivo: **Cerrar todo y completar pedido**.
+### 2. `src/pages/QuoteNew.tsx` y `src/pages/QuoteEdit.tsx`
+- En el `ItemSnapshot`, aceptar y propagar `compositeMultiData`.
+- Al guardar (insert/update de `quote_items`), incluir `composite_multi_data: item.compositeMultiData ?? null`.
+- Al cargar (QuoteEdit), leer `composite_multi_data` de la fila y pasarlo a `QuoteItem` como `initialData.compositeMultiData` para que se hidrate sin pedir nada al motor.
 
-- Nueva función `handleForceCompleteOrder()`:
-  1. `UPDATE production_tasks SET status='completed', completed_at=now() WHERE sales_order_item_id IN (...) AND status <> 'completed'`.
-  2. `UPDATE sales_order_items SET production_status='completed' WHERE sales_order_id = id AND production_status <> 'completed'`.
-  3. `updateSalesOrderStatus(id, 'completed')`.
-  4. Refrescar estado local (`setItems`, `setOrder`) y `loadOrderData()`.
-  5. Invalidate React Query keys: `production-tasks`, claves del pedido.
-  6. Toast informativo: "Pedido cerrado. Se completaron N tareas y M artículos pendientes."
+### 3. `supabase/functions/approve-quote/index.ts`
+En la lógica que hoy hace `syncCompositeDataWithQuantity(item.composite_data, finalQuantity)`:
+- Si existe `item.composite_multi_data?.[finalQuantity]`, usar esa foto directamente para construir el nuevo `composite_data` que se copia a `sales_order_items` (sin llamar al motor, sin recalcular).
+- Si no existe (presupuestos antiguos previos a este cambio), mantener el comportamiento actual como fallback y registrar un `console.warn` para diagnóstico.
 
-- Manejar errores con toast destructivo y no cambiar el estado del pedido si falla algún UPDATE.
+### 4. Migración (ya aplicada)
+`quote_items.composite_multi_data jsonb` — listo.
 
-### 2. Sin cambios en BD
+## Lo que NO cambia
+- `sales_order_items` no recibe nuevo campo (el pedido es de una sola cantidad).
+- `composite_data` actual sigue siendo la foto "principal" (Q1 o cantidad aprobada).
+- Productos simples y multi-cantidad de simples: sin cambios.
+- Flujo de visualización de PDF/Holded: sin cambios.
 
-Las políticas RLS existentes sobre `production_tasks` y `sales_order_items` ya permiten al Admin/Gestor actualizar estos registros. No se requieren migraciones.
+## Pasos de implementación
+1. Ampliar `compositeMultiResults` queryFn para devolver foto completa.
+2. Construir y propagar `compositeMultiData` en el snapshot del item.
+3. Persistir y cargar `composite_multi_data` en QuoteNew y QuoteEdit.
+4. Adaptar `approve-quote` para consumir `composite_multi_data[finalQuantity]` y rellenar `composite_data` sin llamar al motor.
+5. Verificar build y probar: crear presupuesto compuesto con 3 cantidades, recargar (sin llamadas al motor), aprobar una qty distinta a Q1 y comprobar que `sales_order_items.composite_data` coincide con la foto guardada.
 
-## Notas técnicas
-
-- Importar `AlertDialog`, `AlertDialogAction`, `AlertDialogCancel`, etc. desde `@/components/ui/alert-dialog` (ya usados en la pantalla para cancelación).
-- Reutilizar el helper `updateSalesOrderStatus` existente.
-- Mantener la regla actual: si el pedido está `cancelled`, no se ofrece este flujo.
-- El conteo de tareas pendientes se hace en el momento del click (consulta fresca), no se depende de caché.
-
-## QA
-
-1. Pedido con todos los artículos completados → marcar como completado sigue funcionando sin diálogo extra.
-2. Pedido con artículos sin completar y sin tareas → aparece diálogo con "X artículos, 0 tareas". Confirmar marca todo como completado.
-3. Pedido con tareas pausadas/en curso → aparece diálogo con el conteo correcto. Confirmar las cierra todas.
-4. Cancelar el diálogo → el pedido conserva su estado original.
-5. Verificar que el panel de producción refleja las tareas como terminadas tras forzar el cierre.
+## Riesgos / notas
+- Tamaño de `composite_multi_data`: aceptable (JSONB), suele ser <50 KB por item.
+- Presupuestos antiguos sin `composite_multi_data` siguen funcionando vía fallback.
+- No se introduce migración de datos retroactiva: los presupuestos creados antes de este cambio seguirán dependiendo del comportamiento actual hasta que se vuelvan a editar/guardar.

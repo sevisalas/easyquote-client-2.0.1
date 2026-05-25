@@ -54,6 +54,7 @@ type ItemSnapshot = {
   needsRecalculation?: boolean;
   isFinalized?: boolean; // Track if item is finalized
   compositeData?: any; // Datos de componentes compuestos
+  compositeMultiData?: any; // Fotografía por cantidad de componentes (multi-Q compuestos)
 };
 type SelectedAdditional = {
   id: string;
@@ -224,6 +225,7 @@ export default function QuoteNew() {
           // Descripción (solo para productos custom)
           itemAdditionals: item.item_additionals || [],
           compositeData: item.composite_data || undefined,
+          compositeMultiData: (item as any).composite_multi_data || undefined,
           needsRecalculation: false,
           isFinalized: true
         };
@@ -774,6 +776,7 @@ export default function QuoteNew() {
           position: index,
           item_additionals: item.itemAdditionals || [],
           composite_data: item.compositeData || null,
+          composite_multi_data: (item as any).compositeMultiData || null,
         };
       });
       const {

@@ -65,6 +65,7 @@ interface QuoteItem {
   description_manual?: boolean;  // From DB
   itemAdditionals?: any[];
   compositeData?: any;
+  compositeMultiData?: any;
   _liveUpdated?: boolean;  // Flag: item has been updated by live QuoteItem component (price is trustworthy)
   _tariffSignature?: string;
 }
@@ -545,6 +546,7 @@ export default function QuoteEdit() {
             descriptionManual: item.description_manual || false,  // Flag: usuario editó la descripción
             itemAdditionals: Array.isArray(item.item_additionals) ? item.item_additionals : [],
             compositeData: item.composite_data || undefined,
+            compositeMultiData: (item as any).composite_multi_data || undefined,
             source_quote_id: item.source_quote_id || null,
             source_item_id: item.source_item_id || null,
           };
@@ -912,6 +914,7 @@ export default function QuoteEdit() {
             quantity: resolvedQuantity ?? 1,
             item_additionals: item.itemAdditionals || [],
             composite_data: item.compositeData || null,
+            composite_multi_data: (item as any).compositeMultiData || null,
           };
         });
 
@@ -1061,6 +1064,7 @@ export default function QuoteEdit() {
               itemDescription: snapshot.itemDescription ?? item.itemDescription,
               itemAdditionals: snapshot.itemAdditionals ?? item.itemAdditionals,
               compositeData: snapshot.compositeData ?? item.compositeData,
+              compositeMultiData: (snapshot as any).compositeMultiData ?? (item as any).compositeMultiData,
               _liveUpdated: true,
               _tariffSignature: snapshot.tariffSignature ?? activeTariffSignature,
             }
