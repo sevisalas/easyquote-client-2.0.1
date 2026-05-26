@@ -570,9 +570,7 @@ export default function ProductionBoardKanban() {
                         })}
                       </Badge>
                     </div>
-                    <div className="text-sm font-medium">
-                      <CustomerName customerId={order.customer_id} />
-                    </div>
+                    <div className="text-sm font-medium">{order.customer_name || "—"}</div>
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-xs text-secondary">Estado pedido:</span>
                       <Badge
@@ -679,9 +677,7 @@ export default function ProductionBoardKanban() {
                         Sin fecha
                       </Badge>
                     </div>
-                    <div className="text-sm font-medium">
-                      <CustomerName customerId={order.customer_id} />
-                    </div>
+                    <div className="text-sm font-medium">{order.customer_name || "—"}</div>
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-xs text-secondary">Estado pedido:</span>
                       <Badge
