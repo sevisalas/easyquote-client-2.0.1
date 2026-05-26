@@ -48,20 +48,22 @@ const Auth = () => {
     });
   }, [navigate]);
   const fetchUserOrganizations = async (userId: string): Promise<Organization[]> => {
-    // Get organizations where user is a member
-    const { data: memberOrgs } = await supabase
-      .from('organization_members')
-      .select(`
-        organization_id,
-        organization:organizations(id, name, subscription_plan)
-      `)
-      .eq('user_id', userId);
-
-    // Get organizations where user is the API owner
-    const { data: ownerOrgs } = await supabase
-      .from('organizations')
-      .select('id, name, subscription_plan')
-      .eq('api_user_id', userId);
+    // Run both queries in parallel for speed
+    const [memberRes, ownerRes] = await Promise.all([
+      supabase
+        .from('organization_members')
+        .select(`
+          organization_id,
+          organization:organizations(id, name, subscription_plan)
+        `)
+        .eq('user_id', userId),
+      supabase
+        .from('organizations')
+        .select('id, name, subscription_plan')
+        .eq('api_user_id', userId),
+    ]);
+    const memberOrgs = memberRes.data;
+    const ownerOrgs = ownerRes.data;
 
     // Combine and deduplicate
     const orgsMap = new Map<string, Organization>();
@@ -84,22 +86,18 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const {
-        error
-      } = await supabase.auth.signInWithPassword({
+      const { data: signInData, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
       if (error) throw error;
 
-      const { data: session } = await supabase.auth.getSession();
-      if (!session?.session?.user?.id) {
+      const userId = signInData?.user?.id;
+      if (!userId) {
         console.warn("No se pudo obtener el ID del usuario");
         setLoading(false);
         return;
       }
-
-      const userId = session.session.user.id;
 
       // Check if user belongs to multiple organizations
       const userOrgs = await fetchUserOrganizations(userId);
