@@ -7,15 +7,9 @@ export default function ProductionBoardRedirect() {
   const { view, isLoading } = useProductionBoardView();
 
   useEffect(() => {
-    if (!isLoading) {
-      const routes = {
-        list: "/panel-produccion-lista",
-        compact: "/panel-produccion-compacta",
-        kanban: "/panel-produccion-tablero",
-      };
-      navigate(routes[view], { replace: true });
-    }
-  }, [view, isLoading, navigate]);
+    // Otras vistas deshabilitadas: siempre redirigir al panel de pedidos (lista)
+    navigate("/panel-produccion-lista", { replace: true });
+  }, [navigate]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">

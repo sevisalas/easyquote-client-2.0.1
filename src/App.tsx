@@ -530,7 +530,7 @@ const AppContent = () => {
         element={
           <ProtectedRoute>
             <AppLayout>
-              <ProductionBoardKanban />
+              <ProductionBoardRedirect />
             </AppLayout>
           </ProtectedRoute>
         }
@@ -540,7 +540,7 @@ const AppContent = () => {
         element={
           <ProtectedRoute>
             <AppLayout>
-              <ProductionBoardCompact />
+              <ProductionBoardRedirect />
             </AppLayout>
           </ProtectedRoute>
         }
