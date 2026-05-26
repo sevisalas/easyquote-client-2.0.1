@@ -21,7 +21,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { supabase } from "@/integrations/supabase/client";
-import { CustomerName } from "@/components/quotes/CustomerName";
 import { ProductionBoardViewSwitcher } from "@/components/production/ProductionBoardViewSwitcher";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -296,7 +295,6 @@ export default function ProductionBoard() {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="hidden md:hiddenx"></div>
       <div className="mb-6 md:mb-8">
         <h1 className="text-2xl md:text-4xl font-bold mb-4">Panel de taller - Trabajos</h1>
         <ProductionBoardViewSwitcher view={view} onViewChange={updateView} />
