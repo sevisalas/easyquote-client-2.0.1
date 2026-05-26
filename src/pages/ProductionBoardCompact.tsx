@@ -3,7 +3,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { CustomerName } from "@/components/quotes/CustomerName";
 import { ProductionBoardViewSwitcher } from "@/components/production/ProductionBoardViewSwitcher";
 import { format, differenceInDays, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
@@ -27,6 +26,7 @@ interface SalesOrder {
   order_date: string;
   delivery_date: string | null;
   customer_id: string | null;
+  customer_name: string | null;
   status: string;
   items: SalesOrderItem[];
 }
@@ -94,13 +94,11 @@ export default function ProductionBoardCompact() {
   const loadOrders = async () => {
     try {
       setLoading(true);
-
-      // Filtrar por organization_id para separar datos por tenant
       const organizationId = activeOrganizationId;
 
       let query = supabase
         .from("sales_orders")
-        .select("*")
+        .select("id, order_number, order_date, delivery_date, customer_id, status")
         .in("status", ["pending", "in_production"])
         .order("delivery_date", {
           ascending: true,
@@ -113,21 +111,47 @@ export default function ProductionBoardCompact() {
 
       const { data: ordersData, error: ordersError } = await query;
       if (ordersError) throw ordersError;
-      const ordersWithItems = await Promise.all(
-        (ordersData || []).map(async (order) => {
-          const { data: items, error: itemsError } = await supabase
-            .from("sales_order_items")
-            .select("*")
-            .eq("sales_order_id", order.id)
-            .order("position");
-          if (itemsError) throw itemsError;
-          return {
-            ...order,
-            items: items || [],
-          };
-        }),
+
+      const orderIds = (ordersData || []).map((order) => order.id);
+      if (orderIds.length === 0) {
+        setOrders([]);
+        return;
+      }
+
+      const [{ data: itemsData, error: itemsError }, { data: customersData, error: customersError }] = await Promise.all([
+        supabase
+          .from("sales_order_items")
+          .select("id, sales_order_id, product_name, quantity, production_status, description, prompts, position")
+          .in("sales_order_id", orderIds)
+          .order("position"),
+        supabase
+          .from("customers")
+          .select("id, name")
+          .in("id", Array.from(new Set((ordersData || []).map((order) => order.customer_id).filter(Boolean) as string[]))),
+      ]);
+
+      if (itemsError) throw itemsError;
+      if (customersError) throw customersError;
+
+      const itemsByOrderId = new Map<string, SalesOrderItem[]>();
+      for (const item of itemsData || []) {
+        const current = itemsByOrderId.get(item.sales_order_id) || [];
+        current.push(item as SalesOrderItem);
+        itemsByOrderId.set(item.sales_order_id, current);
+      }
+
+      const customersById = new Map<string, string>();
+      for (const customer of customersData || []) {
+        customersById.set(customer.id, customer.name || "");
+      }
+
+      setOrders(
+        (ordersData || []).map((order) => ({
+          ...order,
+          customer_name: order.customer_id ? customersById.get(order.customer_id) ?? null : null,
+          items: itemsByOrderId.get(order.id) || [],
+        })),
       );
-      setOrders(ordersWithItems);
     } catch (error) {
       console.error("Error loading orders:", error);
     } finally {
@@ -188,9 +212,7 @@ export default function ProductionBoardCompact() {
 
                     <div>
                       <div className="text-xs text-secondary">Cliente</div>
-                      <div className="text-sm font-semibold">
-                        <CustomerName customerId={order.customer_id} />
-                      </div>
+                      <div className="text-sm font-semibold">{order.customer_name || "—"}</div>
                     </div>
 
                     <div>
