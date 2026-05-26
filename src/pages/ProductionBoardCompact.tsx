@@ -118,16 +118,17 @@ export default function ProductionBoardCompact() {
         return;
       }
 
+      const customerIds = Array.from(new Set((ordersData || []).map((order) => order.customer_id).filter(Boolean) as string[]));
+
       const [{ data: itemsData, error: itemsError }, { data: customersData, error: customersError }] = await Promise.all([
         supabase
           .from("sales_order_items")
           .select("id, sales_order_id, product_name, quantity, production_status, description, prompts, position")
           .in("sales_order_id", orderIds)
           .order("position"),
-        supabase
-          .from("customers")
-          .select("id, name")
-          .in("id", Array.from(new Set((ordersData || []).map((order) => order.customer_id).filter(Boolean) as string[]))),
+        customerIds.length > 0
+          ? supabase.from("customers").select("id, name").in("id", customerIds)
+          : Promise.resolve({ data: [], error: null }),
       ]);
 
       if (itemsError) throw itemsError;
