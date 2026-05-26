@@ -79,20 +79,22 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   const { toast } = useToast();
 
   const fetchAllUserOrganizations = async (userId: string): Promise<Organization[]> => {
-    // Get organizations where user is a member
-    const { data: memberOrgs } = await supabase
-      .from('organization_members')
-      .select(`
-        organization_id,
-        organization:organizations(id, name, subscription_plan, excel_limit, excel_extra, client_user_limit, client_user_extra, api_user_id, holded_external_customers, max_daily_orders, default_delivery_business_days, b2b_portal_enabled)
-      `)
-      .eq('user_id', userId);
-
-    // Get organizations where user is the API owner
-    const { data: ownerOrgs } = await supabase
-      .from('organizations')
-      .select('*')
-      .eq('api_user_id', userId);
+    // Run both queries in parallel for speed
+    const [memberRes, ownerRes] = await Promise.all([
+      supabase
+        .from('organization_members')
+        .select(`
+          organization_id,
+          organization:organizations(id, name, subscription_plan, excel_limit, excel_extra, client_user_limit, client_user_extra, api_user_id, holded_external_customers, max_daily_orders, default_delivery_business_days, b2b_portal_enabled)
+        `)
+        .eq('user_id', userId),
+      supabase
+        .from('organizations')
+        .select('*')
+        .eq('api_user_id', userId),
+    ]);
+    const memberOrgs = memberRes.data;
+    const ownerOrgs = ownerRes.data;
 
     // Combine and deduplicate
     const orgsMap = new Map<string, Organization>();
