@@ -134,7 +134,7 @@ export default function ProductionBoard() {
   const [editingTask, setEditingTask] = useState<EditableTask | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const navigate = useNavigate();
-  const { membership, organization } = useSubscription();
+  const { membership, organization, loading: subscriptionLoading } = useSubscription();
   const { view, updateView } = useProductionBoardView();
   const { phases } = useProductionPhases();
   const { resolve: resolveStatus } = useStatusSettings();
@@ -145,10 +145,15 @@ export default function ProductionBoard() {
   });
 
   useEffect(() => {
+    if (subscriptionLoading || !activeOrganizationId) {
+      setLoading(subscriptionLoading);
+      return;
+    }
+
     loadJobs(true);
     const interval = setInterval(() => loadJobs(false), 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [activeOrganizationId]);
+  }, [activeOrganizationId, subscriptionLoading]);
 
   const loadJobs = async (showLoading = true) => {
     try {
@@ -293,41 +298,111 @@ export default function ProductionBoard() {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="md:hidden flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
-        <Package className="h-16 w-16 text-muted-foreground mb-4" />
-        <h2 className="text-xl font-bold mb-2">Vista no disponible en móvil</h2>
-        <p className="text-muted-foreground mb-6">
-          Por favor, utiliza la vista Compacta o Tablero en dispositivos móviles
-        </p>
-        <div className="flex gap-2">
-          <Button
-            variant="default"
-            onClick={() => {
-              updateView("compact");
-              navigate("/panel-produccion-compacta");
-            }}
-          >
-            <LayoutGrid className="h-4 w-4 mr-2" />
-            Vista compacta
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              updateView("kanban");
-              navigate("/panel-produccion-tablero");
-            }}
-          >
-            <LayoutGrid className="h-4 w-4 mr-2" />
-            Vista tablero
-          </Button>
-        </div>
+      <div className="hidden md:hiddenx"></div>
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-4xl font-bold mb-4">Panel de taller - Trabajos</h1>
+        <ProductionBoardViewSwitcher view={view} onViewChange={updateView} />
+      </div>
+
+      <div className="md:hidden flex flex-col gap-3">
+        <Card className="p-4 flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="search-jobs-mobile" className="text-xs">Buscar</Label>
+            <Input
+              id="search-jobs-mobile"
+              placeholder="Nº pedido o artículo"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs">Estado</Label>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="pending">Pendiente</SelectItem>
+                <SelectItem value="in_progress">En curso</SelectItem>
+                <SelectItem value="completed">Completado</SelectItem>
+                <SelectItem value="cancelled">Cancelado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <Label htmlFor="exclude-finished-mobile" className="text-sm cursor-pointer">
+              Excluir terminados y cancelados
+            </Label>
+            <Switch
+              id="exclude-finished-mobile"
+              checked={excludeFinished}
+              onCheckedChange={setExcludeFinished}
+            />
+          </div>
+          <div className="text-sm text-muted-foreground">
+            {filteredJobs.length} trabajo{filteredJobs.length === 1 ? "" : "s"}
+          </div>
+        </Card>
+
+        {filteredJobs.length === 0 ? (
+          <Card className="p-8 text-center text-muted-foreground">
+            No hay trabajos pendientes
+          </Card>
+        ) : (
+          filteredJobs.map((j) => (
+            <Card key={j.itemId} className="p-4 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <Link
+                    to={`/pedidos/${j.orderId}`}
+                    className="inline-flex items-center gap-1 font-semibold text-sm hover:underline"
+                  >
+                    {j.orderNumber}
+                    <ExternalLink className="h-3 w-3 opacity-60 flex-shrink-0" />
+                  </Link>
+                  <div className="text-[11px] text-muted-foreground truncate">{j.customerName || "—"}</div>
+                  <div className="text-[11px] truncate">{j.productName}</div>
+                </div>
+                <span className="text-[11px] tabular-nums text-muted-foreground flex-shrink-0">×{j.quantity}</span>
+              </div>
+
+              <div className="flex items-center justify-between text-xs text-muted-foreground gap-3">
+                <span>
+                  Entrega: {j.deliveryDate ? format(new Date(j.deliveryDate), "dd/MM/yyyy", { locale: es }) : "—"}
+                </span>
+                <span>
+                  Pedido: {format(new Date(j.orderDate), "dd/MM/yy", { locale: es })}
+                </span>
+              </div>
+
+              <div>
+                {(() => {
+                  const mapped = resolveStatus(j.productionStatus);
+                  return <Badge style={{ backgroundColor: mapped.bg, color: mapped.color }}>{mapped.label}</Badge>;
+                })()}
+              </div>
+
+              <div className="space-y-3">
+                {phases.map((p) => (
+                  <div key={`${j.itemId}-${p.id}`} className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="block h-2 w-2 rounded-full" style={{ backgroundColor: p.color }} />
+                      <span className="text-[11px] font-semibold uppercase tracking-wide">{p.display_name}</span>
+                    </div>
+                    <PhaseIndicator tasks={j.phaseTasks[p.id] || []} onEdit={(task) => {
+                      setEditingTask(task);
+                      setEditOpen(true);
+                    }} />
+                  </div>
+                ))}
+              </div>
+            </Card>
+          ))
+        )}
       </div>
 
       <div className="hidden md:block">
-        <div className="mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-4xl font-bold mb-4">Panel de taller - Trabajos</h1>
-          <ProductionBoardViewSwitcher view={view} onViewChange={updateView} />
-        </div>
 
         <Card className="p-4 mb-4 flex flex-wrap items-end gap-4">
           <div className="flex flex-col gap-1">
