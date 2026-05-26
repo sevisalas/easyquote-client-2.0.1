@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { STATUS_COLORS } from "@/lib/statusColors";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -26,8 +25,8 @@ import { CustomerName } from "@/components/quotes/CustomerName";
 import { ProductionBoardViewSwitcher } from "@/components/production/ProductionBoardViewSwitcher";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Package, LayoutGrid, ExternalLink } from "lucide-react";
-import { useNavigate, Link } from "react-router-dom";
+import { ExternalLink } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useProductionBoardView } from "@/hooks/useProductionBoardView";
 import { useProductionPhases } from "@/hooks/useProductionPhases";
 import { useStatusSettings } from "@/hooks/useStatusSettings";
@@ -133,7 +132,6 @@ export default function ProductionBoard() {
   const [search, setSearch] = useState("");
   const [editingTask, setEditingTask] = useState<EditableTask | null>(null);
   const [editOpen, setEditOpen] = useState(false);
-  const navigate = useNavigate();
   const { membership, organization, loading: subscriptionLoading } = useSubscription();
   const { view, updateView } = useProductionBoardView();
   const { phases } = useProductionPhases();
@@ -379,7 +377,14 @@ export default function ProductionBoard() {
               <div>
                 {(() => {
                   const mapped = resolveStatus(j.productionStatus);
-                  return <Badge style={{ backgroundColor: mapped.bg, color: mapped.color }}>{mapped.label}</Badge>;
+                  return (
+                    <Badge
+                      className="border"
+                      style={{ backgroundColor: mapped.style.bg, borderColor: mapped.style.border, color: mapped.style.text }}
+                    >
+                      {mapped.label}
+                    </Badge>
+                  );
                 })()}
               </div>
 
