@@ -407,7 +407,7 @@ export default function ProductionBoard() {
 
       <div className="hidden md:block">
 
-        <Card className="p-4 mb-4 flex flex-wrap items-end gap-4">
+        <Card className="p-4 mb-4 flex flex-wrap items-end gap-4 sticky top-0 z-30 bg-card">
           <div className="flex flex-col gap-1">
             <Label htmlFor="search-jobs" className="text-xs">Buscar</Label>
             <Input
@@ -451,12 +451,12 @@ export default function ProductionBoard() {
         <div className="rounded-lg border bg-card overflow-x-auto">
           <Table className="w-max min-w-full">
             <TableHeader>
-              <TableRow>
-                <TableHead className="w-[110px] py-2 sticky left-0 bg-card z-10">Fechas</TableHead>
-                <TableHead className="w-[300px] py-2 sticky left-[110px] bg-card z-10">Trabajo</TableHead>
+              <TableRow className="[&>th]:sticky [&>th]:top-[104px] [&>th]:bg-card [&>th]:z-20">
+                <TableHead className="w-[110px] py-2 !sticky !left-0 !top-[104px] bg-card !z-30">Fechas</TableHead>
+                <TableHead className="w-[300px] py-2 !sticky !left-[110px] !top-[104px] bg-card !z-30">Trabajo</TableHead>
                 <TableHead className="w-[110px] py-2">Estado</TableHead>
                 {phases.map((p) => (
-                  <TableHead key={p.id} className="py-2 text-center px-1 min-w-[140px]" title={p.display_name}>
+                  <TableHead key={p.id} className="py-2 text-center px-1 min-w-[140px] bg-card" title={p.display_name}>
                     <div className="space-y-1">
                       <span className="block h-1.5 w-full rounded-full" style={{ backgroundColor: p.color }} />
                       <span className="block text-[10px] font-semibold uppercase tracking-wide text-foreground truncate">
