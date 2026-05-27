@@ -451,9 +451,9 @@ export default function ProductionBoard() {
         <div className="rounded-lg border bg-card overflow-x-auto">
           <Table className="w-max min-w-full">
             <TableHeader>
-              <TableRow className="[&>th]:sticky [&>th]:top-0 [&>th]:bg-card [&>th]:z-20">
-                <TableHead className="w-[110px] py-2 !sticky !left-0 !top-0 bg-card !z-30">Fechas</TableHead>
-                <TableHead className="w-[300px] py-2 !sticky !left-[110px] !top-0 bg-card !z-30">Trabajo</TableHead>
+              <TableRow className="[&>th]:sticky [&>th]:top-[104px] [&>th]:bg-card [&>th]:z-20">
+                <TableHead className="w-[110px] py-2 !sticky !left-0 !top-[104px] bg-card !z-30">Fechas</TableHead>
+                <TableHead className="w-[300px] py-2 !sticky !left-[110px] !top-[104px] bg-card !z-30">Trabajo</TableHead>
                 <TableHead className="w-[110px] py-2">Estado</TableHead>
                 {phases.map((p) => (
                   <TableHead key={p.id} className="py-2 text-center px-1 min-w-[140px] bg-card" title={p.display_name}>
