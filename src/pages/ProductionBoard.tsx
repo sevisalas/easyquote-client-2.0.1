@@ -448,15 +448,15 @@ export default function ProductionBoard() {
           </div>
         </Card>
 
-        <div className="rounded-lg border bg-card overflow-auto max-h-[calc(100vh-220px)]">
-          <Table className="w-max min-w-full">
+        <div className="rounded-lg border bg-card">
+          <Table containerClassName="max-h-[calc(100vh-220px)] overflow-auto" className="w-max min-w-full">
             <TableHeader>
               <TableRow className="[&>th]:sticky [&>th]:top-0 [&>th]:bg-card [&>th]:z-20">
                 <TableHead className="w-[110px] py-2 !sticky !left-0 !top-0 bg-card !z-30">Fechas</TableHead>
                 <TableHead className="w-[300px] py-2 !sticky !left-[110px] !top-0 bg-card !z-30">Trabajo</TableHead>
-                <TableHead className="w-[110px] py-2">Estado</TableHead>
+                <TableHead className="w-[110px] py-2 !top-0 bg-card">Estado</TableHead>
                 {phases.map((p) => (
-                  <TableHead key={p.id} className="py-2 text-center px-1 min-w-[140px] bg-card" title={p.display_name}>
+                  <TableHead key={p.id} className="py-2 text-center px-1 min-w-[140px] !top-0 bg-card" title={p.display_name}>
                     <div className="space-y-1">
                       <span className="block h-1.5 w-full rounded-full" style={{ backgroundColor: p.color }} />
                       <span className="block text-[10px] font-semibold uppercase tracking-wide text-foreground truncate">
