@@ -157,16 +157,26 @@ export default function ProductionBoard() {
       if (showLoading) setLoading(true);
       const organizationId = activeOrganizationId;
 
-      let query = supabase
+      // Fire orders + resources in parallel (resources doesn't depend on orders)
+      let ordersQuery = supabase
         .from("sales_orders")
         .select("id, order_number, order_date, delivery_date, customer_id, status");
+      if (organizationId) ordersQuery = ordersQuery.eq("organization_id", organizationId);
+      ordersQuery = ordersQuery.not("status", "in", "(completed,cancelled)");
 
-      if (organizationId) query = query.eq("organization_id", organizationId);
-      // Only load orders that may have pending work — completed/cancelled excluded at DB level for speed.
-      query = query.not("status", "in", "(completed,cancelled)");
+      const resourcesPromise = organizationId
+        ? supabase
+            .from("production_resources")
+            .select("id, name")
+            .eq("organization_id", organizationId)
+        : Promise.resolve({ data: [] as Array<{ id: string; name: string }> });
 
-      const { data: ordersData, error: ordersError } = await query;
-      if (ordersError) throw ordersError;
+      const [ordersRes, resourcesRes] = await Promise.all([ordersQuery, resourcesPromise]);
+      if (ordersRes.error) throw ordersRes.error;
+      const ordersData = ordersRes.data;
+
+      const resourcesById = new Map<string, string>();
+      for (const r of (resourcesRes as any).data || []) resourcesById.set(r.id, r.name);
 
       const orderIds = (ordersData || []).map((o) => o.id);
       if (orderIds.length === 0) {
@@ -174,12 +184,25 @@ export default function ProductionBoard() {
         return;
       }
 
-      const { data: itemsData, error: itemsError } = await supabase
+      // Fire items + customers in parallel (customers depends only on orders)
+      const customerIds = Array.from(
+        new Set((ordersData || []).map((o) => o.customer_id).filter(Boolean) as string[])
+      );
+      const itemsPromise = supabase
         .from("sales_order_items")
         .select("id, sales_order_id, product_name, quantity, production_status, position")
         .in("sales_order_id", orderIds)
         .order("position");
-      if (itemsError) throw itemsError;
+      const customersPromise = customerIds.length > 0
+        ? supabase.from("customers").select("id, name").in("id", customerIds)
+        : Promise.resolve({ data: [] as Array<{ id: string; name: string }> });
+
+      const [itemsRes, customersRes] = await Promise.all([itemsPromise, customersPromise]);
+      if (itemsRes.error) throw itemsRes.error;
+      const itemsData = itemsRes.data;
+
+      const customersById = new Map<string, string>();
+      for (const c of (customersRes as any).data || []) customersById.set(c.id, c.name || "");
 
       const itemIds = (itemsData || []).map((it) => it.id);
       const tasksByItem = new Map<string, Array<{ id: string; phase_id: string; task_name: string; status: "pending" | "in_progress" | "paused" | "completed"; resource_id: string | null }>>();
@@ -194,29 +217,6 @@ export default function ProductionBoard() {
           arr.push({ id: (t as any).id, phase_id: t.phase_id, task_name: t.task_name, status: taskStatus, resource_id: (t as any).resource_id ?? null });
           tasksByItem.set(t.sales_order_item_id, arr);
         }
-      }
-
-      // Load resources to resolve resource_id -> name
-      const resourcesById = new Map<string, string>();
-      if (organizationId) {
-        const { data: resourcesData } = await supabase
-          .from("production_resources")
-          .select("id, name")
-          .eq("organization_id", organizationId);
-        for (const r of resourcesData || []) resourcesById.set(r.id, r.name);
-      }
-
-      // Batch-fetch customer names (avoid N+1 from CustomerName component)
-      const customerIds = Array.from(
-        new Set((ordersData || []).map((o) => o.customer_id).filter(Boolean) as string[])
-      );
-      const customersById = new Map<string, string>();
-      if (customerIds.length > 0) {
-        const { data: customersData } = await supabase
-          .from("customers")
-          .select("id, name")
-          .in("id", customerIds);
-        for (const c of customersData || []) customersById.set(c.id, c.name || "");
       }
 
       const ordersById = new Map((ordersData || []).map((o) => [o.id, o]));
