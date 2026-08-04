@@ -1927,6 +1927,7 @@ export type Database = {
           id: string
           max_daily_orders: number | null
           name: string
+          production_saturation_extra_business_days: number
           resource_group_id: string | null
           resource_group_name: string | null
           split_orders_per_item: boolean
@@ -1950,6 +1951,7 @@ export type Database = {
           id?: string
           max_daily_orders?: number | null
           name: string
+          production_saturation_extra_business_days?: number
           resource_group_id?: string | null
           resource_group_name?: string | null
           split_orders_per_item?: boolean
@@ -1973,6 +1975,7 @@ export type Database = {
           id?: string
           max_daily_orders?: number | null
           name?: string
+          production_saturation_extra_business_days?: number
           resource_group_id?: string | null
           resource_group_name?: string | null
           split_orders_per_item?: boolean
@@ -2635,6 +2638,35 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "production_variables"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      production_config: {
+        Row: {
+          id: number
+          saturation: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: number
+          saturation?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: number
+          saturation?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_config_saturation_fkey"
+            columns: ["saturation"]
+            isOneToOne: false
+            referencedRelation: "saturation_levels"
+            referencedColumns: ["level"]
           },
         ]
       }
@@ -3558,6 +3590,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      saturation_levels: {
+        Row: {
+          description: string
+          level: number
+        }
+        Insert: {
+          description: string
+          level: number
+        }
+        Update: {
+          description?: string
+          level?: number
+        }
+        Relationships: []
       }
       support_requests: {
         Row: {
